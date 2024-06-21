@@ -1,21 +1,18 @@
 .container-flouid
-  %nav.navbar.navbar-expand-lg.bg-light
+  %nav.navbar.navbar-expand-lg.bg-light.sticky-top
     .container
-      %a.navbar-brand{href: "/"}
-        %h3 Your Logo
-      %button.navbar-toggler{"aria-controls" => "navbarTogglerDemo02", "aria-expanded" => "false", "aria-label" => "Toggle navigation", "data-bs-target" => "#navbarTogglerDemo02", "data-bs-toggle" => "collapse", type: "button"}
-        %span.navbar-toggler-icon
-      #navbarTogglerDemo02.collapse.navbar-collapse
-        %ul.navbar-nav.me-auto.mb-2.mb-lg-0
-          %li.nav-item
-            %a.nav-link.active{"aria-current" => "page", href: "#"}= I18n.t('menu.home')
-          %li.nav-item
-            %a.nav-link.active{href: "#"}= I18n.t('menu.about')
-          %li.nav-item
-            %a.nav-link.active{"aria-current" => "page", href: "#"}= I18n.t('menu.contact')
-        %form
-          - if current_user
-            = link_to I18n.t('menu.logout'), destroy_user_session_path, class: "btn btn-outline-primary mr-2"
-          - else
-            = link_to I18n.t('menu.login'), new_session_path(User), class: "btn btn-outline-primary mr-2"
-            = link_to I18n.t('menu.register'), new_registration_path(User), class: "btn btn-outline-success"
+      %a.navbar-brand{href: library_path}
+        = image_tag "logo.png", size: "100x100", alt: "Logo", class: "img-fluid"
+      %ul.navbar-nav.me-auto.mb-2.mb-lg-0
+        %li.nav-item.ms-4
+          %a.nav-link.active{"aria-current" => "page", href: library_path}= I18n.t('menu.home')
+        %li.nav-item.ms-4
+          %a.nav-link.active{href: about_path}= I18n.t('menu.about')
+        %li.nav-item.ms-4
+          %a.nav-link.active{"aria-current" => "page", href: contact_path}= I18n.t('menu.contact')
+      %form
+        - if current_user
+          = link_to I18n.t('menu.logout'), destroy_user_session_path, class: "btn btn-outline-primary mr-2"
+        - else
+          = link_to I18n.t('menu.login'), new_session_path(User), class: "btn btn-outline-primary mr-2"
+          = link_to I18n.t('menu.register'), new_registration_path(User), class: "btn btn-outline-success"

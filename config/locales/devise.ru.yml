@@ -3,6 +3,16 @@
 
 ru:
   devise:
+    email: "Email"
+    password: "Пароль (минимум 6 символов)"
+    password_confirmation: "Подтвердите пароль"
+    submit: "Создать аккаунт"
+    log_in: "Войти"
+    sign_up: "Зарегистрироваться"
+    remember_me: "Запомнить меня"
+    forgot_password: "Забыли пароль?"
+    send_instructions: "Отправить инструкции по сбросу пароля"
+
     confirmations:
       confirmed: "Ваша учётная запись успешно подтверждена."
       send_instructions: "В течение нескольких минут вы получите письмо с инструкциями по подтверждению вашей учётной записи."

@@ -1,4 +1,10 @@
 class StoreController < ApplicationController
-  def index
+  def library
+  end
+
+  def contact
+  end
+
+  def about
   end
 end

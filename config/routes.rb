@@ -6,9 +6,11 @@ Rails.application.routes.draw do
   get "up" => "rails/health#show", as: :rails_health_check
   scope "(:locale)", locale: /#{I18n.available_locales.join("|")}/ do
     devise_for :users
-    get "store" => "store#index"
+    get "library" => "store#library", as: :library
+    get "contact" => "store#contact", as: :contact
+    get "about" => "store#about", as: :about
   end
 
   # Defines the root path route ("/")
-  root 'store#index'
+  root 'store#library'
 end

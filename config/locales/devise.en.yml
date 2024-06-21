@@ -2,6 +2,16 @@
 
 en:
   devise:
+    email: "Email"
+    password: "Password (6 characters minimum)"
+    password_confirmation: "Password confirmation"
+    submit: "Create Account"
+    log_in: "Log in"
+    sign_up: "Sign up"
+    remember_me: "Remember me"
+    forgot_password: "Forgot your password?"
+    send_instructions: "Send me reset password instructions"
+
     confirmations:
       confirmed: "Your email address has been successfully confirmed."
       send_instructions: "You will receive an email with instructions for how to confirm your email address in a few minutes."
