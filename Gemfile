@@ -13,6 +13,7 @@ gem 'cssbundling-rails'
 gem 'jbuilder'
 gem 'phlex', '~> 1.10'
 gem 'haml-rails'
+gem 'devise'
 
 # Use Redis adapter to run Action Cable in production
 # gem 'redis', '>= 4.0.1'

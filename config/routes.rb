@@ -5,9 +5,10 @@ Rails.application.routes.draw do
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check
   scope "(:locale)", locale: /#{I18n.available_locales.join("|")}/ do
+    devise_for :users
     get "store" => "store#index"
   end
 
   # Defines the root path route ("/")
-  # root "posts#index"
+  root 'store#index'
 end

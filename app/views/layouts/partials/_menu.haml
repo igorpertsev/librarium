@@ -14,5 +14,8 @@
           %li.nav-item
             %a.nav-link.active{"aria-current" => "page", href: "#"}= I18n.t('menu.contact')
         %form
-          %a.btn.btn-outline-primary.mr-2{href: "#"}= I18n.t('menu.login')
-          %a.btn.btn-outline-success{href: "#"}= I18n.t('menu.register')
+          - if current_user
+            = link_to I18n.t('menu.logout'), destroy_user_session_path, class: "btn btn-outline-primary mr-2"
+          - else
+            = link_to I18n.t('menu.login'), new_session_path(User), class: "btn btn-outline-primary mr-2"
+            = link_to I18n.t('menu.register'), new_registration_path(User), class: "btn btn-outline-success"

@@ -11,8 +11,14 @@
   </head>
 
   <body>
-    <%= render "layouts/partials/menu" %>
+    <% if notice.present? %>
+      <p class="alert alert-success"><%= notice %></p>
+    <% end %>
+    <% if alert.present? %>
+      <p class="alert alert-danger"><%= alert %></p>
+    <% end %>
 
+    <%= render "layouts/partials/menu" %>
     <%= yield %>
   </body>
 </html>
