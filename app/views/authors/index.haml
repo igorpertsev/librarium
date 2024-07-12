@@ -1,7 +1,7 @@
 .container
   .header
-    %h3.text-5xl Authors
-    = link_to 'New Author', new_author_path, data: { turbo_frame: dom_id(Author.new)  }
+    %h3.text-5xl.mb-4= t('authors.name')
+    = link_to  t('genres.form.new'), new_author_path, data: { turbo_frame: dom_id(Author.new)  }, class: "btn btn-primary mb-4"
 
   = turbo_frame_tag Author.new
 
@@ -10,9 +10,10 @@
       %thead
         %tr
           %th #
-          %th Full Name
-          %th Create At
-          %th Updated At
-          %th Action
+          %th= t('authors.table.full_name')
+          %th= t('authors.table.books_count')
+          %th= t('authors.table.created_at')
+          %th= t('authors.table.updated_at')
+          %th
       %tbody#authors-table-body
         = render @authors

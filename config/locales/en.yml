@@ -35,3 +35,50 @@ en:
     login: Login
     register: Become member
     logout: Logout
+    books: Books
+    authors: Authors
+    publishers: Publishers
+    genres: Genres
+    manage: Management
+  genres:
+    name: Genres
+    form:
+      new: "Add New"
+      edit: "Edit"
+      delete: "Delete"
+    table:
+      name: Name
+      created_at: Created
+      updated_at: Updated
+      books_count: Books Count
+  authors:
+    name: Authors
+    form:
+      new: "Add New"
+      edit: "Edit"
+      delete: "Delete"
+    table:
+      full_name: Full Name
+      created_at: Created
+      updated_at: Updated
+      books_count: Books Count
+  publishers:
+    name: Publishers
+    form:
+      new: "Add New"
+      edit: "Edit"
+      delete: "Delete"
+    table:
+      name: Name
+      created_at: Created
+      updated_at: Updated
+  helpers:
+    submit:
+      save: "Save"
+    label:
+      genre:
+        name: "Genre Name"
+      publisher:
+        name: "Publisher Name"
+      author:
+        name: "Author Name"

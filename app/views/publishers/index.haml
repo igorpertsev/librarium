@@ -1,7 +1,7 @@
 .container
   .header
-    %h3.text-5xl Publishers
-    = link_to 'New Publisher', new_publisher_path, data: { turbo_frame: dom_id(Publisher.new)  }
+    %h3.text-5xl.mb-4= t('publishers.name')
+    = link_to t('publishers.form.new'), new_publisher_path, data: { turbo_frame: dom_id(Publisher.new)  }, class: "btn btn-primary mb-4"
 
   = turbo_frame_tag Publisher.new
 
@@ -10,9 +10,9 @@
       %thead
         %tr
           %th #
-          %th Name
-          %th Create At
-          %th Updated At
-          %th Action
+          %th= t('publishers.table.name')
+          %th= t('publishers.table.created_at')
+          %th= t('publishers.table.updated_at')
+          %th
       %tbody#publishers-table-body
         = render @publishers

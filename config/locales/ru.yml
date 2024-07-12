@@ -6,3 +6,50 @@ ru:
     login: Войти
     register: Присоединиться
     logout: Выйти
+    books: Книги
+    authors: Авторы
+    publishers: Издательства
+    genres: Жанры
+    manage: Управление
+  genres:
+    name: Жанры
+    form:
+      new: "Добавить новый"
+      edit: "Редактировать"
+      delete: "Удалить"
+    table:
+      name: Название
+      created_at: Создано
+      updated_at: Обновлено
+      books_count: Количество книг
+  authors:
+    name: Авторы
+    form:
+      new: "Добавить нового"
+      edit: "Редактировать"
+      delete: "Удалить"
+    table:
+      full_name: Полное имя
+      created_at: Создано
+      updated_at: Обновлено
+      books_count: Количество книг
+  publishers:
+    name: Издательства
+    form:
+      new: "Добавить новое"
+      edit: "Редактировать"
+      delete: "Удалить"
+    table:
+      name: Название
+      created_at: Создано
+      updated_at: Обновлено
+  helpers:
+    submit:
+      save: "Сохранить"
+    label:
+      genre:
+        name: "Название жанра"
+      publisher:
+        name: "Название издательства"
+      author:
+        full_name: "Полное имя автора"

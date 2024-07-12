@@ -5,5 +5,5 @@
   %td= genre.created_at
   %td= genre.updated_at
   %td
-    = link_to 'Edit', edit_genre_path(genre), data: { turbo_frame: dom_id(Genre.new) }
-    = link_to 'Destroy', genre, method: :delete, data: { confirm: 'Are you sure?', 'turbo-method': :delete }
+    = link_to t('genres.form.edit'), edit_genre_path(genre), data: { turbo_frame: dom_id(Genre.new) }
+    = link_to t('genres.form.delete'), genre, method: :delete, data: { confirm: 'Are you sure?', 'turbo-method': :delete }

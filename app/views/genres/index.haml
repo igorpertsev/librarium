@@ -1,7 +1,7 @@
 .container
   .header
-    %h3.text-5xl Genres
-    = link_to 'New Genre', new_genre_path, data: { turbo_frame: dom_id(Genre.new)  }
+    %h3.text-5xl.mb-4= t('genres.name')
+    = link_to t('genres.form.new'), new_genre_path, data: { turbo_frame: dom_id(Genre.new)  }, class: "btn btn-primary mb-4"
 
   = turbo_frame_tag Genre.new
 
@@ -10,10 +10,10 @@
       %thead
         %tr
           %th #
-          %th Name
-          %th Books Count
-          %th Create At
-          %th Updated At
-          %th Action
+          %th= t('genres.table.name')
+          %th= t('genres.table.books_count')
+          %th= t('genres.table.created_at')
+          %th= t('genres.table.updated_at')
+          %th
       %tbody#genres-table-body
         = render @genres
