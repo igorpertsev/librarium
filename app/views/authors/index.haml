@@ -1,0 +1,18 @@
+.container
+  .header
+    %h3.text-5xl Authors
+    = link_to 'New Author', new_author_path, data: { turbo_frame: dom_id(Author.new)  }
+
+  = turbo_frame_tag Author.new
+
+  = turbo_frame_tag 'authors' do
+    %table.table
+      %thead
+        %tr
+          %th #
+          %th Full Name
+          %th Create At
+          %th Updated At
+          %th Action
+      %tbody#authors-table-body
+        = render @authors

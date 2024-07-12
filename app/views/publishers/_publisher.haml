@@ -1,0 +1,8 @@
+%tr{id: "#{dom_id(publisher)}-row"}
+  %td= publisher.id
+  %td= publisher.name
+  %td= publisher.created_at
+  %td= publisher.updated_at
+  %td
+    = link_to 'Edit', edit_publisher_path(publisher), data: { turbo_frame: dom_id(Publisher.new) }
+    = link_to 'Destroy', publisher, method: :delete, data: { confirm: 'Are you sure?', 'turbo-method': :delete }

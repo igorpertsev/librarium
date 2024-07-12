@@ -9,6 +9,11 @@ Rails.application.routes.draw do
     get "library" => "store#library", as: :library
     get "contact" => "store#contact", as: :contact
     get "about" => "store#about", as: :about
+
+    resources :genres
+    resources :authors
+    resources :books
+    resources :publishers
   end
 
   # Defines the root path route ("/")

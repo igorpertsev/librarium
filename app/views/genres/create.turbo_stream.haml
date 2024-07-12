@@ -1,0 +1,4 @@
+%turbo-stream{action: "append", target: "genres-table-body"}
+  %template
+    = render @genre
+= turbo_stream.update Genre.new, ""

@@ -1,0 +1,4 @@
+%turbo-stream{action: "replace", target: "#{dom_id(@publisher)}-row"}
+  %template
+    = render @publisher
+= turbo_stream.update Publisher.new, ""

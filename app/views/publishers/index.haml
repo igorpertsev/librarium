@@ -1,0 +1,18 @@
+.container
+  .header
+    %h3.text-5xl Publishers
+    = link_to 'New Publisher', new_publisher_path, data: { turbo_frame: dom_id(Publisher.new)  }
+
+  = turbo_frame_tag Publisher.new
+
+  = turbo_frame_tag 'publishers' do
+    %table.table
+      %thead
+        %tr
+          %th #
+          %th Name
+          %th Create At
+          %th Updated At
+          %th Action
+      %tbody#publishers-table-body
+        = render @publishers

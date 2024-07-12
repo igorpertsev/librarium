@@ -1,0 +1,7 @@
+= turbo_frame_tag Genre.new do
+  = form_for @genre do |f|
+    %p
+      = f.label :name
+      = f.text_field :name
+    %p
+      = f.submit "Submit"

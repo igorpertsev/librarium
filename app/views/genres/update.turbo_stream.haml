@@ -1,0 +1,4 @@
+%turbo-stream{action: "replace", target: "#{dom_id(@genre)}-row"}
+  %template
+    = render @genre
+= turbo_stream.update Genre.new, ""

@@ -13,6 +13,8 @@
       %form
         - if current_user
           = link_to I18n.t('menu.logout'), destroy_user_session_path, class: "btn btn-outline-primary mr-2"
+          - if current_user.admin?
+            %div Admin
         - else
           = link_to I18n.t('menu.login'), new_session_path(User), class: "btn btn-outline-primary mr-2"
           = link_to I18n.t('menu.register'), new_registration_path(User), class: "btn btn-outline-success"

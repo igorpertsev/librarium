@@ -1,0 +1,8 @@
+%tr{id: "#{dom_id(author)}-row"}
+  %td= author.id
+  %td= author.full_name
+  %td= author.created_at
+  %td= author.updated_at
+  %td
+    = link_to 'Edit', edit_author_path(author), data: { turbo_frame: dom_id(Author.new) }
+    = link_to 'Destroy', author, method: :delete, data: { confirm: 'Are you sure?', 'turbo-method': :delete }

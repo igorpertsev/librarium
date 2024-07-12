@@ -1,0 +1,7 @@
+= turbo_frame_tag Author.new do
+  = form_for @author do |f|
+    %p
+      = f.label :full_name
+      = f.text_field :full_name
+    %p
+      = f.submit "Submit"

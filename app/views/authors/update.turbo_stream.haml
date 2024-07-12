@@ -1,0 +1,4 @@
+%turbo-stream{action: "replace", target: "#{dom_id(@author)}-row"}
+  %template
+    = render @author
+= turbo_stream.update Author.new, ""

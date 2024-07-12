@@ -1,0 +1,19 @@
+.container
+  .header
+    %h3.text-5xl Genres
+    = link_to 'New Genre', new_genre_path, data: { turbo_frame: dom_id(Genre.new)  }
+
+  = turbo_frame_tag Genre.new
+
+  = turbo_frame_tag 'genres' do
+    %table.table
+      %thead
+        %tr
+          %th #
+          %th Name
+          %th Books Count
+          %th Create At
+          %th Updated At
+          %th Action
+      %tbody#genres-table-body
+        = render @genres

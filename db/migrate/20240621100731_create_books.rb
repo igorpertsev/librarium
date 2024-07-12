@@ -6,7 +6,6 @@ class CreateBooks < ActiveRecord::Migration[7.1]
 
       t.integer :page_count
       t.string :title
-      t.string :author
       t.text :description
       t.integer :published_year
 
