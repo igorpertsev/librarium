@@ -1,7 +1,7 @@
 .container
   .header
     %h3.text-5xl.mb-4= t('authors.name')
-    = link_to  t('genres.form.new'), new_author_path, data: { turbo_frame: dom_id(Author.new)  }, class: "btn btn-primary mb-4"
+    = link_to  t('authors.form.new'), new_author_path, data: { turbo_frame: dom_id(Author.new)  }, class: "btn btn-primary mb-4"
 
   = turbo_frame_tag Author.new
 

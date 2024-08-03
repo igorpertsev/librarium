@@ -1,0 +1,4 @@
+%turbo-stream{action: "append", target: "books-table-body"}
+  %template
+    = render @book
+= turbo_stream.update Book.new, ""

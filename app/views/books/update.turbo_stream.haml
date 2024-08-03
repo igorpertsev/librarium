@@ -1,0 +1,4 @@
+%turbo-stream{action: "replace", target: "#{dom_id(@book)}-row"}
+  %template
+    = render @book
+= turbo_stream.update Book.new, ""

@@ -1,0 +1,14 @@
+%tr{id: "#{dom_id(book)}-row"}
+  %td= book.id
+  %td= book.title
+  %td= book.author.full_name
+  %td= book.genres.map(&:name).join(', ')
+  %td= book.publisher.name
+  %td= book.description
+  %td= book.published_year
+  %td= book.page_count
+  %td= book.created_at
+  %td= book.updated_at
+  %td
+    = link_to t('genres.form.edit'), edit_book_path(book), data: { turbo_frame: dom_id(Book.new) }
+    = link_to t('genres.form.delete'), book, method: :delete, data: { confirm: 'Are you sure?', 'turbo-method': :delete }

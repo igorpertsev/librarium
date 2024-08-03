@@ -62,6 +62,22 @@ en:
       created_at: Created
       updated_at: Updated
       books_count: Books Count
+  books:
+    name: Books
+    form:
+      new: "Add New"
+      edit: "Edit"
+      delete: "Delete"
+    table:
+      title: Title
+      description: "Description"
+      page_count: "Page Count"
+      published_year: "Published Year"
+      author: "Author"
+      genre: "Genre"
+      publisher: "Publisher"
+      created_at: Created
+      updated_at: Updated
   publishers:
     name: Publishers
     form:
@@ -82,3 +98,11 @@ en:
         name: "Publisher Name"
       author:
         name: "Author Name"
+      book:
+        title: "Book Title"
+        author: "Author"
+        genre: "Genre"
+        publisher: "Publisher"
+        description: "Book Description"
+        page_count: "Page Count"
+        published_year: "Published Year"
