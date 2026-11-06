@@ -7,6 +7,7 @@ import { useCatalog } from '../contexts/CatalogContext';
 import type { Book } from '../types';
 import { useBookText } from '../utils/bookText';
 import { BookDetailsModal } from './BookDetailsModal';
+import { coverOfSize } from '../utils/covers';
 
 const SHELF_SIZE = 8;
 
@@ -49,9 +50,10 @@ export function NewArrivalsShelf() {
                 <div className="aspect-[3/4] overflow-hidden rounded-md bg-muted border border-border">
                   {book.coverImage && (
                     <img
-                      src={book.coverImage}
+                      src={coverOfSize(book.coverImage, 'M')}
                       alt=""
                       loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover transition-transform group-hover:scale-105"
                     />
                   )}

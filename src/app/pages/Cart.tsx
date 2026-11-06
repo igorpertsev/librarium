@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { errorMessage } from '../utils/apiErrors';
 import { useFormat } from '../utils/format';
 import { useBookText } from '../utils/bookText';
+import { coverOfSize } from '../utils/covers';
 import { useConfirm } from '../components/ConfirmDialog';
 import { useCatalog } from '../contexts/CatalogContext';
 import type { ActionResult } from '../../api/errors';
@@ -165,7 +166,7 @@ export default function Cart() {
                       <div key={book.id} className="flex gap-3 p-3 bg-muted rounded-lg">
                         <div className="w-12 h-16 flex-shrink-0 overflow-hidden rounded bg-background">
                           <img
-                            src={book.coverImage}
+                            src={coverOfSize(book.coverImage, 'S')}
                             alt={textOf(book).title}
                             className="w-full h-full object-cover"
                           />
@@ -226,7 +227,7 @@ export default function Cart() {
                           className="relative group aspect-[3/4] overflow-hidden rounded bg-muted"
                         >
                           <img
-                            src={book.coverImage}
+                            src={coverOfSize(book.coverImage, 'S')}
                             alt={textOf(book).title}
                             className={`w-full h-full object-cover ${unavailableBookIds.has(book.id) ? 'opacity-40' : ''}`}
                           />

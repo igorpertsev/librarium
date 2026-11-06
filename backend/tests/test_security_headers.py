@@ -13,7 +13,10 @@ async def test_api_responses_carry_security_headers(client: AsyncClient) -> None
     )
     assert response.headers["X-Content-Type-Options"] == "nosniff"
     assert response.headers["X-Frame-Options"] == "DENY"
-    assert response.headers["Cache-Control"] == "no-store"
+    # The public catalogue may be revalidated (ETag); everything else is never stored.
+    assert response.headers["Cache-Control"] == "no-cache"
+    health = await client.get(f"{API}/health")
+    assert health.headers["Cache-Control"] == "no-store"
 
 
 async def test_docs_page_keeps_working_without_the_api_policy(client: AsyncClient) -> None:

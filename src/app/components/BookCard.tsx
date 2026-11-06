@@ -14,6 +14,7 @@ import { getCartButtonLabel, getCategoryTranslation, getStatusTranslation } from
 import { useFormat } from '../utils/format';
 import { errorMessage } from '../utils/apiErrors';
 import { WaitlistButton } from './WaitlistButton';
+import { coverOfSize } from '../utils/covers';
 import { ReadingListButton } from './ReadingListButton';
 import { AuthorLink, SeriesLink, TagChips } from './CatalogFilters';
 import { useBookLanguageName, useBookText } from '../utils/bookText';
@@ -108,9 +109,11 @@ export function BookCard({ book }: BookCardProps) {
               {images.map((image, index) => (
                 <div key={index} className="flex-[0_0_100%] min-w-0">
                   <img
-                    src={image}
+                    src={coverOfSize(image, 'M')}
                     alt={t('bookDetails.imageAlt', { title: text.title, n: index + 1 })}
                     className="w-full h-full object-cover select-none"
+                    loading="lazy"
+                    decoding="async"
                     draggable={false}
                   />
                 </div>

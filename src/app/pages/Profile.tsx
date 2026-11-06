@@ -23,6 +23,7 @@ import { NextInSeriesCard } from '../components/NextInSeriesCard';
 import { ExtendFromLink } from '../components/ExtendFromLink';
 import { AccountDataCard } from '../components/AccountDataCard';
 import { useBookText } from '../utils/bookText';
+import { coverOfSize } from '../utils/covers';
 import type { Order } from '../types';
 import { BorrowingHistory } from '../components/BorrowingHistory';
 
@@ -277,7 +278,7 @@ export default function Profile() {
               return (
               <div key={book.id} className="flex items-center gap-4 p-3 border border-border rounded-lg">
                 <div className="w-10 h-14 flex-shrink-0 overflow-hidden rounded bg-muted">
-                  <img src={book.coverImage} alt="" className="w-full h-full object-cover" />
+                  <img src={coverOfSize(book.coverImage, 'S')} alt="" className="w-full h-full object-cover" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="truncate">{text.title}</h3>
@@ -330,7 +331,7 @@ export default function Profile() {
                 <div className="flex gap-2 flex-wrap">
                   {order.books.map(book => (
                     <div key={book.id} className="w-10 h-14 overflow-hidden rounded bg-muted" title={book.title}>
-                      <img src={book.coverImage} alt={book.title} className="w-full h-full object-cover" />
+                      <img src={coverOfSize(book.coverImage, 'S')} alt={book.title} className="w-full h-full object-cover" />
                     </div>
                   ))}
                 </div>
@@ -386,7 +387,7 @@ export default function Profile() {
                     {order.books.map((book) => (
                       <div key={book.id} className="flex gap-4 p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors">
                         <div className="w-16 h-24 flex-shrink-0 overflow-hidden rounded bg-muted">
-                          <img src={book.coverImage} alt={book.title} className="w-full h-full object-cover" />
+                          <img src={coverOfSize(book.coverImage, 'S')} alt={book.title} className="w-full h-full object-cover" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <h3 className="truncate mb-1">{book.title}</h3>

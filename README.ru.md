@@ -470,6 +470,10 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 | GET | `/admin/orders`, `/admin/orders/{id}` · PATCH `/admin/orders/{id}/status`, `/admin/orders/{id}/due-date` | admin |
 | GET/PATCH | `/admin/settings` (партия, цена, валюта, срок выдачи) | admin |
 
+Ответы публичного каталога (`/books…`, `/tags`, `/series…`, `/library/rules`) содержат слабый `ETag` и
+`Cache-Control: no-cache`: браузер переспрашивает и получает `304 Not Modified`, пока ничего не изменилось; все
+остальные ответы API — `no-store`. Карточки загружают средний размер обложки Open Library, списки — маленький.
+
 Сортировка книг — только из списка: `title`, `author`, `publication_year`, `created_at` (с `-` для убывания),
 `relevance`, `series` (по порядку томов).
 Переходы статусов: `pending → confirmed | cancelled`, `confirmed → returned`; клиент может отменить только `pending`.

@@ -27,3 +27,14 @@ export async function lookupBookByIsbn(isbn: string): Promise<IsbnLookupResult> 
     return { status: 'error' };
   }
 }
+
+const OPEN_LIBRARY_COVER = /^(https:\/\/covers\.openlibrary\.org\/b\/(?:id|isbn|olid)\/[^/?#]+)-[SML]\.jpg$/;
+
+/**
+ * The same Open Library cover in another size: S (small), M (medium, enough for cards) or L
+ * (large, for the book dialog). Other image URLs are returned unchanged.
+ */
+export function coverOfSize(url: string, size: 'S' | 'M' | 'L'): string {
+  const match = OPEN_LIBRARY_COVER.exec(url);
+  return match ? `${match[1]}-${size}.jpg` : url;
+}

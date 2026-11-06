@@ -473,6 +473,10 @@ Differences (adapters in `src/api/mappers.ts`):
 | GET | `/admin/orders`, `/admin/orders/{id}` · PATCH `/admin/orders/{id}/status`, `/admin/orders/{id}/due-date` | admin |
 | GET/PATCH | `/admin/settings` (batch size, price, currency, loan period) | admin |
 
+Public catalogue responses (`/books…`, `/tags`, `/series…`, `/library/rules`) carry a weak `ETag` with
+`Cache-Control: no-cache`: browsers revalidate and get `304 Not Modified` while nothing changed; every other
+API response is `no-store`. Cards load Open Library's medium cover size, lists the small one.
+
 Book sorting is allow-listed: `title`, `author`, `publication_year`, `created_at` (prefix `-` for descending),
 `relevance`, `series` (volume order).
 Status transitions: `pending → confirmed | cancelled`, `confirmed → returned`; customers can only cancel `pending` orders.
