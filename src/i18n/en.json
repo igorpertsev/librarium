@@ -306,7 +306,9 @@
     "notFound": "Not found",
     "bookUnavailable": "Some books are no longer available",
     "bookUnavailableList": "No longer available: {{titles}}. Remove them from the cart and try again.",
-    "incompleteBatch": "Add books to complete a batch of {{count}} before checking out"
+    "incompleteBatch": "Add books to complete a batch of {{count}} before checking out",
+    "tooManyAttempts_one": "Too many attempts. Please try again in {{count}} minute.",
+    "tooManyAttempts_other": "Too many attempts. Please try again in {{count}} minutes."
   },
   "checkout": {
     "title": "Confirm Order",

@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import Settings
 from app.core.database import Database
 from app.core.exceptions import AuthenticationError, PermissionDeniedError
+from app.core.rate_limit import RateLimiter
 from app.core.security import InvalidAccessTokenError, decode_access_token
 from app.models import User
 from app.models.enums import UserRole
@@ -31,8 +32,14 @@ async def get_session(request: Request) -> AsyncIterator[AsyncSession]:
         yield session
 
 
+def get_rate_limiter(request: Request) -> RateLimiter:
+    limiter: RateLimiter = request.app.state.rate_limiter
+    return limiter
+
+
 SettingsDep = Annotated[Settings, Depends(get_settings_dep)]
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
+RateLimiterDep = Annotated[RateLimiter, Depends(get_rate_limiter)]
 
 _bearer = HTTPBearer(auto_error=False, description="Access token from /auth/login or /auth/refresh")
 

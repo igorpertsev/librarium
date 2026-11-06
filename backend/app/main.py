@@ -17,6 +17,7 @@ from app.api.router import api_router
 from app.core.config import Settings, get_settings
 from app.core.database import Database
 from app.core.exceptions import register_exception_handlers
+from app.core.rate_limit import RateLimiter
 
 logger = logging.getLogger("app")
 
@@ -44,6 +45,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app.state.settings = settings
     app.state.db = database
+    app.state.rate_limiter = RateLimiter(enabled=settings.rate_limit_enabled)
 
     app.add_middleware(
         CORSMiddleware,

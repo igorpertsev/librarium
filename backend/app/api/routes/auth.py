@@ -3,14 +3,32 @@ from __future__ import annotations
 from fastapi import APIRouter, Request, Response, status
 from fastapi.responses import JSONResponse
 
-from app.api.dependencies import ClientMetaDep, CurrentUser, SessionDep, SettingsDep
+from app.api.dependencies import (
+    ClientMetaDep,
+    CurrentUser,
+    RateLimiterDep,
+    SessionDep,
+    SettingsDep,
+)
 from app.core.config import Settings
-from app.core.exceptions import AuthenticationError, PermissionDeniedError, error_payload
+from app.core.exceptions import (
+    AppError,
+    AuthenticationError,
+    PermissionDeniedError,
+    error_payload,
+)
+from app.core.rate_limit import (
+    LOGIN_FAILURES_PER_EMAIL,
+    LOGIN_PER_IP,
+    PASSWORD_FAILURES_PER_USER,
+    REFRESH_PER_IP,
+    REGISTER_PER_IP,
+)
 from app.schemas.auth import ChangePasswordRequest, LoginRequest, RegisterRequest, TokenResponse
 from app.schemas.common import error_responses
 from app.schemas.user import UserRead
 from app.services import auth as auth_service
-from app.services.auth import AuthResult
+from app.services.auth import AuthResult, ClientMeta
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -51,6 +69,10 @@ def _check_origin(request: Request, settings: Settings) -> None:
         raise PermissionDeniedError("Request origin is not allowed", code="ORIGIN_NOT_ALLOWED")
 
 
+def _client_ip(meta: ClientMeta) -> str:
+    return meta.ip_address or "unknown"
+
+
 def _token_response(result: AuthResult) -> TokenResponse:
     return TokenResponse(
         access_token=result.access_token.token,
@@ -63,7 +85,7 @@ def _token_response(result: AuthResult) -> TokenResponse:
     "/register",
     status_code=status.HTTP_201_CREATED,
     response_model=TokenResponse,
-    responses=error_responses(403, 409, 422),
+    responses=error_responses(403, 409, 422, 429),
 )
 async def register(
     body: RegisterRequest,
@@ -72,14 +94,22 @@ async def register(
     session: SessionDep,
     settings: SettingsDep,
     meta: ClientMetaDep,
+    limiter: RateLimiterDep,
 ) -> TokenResponse:
     _check_origin(request, settings)
+    limiter.consume(f"register:ip:{_client_ip(meta)}", REGISTER_PER_IP)
     result = await auth_service.register(session, settings, body, meta)
     _set_refresh_cookie(response, settings, result.refresh_token)
     return _token_response(result)
 
 
-@router.post("/login", response_model=TokenResponse, responses=error_responses(401, 403, 422))
+@router.post(
+    "/login",
+    response_model=TokenResponse,
+    responses=error_responses(401, 403, 422, 429),
+    description="After 10 failed attempts for one email address within 15 minutes, further "
+    "attempts are refused with 429 until the window has passed.",
+)
 async def login(
     body: LoginRequest,
     request: Request,
@@ -87,9 +117,18 @@ async def login(
     session: SessionDep,
     settings: SettingsDep,
     meta: ClientMetaDep,
+    limiter: RateLimiterDep,
 ) -> TokenResponse:
     _check_origin(request, settings)
-    result = await auth_service.login(session, settings, body, meta)
+    limiter.consume(f"login:ip:{_client_ip(meta)}", LOGIN_PER_IP)
+    email_key = f"login:email:{body.email}"
+    limiter.check(email_key, LOGIN_FAILURES_PER_EMAIL)
+    try:
+        result = await auth_service.login(session, settings, body, meta)
+    except AuthenticationError:
+        limiter.hit(email_key, LOGIN_FAILURES_PER_EMAIL)
+        raise
+    limiter.reset(email_key)
     _set_refresh_cookie(response, settings, result.refresh_token)
     return _token_response(result)
 
@@ -97,7 +136,7 @@ async def login(
 @router.post(
     "/refresh",
     response_model=TokenResponse,
-    responses=error_responses(401, 403),
+    responses=error_responses(401, 403, 429),
     description="Rotates the refresh cookie and returns a new access token. "
     "Re-using an already rotated refresh token revokes the whole token family.",
 )
@@ -107,8 +146,10 @@ async def refresh(
     session: SessionDep,
     settings: SettingsDep,
     meta: ClientMetaDep,
+    limiter: RateLimiterDep,
 ) -> TokenResponse | JSONResponse:
     _check_origin(request, settings)
+    limiter.consume(f"refresh:ip:{_client_ip(meta)}", REFRESH_PER_IP)
     try:
         result = await auth_service.refresh(
             session, settings, _refresh_cookie(request, settings), meta
@@ -143,7 +184,7 @@ async def me(user: CurrentUser) -> UserRead:
 @router.post(
     "/change-password",
     response_model=TokenResponse,
-    responses=error_responses(400, 401, 403, 422),
+    responses=error_responses(400, 401, 403, 422, 429),
     description="Changes the password, signs out all other sessions and issues new tokens.",
 )
 async def change_password(
@@ -154,8 +195,17 @@ async def change_password(
     session: SessionDep,
     settings: SettingsDep,
     meta: ClientMetaDep,
+    limiter: RateLimiterDep,
 ) -> TokenResponse:
     _check_origin(request, settings)
-    result = await auth_service.change_password(session, settings, user, body, meta)
+    key = f"change-password:user:{user.id}"
+    limiter.check(key, PASSWORD_FAILURES_PER_USER)
+    try:
+        result = await auth_service.change_password(session, settings, user, body, meta)
+    except AppError as exc:
+        if exc.code == "INVALID_CURRENT_PASSWORD":
+            limiter.hit(key, PASSWORD_FAILURES_PER_USER)
+        raise
+    limiter.reset(key)
     _set_refresh_cookie(response, settings, result.refresh_token)
     return _token_response(result)
