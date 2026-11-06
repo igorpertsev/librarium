@@ -1076,6 +1076,64 @@
         }
       }
     },
+    "/api/v1/books/{book_id}/also-borrowed": {
+      "get": {
+        "tags": [
+          "books"
+        ],
+        "summary": "Get Also Borrowed",
+        "description": "Titles most often borrowed by readers who borrowed this one (each borrowed by at least two of them, so no single reader's borrowing shows).",
+        "operationId": "get_also_borrowed_api_v1_books__book_id__also_borrowed_get",
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BookRead"
+                  },
+                  "title": "Response Get Also Borrowed Api V1 Books  Book Id  Also Borrowed Get"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
     "/api/v1/books/{book_id}": {
       "get": {
         "tags": [

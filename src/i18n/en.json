@@ -707,5 +707,8 @@
   "share": {
     "copyLink": "Copy link to this book",
     "copied": "Link copied"
+  },
+  "alsoBorrowed": {
+    "title": "Readers of this book also borrowed"
   }
 }

@@ -21,6 +21,7 @@ import { AuthorLink, SeriesLink, TagChips } from './CatalogFilters';
 import { useBookLanguageName, useBookText } from '../utils/bookText';
 import { booksApi } from '../../api/endpoints';
 import { bookFromDto } from '../../api/mappers';
+import { coverOfSize } from '../utils/covers';
 
 interface BookDetailsModalProps {
   book: Book | null;
@@ -86,6 +87,23 @@ export function BookDetailsModal({ book: initialBook, open, onOpenChange }: Book
       current = false;
     };
   }, [open, bookId, inNumberedSeries]);
+
+  // "Readers who borrowed this also borrowed".
+  const [alsoBorrowed, setAlsoBorrowed] = useState<Book[]>([]);
+  useEffect(() => {
+    if (!open || !bookId) {
+      setAlsoBorrowed([]);
+      return;
+    }
+    let current = true;
+    booksApi
+      .alsoBorrowed(bookId)
+      .then((found) => current && setAlsoBorrowed(found.map(bookFromDto)))
+      .catch(() => current && setAlsoBorrowed([]));
+    return () => {
+      current = false;
+    };
+  }, [open, bookId]);
 
   const showVolume = (volume: Book) => {
     setShown(volume);
@@ -359,6 +377,30 @@ export function BookDetailsModal({ book: initialBook, open, onOpenChange }: Book
                 <p className="mt-1 text-xs text-muted-foreground">{t('translation.machineTitle')}</p>
               )}
             </div>
+
+            {alsoBorrowed.length > 0 && (
+              <section aria-labelledby="also-borrowed-title">
+                <h3 id="also-borrowed-title" className="mb-2 text-base sm:text-xl">{t('alsoBorrowed.title')}</h3>
+                <ul className="flex gap-3 overflow-x-auto pb-1">
+                  {alsoBorrowed.map((other) => (
+                    <li key={other.id} className="shrink-0 w-20">
+                      <button
+                        type="button"
+                        onClick={() => showVolume(other)}
+                        className="w-full text-left rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <div className="aspect-[3/4] overflow-hidden rounded bg-muted border border-border">
+                          {other.coverImage && (
+                            <img src={coverOfSize(other.coverImage, 'S')} alt="" loading="lazy" className="w-full h-full object-cover" />
+                          )}
+                        </div>
+                        <span className="mt-1 block text-xs leading-snug line-clamp-2">{textOf(other).title}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
 
             <Separator />
 

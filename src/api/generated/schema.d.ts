@@ -325,6 +325,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/books/{book_id}/also-borrowed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Also Borrowed
+         * @description Titles most often borrowed by readers who borrowed this one (each borrowed by at least two of them, so no single reader's borrowing shows).
+         */
+        get: operations["get_also_borrowed_api_v1_books__book_id__also_borrowed_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/books/{book_id}": {
         parameters: {
             query?: never;
@@ -3128,6 +3148,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SeriesNeighbours"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_also_borrowed_api_v1_books__book_id__also_borrowed_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookRead"][];
                 };
             };
             /** @description Not Found */

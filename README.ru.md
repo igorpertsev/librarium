@@ -455,7 +455,7 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 | GET | `/auth/me`, `/users/me` · PATCH `/users/me` · POST `/auth/change-password` | пользователь |
 | GET | `/users/me/next-in-series` (следующая книга каждой серии, которую читатель брал) | пользователь |
 | GET | `/users/me/export` (всё, что хранится о читателе, JSON) · DELETE `/users/me` (`{password}`; заказы остаются без имени и контактов; 409 `ACTIVE_ORDERS` / `ADMIN_ACCOUNT`) | пользователь |
-| GET | `/books?q&category&age_range&available&tags&series&language&author&sort&page&page_size`, `/books/age-ranges`, `/books/languages`, `/books/{id}`, `/books/{id}/series-neighbours` | все |
+| GET | `/books?q&category&age_range&available&tags&series&language&author&sort&page&page_size`, `/books/age-ranges`, `/books/languages`, `/books/{id}`, `/books/{id}/series-neighbours`, `/books/{id}/also-borrowed` (книги, которые брали минимум двое тех же читателей) | все |
 | GET | `/tags` (с числом изданий), `/series?q`, `/series/{id}` | все |
 | GET/DELETE | `/cart` · POST `/cart/items` · DELETE `/cart/items/{book_id}` | пользователь |
 | POST/GET | `/orders` · GET `/orders/{id}` · POST `/orders/{id}/cancel`, `/orders/{id}/renew` | пользователь (только свои) |

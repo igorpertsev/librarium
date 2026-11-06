@@ -83,6 +83,8 @@ export const booksApi = {
   get: (bookId: string) => apiRequest<BookDto>(`/books/${id(bookId)}`, { auth: false }),
   ageRanges: () => apiRequest<string[]>('/books/age-ranges', { auth: false }),
   languages: () => apiRequest<string[]>('/books/languages', { auth: false }),
+  alsoBorrowed: (bookId: string) =>
+    apiRequest<BookDto[]>(`/books/${id(bookId)}/also-borrowed`, { auth: false }),
   seriesNeighbours: (bookId: string) =>
     apiRequest<SeriesNeighboursDto>(`/books/${id(bookId)}/series-neighbours`, { auth: false }),
 };
