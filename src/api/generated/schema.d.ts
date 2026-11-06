@@ -251,6 +251,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/users/me/holds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My Holds
+         * @description Books held for the reader after they waited for them, until held_until. The reader can add the held copy to the cart; nobody else can.
+         */
+        get: operations["my_holds_api_v1_users_me_holds_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/me/holds/{book_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Release Hold
+         * @description Give up a held book: it goes to the next reader in line.
+         */
+        delete: operations["release_hold_api_v1_users_me_holds__book_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users/me/export": {
         parameters: {
             query?: never;
@@ -1860,6 +1900,15 @@ export interface components {
             /** Database */
             database?: string | null;
         };
+        /** HeldBookRead */
+        HeldBookRead: {
+            book: components["schemas"]["BookRead"];
+            /**
+             * Held Until
+             * Format: date-time
+             */
+            held_until: string;
+        };
         /**
          * LibraryRules
          * @description Lending rules every reader may know (GET /library/rules).
@@ -1875,6 +1924,11 @@ export interface components {
             loan_period_days: number;
             /** Max Renewals */
             max_renewals: number;
+            /**
+             * Hold Hours
+             * @description How long a returned book is held for the next reader
+             */
+            hold_hours: number;
         };
         /** LibrarySettingsRead */
         LibrarySettingsRead: {
@@ -1888,6 +1942,11 @@ export interface components {
             loan_period_days: number;
             /** Max Renewals */
             max_renewals: number;
+            /**
+             * Hold Hours
+             * @description How long a returned book is held for the next reader
+             */
+            hold_hours: number;
             /**
              * Updated At
              * Format: date-time
@@ -1906,6 +1965,8 @@ export interface components {
             loan_period_days?: number | null;
             /** Max Renewals */
             max_renewals?: number | null;
+            /** Hold Hours */
+            hold_hours?: number | null;
         };
         /** LoginRequest */
         LoginRequest: {
@@ -2003,7 +2064,7 @@ export interface components {
          * NotificationKind
          * @enum {string}
          */
-        NotificationKind: "order_received" | "order_confirmed" | "order_cancelled" | "due_soon" | "overdue" | "book_available";
+        NotificationKind: "order_received" | "order_confirmed" | "order_cancelled" | "due_soon" | "overdue" | "book_available" | "book_held";
         /** OrderDueDateUpdate */
         OrderDueDateUpdate: {
             /**
@@ -3278,6 +3339,73 @@ export interface operations {
             };
             /** @description Unauthorized */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    my_holds_api_v1_users_me_holds_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HeldBookRead"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    release_hold_api_v1_users_me_holds__book_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

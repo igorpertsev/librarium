@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import uuid
+from datetime import UTC, datetime
+
 from fastapi import APIRouter, Response, status
 from fastapi.responses import JSONResponse
 
@@ -7,8 +10,9 @@ from app.api.dependencies import CurrentUser, SessionDep, SettingsDep
 from app.api.routes.auth import clear_refresh_cookie
 from app.schemas.book import BookRead
 from app.schemas.common import error_responses
+from app.schemas.hold import HeldBookRead
 from app.schemas.user import DeleteAccountRequest, UserRead, UserUpdate
-from app.services import account, recommendations, series_reading
+from app.services import account, holds, recommendations, series_reading
 from app.services import users as users_service
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -45,6 +49,30 @@ async def my_next_in_series(user: CurrentUser, session: SessionDep) -> list[Book
 )
 async def my_recommendations(user: CurrentUser, session: SessionDep) -> list[BookRead]:
     return await recommendations.for_reader(session, user.id)
+
+
+@router.get(
+    "/me/holds",
+    response_model=list[HeldBookRead],
+    responses=error_responses(401),
+    description="Books held for the reader after they waited for them, until held_until. The "
+    "reader can add the held copy to the cart; nobody else can.",
+)
+async def my_holds(user: CurrentUser, session: SessionDep) -> list[HeldBookRead]:
+    found = await holds.list_for(session, user, datetime.now(UTC))
+    return [HeldBookRead(book=item.book, held_until=item.held_until) for item in found]
+
+
+@router.delete(
+    "/me/holds/{book_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
+    responses=error_responses(401, 422),
+    description="Give up a held book: it goes to the next reader in line.",
+)
+async def release_hold(book_id: uuid.UUID, user: CurrentUser, session: SessionDep) -> Response:
+    await holds.release(session, user, book_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get(

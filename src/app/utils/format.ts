@@ -37,6 +37,7 @@ export function useFormat() {
 
   return useMemo(() => {
     const dateFormat = new Intl.DateTimeFormat(locale, { dateStyle: 'medium' });
+    const dateTimeFormat = new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' });
     const moneyFormat = (currency: string, extra: Intl.NumberFormatOptions = {}) => {
       try {
         return new Intl.NumberFormat(locale, { style: 'currency', currency, ...extra });
@@ -56,6 +57,8 @@ export function useFormat() {
         const date = value ? parseDate(value) : null;
         return date ? dateFormat.format(date) : '—';
       },
+      /** A moment (ISO timestamp) in the reader's time zone, e.g. "8 Nov 2026, 14:30". */
+      dateTime: (value: string | Date) => dateTimeFormat.format(typeof value === 'string' ? new Date(value) : value),
     };
   }, [locale]);
 }

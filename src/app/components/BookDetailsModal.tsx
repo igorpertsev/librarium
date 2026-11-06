@@ -9,6 +9,7 @@ import useEmblaCarousel from 'embla-carousel-react';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useSignInFirst } from '../utils/useSignInFirst';
+import { useLibraryRules } from '../utils/useLibraryRules';
 import { useOrders } from '../contexts/OrdersContext';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
@@ -33,6 +34,7 @@ interface BookDetailsModalProps {
 export function BookDetailsModal({ book: initialBook, open, onOpenChange }: BookDetailsModalProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const rules = useLibraryRules();
   const signInFirst = useSignInFirst();
   const copyLink = async (bookId: string) => {
     const url = `${window.location.origin}/books/${bookId}`;
@@ -451,6 +453,9 @@ export function BookDetailsModal({ book: initialBook, open, onOpenChange }: Book
                 {(isOrderedByOther || book.status !== 'available') && !isPending && (
                   <div className="flex flex-col items-center gap-2 text-center">
                     <p className="text-sm text-muted-foreground">{t('waitlist.explain')}</p>
+                    {rules && rules.holdHours > 0 && (
+                      <p className="text-xs text-muted-foreground">{t('waitlist.holdExplain', { count: rules.holdHours })}</p>
+                    )}
                     <WaitlistButton bookId={book.id} groupId={book.groupId} title={text.title} withLabel />
                   </div>
                 )}

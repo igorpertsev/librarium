@@ -764,6 +764,99 @@
         ]
       }
     },
+    "/api/v1/users/me/holds": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "My Holds",
+        "description": "Books held for the reader after they waited for them, until held_until. The reader can add the held copy to the cart; nobody else can.",
+        "operationId": "my_holds_api_v1_users_me_holds_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/HeldBookRead"
+                  },
+                  "type": "array",
+                  "title": "Response My Holds Api V1 Users Me Holds Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/me/holds/{book_id}": {
+      "delete": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Release Hold",
+        "description": "Give up a held book: it goes to the next reader in line.",
+        "operationId": "release_hold_api_v1_users_me_holds__book_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
     "/api/v1/users/me/export": {
       "get": {
         "tags": [
@@ -7419,6 +7512,24 @@
         ],
         "title": "HealthResponse"
       },
+      "HeldBookRead": {
+        "properties": {
+          "book": {
+            "$ref": "#/components/schemas/BookRead"
+          },
+          "held_until": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Held Until"
+          }
+        },
+        "type": "object",
+        "required": [
+          "book",
+          "held_until"
+        ],
+        "title": "HeldBookRead"
+      },
       "LibraryRules": {
         "properties": {
           "books_per_batch": {
@@ -7440,6 +7551,11 @@
           "max_renewals": {
             "type": "integer",
             "title": "Max Renewals"
+          },
+          "hold_hours": {
+            "type": "integer",
+            "title": "Hold Hours",
+            "description": "How long a returned book is held for the next reader"
           }
         },
         "type": "object",
@@ -7448,7 +7564,8 @@
           "price_per_batch",
           "currency",
           "loan_period_days",
-          "max_renewals"
+          "max_renewals",
+          "hold_hours"
         ],
         "title": "LibraryRules",
         "description": "Lending rules every reader may know (GET /library/rules)."
@@ -7475,6 +7592,11 @@
             "type": "integer",
             "title": "Max Renewals"
           },
+          "hold_hours": {
+            "type": "integer",
+            "title": "Hold Hours",
+            "description": "How long a returned book is held for the next reader"
+          },
           "updated_at": {
             "type": "string",
             "format": "date-time",
@@ -7488,6 +7610,7 @@
           "currency",
           "loan_period_days",
           "max_renewals",
+          "hold_hours",
           "updated_at"
         ],
         "title": "LibrarySettingsRead"
@@ -7559,6 +7682,19 @@
               }
             ],
             "title": "Max Renewals"
+          },
+          "hold_hours": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 336.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hold Hours"
           }
         },
         "additionalProperties": false,
@@ -7797,7 +7933,8 @@
           "order_cancelled",
           "due_soon",
           "overdue",
-          "book_available"
+          "book_available",
+          "book_held"
         ],
         "title": "NotificationKind"
       },

@@ -56,6 +56,7 @@ export type QualityIssueDto = Schemas['QualityIssue'];
 export type QualitySummaryDto = Schemas['QualitySummary'];
 export type DemandDto = Schemas['DemandRead'];
 export type ReviewSummaryDto = Schemas['ReviewSummaryRead'];
+export type HeldBookDto = Schemas['HeldBookRead'];
 export type MyReviewDto = Schemas['MyReviewRead'];
 export type ReviewDto = Schemas['ReviewRead'];
 export type ReviewStatusDto = Schemas['ReviewStatus'];

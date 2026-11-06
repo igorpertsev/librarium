@@ -14,6 +14,7 @@ export function LoanRulesSettings() {
   const { t } = useTranslation();
   const [loanPeriodDays, setLoanPeriodDays] = useState('');
   const [maxRenewals, setMaxRenewals] = useState('');
+  const [holdHours, setHoldHours] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -21,6 +22,7 @@ export function LoanRulesSettings() {
       (settings) => {
         setLoanPeriodDays(String(settings.loan_period_days));
         setMaxRenewals(String(settings.max_renewals));
+        setHoldHours(String(settings.hold_hours));
       },
       () => undefined,
     );
@@ -32,6 +34,7 @@ export function LoanRulesSettings() {
       adminApi.updateSettings({
         loan_period_days: Number.parseInt(loanPeriodDays, 10),
         max_renewals: Number.parseInt(maxRenewals, 10),
+        hold_hours: Number.parseInt(holdHours, 10),
       }),
     );
     setSaving(false);
@@ -68,9 +71,21 @@ export function LoanRulesSettings() {
             onChange={(e) => setMaxRenewals(e.target.value)}
           />
         </div>
+        <div className="space-y-2 col-span-2 sm:col-span-1">
+          <Label htmlFor="holdHours">{t('admin.holdHours')}</Label>
+          <Input
+            id="holdHours"
+            type="number"
+            min="0"
+            max="336"
+            value={holdHours}
+            onChange={(e) => setHoldHours(e.target.value)}
+          />
+        </div>
       </div>
       <p className="text-xs text-muted-foreground">{t('admin.loanRulesHint')}</p>
-      <Button variant="outline" onClick={handleSave} disabled={saving || !loanPeriodDays || !maxRenewals}>
+      <p className="text-xs text-muted-foreground">{t('admin.holdHoursHint')}</p>
+      <Button variant="outline" onClick={handleSave} disabled={saving || !loanPeriodDays || !maxRenewals || !holdHours}>
         {t('admin.saveLoanRules')}
       </Button>
     </div>

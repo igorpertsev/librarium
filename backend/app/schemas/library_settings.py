@@ -26,6 +26,7 @@ class LibraryRules(ApiModel):
     currency: str
     loan_period_days: int
     max_renewals: int
+    hold_hours: int = Field(description="How long a returned book is held for the next reader")
 
 
 class LibrarySettingsRead(LibraryRules):
@@ -34,7 +35,14 @@ class LibrarySettingsRead(LibraryRules):
 
 class LibrarySettingsUpdate(PatchModel):
     non_nullable_fields: ClassVar[frozenset[str]] = frozenset(
-        {"books_per_batch", "price_per_batch", "currency", "loan_period_days", "max_renewals"}
+        {
+            "books_per_batch",
+            "price_per_batch",
+            "currency",
+            "loan_period_days",
+            "max_renewals",
+            "hold_hours",
+        }
     )
 
     books_per_batch: Annotated[int, Field(ge=1, le=100)] | None = None
@@ -42,3 +50,4 @@ class LibrarySettingsUpdate(PatchModel):
     currency: CurrencyCode | None = None
     loan_period_days: Annotated[int, Field(ge=1, le=365)] | None = None
     max_renewals: Annotated[int, Field(ge=0, le=10)] | None = None
+    hold_hours: Annotated[int, Field(ge=0, le=336)] | None = None

@@ -17,6 +17,7 @@ import type {
   DemandDto,
   ChangePasswordDto,
   ForgotPasswordDto,
+  HeldBookDto,
   LibraryRulesDto,
   LibrarySettingsDto,
   LibrarySettingsUpdateDto,
@@ -78,6 +79,9 @@ export const usersApi = {
   updateMe: (body: UserUpdateDto) => apiRequest<UserDto>('/users/me', { method: 'PATCH', body }),
   nextInSeries: () => apiRequest<BookDto[]>('/users/me/next-in-series'),
   recommendations: () => apiRequest<BookDto[]>('/users/me/recommendations'),
+  holds: () => apiRequest<HeldBookDto[]>('/users/me/holds'),
+  releaseHold: (bookId: string) =>
+    apiRequest<void>(`/users/me/holds/${id(bookId)}`, { method: 'DELETE' }),
   exportData: () => apiDownload('/users/me/export'),
   deleteMe: (password: string) =>
     apiRequest<void>('/users/me', { method: 'DELETE', body: { password } }),

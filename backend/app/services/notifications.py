@@ -27,7 +27,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
 from app.core.exceptions import ConflictError
-from app.models import Book, BookTranslation, Notification, Order, User
+from app.models import Book, BookHold, BookTranslation, Notification, Order, User
 from app.models.enums import (
     BookStatus,
     NotificationKind,
@@ -284,6 +284,47 @@ def _render_book_available(user: User, book: Book, app_url: str) -> tuple[str, s
     )
 
 
+def _held_until_en(value: datetime) -> str:
+    local = value.astimezone(UTC)
+    return f"{_date_en(local.date())}, {local:%H:%M} UTC"
+
+
+def _held_until_ru(value: datetime) -> str:
+    local = value.astimezone(UTC)
+    return f"{_date_ru(local.date())}, {local:%H:%M} UTC"
+
+
+def _render_book_held(
+    user: User, book: Book, held_until: datetime, app_url: str
+) -> tuple[str, str]:
+    by_language = {item.language: item for item in book.translations}
+    title_en, author_en = _titled(book.title, book.author, by_language.get(UiLanguage.EN))
+    title_ru, author_ru = _titled(book.title, book.author, by_language.get(UiLanguage.RU))
+    profile = f"{app_url}/profile"
+    english = (
+        f"Hello {user.full_name},\n\n"
+        f"“{title_en}” by {author_en}, which you were waiting for, is back, and we are keeping "
+        f"it for you until {_held_until_en(held_until)}. Add it to your cart from your profile: "
+        f"{profile}\n\n"
+        "If you don't take it by then, it goes to the next reader in line. You can also give "
+        "it up on your profile.\n\n— Little Dragon library\n"
+    )
+    russian = (
+        f"Здравствуйте, {user.full_name}!\n\n"
+        f"книга «{title_ru}» ({author_ru}), которую вы ждали, вернулась, и мы держим её для вас "
+        f"до {_held_until_ru(held_until)}. Добавьте её в корзину в профиле: {profile}\n\n"
+        "Если не успеете, книга перейдёт следующему читателю в очереди. Отказаться от неё "
+        "тоже можно в профиле.\n\n— Библиотека Little Dragon\n"
+    )
+    return localized(
+        user,
+        f"“{title_en}” is held for you",
+        f"«{title_ru}» отложена для вас",
+        english,
+        russian,
+    )
+
+
 async def _book_still_available(session: AsyncSession, book: Book) -> bool:
     """Some copy of the title can still be ordered."""
     group = book.copy_group_id or book.id
@@ -356,7 +397,18 @@ async def deliver_pending(
             report.expired += 1
             continue
 
-        if notification.kind is NotificationKind.BOOK_AVAILABLE:
+        if notification.kind is NotificationKind.BOOK_HELD:
+            hold = (
+                await session.get(BookHold, notification.book_id) if notification.book_id else None
+            )
+            book = await session.get(Book, notification.book_id) if notification.book_id else None
+            # Taken, released or expired before the email went out: nothing to announce.
+            if hold is None or book is None or hold.user_id != user.id or hold.held_until <= now:
+                notification.status = NotificationStatus.EXPIRED
+                report.expired += 1
+                continue
+            subject, body = _render_book_held(user, book, hold.held_until, settings.app_base_url)
+        elif notification.kind is NotificationKind.BOOK_AVAILABLE:
             book = await session.get(Book, notification.book_id) if notification.book_id else None
             # Someone else may have ordered it in the meantime: then the news is stale.
             if book is None or not await _book_still_available(session, book):

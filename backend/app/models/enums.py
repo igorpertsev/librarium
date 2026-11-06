@@ -87,6 +87,7 @@ class NotificationKind(StrEnum):
     DUE_SOON = "due_soon"  # reminder a few days before the due date
     OVERDUE = "overdue"  # the due date has passed
     BOOK_AVAILABLE = "book_available"  # a book on the customer's waiting list is back
+    BOOK_HELD = "book_held"  # a returned book is held for the customer for a while
 
 
 class NotificationStatus(StrEnum):

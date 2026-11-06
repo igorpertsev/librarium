@@ -179,7 +179,9 @@
     "filterOverdue": "Overdue",
     "overdueLoans": "Overdue loans",
     "remind": "Remind",
-    "reminderQueued": "Reminder queued: the customer will get an email within a few minutes"
+    "reminderQueued": "Reminder queued: the customer will get an email within a few minutes",
+    "holdHours": "Hold for the next reader (hours)",
+    "holdHoursHint": "A returned book is kept for the reader who has waited longest, who is emailed. 0: everybody waiting is emailed and the first to order gets it."
   },
   "bookForm": {
     "title": "Title",
@@ -454,7 +456,9 @@
     "title": "Waiting List",
     "description": "Books you will be emailed about once they are back",
     "since": "since {{date}}",
-    "availableNow": "This book is available now: add it to your cart."
+    "availableNow": "This book is available now: add it to your cart.",
+    "holdExplain_one": "When it is back, it is kept for the reader who has waited longest for {{count}} hour.",
+    "holdExplain_other": "When it is back, it is kept for the reader who has waited longest for {{count}} hours."
   },
   "history": {
     "title": "Borrowing History",
@@ -749,5 +753,13 @@
     "rejected": "Review rejected",
     "deleted": "Review deleted",
     "deleteNamed": "Delete the review of {{title}}"
+  },
+  "holds": {
+    "title": "Held for you",
+    "description": "Books you waited for are kept for you for a while. Add them to your cart before the time runs out, or give them up for the next reader.",
+    "until": "Held for you until {{date}}",
+    "cardNote": "Held for you until {{date}}",
+    "giveUp": "Give it up",
+    "released": "“{{title}}” goes to the next reader."
   }
 }

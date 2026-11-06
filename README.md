@@ -402,6 +402,11 @@ two copies of the same title are two records (ISBN is not unique).
   `book_available` email (through the notification outbox) and their entries are removed; the first to order
   gets it. The email is dropped if the book is taken again before it is sent. While someone waits for a book,
   its borrower cannot extend the loan (`details.reason = requested_by_others`).
+- **Holds**: with `hold_hours` > 0 (library setting, default 48) a returned copy is not announced to everybody: it is
+  held for the reader who has waited longest, who gets a `book_held` email and sees it under "Held for you" on the
+  profile. Only they can add that copy to the cart until the hold ends; ordering it ends the hold. A hold that runs
+  out (the notifier checks every cycle) or that the reader gives up (`DELETE /users/me/holds/{book_id}`) passes to
+  the next reader in line. `hold_hours = 0` keeps the old behaviour: everybody waiting is emailed.
 
 `POST /api/v1/orders` runs in a single transaction (`app/services/orders.py`):
 
@@ -469,6 +474,7 @@ Differences (adapters in `src/api/mappers.ts`):
 | GET `/books/{id}/reviews` (average and published reviews) · GET/PUT/DELETE `/books/{id}/my-review` (`{rating 1-5, text}`; only after borrowing, 403 `NOT_BORROWED`) | ratings and reviews; text waits for moderation | everyone / signed-in user |
 | GET `/admin/reviews?status` · PATCH/DELETE `/admin/reviews/{id}` | moderation (publish, reject) | admin |
 | GET `/users/me/recommendations` (titles ranked by the tags of borrowed and saved ones) | “For you” shelf | signed-in user |
+| GET `/users/me/holds` · DELETE `/users/me/holds/{book_id}` | books held for the reader; give one up | signed-in user |
 | GET/POST | `/admin/books`, GET `/admin/books/stats`, GET/PATCH/DELETE `/admin/books/{id}` | admin |
 | POST | `/admin/books/import` (CSV, all or nothing, `dry_run`; `warnings` for rows that look like books already there), GET `/admin/isbn/{isbn}` (details from Open Library) | admin |
 | GET | `/admin/books/duplicates?isbn&title&author` (titles with the same ISBN, or the same title and author) | admin |

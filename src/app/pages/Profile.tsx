@@ -20,6 +20,7 @@ import { useWaitlist } from '../contexts/WaitlistContext';
 import { WaitlistButton } from '../components/WaitlistButton';
 import { ReadingListCard } from '../components/ReadingListCard';
 import { NextInSeriesCard } from '../components/NextInSeriesCard';
+import { HeldForYouCard } from '../components/HeldForYouCard';
 import { ExtendFromLink } from '../components/ExtendFromLink';
 import { AccountDataCard } from '../components/AccountDataCard';
 import { useBookText } from '../utils/bookText';
@@ -262,6 +263,7 @@ export default function Profile() {
       </div>
 
       <ExtendFromLink orders={userOrders} confirm={confirm} renew={handleRenew} />
+      <HeldForYouCard />
       <NextInSeriesCard />
 
       <ReadingListCard />

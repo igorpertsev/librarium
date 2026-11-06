@@ -6,6 +6,8 @@ export interface LibraryRules {
   booksPerBatch: number;
   loanPeriodDays: number;
   maxRenewals: number;
+  /** How long a returned book is held for the next reader (0: no holds). */
+  holdHours: number;
 }
 
 let cached: Promise<LibraryRules> | null = null;
@@ -17,6 +19,7 @@ function loadRules(): Promise<LibraryRules> {
       booksPerBatch: dto.books_per_batch,
       loanPeriodDays: dto.loan_period_days,
       maxRenewals: dto.max_renewals,
+      holdHours: dto.hold_hours,
     }))
     .catch((error: unknown) => {
       cached = null; // try again next time

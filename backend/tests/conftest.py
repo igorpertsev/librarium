@@ -110,7 +110,8 @@ async def _clean_database(app: FastAPI) -> None:
         await conn.execute(
             text(
                 "TRUNCATE users, books, carts, cart_items, orders, order_items, refresh_tokens, "
-                "notifications, waitlist_entries, reading_list_entries, reviews, tags, series "
+                "notifications, waitlist_entries, reading_list_entries, reviews, book_holds, "
+                "tags, series "
                 "RESTART IDENTITY CASCADE"
             )
         )

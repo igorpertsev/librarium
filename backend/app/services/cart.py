@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date
+from datetime import UTC, date, datetime
 
 from sqlalchemy import delete, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -16,6 +16,7 @@ from app.models.enums import BookStatus
 from app.repositories.books import active_reservation_due_date, get_book_with_reservation
 from app.schemas.book import BookRead
 from app.schemas.cart import CartItemRead, CartRead
+from app.services import holds
 from app.services.books import book_not_found
 from app.services.library_settings import get_library_settings
 
@@ -84,7 +85,10 @@ async def add_item(session: AsyncSession, user: User, book_id: uuid.UUID) -> Car
         raise BookUnavailableError(
             [(book.id, book.title)], "This book is not available for borrowing"
         )
-    if reserved_until is not None:
+    # A copy held for this reader (see app.services.holds) is theirs to take.
+    if reserved_until is not None and not await holds.held_for(
+        session, book.id, user.id, datetime.now(UTC)
+    ):
         raise BookUnavailableError(
             [(book.id, book.title)], "This book is already reserved by another order"
         )

@@ -34,7 +34,7 @@ from app.models.enums import (
 )
 from app.repositories import orders as orders_repo
 from app.repositories.books import reserved_book_ids
-from app.services import notifications, waitlist
+from app.services import holds, notifications, waitlist
 from app.services.library_settings import get_library_settings
 
 ACTIVE_BOOK_INDEX = "uq_order_items_active_book"
@@ -103,6 +103,7 @@ async def place_order(session: AsyncSession, user: User) -> Order:
     # 4-6. Re-check availability under the lock. Any active order blocks a copy, including
     # the customer's own: the UI never lets a reserved copy be added again.
     reserved = await reserved_book_ids(session, book_ids)
+    reserved |= await holds.held_by_others(session, book_ids, user.id, datetime.now(UTC))
     unavailable = [
         (book_id, books[book_id].title if book_id in books else "")
         for book_id in book_ids
@@ -158,6 +159,7 @@ async def place_order(session: AsyncSession, user: User) -> Order:
 
     # 12. Remove the ordered books from the cart. Books of an incomplete trailing batch stay.
     await session.execute(delete(CartItem).where(CartItem.id.in_([i.id for i in selected])))
+    await holds.consume(session, user.id, book_ids)  # held copies the reader now borrows
 
     # Captured now: after a failed flush the ORM objects are expired and unusable.
     requested = [(book_id, books[book_id].title) for book_id in book_ids]

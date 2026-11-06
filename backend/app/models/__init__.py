@@ -3,6 +3,7 @@
 from app.models.base import Base
 from app.models.book import Book
 from app.models.cart import Cart, CartItem
+from app.models.hold import BookHold
 from app.models.library_settings import LibrarySettings
 from app.models.notification import Notification
 from app.models.order import Order, OrderItem
@@ -18,6 +19,7 @@ from app.models.waitlist import WaitlistEntry
 __all__ = [
     "Base",
     "Book",
+    "BookHold",
     "BookTranslation",
     "Cart",
     "CartItem",
