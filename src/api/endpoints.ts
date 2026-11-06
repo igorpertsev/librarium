@@ -26,6 +26,7 @@ import type {
   OrderStatusDto,
   Paged,
   ReadingListItemDto,
+  SeriesNeighboursDto,
   RegisterDto,
   ReminderQueuedDto,
   ResetPasswordDto,
@@ -68,6 +69,7 @@ export const authApi = {
 
 export const usersApi = {
   updateMe: (body: UserUpdateDto) => apiRequest<UserDto>('/users/me', { method: 'PATCH', body }),
+  nextInSeries: () => apiRequest<BookDto[]>('/users/me/next-in-series'),
 };
 
 export const booksApi = {
@@ -76,6 +78,8 @@ export const booksApi = {
   get: (bookId: string) => apiRequest<BookDto>(`/books/${id(bookId)}`, { auth: false }),
   ageRanges: () => apiRequest<string[]>('/books/age-ranges', { auth: false }),
   languages: () => apiRequest<string[]>('/books/languages', { auth: false }),
+  seriesNeighbours: (bookId: string) =>
+    apiRequest<SeriesNeighboursDto>(`/books/${id(bookId)}/series-neighbours`, { auth: false }),
 };
 
 export const catalogApi = {

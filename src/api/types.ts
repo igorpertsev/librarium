@@ -51,6 +51,7 @@ export type SeriesUpdateDto = Schemas['SeriesUpdate'];
 export type LookupSeriesDto = Schemas['LookupSeries'];
 export type BookTranslationDto = Schemas['BookTranslationRead'];
 export type ReadingListItemDto = Schemas['ReadingListItemRead'];
+export type SeriesNeighboursDto = Schemas['SeriesNeighbours'];
 export type BookTranslationInDto = Schemas['BookTranslationIn'];
 export type TranslationSuggestRequestDto = Schemas['TranslationSuggestRequest'];
 export type TranslationSuggestionDto = Schemas['TranslationSuggestion'];

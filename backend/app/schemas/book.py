@@ -120,6 +120,11 @@ class BookPage(Page[BookRead]):
     pass
 
 
+class SeriesNeighbours(ApiModel):
+    previous: BookRead | None = Field(description="The volume before this one")
+    next: BookRead | None = Field(description="The volume after this one")
+
+
 class AddCopies(RequestModel):
     count: Annotated[int, Field(ge=1, le=20)] = 1
 

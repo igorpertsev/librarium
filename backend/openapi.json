@@ -614,6 +614,47 @@
         ]
       }
     },
+    "/api/v1/users/me/next-in-series": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "My Next In Series",
+        "description": "For each series the reader has borrowed from, the first volume after the furthest one they borrowed that they have not borrowed yet.",
+        "operationId": "my_next_in_series_api_v1_users_me_next_in_series_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/BookRead"
+                  },
+                  "type": "array",
+                  "title": "Response My Next In Series Api V1 Users Me Next In Series Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/books": {
       "get": {
         "tags": [
@@ -855,6 +896,60 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/v1/books/{book_id}/series-neighbours": {
+      "get": {
+        "tags": [
+          "books"
+        ],
+        "summary": "Get Series Neighbours",
+        "description": "The numbered volumes just before and after this book in its series.",
+        "operationId": "get_series_neighbours_api_v1_books__book_id__series_neighbours_get",
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeriesNeighbours"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
           }
         }
       }
@@ -7034,6 +7129,38 @@
           "name"
         ],
         "title": "SeriesCreate"
+      },
+      "SeriesNeighbours": {
+        "properties": {
+          "previous": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BookRead"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The volume before this one"
+          },
+          "next": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BookRead"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The volume after this one"
+          }
+        },
+        "type": "object",
+        "required": [
+          "previous",
+          "next"
+        ],
+        "title": "SeriesNeighbours"
       },
       "SeriesRead": {
         "properties": {

@@ -207,6 +207,26 @@ export interface paths {
         patch: operations["update_me_api_v1_users_me_patch"];
         trace?: never;
     };
+    "/api/v1/users/me/next-in-series": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My Next In Series
+         * @description For each series the reader has borrowed from, the first volume after the furthest one they borrowed that they have not borrowed yet.
+         */
+        get: operations["my_next_in_series_api_v1_users_me_next_in_series_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/books": {
         parameters: {
             query?: never;
@@ -253,6 +273,26 @@ export interface paths {
          * @description Languages (ISO 639 codes) of the books in the catalogue, for the filter.
          */
         get: operations["list_languages_api_v1_books_languages_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/books/{book_id}/series-neighbours": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Series Neighbours
+         * @description The numbered volumes just before and after this book in its series.
+         */
+        get: operations["get_series_neighbours_api_v1_books__book_id__series_neighbours_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1864,6 +1904,13 @@ export interface components {
              */
             description: string;
         };
+        /** SeriesNeighbours */
+        SeriesNeighbours: {
+            /** @description The volume before this one */
+            previous: components["schemas"]["BookRead"] | null;
+            /** @description The volume after this one */
+            next: components["schemas"]["BookRead"] | null;
+        };
         /** SeriesRead */
         SeriesRead: {
             /**
@@ -2651,6 +2698,35 @@ export interface operations {
             };
         };
     };
+    my_next_in_series_api_v1_users_me_next_in_series_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookRead"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     list_books_api_v1_books_get: {
         parameters: {
             query?: {
@@ -2732,6 +2808,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": string[];
+                };
+            };
+        };
+    };
+    get_series_neighbours_api_v1_books__book_id__series_neighbours_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeriesNeighbours"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
         };

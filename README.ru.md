@@ -449,7 +449,8 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 | GET | `/health` (liveness), `/api/v1/health` (DB) | все |
 | POST | `/auth/register`, `/auth/login`, `/auth/refresh`, `/auth/logout`, `/auth/forgot-password`, `/auth/reset-password` | все |
 | GET | `/auth/me`, `/users/me` · PATCH `/users/me` · POST `/auth/change-password` | пользователь |
-| GET | `/books?q&category&age_range&available&tags&series&language&sort&page&page_size`, `/books/age-ranges`, `/books/languages`, `/books/{id}` | все |
+| GET | `/users/me/next-in-series` (следующая книга каждой серии, которую читатель брал) | пользователь |
+| GET | `/books?q&category&age_range&available&tags&series&language&sort&page&page_size`, `/books/age-ranges`, `/books/languages`, `/books/{id}`, `/books/{id}/series-neighbours` | все |
 | GET | `/tags` (с числом изданий), `/series?q`, `/series/{id}` | все |
 | GET/DELETE | `/cart` · POST `/cart/items` · DELETE `/cart/items/{book_id}` | пользователь |
 | POST/GET | `/orders` · GET `/orders/{id}` · POST `/orders/{id}/cancel`, `/orders/{id}/renew` | пользователь (только свои) |

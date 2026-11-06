@@ -17,6 +17,8 @@ import { WaitlistButton } from './WaitlistButton';
 import { ReadingListButton } from './ReadingListButton';
 import { SeriesLink, TagChips } from './CatalogFilters';
 import { useBookLanguageName, useBookText } from '../utils/bookText';
+import { booksApi } from '../../api/endpoints';
+import { bookFromDto } from '../../api/mappers';
 
 interface BookDetailsModalProps {
   book: Book | null;
@@ -24,8 +26,15 @@ interface BookDetailsModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function BookDetailsModal({ book, open, onOpenChange }: BookDetailsModalProps) {
+export function BookDetailsModal({ book: initialBook, open, onOpenChange }: BookDetailsModalProps) {
   const { t } = useTranslation();
+  // "Previous / next volume" shows another book in the same dialog.
+  const [shown, setShown] = useState<Book | null>(null);
+  const book = shown ?? initialBook;
+  const [neighbours, setNeighbours] = useState<{ previous: Book | null; next: Book | null }>({
+    previous: null,
+    next: null,
+  });
   const fmt = useFormat();
   const { addBookToCart, isBookInCart } = useCart();
   const { isBookUnavailable } = useOrders();
@@ -40,6 +49,40 @@ export function BookDetailsModal({ book, open, onOpenChange }: BookDetailsModalP
   const textOf = useBookText();
   const languageNameOf = useBookLanguageName();
   const [showOriginal, setShowOriginal] = useState(false);
+  const bookId = book?.id;
+  const inNumberedSeries = Boolean(book?.series) && book?.seriesPosition != null;
+
+  useEffect(() => {
+    if (!open || !bookId || !inNumberedSeries) {
+      setNeighbours({ previous: null, next: null });
+      return;
+    }
+    let current = true;
+    booksApi
+      .seriesNeighbours(bookId)
+      .then((found) => {
+        if (current) {
+          setNeighbours({
+            previous: found.previous ? bookFromDto(found.previous) : null,
+            next: found.next ? bookFromDto(found.next) : null,
+          });
+        }
+      })
+      .catch(() => current && setNeighbours({ previous: null, next: null }));
+    return () => {
+      current = false;
+    };
+  }, [open, bookId, inNumberedSeries]);
+
+  const showVolume = (volume: Book) => {
+    setShown(volume);
+    setShowOriginal(false);
+    setSelectedIndex(0);
+  };
+  const handleOpenChange = (next: boolean) => {
+    if (!next) setShown(null);
+    onOpenChange(next);
+  };
   const [zoomScale, setZoomScale] = useState(1);
 
   const scrollPrev = useCallback(() => {
@@ -122,8 +165,8 @@ export function BookDetailsModal({ book, open, onOpenChange }: BookDetailsModalP
   const description = showOriginal ? book.description : text.description;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-6xl max-h-[90vh] overflow-y-auto p-4 sm:p-8">
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent key={book.id} className="sm:max-w-6xl max-h-[90vh] overflow-y-auto p-4 sm:p-8">
         <DialogHeader>
           <DialogTitle className="text-xl sm:text-3xl">{text.title}</DialogTitle>
           <DialogDescription className="text-sm sm:text-lg">{t('bookDetails.byAuthor', { author: text.author })}</DialogDescription>
@@ -226,8 +269,24 @@ export function BookDetailsModal({ book, open, onOpenChange }: BookDetailsModalP
             </div>
             {(book.series || (book.tags?.length ?? 0) > 0) && (
               <div className="space-y-2">
-                <SeriesLink book={book} onNavigate={() => onOpenChange(false)} className="text-sm sm:text-base" />
-                <TagChips tags={book.tags} onNavigate={() => onOpenChange(false)} />
+                <SeriesLink book={book} onNavigate={() => handleOpenChange(false)} className="text-sm sm:text-base" />
+                {(neighbours.previous || neighbours.next) && (
+                  <nav aria-label={t('seriesNav.label')} className="flex flex-wrap gap-2">
+                    {neighbours.previous && (
+                      <Button variant="outline" size="sm" onClick={() => showVolume(neighbours.previous!)}>
+                        <ChevronLeft className="w-4 h-4 mr-1" aria-hidden="true" />
+                        {t('seriesNav.previous', { title: textOf(neighbours.previous).title })}
+                      </Button>
+                    )}
+                    {neighbours.next && (
+                      <Button variant="outline" size="sm" onClick={() => showVolume(neighbours.next!)}>
+                        {t('seriesNav.next', { title: textOf(neighbours.next).title })}
+                        <ChevronRight className="w-4 h-4 ml-1" aria-hidden="true" />
+                      </Button>
+                    )}
+                  </nav>
+                )}
+                <TagChips tags={book.tags} onNavigate={() => handleOpenChange(false)} />
               </div>
             )}
             {isOrderedByOther && book.availableFrom && (

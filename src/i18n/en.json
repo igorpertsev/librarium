@@ -634,5 +634,12 @@
     "added": "“{{title}}” saved to Want to read",
     "removed": "“{{title}}” removed from Want to read",
     "since": "saved {{date}}"
+  },
+  "seriesNav": {
+    "label": "Other volumes of the series",
+    "previous": "Previous: {{title}}",
+    "next": "Next: {{title}}",
+    "continueTitle": "Continue the series",
+    "continueDescription": "The next book of each series you have been reading."
   }
 }
