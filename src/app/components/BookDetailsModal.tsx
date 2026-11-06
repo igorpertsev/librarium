@@ -14,6 +14,7 @@ import { getCartButtonLabel, getCategoryTranslation } from '../utils/translation
 import { useFormat } from '../utils/format';
 import { errorMessage } from '../utils/apiErrors';
 import { WaitlistButton } from './WaitlistButton';
+import { ReadingListButton } from './ReadingListButton';
 import { SeriesLink, TagChips } from './CatalogFilters';
 import { useBookLanguageName, useBookText } from '../utils/bookText';
 
@@ -332,6 +333,9 @@ export function BookDetailsModal({ book, open, onOpenChange }: BookDetailsModalP
                 <WaitlistButton bookId={book.id} groupId={book.groupId} title={text.title} withLabel />
               </div>
             )}
+            <div className="flex justify-center">
+              <ReadingListButton bookId={book.id} groupId={book.groupId} title={text.title} withLabel />
+            </div>
           </div>
         </div>
 

@@ -18,6 +18,7 @@ import { orderLabel } from '../utils/translations';
 import { useLibraryRules } from '../utils/useLibraryRules';
 import { useWaitlist } from '../contexts/WaitlistContext';
 import { WaitlistButton } from '../components/WaitlistButton';
+import { ReadingListCard } from '../components/ReadingListCard';
 import { useBookText } from '../utils/bookText';
 import type { Order } from '../types';
 import { BorrowingHistory } from '../components/BorrowingHistory';
@@ -255,6 +256,8 @@ export default function Profile() {
           </CardContent>
         </Card>
       </div>
+
+      <ReadingListCard />
 
       {waitlist.length > 0 && (
         <Card>

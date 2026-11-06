@@ -14,6 +14,7 @@ import { getCartButtonLabel, getCategoryTranslation, getStatusTranslation } from
 import { useFormat } from '../utils/format';
 import { errorMessage } from '../utils/apiErrors';
 import { WaitlistButton } from './WaitlistButton';
+import { ReadingListButton } from './ReadingListButton';
 import { SeriesLink, TagChips } from './CatalogFilters';
 import { useBookLanguageName, useBookText } from '../utils/bookText';
 
@@ -209,6 +210,7 @@ export function BookCard({ book }: BookCardProps) {
         {(isOrderedByOther || book.status !== 'available') && !isPending && (
           <WaitlistButton bookId={book.id} groupId={book.groupId} title={text.title} />
         )}
+        <ReadingListButton bookId={book.id} groupId={book.groupId} title={text.title} />
       </CardFooter>
     </Card>
 

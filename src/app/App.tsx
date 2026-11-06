@@ -4,6 +4,7 @@ import { CatalogProvider } from './contexts/CatalogContext';
 import { CartProvider } from './contexts/CartContext';
 import { OrdersProvider } from './contexts/OrdersContext';
 import { WaitlistProvider } from './contexts/WaitlistContext';
+import { ReadingListProvider } from './contexts/ReadingListContext';
 import { Toaster } from './components/ui/sonner';
 import { router } from './routes';
 import '../i18n/config';
@@ -16,8 +17,10 @@ export default function App() {
         <OrdersProvider>
           <CartProvider>
             <WaitlistProvider>
-              <RouterProvider router={router} />
-              <Toaster />
+              <ReadingListProvider>
+                <RouterProvider router={router} />
+                <Toaster />
+              </ReadingListProvider>
             </WaitlistProvider>
           </CartProvider>
         </OrdersProvider>

@@ -623,5 +623,16 @@
     "notFound": "No translation found.",
     "notFoundNoMachine": "No translation found in Wikidata or Wikipedia. Machine translation is not set up (ANTHROPIC_API_KEY).",
     "wikipediaNote": "From Wikipedia (CC BY-SA); readers see a link to the article:"
+  },
+  "readingList": {
+    "title": "Want to read",
+    "description": "Books you saved for later. They stay here until you remove them.",
+    "add": "Save “{{title}}” to Want to read",
+    "remove": "Remove “{{title}}” from Want to read",
+    "addShort": "Want to read",
+    "saved": "In Want to read",
+    "added": "“{{title}}” saved to Want to read",
+    "removed": "“{{title}}” removed from Want to read",
+    "since": "saved {{date}}"
   }
 }

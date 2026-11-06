@@ -25,6 +25,7 @@ import type {
   OrderPageDto,
   OrderStatusDto,
   Paged,
+  ReadingListItemDto,
   RegisterDto,
   ReminderQueuedDto,
   ResetPasswordDto,
@@ -107,6 +108,12 @@ export const waitlistApi = {
   join: (bookId: string) =>
     apiRequest<WaitlistEntryDto>(`/waitlist/${id(bookId)}`, { method: 'POST' }),
   leave: (bookId: string) => apiRequest<void>(`/waitlist/${id(bookId)}`, { method: 'DELETE' }),
+};
+
+export const readingListApi = {
+  list: () => apiRequest<ReadingListItemDto[]>('/reading-list'),
+  add: (bookId: string) => apiRequest<void>(`/reading-list/${id(bookId)}`, { method: 'POST' }),
+  remove: (bookId: string) => apiRequest<void>(`/reading-list/${id(bookId)}`, { method: 'DELETE' }),
 };
 
 export const libraryApi = {

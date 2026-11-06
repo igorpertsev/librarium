@@ -183,6 +183,7 @@ class BookFilters:
     tags: tuple[str, ...] = ()  # slugs; a book must have every one of them
     series_id: uuid.UUID | None = None
     language: str | None = None  # ISO 639 code
+    groups: tuple[uuid.UUID, ...] | None = None  # only these titles (copy groups)
 
 
 def _conditions(
@@ -211,6 +212,8 @@ def _conditions(
         conditions.append(Book.series_id == filters.series_id)
     if filters.language:
         conditions.append(Book.language == filters.language)
+    if filters.groups is not None:
+        conditions.append(copy_group_key().in_(filters.groups))
     if filters.available is not None and per_copy_availability:
         reserved = active_reservation_exists(Book.id)
         is_available = Book.is_active.is_(True) & (Book.status == BookStatus.AVAILABLE) & ~reserved

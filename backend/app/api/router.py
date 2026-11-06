@@ -9,6 +9,7 @@ from app.api.routes import (
     health,
     library,
     orders,
+    reading_list,
     users,
     waitlist,
 )
@@ -25,4 +26,5 @@ api_router.include_router(cart.router)
 api_router.include_router(orders.router)
 api_router.include_router(library.router)
 api_router.include_router(waitlist.router)
+api_router.include_router(reading_list.router)
 api_router.include_router(admin.router)
