@@ -5,7 +5,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '../components/ui/card';
-import dragonLogo from '../../imports/dragon.png';
+import dragonLogo from '../../imports/dragon.webp';
 import { useTranslation } from 'react-i18next';
 import { PreferredContact } from '../types';
 import { Star } from 'lucide-react';

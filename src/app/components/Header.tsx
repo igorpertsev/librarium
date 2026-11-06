@@ -4,7 +4,7 @@ import { useCart } from '../contexts/CartContext';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { ShoppingCart, User, LogOut, LayoutDashboard, Settings, Menu } from 'lucide-react';
-import dragonLogo from '../../imports/dragon.png';
+import dragonLogo from '../../imports/dragon.webp';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { SettingsDialog } from './SettingsDialog';

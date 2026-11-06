@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader } from './ui/card';
-import dragonLogo from '../../imports/dragon.png';
+import dragonLogo from '../../imports/dragon.webp';
 
 /** Centred card with the logo, used by the password reset pages. */
 export function AuthCard({
