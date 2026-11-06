@@ -24,7 +24,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
 from app.core.database import Database
-from app.core.http import make_http_client
+from app.core.http import make_http_client, ping_monitor
 from app.core.security import hash_password
 from app.main import create_app
 from app.models import Book, RefreshToken, Series, User
@@ -166,6 +166,7 @@ async def _notifications(settings: Settings, *, loop_seconds: int | None) -> Non
     """Queue due-soon/overdue reminders and deliver pending emails, once or in a loop."""
     db = Database(settings)
     send = make_smtp_sender(settings)
+    http = make_http_client(settings)
     warned = False
     try:
         while True:
@@ -188,10 +189,12 @@ async def _notifications(settings: Settings, *, loop_seconds: int | None) -> Non
                         f"Emails: {report.sent} sent, {report.retried} to retry, "
                         f"{report.failed} failed, {report.expired} expired."
                     )
+            await ping_monitor(http, settings.notifier_ping_url)  # "still running"
             if not loop_seconds:
                 break
             await asyncio.sleep(loop_seconds)
     finally:
+        await http.aclose()
         await db.dispose()
 
 

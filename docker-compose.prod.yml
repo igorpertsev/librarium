@@ -41,6 +41,8 @@ x-backend-env: &backend-env
   # Book translations (optional): without ANTHROPIC_API_KEY only Wikidata and Wikipedia are used.
   ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
   TRANSLATION_MODEL: ${TRANSLATION_MODEL:-claude-opus-5-5}
+  # Uptime monitoring (optional): the notifier calls this URL every cycle (see deploy/README.md).
+  NOTIFIER_PING_URL: ${NOTIFIER_PING_URL:-}
 
 services:
   db:

@@ -298,6 +298,33 @@ docker compose -f docker-compose.prod.yml run --rm backend python -m app.cli tra
 
 Drop `--no-machine` to fill the gaps with machine translation too (at most one request per book).
 
+## Monitoring and alerts
+
+Three checks tell you about problems before readers do. All are optional and use free services.
+
+**The site is up.** Add an HTTP check in an uptime service (UptimeRobot, Better Stack,
+healthchecks.io, ...) for
+
+```
+https://library.example.com/api/v1/health
+```
+
+It answers `{"status":"ok","database":"ok"}` with status 200 only when the backend can reach
+PostgreSQL; alert on anything else.
+
+**Emails are going out.** Create a check that expects a ping every 5 minutes (grace period
+10 minutes) in a "dead man's switch" service such as healthchecks.io, put its URL into
+`NOTIFIER_PING_URL` in `.env` and run `docker compose -f docker-compose.prod.yml up -d`. The
+notifier pings after every cycle, so you are alerted when it stops.
+
+**Backups run.** Create a daily check (grace period a few hours) and put its URL into
+`BACKUP_PING_URL` in `.env`. `deploy/backup.sh` pings it after each successful backup and
+calls `<url>/fail` when a backup fails, so you hear both about failures and about backups that
+stopped running (cron removed, VM down).
+
+Unhandled errors in the backend are reported to Sentry when `SENTRY_DSN` is set (see "Everyday
+commands" below).
+
 ## 9. Updating
 
 ```bash
