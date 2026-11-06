@@ -4,7 +4,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Textarea } from '../components/ui/textarea';
 import { Badge } from '../components/ui/badge';
@@ -19,12 +19,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from '../components/ui/pagination';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { getCategoryTranslation, getStatusTranslation, orderLabel } from '../utils/translations';
 import { errorMessage } from '../utils/apiErrors';
 import { useCatalog } from '../contexts/CatalogContext';
 import { adminApi } from '../../api/endpoints';
 import { ActionResult, ApiError, runAction, toApiError } from '../../api/errors';
-import { bookFormToDto, bookFromDto } from '../../api/mappers';
+import { bookFormToDto, bookFromDto, type BookFormValues } from '../../api/mappers';
 import type { BookStatsDto } from '../../api/types';
 import { findCoverByIsbn } from '../utils/covers';
 import { daysUntil, useFormat } from '../utils/format';
@@ -49,9 +50,10 @@ export default function AdminPortal() {
   const [currentPage, setCurrentPage] = useState(1);
   const booksPerPage = 10;
 
+  const { booksPerBatch, pricePerBatch } = batchConfig;
   useEffect(() => {
-    setBatchDraft(batchConfig);
-  }, [batchConfig.booksPerBatch, batchConfig.pricePerBatch]);
+    setBatchDraft({ booksPerBatch, pricePerBatch });
+  }, [booksPerBatch, pricePerBatch]);
 
   const loadBooks = useCallback(async (page: number) => {
     setBooksLoading(true);
@@ -84,7 +86,7 @@ export default function AdminPortal() {
     return false;
   }
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<BookFormValues>({
     title: '',
     author: '',
     category: 'fiction' as BookCategory,
@@ -546,9 +548,9 @@ export default function AdminPortal() {
 }
 
 function BookForm({ formData, setFormData, t }: {
-  formData: any;
-  setFormData: (data: any) => void;
-  t: any;
+  formData: BookFormValues;
+  setFormData: (data: BookFormValues) => void;
+  t: TFunction;
 }) {
   const [findingCover, setFindingCover] = useState(false);
 
@@ -599,7 +601,7 @@ function BookForm({ formData, setFormData, t }: {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="space-y-2">
           <Label htmlFor="category">{t('bookForm.category')}</Label>
-          <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+          <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value as BookCategory })}>
             <SelectTrigger id="category">
               <SelectValue />
             </SelectTrigger>
@@ -617,7 +619,7 @@ function BookForm({ formData, setFormData, t }: {
 
         <div className="space-y-2">
           <Label htmlFor="status">{t('bookForm.status')}</Label>
-          <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
+          <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value as BookStatus })}>
             <SelectTrigger id="status">
               <SelectValue />
             </SelectTrigger>
@@ -719,7 +721,7 @@ function BookForm({ formData, setFormData, t }: {
   );
 }
 
-function orderStatusBadge(status: string, t: any) {
+function orderStatusBadge(status: string, t: TFunction) {
   switch (status) {
     case 'pending':
       return <Badge className="bg-amber-600"><Clock className="w-3 h-3 mr-1" />{t('admin.orderPending')}</Badge>;
@@ -732,7 +734,7 @@ function orderStatusBadge(status: string, t: any) {
   }
 }
 
-function dueDateBadge(dueDate: string, status: string, t: any, formatDate: (value: string) => string) {
+function dueDateBadge(dueDate: string, status: string, t: TFunction, formatDate: (value: string) => string) {
   if (status === 'returned' || status === 'cancelled') return <span className="text-sm text-muted-foreground">—</span>;
   const diffDays = daysUntil(dueDate);
   if (diffDays < 0) {
@@ -749,7 +751,7 @@ function OrderBooksModal({ order, userContacts, open, onOpenChange, t }: {
   userContacts?: import('../types').UserContacts;
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  t: any;
+  t: TFunction;
 }) {
   const [detailBook, setDetailBook] = useState<Book | null>(null);
 
@@ -843,7 +845,7 @@ function OrdersTab({
   onCancel: (id: string) => Promise<ActionResult>;
   onUpdateDueDate: (id: string, date: string) => Promise<ActionResult>;
   onChanged: () => void;
-  t: any;
+  t: TFunction;
 }) {
   const { users } = useAuth();
   const fmt = useFormat();
