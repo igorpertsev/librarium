@@ -171,6 +171,12 @@
     "coverImage": "Cover Image URL",
     "additionalImages": "Additional Images (one URL per line)",
     "additionalImagesDesc": "Enter image URLs, one per line. These will be shown in the carousel.",
+    "findCover": "Find cover by ISBN",
+    "findCoverDesc": "Looks up the cover on Open Library using the ISBN above.",
+    "coverFound": "Cover found",
+    "coverNotFound": "No cover found for this ISBN",
+    "coverInvalidIsbn": "Enter a valid 10- or 13-digit ISBN first",
+    "coverPreview": "Cover preview",
     "description": "Description"
   },
   "auth": {

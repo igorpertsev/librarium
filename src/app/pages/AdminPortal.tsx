@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Textarea } from '../components/ui/textarea';
 import { Badge } from '../components/ui/badge';
-import { Plus, Pencil, Trash2, Users, BookOpen as BookOpenIcon, ClipboardList, CheckCircle2, RotateCcw, Clock, Star } from 'lucide-react';
+import { Plus, Pencil, Trash2, Users, BookOpen as BookOpenIcon, ClipboardList, CheckCircle2, RotateCcw, Clock, Star, ImageDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -25,6 +25,7 @@ import { adminApi } from '../../api/endpoints';
 import { ActionResult, ApiError, runAction, toApiError } from '../../api/errors';
 import { bookFormToDto, bookFromDto } from '../../api/mappers';
 import type { BookStatsDto } from '../../api/types';
+import { findCoverByIsbn } from '../utils/covers';
 
 export default function AdminPortal() {
   const { t } = useTranslation();
@@ -521,6 +522,31 @@ function BookForm({ formData, setFormData, t }: {
   setFormData: (data: any) => void;
   t: any;
 }) {
+  const [findingCover, setFindingCover] = useState(false);
+
+  const handleFindCover = async () => {
+    setFindingCover(true);
+    const result = await findCoverByIsbn(formData.isbn ?? '');
+    setFindingCover(false);
+    if (result.status === 'found') {
+      const previousCover = formData.coverImage;
+      // Replace the gallery only if it was empty or just the previous cover.
+      const keepGallery = formData.images?.some((url: string) => url && url !== previousCover);
+      setFormData({
+        ...formData,
+        coverImage: result.url,
+        images: keepGallery ? formData.images : [result.url],
+      });
+      toast.success(t('bookForm.coverFound'));
+    } else if (result.status === 'invalid-isbn') {
+      toast.error(t('bookForm.coverInvalidIsbn'));
+    } else if (result.status === 'not-found') {
+      toast.error(t('bookForm.coverNotFound'));
+    } else {
+      toast.error(t('errors.network'));
+    }
+  };
+
   return (
     <div className="grid gap-4">
       <div className="grid grid-cols-2 gap-4">
@@ -608,12 +634,32 @@ function BookForm({ formData, setFormData, t }: {
 
       <div className="space-y-2">
         <Label htmlFor="coverImage">{t('bookForm.coverImage')}</Label>
-        <Input
-          id="coverImage"
-          placeholder="https://..."
-          value={formData.coverImage}
-          onChange={(e) => setFormData({ ...formData, coverImage: e.target.value })}
-        />
+        <div className="flex gap-2">
+          <Input
+            id="coverImage"
+            placeholder="https://..."
+            value={formData.coverImage}
+            onChange={(e) => setFormData({ ...formData, coverImage: e.target.value })}
+            className="flex-1"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleFindCover}
+            disabled={findingCover || !formData.isbn?.trim()}
+          >
+            <ImageDown className="w-4 h-4 mr-2" />
+            {t('bookForm.findCover')}
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">{t('bookForm.findCoverDesc')}</p>
+        {formData.coverImage && (
+          <img
+            src={formData.coverImage}
+            alt={t('bookForm.coverPreview')}
+            className="h-28 w-20 rounded object-cover border border-border"
+          />
+        )}
       </div>
 
       <div className="space-y-2">
