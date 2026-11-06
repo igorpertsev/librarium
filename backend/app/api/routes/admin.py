@@ -51,7 +51,7 @@ from app.schemas.order import (
 from app.schemas.report import ReportSummaryRead
 from app.schemas.translation import TranslationSuggestion, TranslationSuggestRequest
 from app.schemas.user import AdminUserPage, AdminUserUpdate, UserRead
-from app.services import book_import, catalog, reports
+from app.services import book_import, catalog, duplicates, reports
 from app.services import books as books_service
 from app.services import library_settings as settings_service
 from app.services import orders as orders_service
@@ -101,6 +101,22 @@ async def admin_list_books(
         page_size=pagination.page_size,
     )
     return BookPage(items=items, total=total, page=pagination.page, page_size=pagination.page_size)
+
+
+@router.get(
+    "/books/duplicates",
+    response_model=list[BookRead],
+    responses=error_responses(422),
+    description="Titles that look like this book: the same ISBN (hyphens ignored) or the same "
+    "title and author (any case). For a warning before adding a duplicate.",
+)
+async def admin_find_duplicates(
+    session: SessionDep,
+    isbn: Annotated[str | None, Query(max_length=32)] = None,
+    title: Annotated[str | None, Query(max_length=500)] = None,
+    author: Annotated[str | None, Query(max_length=300)] = None,
+) -> list[BookRead]:
+    return await duplicates.find(session, isbn=isbn, title=title, author=author)
 
 
 @router.get("/books/stats", response_model=BookStats)

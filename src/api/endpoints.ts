@@ -130,6 +130,8 @@ export const libraryApi = {
 export const adminApi = {
   listBooks: (query: AdminBookListQuery) => apiRequest<BookPageDto>('/admin/books', { query }),
   bookStats: () => apiRequest<BookStatsDto>('/admin/books/stats'),
+  findDuplicates: (query: { isbn?: string; title?: string; author?: string }) =>
+    apiRequest<BookDto[]>('/admin/books/duplicates', { query }),
   lookupIsbn: (isbn: string) => apiRequest<BookLookupDto>(`/admin/isbn/${id(isbn)}`),
   importBooks: (csv: string, dryRun: boolean) =>
     apiRequest<BookImportResultDto>('/admin/books/import', {

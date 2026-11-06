@@ -483,7 +483,9 @@
     "import_other": "Import {{count}} books",
     "importNone": "Import",
     "done_one": "{{count}} book imported",
-    "done_other": "{{count}} books imported"
+    "done_other": "{{count}} books imported",
+    "warnings_one": "{{count}} row looks like a book that is already there. It will be imported anyway:",
+    "warnings_other": "{{count}} rows look like books that are already there. They will be imported anyway:"
   },
   "reports": {
     "tab": "Reports",
@@ -667,5 +669,9 @@
     "password": "Your password",
     "deleteConfirm": "Delete my account",
     "deleted": "Your account has been deleted."
+  },
+  "duplicates": {
+    "title": "This book may already be in the library:",
+    "addCopy": "Add a copy instead"
   }
 }

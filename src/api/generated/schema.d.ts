@@ -649,6 +649,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/books/duplicates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin Find Duplicates
+         * @description Titles that look like this book: the same ISBN (hyphens ignored) or the same title and author (any case). For a warning before adding a duplicate.
+         */
+        get: operations["admin_find_duplicates_api_v1_admin_books_duplicates_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/books/stats": {
         parameters: {
             query?: never;
@@ -1287,6 +1307,23 @@ export interface components {
             created: number;
             /** Errors */
             errors: components["schemas"]["BookImportError"][];
+            /**
+             * Warnings
+             * @description Rows that look like a book already in the library or earlier in the file; they are imported anyway
+             */
+            warnings: components["schemas"]["BookImportWarning"][];
+        };
+        /** BookImportWarning */
+        BookImportWarning: {
+            /** Row */
+            row: number;
+            /** Message */
+            message: string;
+            /**
+             * Existing Book Id
+             * @description A copy of the matching title already in the library
+             */
+            existing_book_id: string | null;
         };
         /** BookLookup */
         BookLookup: {
@@ -3866,6 +3903,57 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BookRead"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_find_duplicates_api_v1_admin_books_duplicates_get: {
+        parameters: {
+            query?: {
+                isbn?: string | null;
+                title?: string | null;
+                author?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookRead"][];
                 };
             };
             /** @description Unauthorized */

@@ -19,6 +19,7 @@ import { LoanRulesSettings } from '../components/LoanRulesSettings';
 import { ReportsTab } from '../components/ReportsTab';
 import { BookCatalogFields } from '../components/BookCatalogFields';
 import { BookTranslationFields } from '../components/BookTranslationFields';
+import { DuplicateWarning } from '../components/DuplicateWarning';
 import { TagsSeriesTab } from '../components/TagsSeriesTab';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
@@ -179,6 +180,13 @@ export default function AdminPortal() {
     }
   };
 
+  // The add-book form found the same title: add a copy of it instead of a new entry.
+  const handleUseExisting = async (book: Book) => {
+    await handleAddCopy(book);
+    setIsAddDialogOpen(false);
+    resetForm();
+  };
+
   const handleSaveBatchConfig = async () => {
     const result = await updateBatchConfig(batchDraft);
     reportResult(result, 'admin.configUpdated');
@@ -254,7 +262,7 @@ export default function AdminPortal() {
               <DialogTitle>{t('admin.addBookTitle')}</DialogTitle>
               <DialogDescription>{t('admin.addBookDesc')}</DialogDescription>
             </DialogHeader>
-            <BookForm formData={formData} setFormData={setFormData} t={t} />
+            <BookForm formData={formData} setFormData={setFormData} t={t} onAddCopy={handleUseExisting} />
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>{t('admin.cancel')}</Button>
               <Button onClick={handleAddBook}>{t('admin.addBookBtn')}</Button>
@@ -629,10 +637,12 @@ export default function AdminPortal() {
   );
 }
 
-function BookForm({ formData, setFormData, t }: {
+function BookForm({ formData, setFormData, t, onAddCopy }: {
   formData: BookFormValues;
   setFormData: (data: BookFormValues) => void;
   t: TFunction;
+  /** Only when adding: offer "add a copy" of a title that looks the same. */
+  onAddCopy?: (book: Book) => void;
 }) {
   const [findingCover, setFindingCover] = useState(false);
 
@@ -684,6 +694,14 @@ function BookForm({ formData, setFormData, t }: {
   return (
     // grid-cols-1 (minmax(0, 1fr)): a long description must not widen the dialog.
     <div className="grid grid-cols-1 gap-4">
+      {onAddCopy && (
+        <DuplicateWarning
+          isbn={formData.isbn}
+          title={formData.title}
+          author={formData.author}
+          onAddCopy={onAddCopy}
+        />
+      )}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="title">{t('bookForm.title')}</Label>

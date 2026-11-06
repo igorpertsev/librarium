@@ -2477,6 +2477,120 @@
         }
       }
     },
+    "/api/v1/admin/books/duplicates": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Find Duplicates",
+        "description": "Titles that look like this book: the same ISBN (hyphens ignored) or the same title and author (any case). For a warning before adding a duplicate.",
+        "operationId": "admin_find_duplicates_api_v1_admin_books_duplicates_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "isbn",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 32
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Isbn"
+            }
+          },
+          {
+            "name": "title",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Title"
+            }
+          },
+          {
+            "name": "author",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 300
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Author"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BookRead"
+                  },
+                  "title": "Response Admin Find Duplicates Api V1 Admin Books Duplicates Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
     "/api/v1/admin/books/stats": {
       "get": {
         "tags": [
@@ -5412,15 +5526,56 @@
             },
             "type": "array",
             "title": "Errors"
+          },
+          "warnings": {
+            "items": {
+              "$ref": "#/components/schemas/BookImportWarning"
+            },
+            "type": "array",
+            "title": "Warnings",
+            "description": "Rows that look like a book already in the library or earlier in the file; they are imported anyway"
           }
         },
         "type": "object",
         "required": [
           "rows",
           "created",
-          "errors"
+          "errors",
+          "warnings"
         ],
         "title": "BookImportResult"
+      },
+      "BookImportWarning": {
+        "properties": {
+          "row": {
+            "type": "integer",
+            "title": "Row"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "existing_book_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Existing Book Id",
+            "description": "A copy of the matching title already in the library"
+          }
+        },
+        "type": "object",
+        "required": [
+          "row",
+          "message",
+          "existing_book_id"
+        ],
+        "title": "BookImportWarning"
       },
       "BookLookup": {
         "properties": {
