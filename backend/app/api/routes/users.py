@@ -8,7 +8,7 @@ from app.api.routes.auth import clear_refresh_cookie
 from app.schemas.book import BookRead
 from app.schemas.common import error_responses
 from app.schemas.user import DeleteAccountRequest, UserRead, UserUpdate
-from app.services import account, series_reading
+from app.services import account, recommendations, series_reading
 from app.services import users as users_service
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -34,6 +34,17 @@ async def update_me(body: UserUpdate, user: CurrentUser, session: SessionDep) ->
 )
 async def my_next_in_series(user: CurrentUser, session: SessionDep) -> list[BookRead]:
     return await series_reading.next_for_reader(session, user)
+
+
+@router.get(
+    "/me/recommendations",
+    response_model=list[BookRead],
+    responses=error_responses(401),
+    description="Up to 8 titles the reader has not borrowed or saved, ranked by the tags of the "
+    "titles they borrowed and saved.",
+)
+async def my_recommendations(user: CurrentUser, session: SessionDep) -> list[BookRead]:
+    return await recommendations.for_reader(session, user.id)
 
 
 @router.get(

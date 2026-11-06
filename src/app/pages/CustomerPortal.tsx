@@ -6,7 +6,7 @@ import { BookCard } from '../components/BookCard';
 import { BatchProgress } from '../components/BatchProgress';
 import { AuthorBanner, SelectedTags, SeriesBanner, SeriesFilter, TagFilter } from '../components/CatalogFilters';
 import { useBookText } from '../utils/bookText';
-import { NewArrivalsShelf } from '../components/NewArrivalsShelf';
+import { CatalogueShelves } from '../components/CatalogueShelves';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Button } from '../components/ui/button';
@@ -385,7 +385,7 @@ export default function CustomerPortal() {
 
       <div ref={resultsRef} className="flex-1 overflow-y-auto" onScroll={handleScroll}>
         <div className="container mx-auto px-4 py-6">
-          {!hasFilters && <NewArrivalsShelf />}
+          {!hasFilters && <CatalogueShelves />}
           {authorFilter && (
             <AuthorBanner
               // The name as the reader sees it on the cards (translated when possible).

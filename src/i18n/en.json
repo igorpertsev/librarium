@@ -710,5 +710,8 @@
   },
   "alsoBorrowed": {
     "title": "Readers of this book also borrowed"
+  },
+  "forYou": {
+    "title": "For you"
   }
 }

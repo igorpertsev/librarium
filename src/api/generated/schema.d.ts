@@ -231,6 +231,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/users/me/recommendations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My Recommendations
+         * @description Up to 8 titles the reader has not borrowed or saved, ranked by the tags of the titles they borrowed and saved.
+         */
+        get: operations["my_recommendations_api_v1_users_me_recommendations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users/me/export": {
         parameters: {
             query?: never;
@@ -2986,6 +3006,35 @@ export interface operations {
         };
     };
     my_next_in_series_api_v1_users_me_next_in_series_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookRead"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    my_recommendations_api_v1_users_me_recommendations_get: {
         parameters: {
             query?: never;
             header?: never;

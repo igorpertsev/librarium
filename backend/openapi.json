@@ -723,6 +723,47 @@
         ]
       }
     },
+    "/api/v1/users/me/recommendations": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "My Recommendations",
+        "description": "Up to 8 titles the reader has not borrowed or saved, ranked by the tags of the titles they borrowed and saved.",
+        "operationId": "my_recommendations_api_v1_users_me_recommendations_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/BookRead"
+                  },
+                  "type": "array",
+                  "title": "Response My Recommendations Api V1 Users Me Recommendations Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/users/me/export": {
       "get": {
         "tags": [
