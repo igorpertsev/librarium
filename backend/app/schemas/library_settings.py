@@ -18,20 +18,27 @@ Money = Annotated[
 ]
 
 
-class LibrarySettingsRead(ApiModel):
+class LibraryRules(ApiModel):
+    """Lending rules every reader may know (GET /library/rules)."""
+
     books_per_batch: int
     price_per_batch: Decimal
     currency: str
     loan_period_days: int
+    max_renewals: int
+
+
+class LibrarySettingsRead(LibraryRules):
     updated_at: datetime
 
 
 class LibrarySettingsUpdate(PatchModel):
     non_nullable_fields: ClassVar[frozenset[str]] = frozenset(
-        {"books_per_batch", "price_per_batch", "currency", "loan_period_days"}
+        {"books_per_batch", "price_per_batch", "currency", "loan_period_days", "max_renewals"}
     )
 
     books_per_batch: Annotated[int, Field(ge=1, le=100)] | None = None
     price_per_batch: Money | None = None
     currency: CurrencyCode | None = None
     loan_period_days: Annotated[int, Field(ge=1, le=365)] | None = None
+    max_renewals: Annotated[int, Field(ge=0, le=10)] | None = None

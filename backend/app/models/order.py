@@ -24,6 +24,7 @@ class Order(TimestampMixin, Base):
             "total_amount = price_per_batch * batch_count", name="total_matches_batches"
         ),
         sa.CheckConstraint("currency ~ '^[A-Z]{3}$'", name="currency_iso4217"),
+        sa.CheckConstraint("renewal_count >= 0", name="renewal_count_non_negative"),
         sa.Index("ix_orders_user_created", "user_id", "created_at"),
     )
 
@@ -57,6 +58,8 @@ class Order(TimestampMixin, Base):
     )
 
     due_date: Mapped[date] = mapped_column(sa.Date)
+    # How often the customer has extended the loan (limited by library_settings.max_renewals).
+    renewal_count: Mapped[int] = mapped_column(sa.SmallInteger, default=0, server_default="0")
     confirmed_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True))
     returned_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True))
     cancelled_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True))

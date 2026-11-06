@@ -308,6 +308,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/orders/{order_id}/renew": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Renew My Order
+         * @description Extends a borrowed order's due date by one loan period. Allowed up to max_renewals times (GET /library/rules) and not once the books are overdue; otherwise 409 RENEWAL_NOT_ALLOWED with details.reason not_borrowed | overdue | limit_reached.
+         */
+        post: operations["renew_my_order_api_v1_orders__order_id__renew_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/orders/{order_id}/cancel": {
         parameters: {
             query?: never;
@@ -319,6 +339,26 @@ export interface paths {
         put?: never;
         /** Cancel My Order */
         post: operations["cancel_my_order_api_v1_orders__order_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/library/rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Library Rules
+         * @description Batch size and price, loan period and how often a loan can be extended.
+         */
+        get: operations["library_rules_api_v1_library_rules_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -868,6 +908,22 @@ export interface components {
             /** Database */
             database?: string | null;
         };
+        /**
+         * LibraryRules
+         * @description Lending rules every reader may know (GET /library/rules).
+         */
+        LibraryRules: {
+            /** Books Per Batch */
+            books_per_batch: number;
+            /** Price Per Batch */
+            price_per_batch: string;
+            /** Currency */
+            currency: string;
+            /** Loan Period Days */
+            loan_period_days: number;
+            /** Max Renewals */
+            max_renewals: number;
+        };
         /** LibrarySettingsRead */
         LibrarySettingsRead: {
             /** Books Per Batch */
@@ -878,6 +934,8 @@ export interface components {
             currency: string;
             /** Loan Period Days */
             loan_period_days: number;
+            /** Max Renewals */
+            max_renewals: number;
             /**
              * Updated At
              * Format: date-time
@@ -894,6 +952,8 @@ export interface components {
             currency?: string | null;
             /** Loan Period Days */
             loan_period_days?: number | null;
+            /** Max Renewals */
+            max_renewals?: number | null;
         };
         /** LoginRequest */
         LoginRequest: {
@@ -997,6 +1057,8 @@ export interface components {
              * Format: date
              */
             due_date: string;
+            /** Renewal Count */
+            renewal_count: number;
             /** Confirmed At */
             confirmed_at: string | null;
             /** Returned At */
@@ -1903,6 +1965,64 @@ export interface operations {
             };
         };
     };
+    renew_my_order_api_v1_orders__order_id__renew_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderRead"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     cancel_my_order_api_v1_orders__order_id__cancel_post: {
         parameters: {
             query?: never;
@@ -1957,6 +2077,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    library_rules_api_v1_library_rules_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibraryRules"];
                 };
             };
         };

@@ -73,6 +73,8 @@ export interface Order {
   totalPrice: number;
   orderedAt: string;
   dueDate: string;
+  /** How often the customer has extended the loan. */
+  renewalCount?: number;
   confirmedAt?: string;
   returnedAt?: string;
   currency?: string;

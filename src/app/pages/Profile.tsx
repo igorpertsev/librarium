@@ -7,7 +7,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
-import { Calendar, Mail, User as UserIcon, BookOpen, Pencil, MessageCircle, Star, CheckCircle2, Clock } from 'lucide-react';
+import { Calendar, CalendarPlus, Mail, User as UserIcon, BookOpen, Pencil, MessageCircle, Star, CheckCircle2, Clock } from 'lucide-react';
 import { UserContacts, PreferredContact } from '../types';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
@@ -15,6 +15,8 @@ import { errorMessage } from '../utils/apiErrors';
 import { daysUntil, useFormat } from '../utils/format';
 import { useConfirm } from '../components/ConfirmDialog';
 import { orderLabel } from '../utils/translations';
+import { useLibraryRules } from '../utils/useLibraryRules';
+import type { Order } from '../types';
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -44,8 +46,10 @@ const CONTACT_FIELDS: { key: PreferredContact; labelKey: string; placeholder: st
 export default function Profile() {
   const { t } = useTranslation();
   const { user, updateUser, changePassword } = useAuth();
-  const { getOrdersForUser, cancelOrder } = useOrders();
+  const { getOrdersForUser, cancelOrder, renewOrder } = useOrders();
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [renewingId, setRenewingId] = useState<string | null>(null);
+  const rules = useLibraryRules();
   const fmt = useFormat();
   const { confirm, confirmDialog } = useConfirm();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -77,14 +81,26 @@ export default function Profile() {
     if (result.ok) toast.success(t('profile.requestCancelled'));
     else toast.error(errorMessage(t, result.error));
   };
-  const borrowedBooks = userOrders
-    .filter(o => o.status === 'confirmed')
-    .flatMap(o => o.books.map(book => ({
-      bookId: book.id,
-      book,
-      borrowedDate: o.confirmedAt || o.orderedAt,
-      returnDate: o.dueDate,
-    })));
+  const borrowedOrders = userOrders.filter(o => o.status === 'confirmed');
+  const borrowedCount = borrowedOrders.reduce((sum, o) => sum + o.books.length, 0);
+  const borrowedBooks = borrowedOrders.flatMap(o => o.books.map(book => ({
+    bookId: book.id,
+    book,
+    borrowedDate: o.confirmedAt || o.orderedAt,
+    returnDate: o.dueDate,
+  })));
+
+  // The server has the final say; this only decides whether to offer the button.
+  const canRenew = (order: Order) =>
+    rules !== null && (order.renewalCount ?? 0) < rules.maxRenewals && daysUntil(order.dueDate) >= 0;
+
+  const handleRenew = async (order: Order) => {
+    setRenewingId(order.id);
+    const result = await renewOrder(order.id);
+    setRenewingId(null);
+    if (result.ok) toast.success(t('profile.loanExtended', { date: fmt.date(result.data.dueDate) }));
+    else toast.error(errorMessage(t, result.error));
+  };
   const returnedBooks = userOrders
     .filter(o => o.status === 'returned')
     .flatMap(o => o.books.map(book => ({
@@ -294,39 +310,59 @@ export default function Profile() {
           <CardDescription>{t('profile.booksToReturn')}</CardDescription>
         </CardHeader>
         <CardContent>
-          {borrowedBooks.length === 0 ? (
+          {borrowedCount === 0 ? (
             <div className="text-center py-8 text-muted-foreground">{t('profile.noBorrowedBooks')}</div>
           ) : (
-            <div className="space-y-4">
-              {borrowedBooks.map((borrowed) => {
-                const daysLeft = getDaysUntilReturn(borrowed.returnDate);
-                const overdue = isOverdue(borrowed.returnDate);
+            <div className="space-y-6">
+              {borrowedOrders.map((order) => {
+                const daysLeft = getDaysUntilReturn(order.dueDate);
+                const overdue = isOverdue(order.dueDate);
+                const renewalsLeft = rules ? Math.max(rules.maxRenewals - (order.renewalCount ?? 0), 0) : 0;
                 return (
-                  <div key={borrowed.bookId} className="flex gap-4 p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                    <div className="w-16 h-24 flex-shrink-0 overflow-hidden rounded bg-muted">
-                      <img src={borrowed.book.coverImage} alt={borrowed.book.title} className="w-full h-full object-cover" />
+                  <section key={order.id} aria-label={orderLabel(order)} className="space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex flex-wrap items-center gap-2 text-sm">
+                        <span className="font-medium">{orderLabel(order)}</span>
+                        <span className="text-muted-foreground">{t('profile.returnBy')}: {fmt.date(order.dueDate)}</span>
+                        {overdue ? (
+                          <Badge variant="destructive">{t('profile.overdueBy')} {Math.abs(daysLeft)} {t('myBooks.days')}</Badge>
+                        ) : daysLeft <= 3 ? (
+                          <Badge className="bg-amber-700">{t('profile.dueIn')} {daysLeft} {t('myBooks.days')}</Badge>
+                        ) : (
+                          <Badge className="bg-green-700">{daysLeft} {t('profile.daysLeft')}</Badge>
+                        )}
+                      </div>
+                      {canRenew(order) ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={renewingId === order.id}
+                          onClick={() => handleRenew(order)}
+                          title={t('profile.renewalsLeft', { count: renewalsLeft })}
+                        >
+                          <CalendarPlus className="w-4 h-4 mr-2" aria-hidden="true" />
+                          {t('profile.extendLoan', { count: rules?.loanPeriodDays ?? 0 })}
+                        </Button>
+                      ) : (order.renewalCount ?? 0) > 0 ? (
+                        <span className="text-xs text-muted-foreground">{t('profile.loanAlreadyExtended')}</span>
+                      ) : null}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="truncate mb-1">{borrowed.book.title}</h3>
-                      <p className="text-sm text-muted-foreground mb-2">{borrowed.book.author}</p>
-                      <div className="flex flex-wrap gap-2">
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <Calendar className="w-4 h-4" />
-                          <span>{t('profile.borrowed')}: {fmt.date(borrowed.borrowedDate)}</span>
+                    {order.books.map((book) => (
+                      <div key={book.id} className="flex gap-4 p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                        <div className="w-16 h-24 flex-shrink-0 overflow-hidden rounded bg-muted">
+                          <img src={book.coverImage} alt={book.title} className="w-full h-full object-cover" />
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-muted-foreground">{t('profile.returnBy')}: {fmt.date(borrowed.returnDate)}</span>
-                          {overdue ? (
-                            <Badge variant="destructive">{t('profile.overdueBy')} {Math.abs(daysLeft)} {t('myBooks.days')}</Badge>
-                          ) : daysLeft <= 3 ? (
-                            <Badge className="bg-amber-700">{t('profile.dueIn')} {daysLeft} {t('myBooks.days')}</Badge>
-                          ) : (
-                            <Badge className="bg-green-700">{daysLeft} {t('profile.daysLeft')}</Badge>
-                          )}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="truncate mb-1">{book.title}</h3>
+                          <p className="text-sm text-muted-foreground mb-2">{book.author}</p>
+                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <Calendar className="w-4 h-4" />
+                            <span>{t('profile.borrowed')}: {fmt.date(order.confirmedAt || order.orderedAt)}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
+                    ))}
+                  </section>
                 );
               })}
             </div>

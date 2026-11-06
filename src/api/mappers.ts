@@ -192,6 +192,7 @@ export function orderFromDto(dto: OrderDto): Order {
     currency: dto.currency,
     orderedAt: dto.created_at,
     dueDate: dto.due_date,
+    renewalCount: dto.renewal_count,
     confirmedAt: dto.confirmed_at ?? undefined,
     returnedAt: dto.returned_at ?? undefined,
     contacts: {

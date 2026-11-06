@@ -260,6 +260,11 @@ refresh (нет цикла); при неудаче auth-состояние оч�
   библиотеки, админ-карточка «Batch Configuration»). В заказ попадают полные партии в порядке
   добавления; книги неполной последней партии остаются в корзине.
 
+**Продление выдачи**: `POST /orders/{id}/renew` переносит срок возврата выданного (`confirmed`) заказа на
+`loan_period_days`, не более `max_renewals` раз на заказ (настройки библиотеки, по умолчанию 1; 0 — продление
+отключено) и никогда после просрочки (`409 RENEWAL_NOT_ALLOWED`, `details.reason`). Уже отправленные напоминания
+о старом сроке удаляются, поэтому перед новым сроком читатель получит напоминание снова.
+
 `POST /api/v1/orders` выполняется в одной транзакции (`app/services/orders.py`):
 
 1. `SELECT … FOR UPDATE` строки корзины (защита от двойного клика/двух вкладок);
@@ -309,7 +314,8 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 | GET | `/auth/me`, `/users/me` · PATCH `/users/me` · POST `/auth/change-password` | пользователь |
 | GET | `/books?q&category&age_range&available&sort&page&page_size`, `/books/age-ranges`, `/books/{id}` | все |
 | GET/DELETE | `/cart` · POST `/cart/items` · DELETE `/cart/items/{book_id}` | пользователь |
-| POST/GET | `/orders` · GET `/orders/{id}` · POST `/orders/{id}/cancel` | пользователь (только свои) |
+| POST/GET | `/orders` · GET `/orders/{id}` · POST `/orders/{id}/cancel`, `/orders/{id}/renew` | пользователь (только свои) |
+| GET | `/library/rules` (размер и цена партии, срок выдачи, число продлений) | все |
 | GET/POST | `/admin/books`, GET `/admin/books/stats`, GET/PATCH/DELETE `/admin/books/{id}` | admin |
 | GET | `/admin/users` · PATCH `/admin/users/{id}` (роль, блокировка) | admin |
 | GET | `/admin/orders`, `/admin/orders/{id}` · PATCH `/admin/orders/{id}/status`, `/admin/orders/{id}/due-date` | admin |

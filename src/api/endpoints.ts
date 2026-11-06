@@ -13,6 +13,7 @@ import type {
   BookUpdateDto,
   CartDto,
   ChangePasswordDto,
+  LibraryRulesDto,
   LibrarySettingsDto,
   LibrarySettingsUpdateDto,
   LoginDto,
@@ -65,6 +66,12 @@ export const ordersApi = {
   get: (orderId: string) => apiRequest<OrderDto>(`/orders/${id(orderId)}`),
   cancel: (orderId: string) =>
     apiRequest<OrderDto>(`/orders/${id(orderId)}/cancel`, { method: 'POST' }),
+  renew: (orderId: string) =>
+    apiRequest<OrderDto>(`/orders/${id(orderId)}/renew`, { method: 'POST' }),
+};
+
+export const libraryApi = {
+  rules: () => apiRequest<LibraryRulesDto>('/library/rules', { auth: false }),
 };
 
 export const adminApi = {
