@@ -25,6 +25,7 @@ export function bookDto(overrides: Partial<BookDto> = {}): BookDto {
     tags: [],
     series: null,
     series_position: null,
+    translations: [],
     created_at: '2026-11-01T10:00:00Z',
     updated_at: '2026-11-01T10:00:00Z',
     ...overrides,

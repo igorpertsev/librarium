@@ -49,6 +49,10 @@ export type SeriesDto = Schemas['SeriesRead'];
 export type SeriesCreateDto = Schemas['SeriesCreate'];
 export type SeriesUpdateDto = Schemas['SeriesUpdate'];
 export type LookupSeriesDto = Schemas['LookupSeries'];
+export type BookTranslationDto = Schemas['BookTranslationRead'];
+export type BookTranslationInDto = Schemas['BookTranslationIn'];
+export type TranslationSuggestRequestDto = Schemas['TranslationSuggestRequest'];
+export type TranslationSuggestionDto = Schemas['TranslationSuggestion'];
 
 export type BookListQuery = NonNullable<paths['/api/v1/books']['get']['parameters']['query']>;
 export type AdminBookListQuery = NonNullable<

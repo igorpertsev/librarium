@@ -29,6 +29,9 @@ x-backend-env: &backend-env
   SMTP_PASSWORD: ${SMTP_PASSWORD:-}
   MAIL_FROM: ${MAIL_FROM:-Little Dragon Library <no-reply@little-dragon.test>}
   APP_BASE_URL: ${APP_BASE_URL:-http://localhost:5173}
+  # Optional: machine translation of book descriptions (see .env.example).
+  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+  TRANSLATION_MODEL: ${TRANSLATION_MODEL:-claude-opus-5-5}
 
 services:
   db:

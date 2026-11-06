@@ -2,16 +2,18 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Sequence
+from typing import Any
 
 from sqlalchemy import case, delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError
-from app.models import Book, CartItem, Series
+from app.models import Book, BookTranslation, CartItem, Series
 from app.models.enums import BookStatus
 from app.repositories import books as books_repo
 from app.repositories.books import BookFilters
 from app.schemas.book import BookCreate, BookRead, BookSort, BookStats, BookUpdate
+from app.schemas.translation import BookTranslationIn
 from app.services import catalog, waitlist
 
 
@@ -37,7 +39,23 @@ SHARED_FIELDS = frozenset(
     }
 )
 # Request fields that are not columns: resolved into tags and series_id.
-_LINK_FIELDS = frozenset({"tags", "series_name", "series_openlibrary_key"})
+_LINK_FIELDS = frozenset({"tags", "series_name", "series_openlibrary_key", "translations"})
+
+
+def translation_rows(items: Sequence[BookTranslationIn | BookTranslation]) -> list[BookTranslation]:
+    """New rows (one book's) from request data or from another copy's translations."""
+    return [
+        BookTranslation(
+            language=item.language,
+            title=item.title,
+            author=item.author,
+            description=item.description,
+            title_source=item.title_source,
+            description_source=item.description_source,
+            source_url=item.source_url,
+        )
+        for item in items
+    ]
 
 
 async def _resolve_series_id(
@@ -71,6 +89,7 @@ async def new_book(session: AsyncSession, data: BookCreate) -> Book:
     if book.series_id is None:
         book.series_position = None
     book.tags = await catalog.resolve_tags(session, data.tags)
+    book.translations = translation_rows(data.translations)
     session.add(book)
     return book
 
@@ -127,6 +146,8 @@ async def update_book(session: AsyncSession, book_id: uuid.UUID, patch: BookUpda
         raise book_not_found()
     changes = patch.changes()
     tags = changes.pop("tags", None)
+    translations = patch.translations if "translations" in changes else None
+    changes.pop("translations", None)
     series_name = changes.pop("series_name", None)
     openlibrary_key = changes.pop("series_openlibrary_key", None)
     if "series_id" in changes or series_name:
@@ -146,27 +167,54 @@ async def update_book(session: AsyncSession, book_id: uuid.UUID, patch: BookUpda
         )
     if tags is not None:
         book.tags = await catalog.resolve_tags(session, tags)
+    if translations is not None:
+        await _replace_translations(session, book, translations)
 
-    # The other copies of the title get the same catalogue data.
     if book.copy_group_id is not None:
-        shared = {field: value for field, value in changes.items() if field in SHARED_FIELDS}
-        if shared:
-            await session.execute(
-                update(Book)
-                .where(Book.copy_group_id == book.copy_group_id, Book.id != book.id)
-                .values(**shared)
-            )
-        if tags is not None:
-            others = await session.scalars(
-                select(Book).where(Book.copy_group_id == book.copy_group_id, Book.id != book.id)
-            )
-            for copy in others:
-                copy.tags = list(book.tags)
+        await _update_other_copies(
+            session, book, changes, translations, tags_changed=tags is not None
+        )
     if book.status is BookStatus.AVAILABLE:
         await waitlist.notify_waiting_readers(session, [book.id])
     await session.commit()
     # Existing orders keep their snapshot; only the catalogue entry changes.
     return await get_book(session, book_id)
+
+
+async def _update_other_copies(
+    session: AsyncSession,
+    book: Book,
+    changes: dict[str, Any],
+    translations: Sequence[BookTranslationIn] | None,
+    *,
+    tags_changed: bool,
+) -> None:
+    """The other copies of the title get the same catalogue data."""
+    shared = {field: value for field, value in changes.items() if field in SHARED_FIELDS}
+    if shared:
+        await session.execute(
+            update(Book)
+            .where(Book.copy_group_id == book.copy_group_id, Book.id != book.id)
+            .values(**shared)
+        )
+    if tags_changed or translations is not None:
+        others = await session.scalars(
+            select(Book).where(Book.copy_group_id == book.copy_group_id, Book.id != book.id)
+        )
+        for copy in others:
+            if tags_changed:
+                copy.tags = list(book.tags)
+            if translations is not None:
+                await _replace_translations(session, copy, translations)
+
+
+async def _replace_translations(
+    session: AsyncSession, book: Book, items: Sequence[BookTranslationIn]
+) -> None:
+    # Delete first: the new rows have the same primary key (book, language).
+    book.translations = []
+    await session.flush()
+    book.translations = translation_rows(items)
 
 
 async def add_copies(session: AsyncSession, book_id: uuid.UUID, count: int) -> list[BookRead]:
@@ -182,6 +230,7 @@ async def add_copies(session: AsyncSession, book_id: uuid.UUID, count: int) -> l
             copy_group_id=book.copy_group_id,
             status=BookStatus.AVAILABLE,
             tags=list(book.tags),
+            translations=translation_rows(book.translations),
             **{field: getattr(book, field) for field in SHARED_FIELDS},
         )
         for _ in range(count)

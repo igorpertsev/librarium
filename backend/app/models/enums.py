@@ -71,6 +71,15 @@ class UiLanguage(StrEnum):
     RU = "ru"
 
 
+class TranslationSource(StrEnum):
+    """Where a translated title or description came from."""
+
+    MANUAL = "manual"  # typed or checked by a librarian
+    WIKIDATA = "wikidata"  # the official name of the work in that language
+    WIKIPEDIA = "wikipedia"  # the summary of the Wikipedia article (CC BY-SA, keep the link)
+    MACHINE = "machine"  # machine translation, not yet checked
+
+
 class NotificationKind(StrEnum):
     ORDER_RECEIVED = "order_received"  # the customer placed an order
     ORDER_CONFIRMED = "order_confirmed"  # books handed over, due date known

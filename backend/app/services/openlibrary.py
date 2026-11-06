@@ -46,6 +46,7 @@ class BookDetails:
 
 
 _SERIES_KEY = re.compile(r"^/series/(OL\d+L)$")
+_WORK_KEY = re.compile(r"^/works/(OL\d+W)$")
 _SERIES_TEXT = re.compile(
     r"^(?P<name>.*?)[\s,;:#(-]*(?:\b(?:bk|book|vol|volume|no|v|t|т|том|кн|книга)\b\.?\s*)?"
     r"(?P<number>\d+(?:\.\d+)?)\)?\s*$",
@@ -157,6 +158,17 @@ class OpenLibraryClient:
             cover_url=f"https://covers.openlibrary.org/b/id/{covers[0]}-L.jpg" if covers else None,
             language=_LANGUAGES.get(language_key.rsplit("/", 1)[-1]),
         )
+
+    async def work_key(self, isbn: str) -> str | None:
+        """Open Library ID of the work an edition belongs to ("OL82563W"), if known."""
+        normalized = normalize_isbn(isbn)
+        if normalized is None:
+            return None
+        edition = await self._get_json(f"/isbn/{normalized}.json")
+        works = edition.get("works") if isinstance(edition, dict) else None
+        key = works[0].get("key") if works and isinstance(works[0], dict) else None
+        match = _WORK_KEY.match(key) if isinstance(key, str) else None
+        return match.group(1) if match else None
 
     async def _series(
         self, edition: dict[str, Any], work: dict[str, Any]

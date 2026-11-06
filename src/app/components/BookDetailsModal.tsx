@@ -15,6 +15,7 @@ import { useFormat } from '../utils/format';
 import { errorMessage } from '../utils/apiErrors';
 import { WaitlistButton } from './WaitlistButton';
 import { SeriesLink, TagChips } from './CatalogFilters';
+import { useBookLanguageName, useBookText } from '../utils/bookText';
 
 interface BookDetailsModalProps {
   book: Book | null;
@@ -35,6 +36,9 @@ export function BookDetailsModal({ book, open, onOpenChange }: BookDetailsModalP
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, dragFree: false });
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isZoomed, setIsZoomed] = useState(false);
+  const textOf = useBookText();
+  const languageNameOf = useBookLanguageName();
+  const [showOriginal, setShowOriginal] = useState(false);
   const [zoomScale, setZoomScale] = useState(1);
 
   const scrollPrev = useCallback(() => {
@@ -111,13 +115,24 @@ export function BookDetailsModal({ book, open, onOpenChange }: BookDetailsModalP
   };
 
   if (!book) return null;
+  const text = textOf(book);
+  const languageName = languageNameOf(book.language);
+  const translation = text.translation;
+  const description = showOriginal ? book.description : text.description;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-6xl max-h-[90vh] overflow-y-auto p-4 sm:p-8">
         <DialogHeader>
-          <DialogTitle className="text-xl sm:text-3xl">{book.title}</DialogTitle>
-          <DialogDescription className="text-sm sm:text-lg">{t('bookDetails.byAuthor', { author: book.author })}</DialogDescription>
+          <DialogTitle className="text-xl sm:text-3xl">{text.title}</DialogTitle>
+          <DialogDescription className="text-sm sm:text-lg">{t('bookDetails.byAuthor', { author: text.author })}</DialogDescription>
+          {text.originalTitle && (
+            <p className="text-sm text-muted-foreground">
+              {t('translation.originalTitleLabel')}{' '}
+              <span lang={book.language ?? undefined}>{text.originalTitle}</span>
+              {text.originalAuthor && <span lang={book.language ?? undefined}> — {text.originalAuthor}</span>}
+            </p>
+          )}
         </DialogHeader>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
@@ -132,7 +147,7 @@ export function BookDetailsModal({ book, open, onOpenChange }: BookDetailsModalP
                     <div key={index} className="flex-[0_0_100%] min-w-0">
                       <img
                         src={image}
-                        alt={t('bookDetails.imageAlt', { title: book.title, n: index + 1 })}
+                        alt={t('bookDetails.imageAlt', { title: text.title, n: index + 1 })}
                         className="w-full h-full object-cover select-none"
                         draggable={false}
                       />
@@ -202,6 +217,11 @@ export function BookDetailsModal({ book, open, onOpenChange }: BookDetailsModalP
               {getStatusBadge()}
               <Badge variant="outline" className="text-xs sm:text-base px-2 sm:px-4 py-0.5 sm:py-1.5">{getCategoryTranslation(t, book.category)}</Badge>
               <Badge variant="outline" className="text-xs sm:text-base px-2 sm:px-4 py-0.5 sm:py-1.5">{book.ageRange}</Badge>
+              {languageName && (
+                <Badge variant="outline" className="text-xs sm:text-base px-2 sm:px-4 py-0.5 sm:py-1.5">
+                  {t('translation.bookLanguage', { language: languageName })}
+                </Badge>
+              )}
             </div>
             {(book.series || (book.tags?.length ?? 0) > 0) && (
               <div className="space-y-2">
@@ -226,7 +246,45 @@ export function BookDetailsModal({ book, open, onOpenChange }: BookDetailsModalP
 
             <div>
               <h3 className="mb-2 sm:mb-4 text-base sm:text-xl">{t('bookDetails.description')}</h3>
-              <p className="text-muted-foreground leading-relaxed text-sm sm:text-base">{book.description}</p>
+              <p
+                className="text-muted-foreground leading-relaxed text-sm sm:text-base"
+                lang={showOriginal || !text.descriptionTranslated ? book.language ?? undefined : translation?.language}
+              >
+                {description}
+              </p>
+              {text.descriptionTranslated && translation && (
+                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                  {!showOriginal && translation.descriptionSource === 'wikipedia' && translation.sourceUrl && (
+                    <span>
+                      {t('translation.source')}{' '}
+                      <a
+                        href={translation.sourceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline underline-offset-2 hover:text-foreground"
+                      >
+                        {t('translation.wikipedia')}
+                      </a>{' '}
+                      (CC BY-SA)
+                    </span>
+                  )}
+                  {!showOriginal && translation.descriptionSource === 'machine' && (
+                    <span>{t('translation.machineDescription')}</span>
+                  )}
+                  {book.description && (
+                    <button
+                      type="button"
+                      onClick={() => setShowOriginal((value) => !value)}
+                      className="underline underline-offset-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+                    >
+                      {showOriginal ? t('translation.showTranslation') : t('translation.showOriginal')}
+                    </button>
+                  )}
+                </div>
+              )}
+              {translation?.titleSource === 'machine' && (
+                <p className="mt-1 text-xs text-muted-foreground">{t('translation.machineTitle')}</p>
+              )}
             </div>
 
             <Separator />
@@ -236,7 +294,7 @@ export function BookDetailsModal({ book, open, onOpenChange }: BookDetailsModalP
                 <BookOpen className="w-4 h-4 sm:w-6 sm:h-6 text-muted-foreground" />
                 <div>
                   <p className="text-xs sm:text-sm text-muted-foreground mb-0.5 sm:mb-1">{t('bookDetails.author')}</p>
-                  <p className="text-sm sm:text-lg">{book.author}</p>
+                  <p className="text-sm sm:text-lg">{text.author}</p>
                 </div>
               </div>
 
@@ -271,7 +329,7 @@ export function BookDetailsModal({ book, open, onOpenChange }: BookDetailsModalP
             {(isOrderedByOther || book.status !== 'available') && !isPending && (
               <div className="flex flex-col items-center gap-2 text-center">
                 <p className="text-sm text-muted-foreground">{t('waitlist.explain')}</p>
-                <WaitlistButton bookId={book.id} groupId={book.groupId} title={book.title} withLabel />
+                <WaitlistButton bookId={book.id} groupId={book.groupId} title={text.title} withLabel />
               </div>
             )}
           </div>
@@ -289,7 +347,7 @@ export function BookDetailsModal({ book, open, onOpenChange }: BookDetailsModalP
               >
                 <img
                   src={images[selectedIndex]}
-                  alt={t('bookDetails.zoomedAlt', { title: book.title, n: selectedIndex + 1 })}
+                  alt={t('bookDetails.zoomedAlt', { title: text.title, n: selectedIndex + 1 })}
                   className="max-w-none transition-transform duration-200 cursor-zoom-in"
                   style={{ transform: `scale(${zoomScale})` }}
                   onClick={(e) => {

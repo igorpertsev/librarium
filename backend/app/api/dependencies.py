@@ -19,6 +19,7 @@ from app.models.enums import UserRole
 from app.services.auth import ClientMeta
 from app.services.notifications import Sender
 from app.services.openlibrary import OpenLibraryClient
+from app.services.translation_lookup import TranslationLookup
 
 
 def get_settings_dep(request: Request) -> Settings:
@@ -49,9 +50,15 @@ def get_openlibrary(request: Request) -> OpenLibraryClient:
     return client
 
 
+def get_translation_lookup(request: Request) -> TranslationLookup:
+    lookup: TranslationLookup = request.app.state.translation_lookup
+    return lookup
+
+
 SettingsDep = Annotated[Settings, Depends(get_settings_dep)]
 MailSenderDep = Annotated[Sender | None, Depends(get_mail_sender)]
 OpenLibraryDep = Annotated[OpenLibraryClient, Depends(get_openlibrary)]
+TranslationLookupDep = Annotated[TranslationLookup, Depends(get_translation_lookup)]
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 RateLimiterDep = Annotated[RateLimiter, Depends(get_rate_limiter)]
 

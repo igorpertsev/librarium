@@ -36,6 +36,8 @@ import type {
   TagDto,
   TagUpdateDto,
   TokenResponseDto,
+  TranslationSuggestRequestDto,
+  TranslationSuggestionDto,
   UserDto,
   UserUpdateDto,
   WaitlistEntryDto,
@@ -128,6 +130,8 @@ export const adminApi = {
     apiRequest<BookDto>(`/admin/books/${id(bookId)}`, { method: 'PATCH', body }),
   deleteBook: (bookId: string) =>
     apiRequest<void>(`/admin/books/${id(bookId)}`, { method: 'DELETE' }),
+  suggestTranslation: (body: TranslationSuggestRequestDto) =>
+    apiRequest<TranslationSuggestionDto>('/admin/translations/suggest', { method: 'POST', body }),
   createTag: (body: TagCreateDto) => apiRequest<TagDto>('/admin/tags', { method: 'POST', body }),
   updateTag: (tagId: string, body: TagUpdateDto) =>
     apiRequest<TagDto>(`/admin/tags/${id(tagId)}`, { method: 'PATCH', body }),

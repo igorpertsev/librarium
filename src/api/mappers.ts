@@ -17,6 +17,7 @@ import type {
   Book,
   BookStatus,
   BookTag,
+  BookTranslation,
   BorrowedBook,
   CartItem,
   Order,
@@ -30,6 +31,8 @@ import type {
   BookBriefDto,
   BookCreateDto,
   BookDto,
+  BookTranslationDto,
+  BookTranslationInDto,
   CartDto,
   LibrarySettingsDto,
   OrderDto,
@@ -55,6 +58,18 @@ export function tagFromDto(dto: TagBriefDto): BookTag {
   return { slug: dto.slug, nameEn: dto.name_en, nameRu: dto.name_ru };
 }
 
+export function translationFromDto(dto: BookTranslationDto): BookTranslation {
+  return {
+    language: dto.language,
+    title: dto.title,
+    author: dto.author,
+    description: dto.description,
+    titleSource: dto.title_source,
+    descriptionSource: dto.description_source,
+    sourceUrl: dto.source_url,
+  };
+}
+
 export function bookFromDto(dto: BookDto | BookBriefDto): Book {
   const book: Book = {
     id: dto.id,
@@ -73,6 +88,7 @@ export function bookFromDto(dto: BookDto | BookBriefDto): Book {
     tags: dto.tags.map(tagFromDto),
     series: dto.series,
     seriesPosition: dto.series_position,
+    translations: dto.translations.map(translationFromDto),
   };
   if ('is_reserved' in dto) {
     book.isReserved = dto.is_reserved;
@@ -102,6 +118,10 @@ export interface BookFormValues {
   seriesPosition: number | null;
   /** Open Library series key from an ISBN lookup, so later editions find the same series. */
   seriesOpenlibraryKey?: string | null;
+  /** ISO 639-1 code of the book's own language; '' when unknown. */
+  language: string;
+  /** Translations into the interface languages; one without a title is dropped. */
+  translations: BookTranslation[];
 }
 
 export function bookFormToDto(form: BookFormValues): BookCreateDto {
@@ -121,7 +141,24 @@ export function bookFormToDto(form: BookFormValues): BookCreateDto {
     publication_year: Number.isFinite(form.publishedYear) ? form.publishedYear : null,
     tags: form.tags,
     ...seriesToDto(form),
+    language: form.language.trim() || null,
+    translations: translationsToDto(form),
   };
+}
+
+function translationsToDto(form: BookFormValues): BookTranslationInDto[] {
+  return form.translations
+    // A "translation" into the book's own language would only hide its real text.
+    .filter((item) => item.title.trim() && item.language !== form.language)
+    .map((item) => ({
+      language: item.language,
+      title: item.title.trim(),
+      author: item.author.trim(),
+      description: item.description.trim(),
+      title_source: item.titleSource,
+      description_source: item.description.trim() ? item.descriptionSource : 'manual',
+      source_url: item.description.trim() ? item.sourceUrl : null,
+    }));
 }
 
 function seriesToDto(form: BookFormValues): Pick<

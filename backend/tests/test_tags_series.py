@@ -304,3 +304,5 @@ async def test_demo_books_come_with_tags_and_series(
     ).json()["items"]
     assert [b["series_position"] for b in in_order] == [1.0, 2.0, 3.0]
     assert await _titles(client, tags="dystopia") == ["1984", "Catching Fire", "The Hunger Games"]
+    # Demo books come with Russian titles, which search finds.
+    assert await _titles(client, q="пересмешника") == ["To Kill a Mockingbird"]

@@ -10,6 +10,7 @@ from app.models.base import Base, TimestampMixin, str_enum, uuid_pk
 from app.models.enums import BookCategory, BookStatus
 from app.models.series import Series
 from app.models.tag import Tag, book_tags
+from app.models.translation import BookTranslation
 
 # "simple" configuration: no stemming, so it treats English and Russian text alike.
 SEARCH_VECTOR_SQL = (
@@ -87,6 +88,11 @@ class Book(TimestampMixin, Base):
     # Loaded together with the book (one extra query per batch of books).
     tags: Mapped[list[Tag]] = relationship(secondary=book_tags, lazy="selectin", order_by=Tag.slug)
     series: Mapped[Series | None] = relationship(lazy="selectin")
+    translations: Mapped[list[BookTranslation]] = relationship(
+        lazy="selectin",
+        cascade="all, delete-orphan",
+        order_by=BookTranslation.language,
+    )
 
     @property
     def group_id(self) -> uuid.UUID:

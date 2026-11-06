@@ -8,10 +8,10 @@ test('the librarian adds, edits and deletes a book', async ({ page }) => {
 
   await page.getByRole('button', { name: 'Add New Book' }).click();
   const form = page.getByRole('dialog');
-  await form.getByLabel('Title').fill(title);
-  await form.getByLabel('Author').fill('Ada Author');
+  await form.getByLabel('Title', { exact: true }).fill(title);
+  await form.getByLabel('Author', { exact: true }).fill('Ada Author');
   await form.getByLabel('Age Range').fill('10+');
-  await form.getByLabel('Description').fill('Written by the browser tests.');
+  await form.getByLabel('Description', { exact: true }).fill('Written by the browser tests.');
   await form.getByRole('button', { name: 'Add Book' }).click();
   await expect(page.getByText('Book added successfully')).toBeVisible();
 
@@ -19,7 +19,7 @@ test('the librarian adds, edits and deletes a book', async ({ page }) => {
   await expect(row).toContainText('Ada Author');
 
   await row.getByRole('button', { name: `Edit “${title}”` }).click();
-  await form.getByLabel('Author').fill('Ada Editor');
+  await form.getByLabel('Author', { exact: true }).fill('Ada Editor');
   await form.getByRole('button', { name: 'Save Changes' }).click();
   await expect(row).toContainText('Ada Editor');
 

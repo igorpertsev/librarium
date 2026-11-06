@@ -558,6 +558,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/translations/suggest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Admin Suggest Translation
+         * @description Title, author and description of a book in another interface language, for the librarian to review: the official name of the work from Wikidata (found by the ISBN's Open Library work), the Wikipedia summary (keep source_url for attribution), and machine translation of what is still missing when it is set up (machine_available). Saves nothing.
+         */
+        post: operations["admin_suggest_translation_api_v1_admin_translations_suggest_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/isbn/{isbn}": {
         parameters: {
             query?: never;
@@ -1058,6 +1078,11 @@ export interface components {
              * @description Volume number within the series
              */
             series_position: number | null;
+            /**
+             * Translations
+             * @description Title, author and description in the other interface languages
+             */
+            translations: components["schemas"]["BookTranslationRead"][];
             /** Is Active */
             is_active: boolean;
         };
@@ -1111,6 +1136,8 @@ export interface components {
             series_openlibrary_key?: string | null;
             /** Series Position */
             series_position?: number | null;
+            /** Translations */
+            translations?: components["schemas"]["BookTranslationIn"][];
         };
         /** BookImportError */
         BookImportError: {
@@ -1208,6 +1235,11 @@ export interface components {
              * @description Volume number within the series
              */
             series_position: number | null;
+            /**
+             * Translations
+             * @description Title, author and description in the other interface languages
+             */
+            translations: components["schemas"]["BookTranslationRead"][];
             /** Is Active */
             is_active: boolean;
             /**
@@ -1272,6 +1304,45 @@ export interface components {
          * @enum {string}
          */
         BookStatus: "available" | "available-soon" | "not-available";
+        /** BookTranslationIn */
+        BookTranslationIn: {
+            language: components["schemas"]["UiLanguage"];
+            /** Title */
+            title: string;
+            /**
+             * Author
+             * @default
+             */
+            author: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** @default manual */
+            title_source: components["schemas"]["TranslationSource"];
+            /** @default manual */
+            description_source: components["schemas"]["TranslationSource"];
+            /** Source Url */
+            source_url?: string | null;
+        };
+        /** BookTranslationRead */
+        BookTranslationRead: {
+            language: components["schemas"]["UiLanguage"];
+            /** Title */
+            title: string;
+            /** Author */
+            author: string;
+            /** Description */
+            description: string;
+            title_source: components["schemas"]["TranslationSource"];
+            description_source: components["schemas"]["TranslationSource"];
+            /**
+             * Source Url
+             * @description Wikipedia article the description comes from (CC BY-SA attribution)
+             */
+            source_url: string | null;
+        };
         /** BookUpdate */
         BookUpdate: {
             /** Title */
@@ -1310,6 +1381,11 @@ export interface components {
             series_openlibrary_key?: string | null;
             /** Series Position */
             series_position?: number | null;
+            /**
+             * Translations
+             * @description Replaces the translations
+             */
+            translations?: components["schemas"]["BookTranslationIn"][] | null;
         };
         /** CartItemCreate */
         CartItemCreate: {
@@ -1817,6 +1893,72 @@ export interface components {
             author: string;
             /** Loans */
             loans: number;
+        };
+        /**
+         * TranslationSource
+         * @description Where a translated title or description came from.
+         * @enum {string}
+         */
+        TranslationSource: "manual" | "wikidata" | "wikipedia" | "machine";
+        /**
+         * TranslationSuggestRequest
+         * @description The book as it is in the form; nothing is saved.
+         */
+        TranslationSuggestRequest: {
+            /** @description Language to find the title and description in */
+            target: components["schemas"]["UiLanguage"];
+            /** Title */
+            title: string;
+            /**
+             * Author
+             * @default
+             */
+            author: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Isbn */
+            isbn?: string | null;
+            /**
+             * Language
+             * @description Language of the book itself
+             */
+            language?: string | null;
+            /**
+             * Machine
+             * @description Machine-translate what Wikidata and Wikipedia do not have
+             * @default true
+             */
+            machine: boolean;
+        };
+        /**
+         * TranslationSuggestion
+         * @description What was found; empty fields were not found anywhere.
+         */
+        TranslationSuggestion: {
+            language: components["schemas"]["UiLanguage"];
+            /** Title */
+            title: string | null;
+            /** Author */
+            author: string | null;
+            /** Description */
+            description: string | null;
+            title_source: components["schemas"]["TranslationSource"] | null;
+            description_source: components["schemas"]["TranslationSource"] | null;
+            /** Source Url */
+            source_url: string | null;
+            /**
+             * Wikidata Id
+             * @description The Wikidata item of the work, e.g. Q183883
+             */
+            wikidata_id: string | null;
+            /**
+             * Machine Available
+             * @description Whether machine translation is set up
+             */
+            machine_available: boolean;
         };
         /**
          * UiLanguage
@@ -3367,6 +3509,57 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BookImportResult"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_suggest_translation_api_v1_admin_translations_suggest_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TranslationSuggestRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TranslationSuggestion"];
                 };
             };
             /** @description Unauthorized */

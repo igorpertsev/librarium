@@ -13,12 +13,14 @@ import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { errorMessage } from '../utils/apiErrors';
 import { useFormat } from '../utils/format';
+import { useBookText } from '../utils/bookText';
 import { useConfirm } from '../components/ConfirmDialog';
 import { useCatalog } from '../contexts/CatalogContext';
 import type { ActionResult } from '../../api/errors';
 
 export default function Cart() {
   const { t } = useTranslation();
+  const textOf = useBookText();
   const {
     cart,
     batchConfig,
@@ -164,13 +166,13 @@ export default function Cart() {
                         <div className="w-12 h-16 flex-shrink-0 overflow-hidden rounded bg-background">
                           <img
                             src={book.coverImage}
-                            alt={book.title}
+                            alt={textOf(book).title}
                             className="w-full h-full object-cover"
                           />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="truncate">{book.title}</p>
-                          <p className="text-sm text-muted-foreground truncate">{book.author}</p>
+                          <p className="truncate">{textOf(book).title}</p>
+                          <p className="text-sm text-muted-foreground truncate">{textOf(book).author}</p>
                           {unavailableBookIds.has(book.id) && (
                             <Badge variant="destructive" className="mt-1">{t('cart.unavailable')}</Badge>
                           )}
@@ -179,7 +181,7 @@ export default function Cart() {
                           variant="ghost"
                           size="sm"
                           onClick={() => removeBookFromCart(batch.batchId, book.id)}
-                          aria-label={t('a11y.removeFromCart', { title: book.title })}
+                          aria-label={t('a11y.removeFromCart', { title: textOf(book).title })}
                         >
                           <X className="w-4 h-4" />
                         </Button>
@@ -225,7 +227,7 @@ export default function Cart() {
                         >
                           <img
                             src={book.coverImage}
-                            alt={book.title}
+                            alt={textOf(book).title}
                             className={`w-full h-full object-cover ${unavailableBookIds.has(book.id) ? 'opacity-40' : ''}`}
                           />
                           {unavailableBookIds.has(book.id) && (
@@ -236,7 +238,7 @@ export default function Cart() {
                           <button
                             type="button"
                             onClick={() => removeBookFromCart(batch.batchId, book.id)}
-                            aria-label={t('a11y.removeFromCart', { title: book.title })}
+                            aria-label={t('a11y.removeFromCart', { title: textOf(book).title })}
                             className="absolute top-1 right-1 p-1 bg-destructive rounded-full opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
                           >
                             <X className="w-3 h-3 text-destructive-foreground" />

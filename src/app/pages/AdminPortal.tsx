@@ -18,6 +18,7 @@ import { useConfirm } from '../components/ConfirmDialog';
 import { LoanRulesSettings } from '../components/LoanRulesSettings';
 import { ReportsTab } from '../components/ReportsTab';
 import { BookCatalogFields } from '../components/BookCatalogFields';
+import { BookTranslationFields } from '../components/BookTranslationFields';
 import { TagsSeriesTab } from '../components/TagsSeriesTab';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
@@ -107,6 +108,8 @@ export default function AdminPortal() {
     seriesName: '',
     seriesPosition: null,
     seriesOpenlibraryKey: null,
+    language: '',
+    translations: [],
   });
 
   const resetForm = () => {
@@ -125,6 +128,8 @@ export default function AdminPortal() {
       seriesName: '',
       seriesPosition: null,
       seriesOpenlibraryKey: null,
+      language: '',
+      translations: [],
     });
   };
 
@@ -196,6 +201,8 @@ export default function AdminPortal() {
       seriesName: book.series?.name ?? '',
       seriesPosition: book.seriesPosition ?? null,
       seriesOpenlibraryKey: null,
+      language: book.language ?? '',
+      translations: book.translations ?? [],
     });
     setIsEditDialogOpen(true);
   };
@@ -657,6 +664,7 @@ function BookForm({ formData, setFormData, t }: {
               seriesOpenlibraryKey: details.series.openlibrary_key ?? null,
             }
           : {}),
+        language: formData.language || details.language || '',
         // Suggestions from the book's subjects; the librarian can remove any of them.
         tags: formData.tags.length > 0 ? formData.tags : details.suggested_tags.map((tag) => tag.slug),
       });
@@ -816,6 +824,8 @@ function BookForm({ formData, setFormData, t }: {
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
         />
       </div>
+
+      <BookTranslationFields value={formData} onChange={(changes) => setFormData({ ...formData, ...changes })} />
     </div>
   );
 }

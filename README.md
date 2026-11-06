@@ -118,6 +118,7 @@ Docker Compose and Vite read the root `.env` (template: `.env.example`). Filled-
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_STARTTLS`, `SMTP_SSL`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `MAIL_FROM` | empty / `587` / `true` / `false` | outgoing email; empty `SMTP_HOST` disables sending |
 | `APP_BASE_URL`, `DUE_SOON_DAYS` | `http://localhost:5173`, `3` | links in emails; reminder lead time in days |
 | `PASSWORD_RESET_EXPIRE_MINUTES` | `60` | lifetime of password reset links (5–1440) |
+| `ANTHROPIC_API_KEY`, `TRANSLATION_MODEL` | —, `claude-opus-5-5` | optional machine translation of book titles and descriptions when Wikidata and Wikipedia have none; without a key only those two are used |
 
 In production the app refuses to start with a missing/weak `JWT_SECRET_KEY`, `COOKIE_SECURE=false`
 or an `http://` origin in `FRONTEND_ORIGINS`.
@@ -175,7 +176,8 @@ The application never calls `metadata.create_all()`.
   an existing admin's password is only changed with `--reset-admin-password`;
 - `--demo-books` adds 19 books from `backend/app/seed_data/demo_books.json`, with tags and two series (*Harry Potter*,
   *The Hunger Games*); demo books loaded before tags existed get their tags and series unless they were edited since;
-  starter tags a librarian deleted are skipped; refuses to run in production;
+  starter tags a librarian deleted are skipped; every demo book has a Russian title, author and description
+  (added to demo books loaded earlier that have no translation); refuses to run in production;
 - `--refresh-demo-covers` (with `--demo-books`) updates the covers of demo books that already exist
   (the demo data uses real covers from Open Library);
 - ensures the library settings row exists. Running it again never duplicates anything.
@@ -369,6 +371,18 @@ two copies of the same title are two records (ISBN is not unique).
   Open Library key with the series so other editions find it, and suggests tags from the book's subjects. The
   catalogue shows the series on each card (link to the series), lists a series in volume order and can put every
   available volume into the cart (“Take the whole series”).
+- **Translations**: a book row keeps the text of the edition on the shelf; `translations` adds its title, author and
+  description in the other interface language (`book_translations`, one per language, the same on every copy). The
+  catalogue, the book dialog, the cart and the waiting list show the reader's language with the original title next
+  to it and a “Language: English” badge, and search finds books by their translated text too. In the book form,
+  “Find translation” (`POST /admin/translations/suggest`, nothing is saved) fills the empty fields: the official name
+  of the work and its authors from **Wikidata** (matched by the Open Library work of the ISBN, property P648, not by
+  title), the first paragraph of the **Wikipedia** article in that language (CC BY-SA: readers see a link to the
+  article), and, for what is still missing, **machine translation** with Claude when `ANTHROPIC_API_KEY` is set
+  (marked “Translated automatically” until a librarian edits it; a declined request falls back server-side to
+  Anthropic's recommended model). `python -m app.cli translate-books --to ru [--no-machine] [--limit 50]` does the
+  same for titles without a translation (pausing 1 s between titles); review the results in the admin portal.
+  Fantlab is not used: its API documentation states no terms for reusing its user-written texts.
 - The cart is not a reservation: the same book can sit in several users' carts; adding it checks
   availability, but the decisive check happens at checkout.
 - Pricing is per **batch**: `price_per_batch` for every complete set of `books_per_batch` books (library
@@ -410,6 +424,7 @@ Concurrency is covered by tests in which both requests are held at a barrier rig
 | `books` | one row per physical copy: `cover_url`, `image_urls[]`, `age_range`, `category`, `status` (`available/available-soon/not-available`), `language`, `publication_year`, `is_active` (soft delete), `copy_group_id` (copies of one title), `series_id` + `series_position` (CHECK > 0) |
 | `tags`, `book_tags` | tag `slug` (unique, CHECK format), `name_en`, `name_ru`; book ↔ tag link table |
 | `series` | `name` (unique), `description`, `openlibrary_key` (unique, from ISBN lookups) |
+| `book_translations` | per book and language (`en`/`ru`): `title`, `author`, `description`, `title_source`/`description_source` (`manual/wikidata/wikipedia/machine`), `source_url` (Wikipedia attribution) |
 | `library_settings` | single row: `books_per_batch`, `price_per_batch NUMERIC(10,2)`, `currency`, `loan_period_days`, `max_renewals` |
 | `carts`, `cart_items` | one cart per user, `UNIQUE(cart_id, book_id)` |
 | `waitlist_entries` | customer waiting for a book, `UNIQUE(user_id, book_id)` |
@@ -447,6 +462,7 @@ Differences (adapters in `src/api/mappers.ts`):
 | GET | `/admin/reports/summary`, `/admin/reports/orders.csv` (`date_from`, `date_to`; default last 30 days) | admin |
 | POST | `/admin/books/{id}/copies` (`{count}`: more copies of a title) | admin |
 | POST/PATCH/DELETE | `/admin/tags`, `/admin/tags/{id}` · POST `/admin/tags/{id}/merge`; the same for `/admin/series` | admin |
+| POST | `/admin/translations/suggest` (title, author and description in another language; saves nothing) | admin |
 | GET | `/admin/users` · PATCH `/admin/users/{id}` (role, disable) | admin |
 | GET | `/admin/orders`, `/admin/orders/{id}` · PATCH `/admin/orders/{id}/status`, `/admin/orders/{id}/due-date` | admin |
 | GET/PATCH | `/admin/settings` (batch size, price, currency, loan period) | admin |

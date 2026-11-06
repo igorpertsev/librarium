@@ -591,5 +591,35 @@
     "mergeSeriesDesc": "Its books move to the chosen series (keeping their numbers), then this series is deleted.",
     "mergeInto": "Merge into",
     "choose": "Choose…"
+  },
+  "translation": {
+    "originalTitleLabel": "Original title:",
+    "bookLanguage": "Language: {{language}}",
+    "source": "Source:",
+    "wikipedia": "Wikipedia",
+    "machineDescription": "Translated automatically",
+    "machineTitle": "The title was translated automatically.",
+    "showOriginal": "Show the original",
+    "showTranslation": "Show the translation"
+  },
+  "translationForm": {
+    "bookLanguage": "Language of the book",
+    "notSet": "Not specified",
+    "heading": "Translation into {{language}}",
+    "hint": "Readers who use the site in that language see this title and description, with the original title next to it.",
+    "find": "Find translation",
+    "clear": "Remove translation",
+    "title": "Translated title",
+    "author": "Translated author",
+    "description": "Translated description",
+    "sourceWikidata": "Wikidata",
+    "sourceWikipedia": "Wikipedia",
+    "sourceMachine": "Machine translation",
+    "found": "Translation filled in. Check it before saving.",
+    "checkMachine": "Parts of it are machine-translated: please read them through.",
+    "nothingEmpty": "The fields are already filled in. Clear a field to replace it.",
+    "notFound": "No translation found.",
+    "notFoundNoMachine": "No translation found in Wikidata or Wikipedia. Machine translation is not set up (ANTHROPIC_API_KEY).",
+    "wikipediaNote": "From Wikipedia (CC BY-SA); readers see a link to the article:"
   }
 }

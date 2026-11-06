@@ -2168,6 +2168,73 @@
         }
       }
     },
+    "/api/v1/admin/translations/suggest": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Suggest Translation",
+        "description": "Title, author and description of a book in another interface language, for the librarian to review: the official name of the work from Wikidata (found by the ISBN's Open Library work), the Wikipedia summary (keep source_url for attribution), and machine translation of what is still missing when it is set up (machine_available). Saves nothing.",
+        "operationId": "admin_suggest_translation_api_v1_admin_translations_suggest_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TranslationSuggestRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TranslationSuggestion"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/admin/isbn/{isbn}": {
       "get": {
         "tags": [
@@ -4639,6 +4706,14 @@
             "title": "Series Position",
             "description": "Volume number within the series"
           },
+          "translations": {
+            "items": {
+              "$ref": "#/components/schemas/BookTranslationRead"
+            },
+            "type": "array",
+            "title": "Translations",
+            "description": "Title, author and description in the other interface languages"
+          },
           "is_active": {
             "type": "boolean",
             "title": "Is Active"
@@ -4662,6 +4737,7 @@
           "tags",
           "series",
           "series_position",
+          "translations",
           "is_active"
         ],
         "title": "BookBrief",
@@ -4833,6 +4909,14 @@
               }
             ],
             "title": "Series Position"
+          },
+          "translations": {
+            "items": {
+              "$ref": "#/components/schemas/BookTranslationIn"
+            },
+            "type": "array",
+            "maxItems": 2,
+            "title": "Translations"
           }
         },
         "additionalProperties": false,
@@ -5148,6 +5232,14 @@
             "title": "Series Position",
             "description": "Volume number within the series"
           },
+          "translations": {
+            "items": {
+              "$ref": "#/components/schemas/BookTranslationRead"
+            },
+            "type": "array",
+            "title": "Translations",
+            "description": "Title, author and description in the other interface languages"
+          },
           "is_active": {
             "type": "boolean",
             "title": "Is Active"
@@ -5215,6 +5307,7 @@
           "tags",
           "series",
           "series_position",
+          "translations",
           "is_active",
           "is_reserved",
           "is_available",
@@ -5285,6 +5378,106 @@
         ],
         "title": "BookStatus",
         "description": "Status set by librarians. Reservation by orders is computed separately."
+      },
+      "BookTranslationIn": {
+        "properties": {
+          "language": {
+            "$ref": "#/components/schemas/UiLanguage"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "author": {
+            "type": "string",
+            "maxLength": 300,
+            "title": "Author",
+            "default": ""
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 10000,
+            "title": "Description",
+            "default": ""
+          },
+          "title_source": {
+            "$ref": "#/components/schemas/TranslationSource",
+            "default": "manual"
+          },
+          "description_source": {
+            "$ref": "#/components/schemas/TranslationSource",
+            "default": "manual"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2048
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "language",
+          "title"
+        ],
+        "title": "BookTranslationIn"
+      },
+      "BookTranslationRead": {
+        "properties": {
+          "language": {
+            "$ref": "#/components/schemas/UiLanguage"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "author": {
+            "type": "string",
+            "title": "Author"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "title_source": {
+            "$ref": "#/components/schemas/TranslationSource"
+          },
+          "description_source": {
+            "$ref": "#/components/schemas/TranslationSource"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url",
+            "description": "Wikipedia article the description comes from (CC BY-SA attribution)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "language",
+          "title",
+          "author",
+          "description",
+          "title_source",
+          "description_source",
+          "source_url"
+        ],
+        "title": "BookTranslationRead"
       },
       "BookUpdate": {
         "properties": {
@@ -5492,6 +5685,22 @@
               }
             ],
             "title": "Series Position"
+          },
+          "translations": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/BookTranslationIn"
+                },
+                "type": "array",
+                "maxItems": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Translations",
+            "description": "Replaces the translations"
           }
         },
         "additionalProperties": false,
@@ -6860,6 +7069,184 @@
           "loans"
         ],
         "title": "TopBookRead"
+      },
+      "TranslationSource": {
+        "type": "string",
+        "enum": [
+          "manual",
+          "wikidata",
+          "wikipedia",
+          "machine"
+        ],
+        "title": "TranslationSource",
+        "description": "Where a translated title or description came from."
+      },
+      "TranslationSuggestRequest": {
+        "properties": {
+          "target": {
+            "$ref": "#/components/schemas/UiLanguage",
+            "description": "Language to find the title and description in"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "author": {
+            "type": "string",
+            "maxLength": 300,
+            "title": "Author",
+            "default": ""
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 10000,
+            "title": "Description",
+            "default": ""
+          },
+          "isbn": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9Xx][0-9Xx\\- ]{8,30}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Isbn"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language",
+            "description": "Language of the book itself"
+          },
+          "machine": {
+            "type": "boolean",
+            "title": "Machine",
+            "description": "Machine-translate what Wikidata and Wikipedia do not have",
+            "default": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "target",
+          "title"
+        ],
+        "title": "TranslationSuggestRequest",
+        "description": "The book as it is in the form; nothing is saved."
+      },
+      "TranslationSuggestion": {
+        "properties": {
+          "language": {
+            "$ref": "#/components/schemas/UiLanguage"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "author": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "title_source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TranslationSource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "description_source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TranslationSource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          },
+          "wikidata_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wikidata Id",
+            "description": "The Wikidata item of the work, e.g. Q183883"
+          },
+          "machine_available": {
+            "type": "boolean",
+            "title": "Machine Available",
+            "description": "Whether machine translation is set up"
+          }
+        },
+        "type": "object",
+        "required": [
+          "language",
+          "title",
+          "author",
+          "description",
+          "title_source",
+          "description_source",
+          "source_url",
+          "wikidata_id",
+          "machine_available"
+        ],
+        "title": "TranslationSuggestion",
+        "description": "What was found; empty fields were not found anywhere."
       },
       "UiLanguage": {
         "type": "string",

@@ -75,7 +75,16 @@ export async function createBooks(request: APIRequestContext, prefix: string, co
 /** Creates one available book through the admin API (tags by slug, series by name). */
 export async function createBook(
   request: APIRequestContext,
-  book: { title: string; tags?: string[]; series_name?: string; series_position?: number },
+  book: {
+    title: string;
+    author?: string;
+    description?: string;
+    language?: string;
+    tags?: string[];
+    series_name?: string;
+    series_position?: number;
+    translations?: { language: 'en' | 'ru'; title: string; author?: string; description?: string }[];
+  },
 ) {
   const token = await adminToken(request);
   const response = await request.post(`${API_URL}/admin/books`, {

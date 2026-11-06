@@ -116,6 +116,7 @@ Docker Compose и Vite — корневой `.env` (шаблон `.env.example`)
 | `TEST_DATABASE_URL` | `…/bookstore_test` | только для тестов; имя БД обязано оканчиваться на `_test` |
 | `VITE_API_URL` | `http://localhost:8000/api/v1` | адрес API для frontend |
 | `PASSWORD_RESET_EXPIRE_MINUTES` | `60` | срок действия ссылки для сброса пароля (5–1440) |
+| `ANTHROPIC_API_KEY`, `TRANSLATION_MODEL` | —, `claude-opus-5-5` | необязательно: машинный перевод названий и описаний книг, если в Wikidata и Википедии перевода нет; без ключа используются только они |
 
 В production приложение не стартует при отсутствующем/слабом `JWT_SECRET_KEY`, `COOKIE_SECURE=false`
 или `http://` в `FRONTEND_ORIGINS`.
@@ -173,7 +174,8 @@ docker compose --profile dev run --rm backend-dev alembic check
   пароль существующего админа меняется только с `--reset-admin-password`;
 - `--demo-books` добавляет 19 книг из `backend/app/seed_data/demo_books.json` с тегами и двумя сериями (*Harry Potter*,
   *The Hunger Games*); демо-книги, загруженные до появления тегов, получают теги и серию, если их с тех пор не меняли;
-  удалённые библиотекарем стартовые теги пропускаются; в production отказывается работать;
+  удалённые библиотекарем стартовые теги пропускаются; у каждой демо-книги есть русские название, автор и описание
+  (их получают и ранее загруженные демо-книги без перевода); в production отказывается работать;
 - `--refresh-demo-covers` (вместе с `--demo-books`) обновляет обложки уже существующих демо-книг
   (демо-данные используют настоящие обложки из Open Library);
 - гарантирует строку настроек библиотеки. Повторный запуск ничего не дублирует.
@@ -371,6 +373,19 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 издания находили её, и предлагает теги по темам книги. Каталог показывает серию на карточке (ссылка на серию),
 выводит серию по порядку томов и умеет положить в корзину все доступные тома («Взять всю серию»).
 
+**Переводы**: строка книги хранит текст издания, которое стоит на полке; `translations` добавляет название, автора и
+описание на другом языке интерфейса (`book_translations`, по одному на язык, одинаковые у всех экземпляров). Каталог,
+окно книги, корзина и лист ожидания показывают текст на языке читателя, рядом — оригинальное название и метку
+«Язык: английский»; поиск находит книги и по переведённому тексту. В форме книги кнопка «Найти перевод»
+(`POST /admin/translations/suggest`, ничего не сохраняет) заполняет пустые поля: официальное название произведения и
+имена авторов из **Wikidata** (поиск по произведению Open Library для этого ISBN, свойство P648, а не по названию),
+первый абзац статьи **Википедии** на этом языке (CC BY-SA: читатели видят ссылку на статью) и, для того, чего не
+нашлось, **машинный перевод** через Claude, если задан `ANTHROPIC_API_KEY` (с пометкой «Машинный перевод», пока
+библиотекарь не отредактирует текст; отклонённый запрос на стороне API повторяется на рекомендованной модели).
+`python -m app.cli translate-books --to ru [--no-machine] [--limit 50]` делает то же для изданий без перевода (с
+паузой 1 с между книгами); результаты стоит проверить в админ-панели. Fantlab не используется: в документации его API
+нет условий повторного использования текстов, которые пишут пользователи.
+
 **Продление выдачи**: `POST /orders/{id}/renew` переносит срок возврата выданного (`confirmed`) заказа на
 `loan_period_days`, не более `max_renewals` раз на заказ (настройки библиотеки, по умолчанию 1; 0 — продление
 отключено) и никогда после просрочки (`409 RENEWAL_NOT_ALLOWED`, `details.reason`). Уже отправленные напоминания
@@ -407,6 +422,7 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 | `books` | `cover_url`, `image_urls[]`, `age_range`, `category`, `status` (`available/available-soon/not-available`), `language`, `publication_year`, `is_active` (мягкое удаление), `series_id` + `series_position` (CHECK > 0) |
 | `tags`, `book_tags` | `slug` тега (уникальный, CHECK формата), `name_en`, `name_ru`; связь книга ↔ тег |
 | `series` | `name` (уникальное), `description`, `openlibrary_key` (уникальный, из поиска по ISBN) |
+| `book_translations` | на книгу и язык (`en`/`ru`): `title`, `author`, `description`, `title_source`/`description_source` (`manual/wikidata/wikipedia/machine`), `source_url` (ссылка на Википедию) |
 | `library_settings` | одна строка: `books_per_batch`, `price_per_batch NUMERIC(10,2)`, `currency`, `loan_period_days` |
 | `carts`, `cart_items` | одна корзина на пользователя, `UNIQUE(cart_id, book_id)` |
 | `orders` | статус, сумма/валюта, снимок цены партии и контактов, `due_date`, `confirmed_at/returned_at/cancelled_at`, CHECK `total = price × batches` |
@@ -443,6 +459,7 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 | GET | `/admin/reports/summary`, `/admin/reports/orders.csv` (`date_from`, `date_to`; по умолчанию последние 30 дней) | admin |
 | POST | `/admin/books/{id}/copies` (`{count}`: ещё экземпляры книги) | admin |
 | POST/PATCH/DELETE | `/admin/tags`, `/admin/tags/{id}` · POST `/admin/tags/{id}/merge`; то же для `/admin/series` | admin |
+| POST | `/admin/translations/suggest` (название, автор и описание на другом языке; ничего не сохраняет) | admin |
 | GET | `/admin/users` · PATCH `/admin/users/{id}` (роль, блокировка) | admin |
 | GET | `/admin/orders`, `/admin/orders/{id}` · PATCH `/admin/orders/{id}/status`, `/admin/orders/{id}/due-date` | admin |
 | GET/PATCH | `/admin/settings` (партия, цена, валюта, срок выдачи) | admin |

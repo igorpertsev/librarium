@@ -62,6 +62,8 @@ describe('bookFormToDto', () => {
     tags: ['science-fiction'],
     seriesName: '  ',
     seriesPosition: 2,
+    language: 'en',
+    translations: [],
   };
 
   it('trims URLs, drops empty values and never stores the UI-only "pending" status', () => {
@@ -78,7 +80,37 @@ describe('bookFormToDto', () => {
       publication_year: null,
       tags: ['science-fiction'],
       series_id: null,
+      language: 'en',
+      translations: [],
     });
+  });
+
+  it('sends translations with a title, never one into the book\'s own language', () => {
+    const translation = {
+      language: 'ru' as const,
+      title: ' Дюна ',
+      author: 'Фрэнк Герберт',
+      description: '',
+      titleSource: 'wikidata' as const,
+      descriptionSource: 'wikipedia' as const,
+      sourceUrl: 'https://ru.wikipedia.org/wiki/Дюна',
+    };
+    const dto = bookFormToDto({
+      ...form,
+      translations: [translation, { ...translation, language: 'en', title: 'Dune' }, { ...translation, title: ' ' }],
+    });
+    // Without a description there is nothing to attribute to Wikipedia.
+    expect(dto.translations).toEqual([
+      {
+        language: 'ru',
+        title: 'Дюна',
+        author: 'Фрэнк Герберт',
+        description: '',
+        title_source: 'wikidata',
+        description_source: 'manual',
+        source_url: null,
+      },
+    ]);
   });
 
   it('sends the series by name with its volume and Open Library key', () => {

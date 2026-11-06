@@ -18,6 +18,7 @@ import { orderLabel } from '../utils/translations';
 import { useLibraryRules } from '../utils/useLibraryRules';
 import { useWaitlist } from '../contexts/WaitlistContext';
 import { WaitlistButton } from '../components/WaitlistButton';
+import { useBookText } from '../utils/bookText';
 import type { Order } from '../types';
 import { BorrowingHistory } from '../components/BorrowingHistory';
 
@@ -48,6 +49,7 @@ const CONTACT_FIELDS: { key: PreferredContact; labelKey: string; placeholder: st
 
 export default function Profile() {
   const { t } = useTranslation();
+  const textOf = useBookText();
   const { user, updateUser, changePassword } = useAuth();
   const { getOrdersForUser, cancelOrder, renewOrder } = useOrders();
   const [cancellingId, setCancellingId] = useState<string | null>(null);
@@ -261,20 +263,23 @@ export default function Profile() {
             <CardDescription>{t('waitlist.description')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {waitlist.map(({ book, createdAt }) => (
+            {waitlist.map(({ book, createdAt }) => {
+              const text = textOf(book);
+              return (
               <div key={book.id} className="flex items-center gap-4 p-3 border border-border rounded-lg">
                 <div className="w-10 h-14 flex-shrink-0 overflow-hidden rounded bg-muted">
                   <img src={book.coverImage} alt="" className="w-full h-full object-cover" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="truncate">{book.title}</h3>
+                  <h3 className="truncate">{text.title}</h3>
                   <p className="text-sm text-muted-foreground truncate">
-                    {book.author} · {t('waitlist.since', { date: fmt.date(createdAt) })}
+                    {text.author} · {t('waitlist.since', { date: fmt.date(createdAt) })}
                   </p>
                 </div>
-                <WaitlistButton bookId={book.id} groupId={book.groupId} title={book.title} />
+                <WaitlistButton bookId={book.id} groupId={book.groupId} title={text.title} />
               </div>
-            ))}
+              );
+            })}
           </CardContent>
         </Card>
       )}

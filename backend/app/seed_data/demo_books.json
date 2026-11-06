@@ -17,6 +17,14 @@
       "classics",
       "coming-of-age",
       "family"
+    ],
+    "translations": [
+      {
+        "language": "ru",
+        "title": "Убить пересмешника",
+        "author": "Харпер Ли",
+        "description": "Захватывающая история о расовой несправедливости и детской невинности."
+      }
     ]
   },
   {
@@ -37,6 +45,14 @@
       "classics",
       "dystopia",
       "science-fiction"
+    ],
+    "translations": [
+      {
+        "language": "ru",
+        "title": "1984",
+        "author": "Джордж Оруэлл",
+        "description": "Социальная фантастика: антиутопия и роман-предостережение."
+      }
     ]
   },
   {
@@ -56,6 +72,14 @@
     "tags": [
       "classics",
       "romance"
+    ],
+    "translations": [
+      {
+        "language": "ru",
+        "title": "Великий Гэтсби",
+        "author": "Фрэнсис Скотт Фицджеральд",
+        "description": "Портрет эпохи джаза со всей её роскошью и излишествами."
+      }
     ]
   },
   {
@@ -76,6 +100,14 @@
       "classics",
       "romance",
       "family"
+    ],
+    "translations": [
+      {
+        "language": "ru",
+        "title": "Гордость и предубеждение",
+        "author": "Джейн Остин",
+        "description": "Роман нравов о любви в Англии георгианской эпохи."
+      }
     ]
   },
   {
@@ -96,6 +128,14 @@
       "classics",
       "coming-of-age",
       "school"
+    ],
+    "translations": [
+      {
+        "language": "ru",
+        "title": "Над пропастью во ржи",
+        "author": "Джером Д. Сэлинджер",
+        "description": "Несколько дней из жизни подростка в Нью-Йорке."
+      }
     ]
   },
   {
@@ -112,7 +152,15 @@
     "isbn": "978-0553380163",
     "language": "en",
     "publication_year": 1988,
-    "tags": []
+    "tags": [],
+    "translations": [
+      {
+        "language": "ru",
+        "title": "Краткая история времени",
+        "author": "Стивен Хокинг",
+        "description": "Знаковая книга научно-популярной литературы."
+      }
+    ]
   },
   {
     "title": "Sapiens",
@@ -130,6 +178,14 @@
     "publication_year": 2011,
     "tags": [
       "historical"
+    ],
+    "translations": [
+      {
+        "language": "ru",
+        "title": "Sapiens. Краткая история человечества",
+        "author": "Юваль Ной Харари",
+        "description": "Краткая история человечества."
+      }
     ]
   },
   {
@@ -151,6 +207,14 @@
       "war",
       "historical",
       "coming-of-age"
+    ],
+    "translations": [
+      {
+        "language": "ru",
+        "title": "Дневник Анны Франк",
+        "author": "Анна Франк",
+        "description": "Дневник еврейской девочки, скрывавшейся от нацистов во время Холокоста."
+      }
     ]
   },
   {
@@ -174,7 +238,15 @@
       "friendship"
     ],
     "series_name": "Harry Potter",
-    "series_position": 1
+    "series_position": 1,
+    "translations": [
+      {
+        "language": "ru",
+        "title": "Гарри Поттер и философский камень",
+        "author": "Дж. К. Роулинг",
+        "description": "Юный волшебник начинает учиться магии."
+      }
+    ]
   },
   {
     "title": "The Hunger Games",
@@ -196,7 +268,15 @@
       "science-fiction"
     ],
     "series_name": "The Hunger Games",
-    "series_position": 1
+    "series_position": 1,
+    "translations": [
+      {
+        "language": "ru",
+        "title": "Голодные игры",
+        "author": "Сьюзен Коллинз",
+        "description": "История о том, как выжить в мире антиутопии."
+      }
+    ]
   },
   {
     "title": "Educated",
@@ -216,6 +296,14 @@
       "true-story",
       "family",
       "coming-of-age"
+    ],
+    "translations": [
+      {
+        "language": "ru",
+        "title": "Ученица. Предать, чтобы обрести себя",
+        "author": "Тара Вестовер",
+        "description": "Воспоминания об учёбе и о том, как человек создаёт себя сам."
+      }
     ]
   },
   {
@@ -236,6 +324,14 @@
       "fantasy",
       "adventure",
       "classics"
+    ],
+    "translations": [
+      {
+        "language": "ru",
+        "title": "Хоббит, или Туда и обратно",
+        "author": "Дж. Р. Р. Толкин",
+        "description": "Фэнтезийное приключение хоббита."
+      }
     ]
   },
   {
@@ -252,7 +348,15 @@
     "isbn": "978-0345539434",
     "language": "en",
     "publication_year": 1980,
-    "tags": []
+    "tags": [],
+    "translations": [
+      {
+        "language": "ru",
+        "title": "Космос",
+        "author": "Карл Саган",
+        "description": "Путешествие сквозь пространство и время."
+      }
+    ]
   },
   {
     "title": "The Book Thief",
@@ -272,6 +376,14 @@
       "historical",
       "war",
       "coming-of-age"
+    ],
+    "translations": [
+      {
+        "language": "ru",
+        "title": "Книжный вор",
+        "author": "Маркус Зусак",
+        "description": "История времён Второй мировой войны, которую рассказывает Смерть."
+      }
     ]
   },
   {
@@ -294,6 +406,14 @@
       "animals",
       "friendship",
       "classics"
+    ],
+    "translations": [
+      {
+        "language": "ru",
+        "title": "Паутина Шарлотты",
+        "author": "Элвин Брукс Уайт",
+        "description": "История поросёнка и его подруги-паучихи."
+      }
     ]
   },
   {
@@ -312,6 +432,14 @@
     "publication_year": 2018,
     "tags": [
       "true-story"
+    ],
+    "translations": [
+      {
+        "language": "ru",
+        "title": "Becoming. Моя история",
+        "author": "Мишель Обама",
+        "description": "Воспоминания бывшей первой леди США."
+      }
     ]
   },
   {
@@ -335,7 +463,15 @@
       "friendship"
     ],
     "series_name": "Harry Potter",
-    "series_position": 2
+    "series_position": 2,
+    "translations": [
+      {
+        "language": "ru",
+        "title": "Гарри Поттер и Тайная комната",
+        "author": "Дж. К. Роулинг",
+        "description": "Второй год Гарри в Хогвартсе: тайную комнату открывают снова."
+      }
+    ]
   },
   {
     "title": "Harry Potter and the Prisoner of Azkaban",
@@ -358,7 +494,15 @@
       "friendship"
     ],
     "series_name": "Harry Potter",
-    "series_position": 3
+    "series_position": 3,
+    "translations": [
+      {
+        "language": "ru",
+        "title": "Гарри Поттер и узник Азкабана",
+        "author": "Дж. К. Роулинг",
+        "description": "Из тюрьмы бежит опасный узник, и Гарри узнаёт больше о своём прошлом."
+      }
+    ]
   },
   {
     "title": "Catching Fire",
@@ -380,6 +524,14 @@
       "science-fiction"
     ],
     "series_name": "The Hunger Games",
-    "series_position": 2
+    "series_position": 2,
+    "translations": [
+      {
+        "language": "ru",
+        "title": "И вспыхнет пламя",
+        "author": "Сьюзен Коллинз",
+        "description": "Китнисс снова попадает на Игры, а в стране назревает восстание."
+      }
+    ]
   }
 ]

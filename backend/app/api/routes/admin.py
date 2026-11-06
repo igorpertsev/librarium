@@ -11,6 +11,7 @@ from app.api.dependencies import (
     OpenLibraryDep,
     PaginationDep,
     SessionDep,
+    TranslationLookupDep,
     require_admin,
 )
 from app.api.routes.books import TagsQuery, tag_slugs
@@ -48,6 +49,7 @@ from app.schemas.order import (
     ReminderQueued,
 )
 from app.schemas.report import ReportSummaryRead
+from app.schemas.translation import TranslationSuggestion, TranslationSuggestRequest
 from app.schemas.user import AdminUserPage, AdminUserUpdate, UserRead
 from app.services import book_import, catalog, reports
 from app.services import books as books_service
@@ -127,6 +129,21 @@ async def admin_import_books(
 ) -> BookImportResult:
     result = await book_import.import_books(session, body.csv, dry_run=dry_run)
     return BookImportResult.model_validate(result, from_attributes=True)
+
+
+@router.post(
+    "/translations/suggest",
+    response_model=TranslationSuggestion,
+    responses=error_responses(422),
+    description="Title, author and description of a book in another interface language, for "
+    "the librarian to review: the official name of the work from Wikidata (found by the ISBN's "
+    "Open Library work), the Wikipedia summary (keep source_url for attribution), and machine "
+    "translation of what is still missing when it is set up (machine_available). Saves nothing.",
+)
+async def admin_suggest_translation(
+    body: TranslationSuggestRequest, lookup: TranslationLookupDep
+) -> TranslationSuggestion:
+    return await lookup.suggest(body)
 
 
 @router.get(

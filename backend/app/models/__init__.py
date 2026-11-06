@@ -9,12 +9,14 @@ from app.models.order import Order, OrderItem
 from app.models.refresh_token import RefreshToken
 from app.models.series import Series
 from app.models.tag import Tag, book_tags
+from app.models.translation import BookTranslation
 from app.models.user import User
 from app.models.waitlist import WaitlistEntry
 
 __all__ = [
     "Base",
     "Book",
+    "BookTranslation",
     "Cart",
     "CartItem",
     "LibrarySettings",

@@ -4,6 +4,7 @@ python -m app.cli seed [--demo-books]   # idempotent: admin from env, optional d
 python -m app.cli export-openapi PATH   # write the OpenAPI document without a server
 python -m app.cli purge-tokens          # delete expired/revoked refresh tokens
 python -m app.cli notifications [--loop SECONDS]  # queue reminders, send customer emails
+python -m app.cli translate-books --to ru [--no-machine] [--limit N]  # fill missing translations
 """
 
 from __future__ import annotations
@@ -23,16 +24,24 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
 from app.core.database import Database
+from app.core.http import make_http_client
 from app.core.security import hash_password
 from app.main import create_app
 from app.models import Book, RefreshToken, User
-from app.models.enums import UserRole
+from app.models.enums import UiLanguage, UserRole
 from app.schemas.book import BookCreate
 from app.schemas.types import NormalizedEmail
 from app.services import catalog
-from app.services.books import new_book
+from app.services.books import new_book, translation_rows
 from app.services.library_settings import ensure_library_settings
 from app.services.notifications import deliver_pending, make_smtp_sender, queue_reminders
+from app.services.openlibrary import OpenLibraryClient
+from app.services.translation_lookup import (
+    TranslationLookup,
+    WikimediaClient,
+    make_machine_translator,
+)
+from app.services.translations import translate_catalogue
 
 DEMO_BOOKS_FILE = Path(__file__).parent / "seed_data" / "demo_books.json"
 MIN_ADMIN_PASSWORD_LENGTH = 12
@@ -93,7 +102,7 @@ async def _seed_demo_books(session: AsyncSession, *, refresh_covers: bool) -> No
     raw: list[dict[str, Any]] = json.loads(DEMO_BOOKS_FILE.read_text("utf-8"))
     # Starter tags a librarian has deleted or merged since are left out.
     known_tags = set((await catalog.tag_lookup(session)).values())
-    created = refreshed = linked = 0
+    created = refreshed = linked = translated = 0
     for item in raw:
         data = BookCreate.model_validate(item)
         data.tags = [slug for slug in data.tags if slug in known_tags]
@@ -117,9 +126,13 @@ async def _seed_demo_books(session: AsyncSession, *, refresh_covers: bool) -> No
                 existing.series_id = series.id
                 existing.series_position = data.series_position
             linked += bool(existing.tags or data.series_name)
+        if not existing.translations and data.translations:
+            existing.translations = translation_rows(data.translations)
+            translated += 1
     print(
         f"Demo books: {created} created, {len(raw) - created} already present"
         + (f", {linked} given tags/series" if linked else "")
+        + (f", {translated} given translations" if translated else "")
         + (f", {refreshed} covers refreshed." if refresh_covers else ".")
     )
 
@@ -173,6 +186,31 @@ async def _notifications(settings: Settings, *, loop_seconds: int | None) -> Non
         await db.dispose()
 
 
+async def _translate_books(
+    settings: Settings, *, target: UiLanguage, machine: bool, limit: int
+) -> None:
+    db = Database(settings)
+    http = make_http_client(settings)
+    translator, client = make_machine_translator(
+        settings.anthropic_api_key.get_secret_value() if settings.anthropic_api_key else None,
+        settings.translation_model,
+    )
+    if machine and translator is None:
+        print("ANTHROPIC_API_KEY is not set: only Wikidata and Wikipedia are used.")
+    lookup = TranslationLookup(OpenLibraryClient(http), WikimediaClient(http), translator)
+    try:
+        async with db.sessionmaker() as session:
+            done = await translate_catalogue(
+                session, lookup, target=target, machine=machine, limit=limit
+            )
+        print(f"Translated {done} title(s) into {target.value}.")
+    finally:
+        await http.aclose()
+        if client is not None:
+            await client.close()
+        await db.dispose()
+
+
 def _export_openapi(path: str) -> None:
     document = create_app(get_settings()).openapi()
     target = Path(path)
@@ -209,6 +247,13 @@ def main(argv: list[str] | None = None) -> None:
         "--loop", type=int, metavar="SECONDS", help="Repeat every SECONDS instead of running once"
     )
 
+    translate = commands.add_parser(
+        "translate-books", help="Find translations for titles that have none (review them later)"
+    )
+    translate.add_argument("--to", choices=[lang.value for lang in UiLanguage], default="ru")
+    translate.add_argument("--no-machine", action="store_true", help="Wikidata and Wikipedia only")
+    translate.add_argument("--limit", type=int, default=50, help="At most this many titles")
+
     args = parser.parse_args(argv)
     if args.command == "seed":
         asyncio.run(
@@ -225,6 +270,15 @@ def main(argv: list[str] | None = None) -> None:
         asyncio.run(_purge_tokens(get_settings(), older_than_days=args.older_than_days))
     elif args.command == "notifications":
         asyncio.run(_notifications(get_settings(), loop_seconds=args.loop))
+    elif args.command == "translate-books":
+        asyncio.run(
+            _translate_books(
+                get_settings(),
+                target=UiLanguage(args.to),
+                machine=not args.no_machine,
+                limit=args.limit,
+            )
+        )
 
 
 if __name__ == "__main__":

@@ -9,6 +9,20 @@ export interface BookTag {
   nameRu: string;
 }
 
+export type TranslationSource = 'manual' | 'wikidata' | 'wikipedia' | 'machine';
+
+/** Title, author and description in another interface language. */
+export interface BookTranslation {
+  language: 'en' | 'ru';
+  title: string;
+  author: string;
+  description: string;
+  titleSource: TranslationSource;
+  descriptionSource: TranslationSource;
+  /** The Wikipedia article a description comes from (CC BY-SA attribution). */
+  sourceUrl: string | null;
+}
+
 export interface BookSeries {
   id: string;
   name: string;
@@ -42,6 +56,7 @@ export interface Book {
   series?: BookSeries | null;
   /** Volume number within the series (may be fractional, e.g. 1.5 for a novella). */
   seriesPosition?: number | null;
+  translations?: BookTranslation[];
 }
 
 export type PreferredContact = 'whatsapp' | 'telegram' | 'instagram' | 'phone';

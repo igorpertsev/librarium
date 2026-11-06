@@ -85,6 +85,12 @@ class Settings(BaseSettings):
     password_reset_expire_minutes: int = Field(default=60, ge=5, le=24 * 60)
     due_soon_days: int = Field(default=3, ge=0, le=30)
 
+    # Machine translation of book titles and descriptions (admin "Find translation" and
+    # `python -m app.cli translate-books`) when Wikidata and Wikipedia have none. Optional:
+    # without a key only Wikidata and Wikipedia are used.
+    anthropic_api_key: SecretStr | None = None
+    translation_model: str = "claude-opus-5-5"
+
     # Seed command inputs. Never hard-code production credentials.
     seed_admin_email: str | None = None
     seed_admin_password: SecretStr | None = None
@@ -119,7 +125,12 @@ class Settings(BaseSettings):
         return value
 
     @field_validator(
-        "jwt_secret_key", "seed_admin_password", "smtp_password", "sentry_dsn", mode="before"
+        "jwt_secret_key",
+        "seed_admin_password",
+        "smtp_password",
+        "sentry_dsn",
+        "anthropic_api_key",
+        mode="before",
     )
     @classmethod
     def _empty_secret_to_none(cls, value: object) -> object:

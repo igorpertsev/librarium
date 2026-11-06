@@ -15,6 +15,7 @@ import { useFormat } from '../utils/format';
 import { errorMessage } from '../utils/apiErrors';
 import { WaitlistButton } from './WaitlistButton';
 import { SeriesLink, TagChips } from './CatalogFilters';
+import { useBookLanguageName, useBookText } from '../utils/bookText';
 
 interface BookCardProps {
   book: Book;
@@ -23,6 +24,8 @@ interface BookCardProps {
 export function BookCard({ book }: BookCardProps) {
   const { t } = useTranslation();
   const fmt = useFormat();
+  const text = useBookText()(book);
+  const languageName = useBookLanguageName()(book.language);
   const { addBookToCart, isBookInCart } = useCart();
   const { isBookUnavailable } = useOrders();
   const inCart = isBookInCart(book.id);
@@ -43,7 +46,7 @@ export function BookCard({ book }: BookCardProps) {
       const result = await addBookToCart(book);
       setAdding(false);
       if (result.ok) {
-        toast.success(`${book.title}: ${t('cart.bookAdded')}`);
+        toast.success(`${text.title}: ${t('cart.bookAdded')}`);
       } else {
         toast.error(errorMessage(t, result.error));
       }
@@ -105,7 +108,7 @@ export function BookCard({ book }: BookCardProps) {
                 <div key={index} className="flex-[0_0_100%] min-w-0">
                   <img
                     src={image}
-                    alt={t('bookDetails.imageAlt', { title: book.title, n: index + 1 })}
+                    alt={t('bookDetails.imageAlt', { title: text.title, n: index + 1 })}
                     className="w-full h-full object-cover select-none"
                     draggable={false}
                   />
@@ -160,15 +163,24 @@ export function BookCard({ book }: BookCardProps) {
               onClick={() => setIsModalOpen(true)}
               className="text-left rounded-sm hover:underline underline-offset-2 focus-visible:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              {book.title}
+              {text.title}
             </button>
           </h2>
-          <p className="text-sm text-muted-foreground">{book.author}</p>
+          {text.originalTitle && (
+            <p className="text-xs text-muted-foreground line-clamp-1 -mt-1" lang={book.language ?? undefined}>
+              <span className="sr-only">{t('translation.originalTitleLabel')} </span>
+              {text.originalTitle}
+            </p>
+          )}
+          <p className="text-sm text-muted-foreground">{text.author}</p>
           <SeriesLink book={book} className="text-sm max-w-full" />
           <div className="flex gap-2 flex-wrap">
             {getStatusBadge()}
             <Badge variant="outline">{getCategoryTranslation(t, book.category)}</Badge>
             <Badge variant="outline">{book.ageRange}</Badge>
+            {languageName && (
+              <Badge variant="outline">{t('translation.bookLanguage', { language: languageName })}</Badge>
+            )}
           </div>
           <TagChips tags={book.tags} limit={3} />
           {isOrderedByOther && book.availableFrom && (
@@ -195,7 +207,7 @@ export function BookCard({ book }: BookCardProps) {
           {getCartButtonLabel(t, { status: book.status, inCart: isPending, reserved: isOrderedByOther })}
         </Button>
         {(isOrderedByOther || book.status !== 'available') && !isPending && (
-          <WaitlistButton bookId={book.id} groupId={book.groupId} title={book.title} />
+          <WaitlistButton bookId={book.id} groupId={book.groupId} title={text.title} />
         )}
       </CardFooter>
     </Card>

@@ -11,6 +11,7 @@ from app.models.book import Book
 from app.models.enums import BookCategory, BookStatus
 from app.schemas.catalog import SeriesBrief, SeriesName, SeriesPosition, TagBrief, TagSlug
 from app.schemas.common import ApiModel, Page, PatchModel, RequestModel
+from app.schemas.translation import BookTranslationRead, Translations
 from app.schemas.types import (
     AgeRange,
     AuthorName,
@@ -68,6 +69,9 @@ class BookBrief(ApiModel):
     tags: list[TagBrief]
     series: SeriesBrief | None
     series_position: float | None = Field(description="Volume number within the series")
+    translations: list[BookTranslationRead] = Field(
+        description="Title, author and description in the other interface languages"
+    )
     is_active: bool
 
 
@@ -147,6 +151,7 @@ class BookCreate(RequestModel):
     )
     series_openlibrary_key: str | None = Field(None, max_length=32, pattern=r"^OL\d+L$")
     series_position: SeriesPosition | None = None
+    translations: Translations = Field(default_factory=list)
 
     _year = field_validator("publication_year")(_check_year)
 
@@ -158,7 +163,17 @@ class BookCreate(RequestModel):
 
 class BookUpdate(PatchModel):
     non_nullable_fields: ClassVar[frozenset[str]] = frozenset(
-        {"title", "author", "description", "category", "age_range", "status", "image_urls", "tags"}
+        {
+            "title",
+            "author",
+            "description",
+            "category",
+            "age_range",
+            "status",
+            "image_urls",
+            "tags",
+            "translations",
+        }
     )
 
     title: Title | None = None
@@ -177,6 +192,7 @@ class BookUpdate(PatchModel):
     series_name: SeriesName | None = None
     series_openlibrary_key: str | None = Field(None, max_length=32, pattern=r"^OL\d+L$")
     series_position: SeriesPosition | None = None
+    translations: Translations | None = Field(None, description="Replaces the translations")
 
     _year = field_validator("publication_year")(_check_year)
 

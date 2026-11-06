@@ -24,7 +24,7 @@ from sqlalchemy import (
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import InstrumentedAttribute
 
-from app.models import Book, Order, OrderItem, Series, Tag, book_tags
+from app.models import Book, BookTranslation, Order, OrderItem, Series, Tag, book_tags
 from app.models.enums import ACTIVE_ORDER_STATUSES, BookCategory, BookStatus
 from app.schemas.book import BookSort
 
@@ -122,6 +122,23 @@ def search_condition(text: str) -> ColumnElement[bool]:
             )
         )
     )
+    # Translated titles, authors and descriptions ("над пропастью" finds the English book).
+    translated_text = func.to_tsvector(
+        "simple",
+        BookTranslation.title + " " + BookTranslation.author + " " + BookTranslation.description,
+    )
+    clauses.append(
+        Book.id.in_(
+            select(BookTranslation.book_id).where(
+                or_(
+                    translated_text.op("@@")(_search_query(text)),
+                    BookTranslation.title.ilike(pattern, escape="\\"),
+                    BookTranslation.author.ilike(pattern, escape="\\"),
+                    func.word_similarity(literal(text), BookTranslation.title) >= TYPO_SIMILARITY,
+                )
+            )
+        )
+    )
     clauses.append(
         Book.series_id.in_(
             select(Series.id).where(
@@ -142,9 +159,15 @@ def relevance(text: str) -> ColumnElement[float]:
     """Full-text rank, plus how well the text matches words of the title or author, plus how
     close it is to the whole title (so "dune" ranks "Dune" above "Children of Dune")."""
     full_text = func.ts_rank_cd(Book.search_vector, _search_query(text)) * 2
+    translated_title = (
+        select(func.max(func.word_similarity(literal(text), BookTranslation.title)))
+        .where(BookTranslation.book_id == Book.id)
+        .scalar_subquery()
+    )
     words = func.greatest(
         func.word_similarity(literal(text), Book.title),
         func.word_similarity(literal(text), Book.author) * 0.8,
+        func.coalesce(translated_title, 0),
     )
     return full_text + words + func.similarity(literal(text), Book.title)
 

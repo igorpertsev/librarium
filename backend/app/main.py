@@ -11,7 +11,6 @@ import time
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
-import httpx
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -19,10 +18,16 @@ from app.api.router import api_router
 from app.core.config import Settings, get_settings
 from app.core.database import Database
 from app.core.exceptions import register_exception_handlers
+from app.core.http import make_http_client
 from app.core.logging import configure_logging, init_sentry, new_request_id, request_id_var
 from app.core.rate_limit import RateLimiter
 from app.services.notifications import make_smtp_sender
 from app.services.openlibrary import OpenLibraryClient
+from app.services.translation_lookup import (
+    TranslationLookup,
+    WikimediaClient,
+    make_machine_translator,
+)
 
 logger = logging.getLogger("app")
 access_logger = logging.getLogger("app.request")
@@ -43,17 +48,21 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "All sessions are invalidated on restart. Set JWT_SECRET_KEY to persist them."
         )
 
-    # Outgoing HTTP (Open Library lookups from the admin portal).
-    http = httpx.AsyncClient(
-        timeout=10,
-        follow_redirects=True,  # e.g. Open Library: /isbn/<isbn>.json -> /books/<id>.json
-        headers={"User-Agent": f"LittleDragonLibrary/1.0 (+{settings.app_base_url})"},
+    # Outgoing HTTP (Open Library, Wikidata and Wikipedia lookups from the admin portal).
+    http = make_http_client(settings)
+
+    # Optional machine translation (ANTHROPIC_API_KEY); Wikidata and Wikipedia work without it.
+    machine, machine_client = make_machine_translator(
+        settings.anthropic_api_key.get_secret_value() if settings.anthropic_api_key else None,
+        settings.translation_model,
     )
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         yield
         await http.aclose()
+        if machine_client is not None:
+            await machine_client.close()
         await database.dispose()
 
     app = FastAPI(
@@ -69,6 +78,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # Emails sent directly by the API (password reset); None when SMTP_HOST is not set.
     app.state.mail_sender = make_smtp_sender(settings)
     app.state.openlibrary = OpenLibraryClient(http)
+    app.state.translation_lookup = TranslationLookup(
+        app.state.openlibrary, WikimediaClient(http), machine
+    )
 
     app.add_middleware(
         CORSMiddleware,
