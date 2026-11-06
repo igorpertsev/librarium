@@ -43,7 +43,11 @@ export interface User {
   role: 'customer' | 'admin';
   borrowedBooks: BorrowedBook[];
   contacts?: UserContacts;
+  /** Interface language saved on the account (emails use it too). */
+  preferredLanguage?: UiLanguage | null;
 }
+
+export type UiLanguage = 'en' | 'ru';
 
 export interface BorrowedBook {
   bookId: string;

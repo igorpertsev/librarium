@@ -4,8 +4,9 @@
 * ``queue_reminders`` adds due-soon / overdue reminders (run periodically).
 * ``deliver_pending`` renders and sends queued emails with retries and backoff.
 
-Messages are bilingual (English, then Russian) because the user's UI language is only
-known to their browser. They are rendered at send time, from current order data.
+Messages are in the language the customer chose in the interface (users.preferred_language),
+or in English followed by Russian when it is not known. They are rendered at send time,
+from current order data.
 """
 
 from __future__ import annotations
@@ -27,7 +28,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import Settings
 from app.core.exceptions import ConflictError
 from app.models import Book, Notification, Order, User
-from app.models.enums import BookStatus, NotificationKind, NotificationStatus, OrderStatus
+from app.models.enums import (
+    BookStatus,
+    NotificationKind,
+    NotificationStatus,
+    OrderStatus,
+    UiLanguage,
+)
 from app.repositories import orders as orders_repo
 from app.repositories.books import reserved_book_ids
 
@@ -173,15 +180,23 @@ def _render(kind: NotificationKind, user: User, order: Order, app_url: str) -> t
         ),
     }
     subject, english, russian = texts[kind]
-    subject = f"{subject} (#{order.number})"
-    body = (
-        f"Hello {user.full_name},\n\nOrder #{order.number}: {english}\n\n"
-        "— Little Dragon library\n\n"
-        f"----------------------------------------\n\n"
+    subject_en, subject_ru = subject.split(" · ")
+    english_body = (
+        f"Hello {user.full_name},\n\nOrder #{order.number}: {english}\n\n— Little Dragon library\n"
+    )
+    russian_body = (
         f"Здравствуйте, {user.full_name}!\n\nЗаказ №{order.number}: {russian}\n\n"
         "— Библиотека Little Dragon\n"
     )
-    return subject, body
+    # The language the customer chose in the interface; both when it is unknown.
+    if user.preferred_language is UiLanguage.EN:
+        return f"{subject_en} (#{order.number})", english_body
+    if user.preferred_language is UiLanguage.RU:
+        return f"{subject_ru} (№{order.number})", russian_body
+    return (
+        f"{subject} (#{order.number})",
+        f"{english_body}\n----------------------------------------\n\n{russian_body}",
+    )
 
 
 def _render_book_available(user: User, book: Book, app_url: str) -> tuple[str, str]:

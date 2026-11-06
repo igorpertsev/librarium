@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, UserContacts } from '../types';
+import { useTranslation } from 'react-i18next';
+import { UiLanguage, User, UserContacts } from '../types';
 import { refreshSession, setAccessToken, setAuthListeners } from '../../api/client';
 import { adminApi, authApi, fetchAllPages, usersApi } from '../../api/endpoints';
 import { ActionResult, runAction } from '../../api/errors';
@@ -18,9 +19,14 @@ interface AuthContextType {
   changePassword: (currentPassword: string, newPassword: string) => Promise<ActionResult>;
   updateUserRole: (userId: string, role: 'customer' | 'admin') => Promise<ActionResult>;
   refreshUsers: () => Promise<void>;
+  /** Switch the interface language; saved on the account when signed in. */
+  setLanguage: (language: UiLanguage) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
 }
+
+const currentLanguage = (language: string): UiLanguage | null =>
+  language.startsWith('ru') ? 'ru' : language.startsWith('en') ? 'en' : null;
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -28,6 +34,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { i18n } = useTranslation();
+
+  // The language saved on the account wins over this browser's choice (it follows the user
+  // to other devices).
+  const savedLanguage = user?.preferredLanguage;
+  useEffect(() => {
+    if (savedLanguage && savedLanguage !== i18n.language) {
+      i18n.changeLanguage(savedLanguage);
+      localStorage.setItem('language', savedLanguage);
+    }
+  }, [savedLanguage, i18n]);
 
   const applyTokens = useCallback((response: TokenResponseDto) => {
     setAccessToken(response.access_token);
@@ -73,7 +90,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = (name: string, email: string, password: string, contacts: UserContacts) =>
     runAction(async () => {
       applyTokens(
-        await authApi.register({ email, password, full_name: name, ...contactsToDto(contacts) }),
+        await authApi.register({
+          email,
+          password,
+          full_name: name,
+          ...contactsToDto(contacts),
+          preferred_language: currentLanguage(i18n.language),
+        }),
       );
     });
 
@@ -86,6 +109,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       setUser(userFromDto(updated));
     });
+
+  /** Switch the interface language and, when signed in, save it on the account. */
+  const setLanguage = async (language: UiLanguage) => {
+    await i18n.changeLanguage(language);
+    localStorage.setItem('language', language);
+    if (user && user.preferredLanguage !== language) {
+      try {
+        setUser(userFromDto(await usersApi.updateMe({ preferred_language: language })));
+      } catch {
+        // Not critical: the browser keeps the choice; the account is updated next time.
+      }
+    }
+  };
 
   const changePassword = (currentPassword: string, newPassword: string) =>
     runAction(async () => {
@@ -124,6 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       changePassword,
       updateUserRole,
       refreshUsers,
+      setLanguage,
       logout,
       isAuthenticated: !!user
     }}>

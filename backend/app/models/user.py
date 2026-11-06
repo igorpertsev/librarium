@@ -6,7 +6,7 @@ import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, TimestampMixin, str_enum, uuid_pk
-from app.models.enums import ContactMethod, UserRole
+from app.models.enums import ContactMethod, UiLanguage, UserRole
 
 
 class User(TimestampMixin, Base):
@@ -33,6 +33,10 @@ class User(TimestampMixin, Base):
     phone: Mapped[str | None] = mapped_column(sa.String(100))
     preferred_contact_method: Mapped[ContactMethod | None] = mapped_column(
         str_enum(ContactMethod, "contact_method")
+    )
+    # Interface language chosen by the user; emails use it (NULL: English and Russian).
+    preferred_language: Mapped[UiLanguage | None] = mapped_column(
+        str_enum(UiLanguage, "ui_language")
     )
 
     def contact_value(self, method: ContactMethod | None) -> str | None:

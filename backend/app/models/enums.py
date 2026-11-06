@@ -64,6 +64,13 @@ ORDER_STATUS_TRANSITIONS: dict[OrderStatus, frozenset[OrderStatus]] = {
 CUSTOMER_CANCELLABLE_STATUSES: frozenset[OrderStatus] = frozenset({OrderStatus.PENDING})
 
 
+class UiLanguage(StrEnum):
+    """Languages of the web interface and of customer emails."""
+
+    EN = "en"
+    RU = "ru"
+
+
 class NotificationKind(StrEnum):
     ORDER_RECEIVED = "order_received"  # the customer placed an order
     ORDER_CONFIRMED = "order_confirmed"  # books handed over, due date known

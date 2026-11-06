@@ -12,7 +12,15 @@ from sqlalchemy import select, update
 from app.models import Notification, Order
 from app.models.enums import NotificationKind, NotificationStatus
 from app.services.notifications import MAX_ATTEMPTS, deliver_pending, queue_reminders
-from tests.conftest import API, ApiUser, CreateBook, SetBatch, fill_cart, place_order
+from tests.conftest import (
+    API,
+    ApiUser,
+    CreateBook,
+    RegisterUser,
+    SetBatch,
+    fill_cart,
+    place_order,
+)
 
 
 async def _notifications(app: FastAPI) -> list[Notification]:
@@ -202,3 +210,32 @@ async def test_confirmation_email_has_the_due_date_in_both_languages(
     assert "Please return them by 6 December 2026." in body
     assert "верните их до 6 декабря 2026 г.\n" in body
     assert "г.." not in body
+
+
+async def test_emails_use_the_customers_language(
+    app: FastAPI, register_user: RegisterUser, create_book: CreateBook, set_batch: SetBatch
+) -> None:
+    await set_batch(1)
+    russian = await register_user(
+        full_name="Ivan Reader", preferred_language="ru", telegram="@ivan"
+    )
+    english = await register_user(full_name="Emma Reader")
+    response = await english.patch(f"{API}/users/me", json={"preferred_language": "en"})
+    assert response.json()["preferred_language"] == "en"
+
+    ru_order = await _order(russian, create_book, "Война и мир")
+    en_order = await _order(english, create_book, "Emma")
+    send = FakeSender()
+    await _deliver(app, send)
+
+    by_recipient = {m["To"]: m for m in send.messages}
+    ru_mail = next(m for to, m in by_recipient.items() if russian.email in to)
+    en_mail = next(m for to, m in by_recipient.items() if english.email in to)
+    assert ru_mail["Subject"] == f"Заявка получена (№{ru_order['number']})"
+    assert "Здравствуйте, Ivan Reader!" in ru_mail.get_content()
+    assert "Hello" not in ru_mail.get_content()
+    assert en_mail["Subject"] == f"We received your request (#{en_order['number']})"
+    assert "Здравствуйте" not in en_mail.get_content()
+
+    response = await english.patch(f"{API}/users/me", json={"preferred_language": "de"})
+    assert response.status_code == 422

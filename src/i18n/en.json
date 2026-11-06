@@ -253,7 +253,7 @@
   "settings": {
     "title": "Settings",
     "language": "Language",
-    "languageDesc": "Choose your preferred language",
+    "languageDesc": "Choose your preferred language. When you are signed in, it is saved on your account and emails from the library use it too.",
     "english": "English",
     "russian": "Russian",
     "close": "Close"
