@@ -481,6 +481,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/books/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Admin Import Books
+         * @description Creates books from CSV text (header row; required columns title, author, category). All or nothing: with any invalid row nothing is created and `errors` lists them by line. `dry_run=true` only validates. At most 500 books per import.
+         */
+        post: operations["admin_import_books_api_v1_admin_books_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/isbn/{isbn}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin Lookup Isbn
+         * @description Title, author, description, year, language and cover for an ISBN, from Open Library. 404 ISBN_NOT_FOUND, 502 LOOKUP_UNAVAILABLE.
+         */
+        get: operations["admin_lookup_isbn_api_v1_admin_isbn__isbn__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/books/{book_id}": {
         parameters: {
             query?: never;
@@ -800,6 +840,44 @@ export interface components {
             /** Publication Year */
             publication_year?: number | null;
         };
+        /** BookImportError */
+        BookImportError: {
+            /** Row */
+            row: number;
+            /** Message */
+            message: string;
+        };
+        /** BookImportRequest */
+        BookImportRequest: {
+            /** Csv */
+            csv: string;
+        };
+        /** BookImportResult */
+        BookImportResult: {
+            /** Rows */
+            rows: number;
+            /** Created */
+            created: number;
+            /** Errors */
+            errors: components["schemas"]["BookImportError"][];
+        };
+        /** BookLookup */
+        BookLookup: {
+            /** Isbn */
+            isbn: string;
+            /** Title */
+            title: string;
+            /** Author */
+            author: string | null;
+            /** Description */
+            description: string | null;
+            /** Publication Year */
+            publication_year: number | null;
+            /** Cover Url */
+            cover_url: string | null;
+            /** Language */
+            language: string | null;
+        };
         /** BookPage */
         BookPage: {
             /** Items */
@@ -1009,6 +1087,11 @@ export interface components {
              * Format: email
              */
             email: string;
+        };
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
         };
         /** HealthResponse */
         HealthResponse: {
@@ -1312,6 +1395,19 @@ export interface components {
             /** Phone */
             phone?: string | null;
             preferred_contact_method?: components["schemas"]["ContactMethod"] | null;
+        };
+        /** ValidationError */
+        ValidationError: {
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
+            /** Input */
+            input?: unknown;
+            /** Context */
+            ctx?: Record<string, never>;
         };
         /** WaitlistEntryRead */
         WaitlistEntryRead: {
@@ -2653,6 +2749,126 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_import_books_api_v1_admin_books_import_post: {
+        parameters: {
+            query?: {
+                dry_run?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BookImportRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookImportResult"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_lookup_isbn_api_v1_admin_isbn__isbn__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                isbn: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookLookup"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
                 headers: {
                     [name: string]: unknown;
                 };

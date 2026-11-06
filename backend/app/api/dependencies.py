@@ -18,6 +18,7 @@ from app.models import User
 from app.models.enums import UserRole
 from app.services.auth import ClientMeta
 from app.services.notifications import Sender
+from app.services.openlibrary import OpenLibraryClient
 
 
 def get_settings_dep(request: Request) -> Settings:
@@ -43,8 +44,14 @@ def get_mail_sender(request: Request) -> Sender | None:
     return sender
 
 
+def get_openlibrary(request: Request) -> OpenLibraryClient:
+    client: OpenLibraryClient = request.app.state.openlibrary
+    return client
+
+
 SettingsDep = Annotated[Settings, Depends(get_settings_dep)]
 MailSenderDep = Annotated[Sender | None, Depends(get_mail_sender)]
+OpenLibraryDep = Annotated[OpenLibraryClient, Depends(get_openlibrary)]
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 RateLimiterDep = Annotated[RateLimiter, Depends(get_rate_limiter)]
 

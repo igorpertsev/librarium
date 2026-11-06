@@ -37,6 +37,8 @@ export type WaitlistEntryDto = Schemas['WaitlistEntryRead'];
 export type LibrarySettingsUpdateDto = Schemas['LibrarySettingsUpdate'];
 export type ErrorResponseDto = Schemas['ErrorResponse'];
 export type ReminderQueuedDto = Schemas['ReminderQueued'];
+export type BookLookupDto = Schemas['BookLookup'];
+export type BookImportResultDto = Schemas['BookImportResult'];
 
 export type BookListQuery = NonNullable<paths['/api/v1/books']['get']['parameters']['query']>;
 export type AdminBookListQuery = NonNullable<

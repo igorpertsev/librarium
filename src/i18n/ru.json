@@ -197,7 +197,10 @@
     "coverNotFound": "Для этого ISBN обложка не найдена",
     "coverInvalidIsbn": "Сначала введите корректный ISBN из 10 или 13 цифр",
     "coverPreview": "Предпросмотр обложки",
-    "description": "Описание"
+    "description": "Описание",
+    "detailsFound": "Данные заполнены из Open Library",
+    "lookupIsbn": "Заполнить по ISBN",
+    "lookupIsbnDesc": "Находит название, автора, описание, год и обложку в Open Library и заполняет пустые поля."
   },
   "auth": {
     "login": "Вход",
@@ -457,5 +460,31 @@
     "goToCart": "В корзину",
     "showAll": "Показать все ({{count}})",
     "showLess": "Свернуть"
+  },
+  "bookImport": {
+    "button": "Импорт CSV",
+    "title": "Импорт книг из CSV",
+    "description": "Одна книга в строке. Обязательные столбцы: title, author, category. Необязательные: age_range, isbn, publication_year, language, status, cover_url, image_urls, description. Если хоть в одной строке ошибка, ничего не импортируется.",
+    "template": "Скачать шаблон",
+    "file": "Файл CSV",
+    "ready_one": "{{file}}: к импорту готова {{count}} книга.",
+    "ready_few": "{{file}}: к импорту готовы {{count}} книги.",
+    "ready_many": "{{file}}: к импорту готово {{count}} книг.",
+    "ready_other": "{{file}}: к импорту готово {{count}} книги.",
+    "empty": "В файле нет книг.",
+    "invalid_one": "Найдена {{count}} ошибка. Исправьте файл и выберите его снова:",
+    "invalid_few": "Найдены {{count}} ошибки. Исправьте файл и выберите его снова:",
+    "invalid_many": "Найдено {{count}} ошибок. Исправьте файл и выберите его снова:",
+    "invalid_other": "Найдено {{count}} ошибки. Исправьте файл и выберите его снова:",
+    "line": "Строка {{row}}",
+    "import_one": "Импортировать {{count}} книгу",
+    "import_few": "Импортировать {{count}} книги",
+    "import_many": "Импортировать {{count}} книг",
+    "import_other": "Импортировать {{count}} книги",
+    "importNone": "Импортировать",
+    "done_one": "Импортирована {{count}} книга",
+    "done_few": "Импортированы {{count}} книги",
+    "done_many": "Импортировано {{count}} книг",
+    "done_other": "Импортировано {{count}} книги"
   }
 }

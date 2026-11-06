@@ -15,13 +15,13 @@ dependencies = [
     "argon2-cffi>=23.1",
     "pyjwt>=2.10",
     "sentry-sdk>=2.20",
+    "httpx>=0.28",
 ]
 
 [dependency-groups]
 dev = [
     "pytest>=8.3",
     "pytest-asyncio>=1.0",
-    "httpx>=0.28",
     "ruff>=0.8",
     "mypy>=1.13",
 ]
