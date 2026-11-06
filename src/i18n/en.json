@@ -354,7 +354,8 @@
     "sortAuthor": "Author (A–Z)",
     "sortYearNewest": "Newest publications",
     "sortRecentlyAdded": "Recently added",
-    "loadMore": "Load more"
+    "loadMore": "Load more",
+    "sortRelevance": "Best match"
   },
   "batch": {
     "info": "Books are lent in batches of {{count}} for {{price}} per batch.",

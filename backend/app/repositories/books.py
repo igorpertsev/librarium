@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import re
 import uuid
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from datetime import date
 from typing import Any
 
-from sqlalchemy import ColumnElement, Exists, ScalarSelect, exists, func, or_, select
+from sqlalchemy import ColumnElement, Exists, ScalarSelect, exists, func, literal, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import InstrumentedAttribute
 
@@ -67,7 +68,44 @@ _SORT_COLUMNS: dict[BookSort, ColumnElement[Any]] = {
     BookSort.PUBLICATION_YEAR_DESC: Book.publication_year.desc().nulls_last(),
     BookSort.CREATED_AT: Book.created_at.asc(),
     BookSort.CREATED_AT_DESC: Book.created_at.desc(),
+    BookSort.RELEVANCE: func.lower(Book.title).asc(),  # without a search text
 }
+
+# word_similarity() above which a title or author counts as a (possibly misspelt) match:
+# "hobit" ~ "The Hobbit" 0.63, "harri poter" ~ "Harry Potter..." 0.56, unrelated <= 0.25.
+TYPO_SIMILARITY = 0.5
+
+
+def _search_query(text: str) -> ColumnElement[Any]:
+    """Words of the search text; quotes, OR and -word work as on web search engines."""
+    return func.websearch_to_tsquery("simple", text)
+
+
+def search_condition(text: str) -> ColumnElement[bool]:
+    pattern = f"%{escape_like(text)}%"
+    clauses: list[ColumnElement[bool]] = [
+        Book.search_vector.op("@@")(_search_query(text)),
+        Book.title.ilike(pattern, escape="\\"),
+        Book.author.ilike(pattern, escape="\\"),
+        Book.isbn.ilike(pattern, escape="\\"),
+        func.word_similarity(literal(text), Book.title) >= TYPO_SIMILARITY,
+        func.word_similarity(literal(text), Book.author) >= TYPO_SIMILARITY,
+    ]
+    digits = re.sub(r"[^0-9Xx]", "", text)
+    if len(digits) >= 4 and len(digits) >= len(text.replace(" ", "")) - 4:  # looks like an ISBN
+        clauses.append(func.regexp_replace(Book.isbn, "[^0-9Xx]", "", "g").ilike(f"%{digits}%"))
+    return or_(*clauses)
+
+
+def relevance(text: str) -> ColumnElement[float]:
+    """Full-text rank, plus how well the text matches words of the title or author, plus how
+    close it is to the whole title (so "dune" ranks "Dune" above "Children of Dune")."""
+    full_text = func.ts_rank_cd(Book.search_vector, _search_query(text)) * 2
+    words = func.greatest(
+        func.word_similarity(literal(text), Book.title),
+        func.word_similarity(literal(text), Book.author) * 0.8,
+    )
+    return full_text + words + func.similarity(literal(text), Book.title)
 
 
 @dataclass(frozen=True, slots=True)
@@ -85,14 +123,7 @@ def _conditions(filters: BookFilters) -> list[ColumnElement[bool]]:
     if not filters.include_inactive:
         conditions.append(Book.is_active.is_(True))
     if filters.q:
-        pattern = f"%{escape_like(filters.q)}%"
-        conditions.append(
-            or_(
-                Book.title.ilike(pattern, escape="\\"),
-                Book.author.ilike(pattern, escape="\\"),
-                Book.isbn.ilike(pattern, escape="\\"),
-            )
-        )
+        conditions.append(search_condition(filters.q))
     if filters.category is not None:
         conditions.append(Book.category == filters.category)
     if filters.age_range:
@@ -120,7 +151,13 @@ async def list_books(
     stmt = (
         select(Book, active_reservation_due_date(Book.id).label("reserved_until"))
         .where(*conditions)
-        .order_by(_SORT_COLUMNS[sort], Book.id)
+        .order_by(
+            relevance(filters.q).desc()
+            if sort is BookSort.RELEVANCE and filters.q
+            else _SORT_COLUMNS[sort],
+            func.lower(Book.title),
+            Book.id,
+        )
         .limit(page_size)
         .offset((page - 1) * page_size)
     )

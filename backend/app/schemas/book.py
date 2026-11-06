@@ -42,6 +42,8 @@ class BookSort(StrEnum):
     PUBLICATION_YEAR_DESC = "-publication_year"
     CREATED_AT = "created_at"
     CREATED_AT_DESC = "-created_at"
+    # Best match for the search text first (falls back to title without a search).
+    RELEVANCE = "relevance"
 
 
 class BookBrief(ApiModel):

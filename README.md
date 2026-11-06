@@ -256,6 +256,10 @@ two copies of the same title are two records (ISBN is not unique).
 - Active order statuses: `ACTIVE_ORDER_STATUSES = {pending, confirmed}` (`app/models/enums.py`).
   `returned` and `cancelled` release the book.
 - A book is blocked by **any** active order, including one placed by the same user (as in the UI).
+- **Search** (`GET /books?q=`): PostgreSQL full-text search over title, author and description (generated
+  `search_vector`, `simple` configuration, so English and Russian are treated alike; web-search syntax: `"phrase"`,
+  `-word`), substring matches on title, author and ISBN (hyphens ignored), and typo tolerance via `pg_trgm`
+  (`word_similarity` ≥ 0.5: “hobit” finds *The Hobbit*). `sort=relevance` ranks the best match first.
 - The cart is not a reservation: the same book can sit in several users' carts; adding it checks
   availability, but the decisive check happens at checkout.
 - Pricing is per **batch**: `price_per_batch` for every complete set of `books_per_batch` books (library

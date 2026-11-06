@@ -22,6 +22,8 @@ const PAGE_SIZE = 24;
 type SortKey = NonNullable<BookListQuery['sort']>;
 // Only keys the API allows (it validates them against an allow-list).
 const SORT_OPTIONS: { value: SortKey; labelKey: string }[] = [
+  // Best match for the search text; alphabetical while nothing is searched.
+  { value: 'relevance', labelKey: 'catalog.sortRelevance' },
   { value: 'title', labelKey: 'catalog.sortTitle' },
   { value: '-title', labelKey: 'catalog.sortTitleDesc' },
   { value: 'author', labelKey: 'catalog.sortAuthor' },
@@ -63,7 +65,7 @@ export default function CustomerPortal() {
   const [ageFilter, setAgeFilter] = useState<string>('all');
   const [ageRanges, setAgeRanges] = useState<string[]>([]);
   const [availableOnly, setAvailableOnly] = useState(false);
-  const [sort, setSort] = useState<SortKey>('title');
+  const [sort, setSort] = useState<SortKey>('relevance');
 
   const [books, setBooks] = useState<Book[]>([]);
   const [total, setTotal] = useState(0);

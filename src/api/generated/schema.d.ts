@@ -730,7 +730,7 @@ export interface components {
          * @description Allow-list of sort keys; ``-`` prefix means descending. Never interpolated into SQL.
          * @enum {string}
          */
-        BookSort: "title" | "-title" | "author" | "-author" | "publication_year" | "-publication_year" | "created_at" | "-created_at";
+        BookSort: "title" | "-title" | "author" | "-author" | "publication_year" | "-publication_year" | "created_at" | "-created_at" | "relevance";
         /** BookStats */
         BookStats: {
             /** Total */
