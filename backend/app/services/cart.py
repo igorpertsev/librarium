@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import date
 
 from sqlalchemy import delete, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -12,7 +13,7 @@ from sqlalchemy.orm import contains_eager
 from app.core.exceptions import BookUnavailableError
 from app.models import Book, Cart, CartItem, User
 from app.models.enums import BookStatus
-from app.repositories.books import active_reservation_exists, get_book_with_reservation
+from app.repositories.books import active_reservation_due_date, get_book_with_reservation
 from app.schemas.book import BookRead
 from app.schemas.cart import CartItemRead, CartRead
 from app.services.books import book_not_found
@@ -38,28 +39,28 @@ async def build_cart(session: AsyncSession, user_id: uuid.UUID) -> CartRead:
     settings = await get_library_settings(session)
     per_batch = settings.books_per_batch
 
-    rows: list[tuple[CartItem, bool]] = []
+    rows: list[tuple[CartItem, date | None]] = []
     cart_id = await _get_cart_id(session, user_id)
     if cart_id is not None:
         result = await session.execute(
-            select(CartItem, active_reservation_exists(Book.id).label("is_reserved"))
+            select(CartItem, active_reservation_due_date(Book.id).label("reserved_until"))
             .join(CartItem.book)
             .options(contains_eager(CartItem.book))
             .where(CartItem.cart_id == cart_id)
             .order_by(CartItem.added_at, CartItem.id)
         )
-        rows = [(row[0], bool(row[1])) for row in result.all()]
+        rows = [(row[0], row[1]) for row in result.all()]
 
     complete_batches = len(rows) // per_batch
     orderable = complete_batches * per_batch
     items = [
         CartItemRead(
-            book=BookRead.from_book(item.book, is_reserved=reserved),
+            book=BookRead.from_book(item.book, reserved_until=reserved_until),
             added_at=item.added_at,
             batch_number=index // per_batch + 1,
             in_complete_batch=index < orderable,
         )
-        for index, (item, reserved) in enumerate(rows)
+        for index, (item, reserved_until) in enumerate(rows)
     ]
     return CartRead(
         items=items,
@@ -78,12 +79,12 @@ async def add_item(session: AsyncSession, user: User, book_id: uuid.UUID) -> Car
     found = await get_book_with_reservation(session, book_id)
     if found is None or not found[0].is_active:
         raise book_not_found()
-    book, reserved = found
+    book, reserved_until = found
     if book.status is not BookStatus.AVAILABLE:
         raise BookUnavailableError(
             [(book.id, book.title)], "This book is not available for borrowing"
         )
-    if reserved:
+    if reserved_until is not None:
         raise BookUnavailableError(
             [(book.id, book.title)], "This book is already reserved by another order"
         )

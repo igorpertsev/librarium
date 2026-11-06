@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from enum import StrEnum
 from typing import Annotated, Any, ClassVar
 
@@ -68,20 +68,26 @@ class BookRead(BookBrief):
         description="True when the copy can be added to a cart: active, status 'available' "
         "and not reserved"
     )
+    available_from: date | None = Field(
+        description="While reserved: the due date of the order holding the copy, i.e. when it "
+        "is expected back. null when the copy is not reserved."
+    )
     created_at: datetime
     updated_at: datetime
 
     @classmethod
-    def from_book(cls, book: Book, *, is_reserved: bool) -> BookRead:
+    def from_book(cls, book: Book, *, reserved_until: date | None) -> BookRead:
+        """``reserved_until``: due date of the active order holding the copy, if any."""
+        computed = {"is_reserved", "is_available", "available_from"}
         data: dict[str, Any] = {
-            name: getattr(book, name)
-            for name in cls.model_fields
-            if name not in {"is_reserved", "is_available"}
+            name: getattr(book, name) for name in cls.model_fields if name not in computed
         }
+        is_reserved = reserved_until is not None
         return cls(
             **data,
             is_reserved=is_reserved,
             is_available=book.is_active and book.status is BookStatus.AVAILABLE and not is_reserved,
+            available_from=reserved_until,
         )
 
 

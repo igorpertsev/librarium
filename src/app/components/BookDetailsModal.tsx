@@ -11,6 +11,7 @@ import { useOrders } from '../contexts/OrdersContext';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { getCartButtonLabel, getCategoryTranslation } from '../utils/translations';
+import { formatCalendarDate } from '../utils/dates';
 import { errorMessage } from '../utils/apiErrors';
 
 interface BookDetailsModalProps {
@@ -20,7 +21,7 @@ interface BookDetailsModalProps {
 }
 
 export function BookDetailsModal({ book, open, onOpenChange }: BookDetailsModalProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { addBookToCart, isBookInCart } = useCart();
   const { isBookUnavailable } = useOrders();
   const inCart = book ? isBookInCart(book.id) : false;
@@ -192,6 +193,11 @@ export function BookDetailsModal({ book, open, onOpenChange }: BookDetailsModalP
               <Badge variant="outline" className="text-xs sm:text-base px-2 sm:px-4 py-0.5 sm:py-1.5">{getCategoryTranslation(t, book.category)}</Badge>
               <Badge variant="outline" className="text-xs sm:text-base px-2 sm:px-4 py-0.5 sm:py-1.5">{book.ageRange}</Badge>
             </div>
+            {isOrderedByOther && book.availableFrom && (
+              <p className="text-sm text-muted-foreground">
+                {t('availability.expectedBack', { date: formatCalendarDate(book.availableFrom, i18n.language) })}
+              </p>
+            )}
 
             <Separator />
 

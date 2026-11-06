@@ -5,9 +5,10 @@ from __future__ import annotations
 import uuid
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
+from datetime import date
 from typing import Any
 
-from sqlalchemy import ColumnElement, Exists, exists, func, or_, select
+from sqlalchemy import ColumnElement, Exists, ScalarSelect, exists, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import InstrumentedAttribute
 
@@ -22,6 +23,21 @@ def active_reservation_exists(book_id: InstrumentedAttribute[uuid.UUID]) -> Exis
         OrderItem.book_id == book_id,
         OrderItem.order_id == Order.id,
         Order.status.in_(ACTIVE_ORDER_STATUSES),
+    )
+
+
+def active_reservation_due_date(book_id: InstrumentedAttribute[uuid.UUID]) -> ScalarSelect[date]:
+    """Due date of the active order holding this copy; NULL when the copy is free.
+
+    Every active order has a due date, so this also answers "is the copy reserved?".
+    """
+    return (
+        select(Order.due_date)
+        .join(OrderItem, OrderItem.order_id == Order.id)
+        .where(OrderItem.book_id == book_id, Order.status.in_(ACTIVE_ORDER_STATUSES))
+        .order_by(Order.due_date.desc())
+        .limit(1)
+        .scalar_subquery()
     )
 
 
@@ -97,30 +113,32 @@ async def list_books(
     sort: BookSort,
     page: int,
     page_size: int,
-) -> tuple[list[tuple[Book, bool]], int]:
+) -> tuple[list[tuple[Book, date | None]], int]:
+    """Books of one page, each with the due date of the order reserving it (or None)."""
     conditions = _conditions(filters)
     total = await session.scalar(select(func.count()).select_from(Book).where(*conditions))
     stmt = (
-        select(Book, active_reservation_exists(Book.id).label("is_reserved"))
+        select(Book, active_reservation_due_date(Book.id).label("reserved_until"))
         .where(*conditions)
         .order_by(_SORT_COLUMNS[sort], Book.id)
         .limit(page_size)
         .offset((page - 1) * page_size)
     )
     rows = (await session.execute(stmt)).all()
-    return [(row[0], bool(row[1])) for row in rows], int(total or 0)
+    return [(row[0], row[1]) for row in rows], int(total or 0)
 
 
 async def get_book_with_reservation(
     session: AsyncSession, book_id: uuid.UUID
-) -> tuple[Book, bool] | None:
-    stmt = select(Book, active_reservation_exists(Book.id).label("is_reserved")).where(
+) -> tuple[Book, date | None] | None:
+    """The book and the due date of the order reserving it (None when free)."""
+    stmt = select(Book, active_reservation_due_date(Book.id).label("reserved_until")).where(
         Book.id == book_id
     )
     row = (await session.execute(stmt)).first()
     if row is None:
         return None
-    return row[0], bool(row[1])
+    return row[0], row[1]
 
 
 async def distinct_age_ranges(session: AsyncSession) -> Sequence[str]:

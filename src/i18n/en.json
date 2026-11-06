@@ -362,5 +362,8 @@
     "ready_one": "{{count}} batch ready",
     "ready_other": "{{count}} batches ready",
     "goToCart": "Go to cart"
+  },
+  "availability": {
+    "expectedBack": "Expected back by {{date}}"
   }
 }

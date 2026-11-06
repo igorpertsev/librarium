@@ -364,5 +364,8 @@
     "ready_many": "{{count}} партий готово",
     "ready_other": "{{count}} партии готовы",
     "goToCart": "В корзину"
+  },
+  "availability": {
+    "expectedBack": "Ожидается к {{date}}"
   }
 }

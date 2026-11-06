@@ -24,7 +24,7 @@ async def list_books(
     rows, total = await books_repo.list_books(
         session, filters, sort=sort, page=page, page_size=page_size
     )
-    return [BookRead.from_book(book, is_reserved=reserved) for book, reserved in rows], total
+    return [BookRead.from_book(book, reserved_until=until) for book, until in rows], total
 
 
 async def get_book(
@@ -33,8 +33,8 @@ async def get_book(
     found = await books_repo.get_book_with_reservation(session, book_id)
     if found is None or (not include_inactive and not found[0].is_active):
         raise book_not_found()
-    book, reserved = found
-    return BookRead.from_book(book, is_reserved=reserved)
+    book, reserved_until = found
+    return BookRead.from_book(book, reserved_until=reserved_until)
 
 
 async def age_ranges(session: AsyncSession) -> Sequence[str]:
@@ -45,7 +45,7 @@ async def create_book(session: AsyncSession, data: BookCreate) -> BookRead:
     book = Book(id=uuid.uuid4(), **data.model_dump())
     session.add(book)
     await session.commit()
-    return BookRead.from_book(book, is_reserved=False)
+    return BookRead.from_book(book, reserved_until=None)
 
 
 async def update_book(session: AsyncSession, book_id: uuid.UUID, patch: BookUpdate) -> BookRead:
