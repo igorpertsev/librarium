@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Textarea } from '../components/ui/textarea';
 import { Badge } from '../components/ui/badge';
-import { Plus, Pencil, Trash2, Users, BookOpen as BookOpenIcon, ClipboardList, CheckCircle2, RotateCcw, Clock, Star, ImageDown } from 'lucide-react';
+import { Plus, Pencil, Trash2, Users, BookOpen as BookOpenIcon, ClipboardList, CheckCircle2, RotateCcw, Clock, Star, ImageDown, BellRing } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -43,7 +43,8 @@ export default function AdminPortal() {
   const fmt = useFormat();
   const [batchDraft, setBatchDraft] = useState<BatchConfig>(batchConfig);
   const { users, updateUserRole, refreshUsers } = useAuth();
-  const { orders, confirmOrder, markReturned, cancelOrder, updateDueDate } = useOrders();
+  const { orders, isLoading: ordersLoading, confirmOrder, markReturned, cancelOrder, updateDueDate } = useOrders();
+  const overdueCount = orders.filter(isOverdueOrder).length;
   const { invalidateCatalog } = useCatalog();
   const { confirm, confirmDialog } = useConfirm();
   const [currentPage, setCurrentPage] = useState(1);
@@ -277,6 +278,10 @@ export default function AdminPortal() {
             <div className="flex justify-between">
               <span className="text-muted-foreground">{t('admin.notAvailable')}:</span>
               <span>{stats?.not_available ?? '—'}</span>
+            </div>
+            <div className="flex justify-between border-t border-border pt-2">
+              <span className="text-muted-foreground">{t('admin.overdueLoans')}:</span>
+              <span className={overdueCount > 0 ? 'text-destructive font-medium' : undefined}>{ordersLoading ? '—' : overdueCount}</span>
             </div>
           </CardContent>
         </Card>
@@ -719,6 +724,11 @@ function BookForm({ formData, setFormData, t }: {
   );
 }
 
+/** A borrowed order whose due date has passed. */
+function isOverdueOrder(order: Order): boolean {
+  return order.status === 'confirmed' && daysUntil(order.dueDate) < 0;
+}
+
 function orderStatusBadge(status: string, t: any) {
   switch (status) {
     case 'pending':
@@ -865,7 +875,7 @@ function OrdersTab({
       toast.error(errorMessage(t, result.error));
     }
   };
-  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'confirmed' | 'returned' | 'cancelled'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'confirmed' | 'overdue' | 'returned' | 'cancelled'>('all');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [editingDueDateId, setEditingDueDateId] = useState<string | null>(null);
   const [dueDateInput, setDueDateInput] = useState('');
@@ -891,7 +901,9 @@ function OrdersTab({
     o.userEmail.toLowerCase().includes(query) ||
     String(o.number ?? '').includes(query) ||
     o.books.some(b => b.title.toLowerCase().includes(query));
-  const filtered = (statusFilter === 'all' ? orders : orders.filter(o => o.status === statusFilter)).filter(matchesSearch);
+  const matchesStatus = (o: Order, s: typeof statusFilter) =>
+    s === 'all' || (s === 'overdue' ? isOverdueOrder(o) : o.status === s);
+  const filtered = orders.filter(o => matchesStatus(o, statusFilter)).filter(matchesSearch);
 
   return (
     <div className="space-y-4">
@@ -904,16 +916,16 @@ function OrdersTab({
         className="max-w-md"
       />
       <div className="flex gap-2 flex-wrap">
-        {(['all', 'pending', 'confirmed', 'returned', 'cancelled'] as const).map(s => (
+        {(['all', 'pending', 'confirmed', 'overdue', 'returned', 'cancelled'] as const).map(s => (
           <Button
             key={s}
             size="sm"
-            variant={statusFilter === s ? 'default' : 'outline'}
+            variant={statusFilter === s ? (s === 'overdue' ? 'destructive' : 'default') : 'outline'}
             onClick={() => setStatusFilter(s)}
           >
             {t(`admin.filter${s.charAt(0).toUpperCase() + s.slice(1)}`)}
             {s !== 'all' && (
-              <span className="ml-1 opacity-70">({orders.filter(o => o.status === s).length})</span>
+              <span className="ml-1 opacity-70">({orders.filter(o => matchesStatus(o, s)).length})</span>
             )}
           </Button>
         ))}
@@ -1050,6 +1062,19 @@ function OrdersTab({
                             {t('admin.cancelOrder')}
                           </Button>
                         </>
+                      )}
+                      {isOverdueOrder(order) && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={busyOrderId === order.id}
+                          onClick={() =>
+                            runOrderAction(order.id, () => runAction(async () => { await adminApi.remindCustomer(order.id); }), 'admin.reminderQueued')
+                          }
+                        >
+                          <BellRing className="w-4 h-4 mr-1" aria-hidden="true" />
+                          {t('admin.remind')}
+                        </Button>
                       )}
                       {order.status === 'confirmed' && (
                         <Button

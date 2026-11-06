@@ -22,6 +22,7 @@ import type {
   OrderStatusDto,
   Paged,
   RegisterDto,
+  ReminderQueuedDto,
   TokenResponseDto,
   UserDto,
   UserUpdateDto,
@@ -85,6 +86,8 @@ export const adminApi = {
       method: 'PATCH',
       body: { status },
     }),
+  remindCustomer: (orderId: string) =>
+    apiRequest<ReminderQueuedDto>(`/admin/orders/${id(orderId)}/remind`, { method: 'POST' }),
   setOrderDueDate: (orderId: string, dueDate: string) =>
     apiRequest<OrderDto>(`/admin/orders/${id(orderId)}/due-date`, {
       method: 'PATCH',

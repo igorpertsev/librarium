@@ -168,7 +168,11 @@
     "orderCancelledMsg": "Order cancelled",
     "dueDateUpdated": "Due date updated",
     "searchOrders": "Search by customer, email, order number or book",
-    "showLess": "Show less"
+    "showLess": "Show less",
+    "filterOverdue": "Overdue",
+    "overdueLoans": "Overdue loans",
+    "remind": "Remind",
+    "reminderQueued": "Reminder queued: the customer will get an email within a few minutes"
   },
   "bookForm": {
     "title": "Title",
@@ -306,7 +310,8 @@
     "notFound": "Not found",
     "bookUnavailable": "Some books are no longer available",
     "bookUnavailableList": "No longer available: {{titles}}. Remove them from the cart and try again.",
-    "incompleteBatch": "Add books to complete a batch of {{count}} before checking out"
+    "incompleteBatch": "Add books to complete a batch of {{count}} before checking out",
+    "reminderRecentlySent": "This customer was reminded less than 24 hours ago."
   },
   "checkout": {
     "title": "Confirm Order",

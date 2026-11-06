@@ -23,7 +23,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import BadRequestError, BookUnavailableError, ConflictError, NotFoundError
-from app.models import Book, Cart, CartItem, Order, OrderItem, User
+from app.models import Book, Cart, CartItem, Notification, Order, OrderItem, User
 from app.models.enums import (
     ACTIVE_ORDER_STATUSES,
     CUSTOMER_CANCELLABLE_STATUSES,
@@ -250,6 +250,20 @@ async def change_status(
             )
         await session.commit()
     return await get_order(session, order_id)
+
+
+async def remind_customer(session: AsyncSession, order_id: uuid.UUID) -> Notification:
+    """Queue a due-date reminder for a borrowed order right away (librarians)."""
+    order = await orders_repo.lock_order(session, order_id)
+    if order is None:
+        raise order_not_found()
+    if order.status is not OrderStatus.CONFIRMED:
+        raise ConflictError("Only borrowed orders can be reminded about", code="ORDER_NOT_BORROWED")
+    notification = await notifications.queue_manual_reminder(
+        session, order, today=_today(), now=datetime.now(UTC)
+    )
+    await session.commit()
+    return notification
 
 
 async def change_due_date(session: AsyncSession, order_id: uuid.UUID, due_date: date) -> Order:

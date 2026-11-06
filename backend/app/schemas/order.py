@@ -4,7 +4,7 @@ import uuid
 from datetime import date, datetime
 from decimal import Decimal
 
-from app.models.enums import BookCategory, ContactMethod, OrderStatus
+from app.models.enums import BookCategory, ContactMethod, NotificationKind, OrderStatus
 from app.schemas.book import BookBrief
 from app.schemas.common import ApiModel, Page, RequestModel
 
@@ -63,3 +63,8 @@ class OrderStatusUpdate(RequestModel):
 
 class OrderDueDateUpdate(RequestModel):
     due_date: date
+
+
+class ReminderQueued(ApiModel):
+    kind: NotificationKind
+    queued_at: datetime

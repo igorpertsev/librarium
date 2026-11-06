@@ -19,6 +19,8 @@ const MESSAGE_KEYS: Record<string, string> = {
   CANNOT_MODIFY_SELF: 'errors.cannotModifySelf',
   BOOK_NOT_FOUND: 'errors.bookNotFound',
   ORDER_NOT_FOUND: 'errors.notFound',
+  REMINDER_RECENTLY_SENT: 'errors.reminderRecentlySent',
+  ORDER_NOT_BORROWED: 'errors.invalidTransition',
   USER_NOT_FOUND: 'errors.notFound',
   NOT_FOUND: 'errors.notFound',
 };
