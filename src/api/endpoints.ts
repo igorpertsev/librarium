@@ -1,4 +1,4 @@
-import { apiRequest } from './client';
+import { apiDownload, apiRequest } from './client';
 import type {
   AdminBookListQuery,
   AdminOrderListQuery,
@@ -28,6 +28,7 @@ import type {
   RegisterDto,
   ReminderQueuedDto,
   ResetPasswordDto,
+  ReportSummaryDto,
   TokenResponseDto,
   UserDto,
   UserUpdateDto,
@@ -35,6 +36,11 @@ import type {
 } from './types';
 
 const id = (value: string) => encodeURIComponent(value);
+
+export interface ReportPeriod {
+  date_from: string;
+  date_to: string;
+}
 
 export const authApi = {
   register: (body: RegisterDto) =>
@@ -124,6 +130,9 @@ export const adminApi = {
       body: { due_date: dueDate },
     }),
   getSettings: () => apiRequest<LibrarySettingsDto>('/admin/settings'),
+  reportSummary: (period: ReportPeriod) =>
+    apiRequest<ReportSummaryDto>('/admin/reports/summary', { query: period }),
+  ordersCsv: (period: ReportPeriod) => apiDownload('/admin/reports/orders.csv', { query: period }),
   updateSettings: (body: LibrarySettingsUpdateDto) =>
     apiRequest<LibrarySettingsDto>('/admin/settings', { method: 'PATCH', body }),
 };

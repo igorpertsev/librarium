@@ -132,6 +132,21 @@ export function refreshSession(): Promise<TokenResponseDto | null> {
   return refreshInFlight;
 }
 
+/** Like apiRequest, for file downloads (CSV exports): returns the body as a Blob. */
+export async function apiDownload(path: string, options: Omit<RequestOptions, 'body'> = {}): Promise<Blob> {
+  let response = await send(path, options);
+  if (response.status === 401 && options.auth !== false) {
+    const refreshed = await refreshSession();
+    if (!refreshed) {
+      listeners.onSessionExpired?.();
+      return parse<never>(response);
+    }
+    response = await send(path, options);
+  }
+  if (!response.ok) return parse<never>(response); // throws ApiError
+  return response.blob();
+}
+
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
   let response = await send(path, options);
   if (response.status === 401 && options.auth !== false) {

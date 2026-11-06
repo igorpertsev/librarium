@@ -2964,6 +2964,208 @@
         }
       }
     },
+    "/api/v1/admin/reports/summary": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Report Summary",
+        "description": "Orders placed, loans (orders handed over) and their books, returns, revenue (orders handed over), readers and the 10 most borrowed books in the period; overdue loans right now. Default period: the last 30 days.",
+        "operationId": "admin_report_summary_api_v1_admin_reports_summary_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportSummaryRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/reports/orders.csv": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Report Orders Csv",
+        "description": "Orders placed in the period as CSV (UTF-8 with BOM for spreadsheet apps).",
+        "operationId": "admin_report_orders_csv_api_v1_admin_reports_orders_csv_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/csv": {}
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
     "/api/v1/admin/settings": {
       "get": {
         "tags": [
@@ -4915,6 +5117,81 @@
         ],
         "title": "ReminderQueued"
       },
+      "ReportSummaryRead": {
+        "properties": {
+          "date_from": {
+            "type": "string",
+            "format": "date",
+            "title": "Date From"
+          },
+          "date_to": {
+            "type": "string",
+            "format": "date",
+            "title": "Date To"
+          },
+          "orders_placed": {
+            "type": "integer",
+            "title": "Orders Placed"
+          },
+          "orders_confirmed": {
+            "type": "integer",
+            "title": "Orders Confirmed"
+          },
+          "books_lent": {
+            "type": "integer",
+            "title": "Books Lent"
+          },
+          "books_returned": {
+            "type": "integer",
+            "title": "Books Returned"
+          },
+          "active_readers": {
+            "type": "integer",
+            "title": "Active Readers"
+          },
+          "overdue_now": {
+            "type": "integer",
+            "title": "Overdue Now"
+          },
+          "revenue": {
+            "type": "string",
+            "title": "Revenue"
+          },
+          "currency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency"
+          },
+          "top_books": {
+            "items": {
+              "$ref": "#/components/schemas/TopBookRead"
+            },
+            "type": "array",
+            "title": "Top Books"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date_from",
+          "date_to",
+          "orders_placed",
+          "orders_confirmed",
+          "books_lent",
+          "books_returned",
+          "active_readers",
+          "overdue_now",
+          "revenue",
+          "currency",
+          "top_books"
+        ],
+        "title": "ReportSummaryRead"
+      },
       "ResetPasswordRequest": {
         "properties": {
           "token": {
@@ -4967,6 +5244,29 @@
         ],
         "title": "TokenResponse",
         "description": "The refresh token is never part of a JSON body: it travels in an HttpOnly cookie."
+      },
+      "TopBookRead": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "author": {
+            "type": "string",
+            "title": "Author"
+          },
+          "loans": {
+            "type": "integer",
+            "title": "Loans"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "author",
+          "loans"
+        ],
+        "title": "TopBookRead"
       },
       "UserRead": {
         "properties": {

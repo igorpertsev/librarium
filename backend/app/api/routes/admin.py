@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, date, datetime, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, Response, status
@@ -12,6 +13,7 @@ from app.api.dependencies import (
     SessionDep,
     require_admin,
 )
+from app.core.exceptions import BadRequestError
 from app.models.enums import BookCategory, BookStatus, OrderStatus
 from app.repositories import orders as orders_repo
 from app.repositories.books import BookFilters
@@ -26,8 +28,9 @@ from app.schemas.order import (
     OrderStatusUpdate,
     ReminderQueued,
 )
+from app.schemas.report import ReportSummaryRead
 from app.schemas.user import AdminUserPage, AdminUserUpdate, UserRead
-from app.services import book_import
+from app.services import book_import, reports
 from app.services import books as books_service
 from app.services import library_settings as settings_service
 from app.services import orders as orders_service
@@ -228,6 +231,59 @@ async def admin_change_order_due_date(
 async def admin_remind_customer(order_id: uuid.UUID, session: SessionDep) -> ReminderQueued:
     notification = await orders_service.remind_customer(session, order_id)
     return ReminderQueued(kind=notification.kind, queued_at=notification.created_at)
+
+
+# --- Reports -----------------------------------------------------------------------------
+
+MAX_REPORT_DAYS = 366
+
+
+def _period(date_from: date | None, date_to: date | None) -> tuple[date, date]:
+    """Default: the last 30 days up to today (both inclusive)."""
+    end = date_to or datetime.now(UTC).date()
+    start = date_from or end - timedelta(days=29)
+    if start > end or (end - start).days >= MAX_REPORT_DAYS:
+        raise BadRequestError(
+            f"Choose a period of at most {MAX_REPORT_DAYS} days that ends after it starts",
+            code="INVALID_PERIOD",
+        )
+    return start, end
+
+
+@router.get(
+    "/reports/summary",
+    response_model=ReportSummaryRead,
+    responses=error_responses(400, 422),
+    description="Orders placed, loans (orders handed over) and their books, returns, revenue "
+    "(orders handed over), readers and the 10 most borrowed books in the period; overdue "
+    "loans right now. Default period: the last 30 days.",
+)
+async def admin_report_summary(
+    session: SessionDep, date_from: date | None = None, date_to: date | None = None
+) -> ReportSummaryRead:
+    start, end = _period(date_from, date_to)
+    report = await reports.summary(session, start, end)
+    return ReportSummaryRead.model_validate(report, from_attributes=True)
+
+
+@router.get(
+    "/reports/orders.csv",
+    response_class=Response,
+    responses={200: {"content": {"text/csv": {}}}, **error_responses(400, 422)},
+    description="Orders placed in the period as CSV (UTF-8 with BOM for spreadsheet apps).",
+)
+async def admin_report_orders_csv(
+    session: SessionDep, date_from: date | None = None, date_to: date | None = None
+) -> Response:
+    start, end = _period(date_from, date_to)
+    content = "\ufeff" + await reports.orders_csv(session, start, end)
+    return Response(
+        content=content,
+        media_type="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": f'attachment; filename="orders-{start}-to-{end}.csv"',
+        },
+    )
 
 
 # --- Library settings (batch configuration) --------------------------------------------

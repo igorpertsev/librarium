@@ -23,6 +23,7 @@ const MESSAGE_KEYS: Record<string, string> = {
   ORDER_NOT_FOUND: 'errors.notFound',
   REMINDER_RECENTLY_SENT: 'errors.reminderRecentlySent',
   ORDER_NOT_BORROWED: 'errors.invalidTransition',
+  INVALID_PERIOD: 'errors.invalidPeriod',
   USER_NOT_FOUND: 'errors.notFound',
   NOT_FOUND: 'errors.notFound',
 };
