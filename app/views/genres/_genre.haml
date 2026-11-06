@@ -1,9 +1,0 @@
-%tr{id: "#{dom_id(genre)}-row"}
-  %td= genre.id
-  %td= genre.name
-  %td= genre.genres_to_books.count
-  %td= genre.created_at
-  %td= genre.updated_at
-  %td
-    = link_to t('genres.form.edit'), edit_genre_path(genre), data: { turbo_frame: dom_id(Genre.new) }
-    = link_to t('genres.form.delete'), genre, method: :delete, data: { confirm: 'Are you sure?', 'turbo-method': :delete }

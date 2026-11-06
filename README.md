@@ -1,24 +1,11 @@
-# README
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+  # Online library website
 
-Things you may want to cover:
+  This is a code bundle for Online library website. The original project is available at https://www.figma.com/design/3D9jREiGTmIKNYLFQXjh7o/Online-library-website.
 
-* Ruby version
+  ## Running the code
 
-* System dependencies
+  Run `npm i` to install the dependencies.
 
-* Configuration
-
-* Database creation
-
-* Database initialization
-
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
+  Run `npm run dev` to start the development server.
+  

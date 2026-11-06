@@ -1,8 +1,0 @@
-%tr{id: "#{dom_id(publisher)}-row"}
-  %td= publisher.id
-  %td= publisher.name
-  %td= publisher.created_at
-  %td= publisher.updated_at
-  %td
-    = link_to t('publishers.form.edit'), edit_publisher_path(publisher), data: { turbo_frame: dom_id(Publisher.new) }
-    = link_to t('publishers.form.delete'), publisher, method: :delete, data: { confirm: 'Are you sure?', 'turbo-method': :delete }

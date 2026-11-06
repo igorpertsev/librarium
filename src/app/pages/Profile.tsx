@@ -1,0 +1,390 @@
+import { useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { useOrders } from '../contexts/OrdersContext';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
+import { Calendar, Mail, User as UserIcon, BookOpen, Pencil, MessageCircle, Star, CheckCircle2 } from 'lucide-react';
+import { UserContacts, PreferredContact } from '../types';
+import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
+
+function ContactRow({ label, value, isPreferred }: { label: string; value?: string; isPreferred?: boolean }) {
+  if (!value) return null;
+  return (
+    <div className="flex items-center gap-3">
+      <div className="p-2 bg-primary/10 rounded-lg"><MessageCircle className="w-5 h-5 text-primary" /></div>
+      <div className="flex-1">
+        <div className="flex items-center gap-1.5">
+          <p className="text-sm text-muted-foreground">{label}</p>
+          {isPreferred && <Star className="w-3 h-3 fill-amber-400 text-amber-400" />}
+        </div>
+        <p>{value}</p>
+      </div>
+    </div>
+  );
+}
+
+const CONTACT_FIELDS: { key: PreferredContact; labelKey: string; placeholder: string; type: string }[] = [
+  { key: 'whatsapp',  labelKey: 'auth.whatsapp',  placeholder: '+1 234 567 8900', type: 'text' },
+  { key: 'telegram',  labelKey: 'auth.telegram',  placeholder: '@username',       type: 'text' },
+  { key: 'instagram', labelKey: 'auth.instagram', placeholder: '@handle',         type: 'text' },
+  { key: 'phone',     labelKey: 'auth.phone',     placeholder: '+1 234 567 8900', type: 'tel'  },
+];
+
+export default function Profile() {
+  const { t } = useTranslation();
+  const { user, updateUser, changePassword } = useAuth();
+  const { getOrdersForUser } = useOrders();
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editWhatsapp, setEditWhatsapp] = useState('');
+  const [editTelegram, setEditTelegram] = useState('');
+  const [editInstagram, setEditInstagram] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editPreferred, setEditPreferred] = useState<PreferredContact | ''>('');
+
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+
+  if (!user) return null;
+
+  const userOrders = getOrdersForUser(user.id);
+  const borrowedBooks = userOrders
+    .filter(o => o.status === 'confirmed')
+    .flatMap(o => o.books.map(book => ({
+      bookId: book.id,
+      book,
+      borrowedDate: o.confirmedAt || o.orderedAt,
+      returnDate: o.dueDate,
+    })));
+  const returnedBooks = userOrders
+    .filter(o => o.status === 'returned')
+    .flatMap(o => o.books.map(book => ({
+      bookId: book.id,
+      book,
+      returnedAt: o.returnedAt!,
+    })));
+
+  const isOverdue = (returnDate: string) => new Date(returnDate) < new Date();
+
+  const getDaysUntilReturn = (returnDate: string) =>
+    Math.ceil((new Date(returnDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+
+  const handleEditClick = () => {
+    setEditName(user.name);
+    setEditEmail(user.email);
+    setEditWhatsapp(user.contacts?.whatsapp ?? '');
+    setEditTelegram(user.contacts?.telegram ?? '');
+    setEditInstagram(user.contacts?.instagram ?? '');
+    setEditPhone(user.contacts?.phone ?? '');
+    setEditPreferred(user.contacts?.preferred ?? '');
+    setError('');
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveProfile = async () => {
+    setError('');
+    if (!editName.trim()) { setError(t('profile.nameEmpty')); return; }
+    if (!editEmail.trim()) { setError(t('profile.emailEmpty')); return; }
+
+    const contacts: UserContacts = {
+      whatsapp: editWhatsapp.trim() || undefined,
+      telegram: editTelegram.trim() || undefined,
+      instagram: editInstagram.trim() || undefined,
+      phone: editPhone.trim() || undefined,
+      preferred: editPreferred || undefined,
+    };
+
+    if (!contacts.whatsapp && !contacts.telegram && !contacts.instagram && !contacts.phone) {
+      setError(t('auth.contactRequired'));
+      return;
+    }
+
+    const success = await updateUser(editName, editEmail, contacts);
+    if (success) {
+      setIsEditDialogOpen(false);
+      toast.success(t('profile.profileUpdated'));
+    } else {
+      setError(t('profile.emailTaken'));
+    }
+  };
+
+  const handleOpenPasswordDialog = () => {
+    setCurrentPassword(''); setNewPassword(''); setConfirmPassword(''); setPasswordError('');
+    setIsPasswordDialogOpen(true);
+  };
+
+  const handleChangePassword = async () => {
+    setPasswordError('');
+    if (!currentPassword) { setPasswordError(t('profile.enterCurrentPasswordError')); return; }
+    if (newPassword.length < 6) { setPasswordError(t('profile.passwordLengthError')); return; }
+    if (newPassword !== confirmPassword) { setPasswordError(t('profile.passwordsNoMatch')); return; }
+
+    const success = await changePassword(currentPassword, newPassword);
+    if (success) {
+      setIsPasswordDialogOpen(false);
+      toast.success(t('profile.passwordChanged'));
+    } else {
+      setPasswordError(t('profile.incorrectPassword'));
+    }
+  };
+
+  const contacts = user.contacts;
+  const hasContacts = contacts && (contacts.whatsapp || contacts.telegram || contacts.instagram || contacts.phone);
+
+  return (
+    <div className="container mx-auto px-4 py-6 space-y-6">
+      <h1>{t('profile.title')}</h1>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>{t('profile.personalInfo')}</CardTitle>
+              <CardDescription>{t('profile.personalInfoDesc')}</CardDescription>
+            </div>
+            <Button variant="ghost" size="icon" onClick={handleEditClick}>
+              <Pencil className="w-4 h-4" />
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg"><UserIcon className="w-5 h-5 text-primary" /></div>
+              <div>
+                <p className="text-sm text-muted-foreground">{t('profile.name')}</p>
+                <p>{user.name}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg"><Mail className="w-5 h-5 text-primary" /></div>
+              <div>
+                <p className="text-sm text-muted-foreground">{t('profile.email')}</p>
+                <p>{user.email}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg"><BookOpen className="w-5 h-5 text-primary" /></div>
+              <div>
+                <p className="text-sm text-muted-foreground">{t('profile.role')}</p>
+                <Badge variant="outline" className="capitalize">{user.role === 'admin' ? t('admin.admin') : t('admin.customer')}</Badge>
+              </div>
+            </div>
+
+            {hasContacts && (
+              <div className="border-t border-border pt-3 space-y-3">
+                <p className="text-sm font-medium">{t('auth.contactInfo')}</p>
+                <ContactRow label={t('auth.whatsapp')} value={contacts?.whatsapp} isPreferred={contacts?.preferred === 'whatsapp'} />
+                <ContactRow label={t('auth.telegram')} value={contacts?.telegram} isPreferred={contacts?.preferred === 'telegram'} />
+                <ContactRow label={t('auth.instagram')} value={contacts?.instagram} isPreferred={contacts?.preferred === 'instagram'} />
+                <ContactRow label={t('auth.phone')} value={contacts?.phone} isPreferred={contacts?.preferred === 'phone'} />
+              </div>
+            )}
+
+            <Button variant="outline" className="w-full mt-2" onClick={handleOpenPasswordDialog}>
+              {t('profile.changePassword')}
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle>{t('profile.borrowingStats')}</CardTitle>
+            <CardDescription>{t('profile.borrowingStatsDesc')}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div className="p-4 bg-muted rounded-lg">
+                <p className="text-3xl mb-1">{borrowedBooks.length}</p>
+                <p className="text-sm text-muted-foreground">{t('profile.currentlyBorrowed')}</p>
+              </div>
+              <div className="p-4 bg-muted rounded-lg">
+                <p className="text-3xl mb-1">{borrowedBooks.filter(b => !isOverdue(b.returnDate)).length}</p>
+                <p className="text-sm text-muted-foreground">{t('profile.onTime')}</p>
+              </div>
+              <div className="p-4 bg-muted rounded-lg">
+                <p className="text-3xl mb-1">{borrowedBooks.filter(b => isOverdue(b.returnDate)).length}</p>
+                <p className="text-sm text-muted-foreground">{t('profile.overdue')}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('profile.currentlyBorrowedBooks')}</CardTitle>
+          <CardDescription>{t('profile.booksToReturn')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {borrowedBooks.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">{t('profile.noBorrowedBooks')}</div>
+          ) : (
+            <div className="space-y-4">
+              {borrowedBooks.map((borrowed) => {
+                const daysLeft = getDaysUntilReturn(borrowed.returnDate);
+                const overdue = isOverdue(borrowed.returnDate);
+                return (
+                  <div key={borrowed.bookId} className="flex gap-4 p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                    <div className="w-16 h-24 flex-shrink-0 overflow-hidden rounded bg-muted">
+                      <img src={borrowed.book.coverImage} alt={borrowed.book.title} className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="truncate mb-1">{borrowed.book.title}</h3>
+                      <p className="text-sm text-muted-foreground mb-2">{borrowed.book.author}</p>
+                      <div className="flex flex-wrap gap-2">
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <Calendar className="w-4 h-4" />
+                          <span>{t('profile.borrowed')}: {new Date(borrowed.borrowedDate).toLocaleDateString()}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">{t('profile.returnBy')}: {new Date(borrowed.returnDate).toLocaleDateString()}</span>
+                          {overdue ? (
+                            <Badge variant="destructive">{t('profile.overdueBy')} {Math.abs(daysLeft)} {t('myBooks.days')}</Badge>
+                          ) : daysLeft <= 3 ? (
+                            <Badge className="bg-amber-700">{t('profile.dueIn')} {daysLeft} {t('myBooks.days')}</Badge>
+                          ) : (
+                            <Badge className="bg-green-700">{daysLeft} {t('profile.daysLeft')}</Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {returnedBooks.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('profile.returnedBooks')}</CardTitle>
+            <CardDescription>{t('profile.returnedBooksDesc')}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {returnedBooks.map((entry, idx) => (
+                <div key={`${entry.bookId}-${idx}`} className="flex gap-4 p-4 border border-border rounded-lg bg-muted/30">
+                  <div className="w-16 h-24 flex-shrink-0 overflow-hidden rounded bg-muted">
+                    <img src={entry.book.coverImage} alt={entry.book.title} className="w-full h-full object-cover opacity-70" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="truncate mb-1">{entry.book.title}</h3>
+                    <p className="text-sm text-muted-foreground mb-2">{entry.book.author}</p>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <CheckCircle2 className="w-4 h-4 text-green-600" />
+                      <span>{t('profile.returnedOn')}: {new Date(entry.returnedAt).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Edit Profile Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{t('profile.editProfile')}</DialogTitle>
+            <DialogDescription>{t('profile.editProfileDesc')}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">{t('profile.fullName')}</Label>
+              <Input id="edit-name" value={editName} onChange={e => setEditName(e.target.value)} placeholder={t('profile.yourName')} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-email">{t('profile.email')}</Label>
+              <Input id="edit-email" type="email" value={editEmail} onChange={e => setEditEmail(e.target.value)} placeholder={t('profile.yourEmail')} />
+            </div>
+            <div className="space-y-3 pt-1">
+              <div>
+                <p className="text-sm font-medium">{t('auth.contactInfo')} <span className="text-muted-foreground font-normal text-xs">({t('auth.atLeastOne')})</span></p>
+                <p className="text-xs text-muted-foreground mt-0.5">{t('auth.starToMarkPreferred')}</p>
+              </div>
+              {(() => {
+                const vals: Record<PreferredContact, string> = { whatsapp: editWhatsapp, telegram: editTelegram, instagram: editInstagram, phone: editPhone };
+                const setters: Record<PreferredContact, (v: string) => void> = { whatsapp: setEditWhatsapp, telegram: setEditTelegram, instagram: setEditInstagram, phone: setEditPhone };
+                return CONTACT_FIELDS.map(({ key, labelKey, placeholder, type }) => (
+                  <div key={key} className="space-y-1.5">
+                    <Label htmlFor={`edit-${key}`}>{t(labelKey)}</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id={`edit-${key}`}
+                        type={type}
+                        value={vals[key]}
+                        onChange={e => { setters[key](e.target.value); if (!e.target.value.trim() && editPreferred === key) setEditPreferred(''); }}
+                        placeholder={placeholder}
+                        className="flex-1"
+                      />
+                      <button
+                        type="button"
+                        title={t('auth.markPreferred')}
+                        disabled={!vals[key].trim()}
+                        onClick={() => setEditPreferred(prev => prev === key ? '' : key)}
+                        className={`px-2 rounded-md border transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${
+                          editPreferred === key
+                            ? 'bg-amber-400 border-amber-500 text-white'
+                            : 'border-border text-muted-foreground hover:border-amber-400 hover:text-amber-500'
+                        }`}
+                      >
+                        <Star className="w-4 h-4" fill={editPreferred === key ? 'currentColor' : 'none'} />
+                      </button>
+                    </div>
+                  </div>
+                ));
+              })()}
+            </div>
+            {error && <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">{error}</div>}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>{t('admin.cancel')}</Button>
+            <Button onClick={handleSaveProfile}>{t('admin.saveChanges')}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Change Password Dialog */}
+      <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('profile.changePasswordTitle')}</DialogTitle>
+            <DialogDescription>{t('profile.changePasswordDesc')}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="current-password">{t('profile.currentPassword')}</Label>
+              <Input id="current-password" type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} placeholder={t('profile.enterCurrentPassword')} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-password">{t('profile.newPassword')}</Label>
+              <Input id="new-password" type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder={t('profile.newPasswordPlaceholder')} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">{t('profile.confirmPassword')}</Label>
+              <Input id="confirm-password" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder={t('profile.repeatPassword')} />
+            </div>
+            {passwordError && <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">{passwordError}</div>}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsPasswordDialogOpen(false)}>{t('admin.cancel')}</Button>
+            <Button onClick={handleChangePassword}>{t('profile.changePassword')}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
