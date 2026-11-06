@@ -166,6 +166,8 @@ docker compose --profile dev run --rm backend-dev alembic check
 - создаёт/активирует администратора из `SEED_ADMIN_EMAIL` + `SEED_ADMIN_PASSWORD` (пароль в коде не хранится);
   пароль существующего админа меняется только с `--reset-admin-password`;
 - `--demo-books` добавляет 16 книг из `backend/app/seed_data/demo_books.json`; в production отказывается работать;
+- `--refresh-demo-covers` (вместе с `--demo-books`) обновляет обложки уже существующих демо-книг
+  (демо-данные используют настоящие обложки из Open Library);
 - гарантирует строку настроек библиотеки. Повторный запуск ничего не дублирует.
 
 ## Тесты, lint, typecheck

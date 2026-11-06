@@ -171,6 +171,12 @@
     "coverImage": "URL обложки",
     "additionalImages": "Дополнительные изображения (один URL на строку)",
     "additionalImagesDesc": "Введите URL изображений, по одному на строку. Они будут показаны в карусели.",
+    "findCover": "Найти обложку по ISBN",
+    "findCoverDesc": "Ищет обложку в Open Library по указанному ISBN.",
+    "coverFound": "Обложка найдена",
+    "coverNotFound": "Для этого ISBN обложка не найдена",
+    "coverInvalidIsbn": "Сначала введите корректный ISBN из 10 или 13 цифр",
+    "coverPreview": "Предпросмотр обложки",
     "description": "Описание"
   },
   "auth": {

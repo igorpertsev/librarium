@@ -166,6 +166,8 @@ The application never calls `metadata.create_all()`.
 - creates/activates the administrator from `SEED_ADMIN_EMAIL` + `SEED_ADMIN_PASSWORD` (no password is stored in code);
   an existing admin's password is only changed with `--reset-admin-password`;
 - `--demo-books` adds 16 books from `backend/app/seed_data/demo_books.json`; refuses to run in production;
+- `--refresh-demo-covers` (with `--demo-books`) updates the covers of demo books that already exist
+  (the demo data uses real covers from Open Library);
 - ensures the library settings row exists. Running it again never duplicates anything.
 
 ## Tests, lint, typecheck

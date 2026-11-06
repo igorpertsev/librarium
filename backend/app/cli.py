@@ -33,7 +33,13 @@ DEMO_BOOKS_FILE = Path(__file__).parent / "seed_data" / "demo_books.json"
 MIN_ADMIN_PASSWORD_LENGTH = 12
 
 
-async def _seed(settings: Settings, *, demo_books: bool, reset_admin_password: bool) -> None:
+async def _seed(
+    settings: Settings,
+    *,
+    demo_books: bool,
+    reset_admin_password: bool,
+    refresh_demo_covers: bool = False,
+) -> None:
     if demo_books and settings.is_production:
         raise SystemExit("Refusing to load demo books in production.")
 
@@ -72,16 +78,23 @@ async def _seed(settings: Settings, *, demo_books: bool, reset_admin_password: b
 
             if demo_books:
                 raw: list[dict[str, Any]] = json.loads(DEMO_BOOKS_FILE.read_text("utf-8"))
-                created = 0
+                created = refreshed = 0
                 for item in raw:
                     data = BookCreate.model_validate(item)
-                    exists = await session.scalar(
-                        select(Book.id).where(Book.isbn == data.isbn, Book.title == data.title)
+                    existing = await session.scalar(
+                        select(Book).where(Book.isbn == data.isbn, Book.title == data.title)
                     )
-                    if exists is None:
+                    if existing is None:
                         session.add(Book(id=uuid.uuid4(), **data.model_dump()))
                         created += 1
-                print(f"Demo books: {created} created, {len(raw) - created} already present.")
+                    elif refresh_demo_covers and existing.cover_url != data.cover_url:
+                        existing.cover_url = data.cover_url
+                        existing.image_urls = data.image_urls
+                        refreshed += 1
+                print(
+                    f"Demo books: {created} created, {len(raw) - created} already present"
+                    + (f", {refreshed} covers refreshed." if refresh_demo_covers else ".")
+                )
 
             await session.commit()
     finally:
@@ -123,6 +136,11 @@ def main(argv: list[str] | None = None) -> None:
         action="store_true",
         help="Overwrite the password of an existing admin with SEED_ADMIN_PASSWORD",
     )
+    seed.add_argument(
+        "--refresh-demo-covers",
+        action="store_true",
+        help="With --demo-books: update the covers of demo books that already exist",
+    )
 
     export = commands.add_parser("export-openapi", help="Write openapi.json")
     export.add_argument("path", nargs="?", default="openapi.json")
@@ -137,6 +155,7 @@ def main(argv: list[str] | None = None) -> None:
                 get_settings(),
                 demo_books=args.demo_books,
                 reset_admin_password=args.reset_admin_password,
+                refresh_demo_covers=args.refresh_demo_covers,
             )
         )
     elif args.command == "export-openapi":
