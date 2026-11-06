@@ -296,34 +296,34 @@ export default function Cart() {
           {!orderComplete ? (
             <>
               <DialogHeader>
-                <DialogTitle>Confirm Order</DialogTitle>
+                <DialogTitle>{t('checkout.title')}</DialogTitle>
                 <DialogDescription>
-                  Review your order before placing it
+                  {t('checkout.description')}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Batches</span>
+                    <span className="text-muted-foreground">{t('checkout.batches')}</span>
                     <span>{completeBatches.length}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Total Books</span>
+                    <span className="text-muted-foreground">{t('checkout.totalBooks')}</span>
                     <span>{completeBatches.length * batchConfig.booksPerBatch}</span>
                   </div>
                   <Separator />
                   <div className="flex justify-between">
-                    <span>Total Amount</span>
+                    <span>{t('checkout.totalAmount')}</span>
                     <span>${totalPrice.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setShowCheckoutDialog(false)}>
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
                 <Button onClick={confirmCheckout} disabled={submitting}>
-                  Place Order
+                  {t('checkout.placeOrder')}
                 </Button>
               </DialogFooter>
             </>
@@ -334,9 +334,9 @@ export default function Cart() {
                   <CheckCircle2 className="w-12 h-12 text-green-700 dark:text-green-300" />
                 </div>
               </div>
-              <h2 className="mb-2">Order Placed!</h2>
+              <h2 className="mb-2">{t('checkout.placedTitle')}</h2>
               <p className="text-muted-foreground">
-                Your order has been successfully placed.
+                {t('checkout.placedText')}
               </p>
             </div>
           )}

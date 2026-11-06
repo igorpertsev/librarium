@@ -14,7 +14,10 @@
     "allCategories": "All Categories",
     "availableBooks": "Available Books",
     "ageRange": "Age Range",
-    "allAges": "All Ages"
+    "allAges": "All Ages",
+    "showingCount": "Showing {{shown}} of {{total}} books",
+    "noResults": "No books found matching your criteria.",
+    "scrollForMore": "Scroll down to load more books..."
   },
   "categories": {
     "fiction": "Fiction",
@@ -36,7 +39,11 @@
     "author": "Author",
     "isbn": "ISBN",
     "publishedYear": "Published Year",
-    "addToCart": "Add to Cart"
+    "addToCart": "Add to Cart",
+    "byAuthor": "by {{author}}",
+    "imageAlt": "{{title}} – image {{n}}",
+    "thumbnailAlt": "Thumbnail {{n}}",
+    "zoomedAlt": "{{title}} – zoomed image {{n}}"
   },
   "cart": {
     "title": "Shopping Cart",
@@ -270,7 +277,8 @@
   },
   "common": {
     "loading": "Loading…",
-    "retry": "Try again"
+    "retry": "Try again",
+    "cancel": "Cancel"
   },
   "errors": {
     "network": "Cannot reach the server. Check your connection and try again.",
@@ -289,5 +297,25 @@
     "bookUnavailable": "Some books are no longer available",
     "bookUnavailableList": "No longer available: {{titles}}. Remove them from the cart and try again.",
     "incompleteBatch": "Add books to complete a batch of {{count}} before checking out"
+  },
+  "checkout": {
+    "title": "Confirm Order",
+    "description": "Review your order before placing it",
+    "batches": "Batches",
+    "totalBooks": "Total Books",
+    "totalAmount": "Total Amount",
+    "placeOrder": "Place Order",
+    "placedTitle": "Order Placed!",
+    "placedText": "Your order has been successfully placed."
+  },
+  "brand": {
+    "logoAlt": "Little Dragon logo"
+  },
+  "pagination": {
+    "previous": "Previous",
+    "next": "Next",
+    "previousAria": "Go to previous page",
+    "nextAria": "Go to next page",
+    "morePages": "More pages"
   }
 }

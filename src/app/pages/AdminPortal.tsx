@@ -359,6 +359,8 @@ export default function AdminPortal() {
                 <PaginationContent>
                   <PaginationItem>
                     <PaginationPrevious
+                      label={t('pagination.previous')}
+                      ariaLabel={t('pagination.previousAria')}
                       onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
                       className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
                     />
@@ -384,7 +386,7 @@ export default function AdminPortal() {
                     } else if (page === currentPage - 2 || page === currentPage + 2) {
                       return (
                         <PaginationItem key={page}>
-                          <PaginationEllipsis />
+                          <PaginationEllipsis label={t('pagination.morePages')} />
                         </PaginationItem>
                       );
                     }
@@ -393,6 +395,8 @@ export default function AdminPortal() {
 
                   <PaginationItem>
                     <PaginationNext
+                      label={t('pagination.next')}
+                      ariaLabel={t('pagination.nextAria')}
                       onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
                       className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
                     />

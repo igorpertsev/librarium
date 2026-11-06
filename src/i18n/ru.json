@@ -14,7 +14,10 @@
     "allCategories": "Все категории",
     "availableBooks": "Доступные книги",
     "ageRange": "Возрастной диапазон",
-    "allAges": "Все возрасты"
+    "allAges": "Все возрасты",
+    "showingCount": "Показано {{shown}} из {{total}} книг",
+    "noResults": "По вашему запросу книги не найдены.",
+    "scrollForMore": "Прокрутите вниз, чтобы загрузить ещё книги..."
   },
   "categories": {
     "fiction": "Художественная литература",
@@ -36,7 +39,11 @@
     "author": "Автор",
     "isbn": "ISBN",
     "publishedYear": "Год издания",
-    "addToCart": "Добавить в корзину"
+    "addToCart": "Добавить в корзину",
+    "byAuthor": "автор: {{author}}",
+    "imageAlt": "{{title}} — изображение {{n}}",
+    "thumbnailAlt": "Миниатюра {{n}}",
+    "zoomedAlt": "{{title}} — увеличенное изображение {{n}}"
   },
   "cart": {
     "title": "Корзина",
@@ -270,7 +277,8 @@
   },
   "common": {
     "loading": "Загрузка…",
-    "retry": "Повторить"
+    "retry": "Повторить",
+    "cancel": "Отмена"
   },
   "errors": {
     "network": "Нет связи с сервером. Проверьте подключение и попробуйте снова.",
@@ -289,5 +297,25 @@
     "bookUnavailable": "Некоторые книги больше недоступны",
     "bookUnavailableList": "Больше недоступны: {{titles}}. Удалите их из корзины и попробуйте снова.",
     "incompleteBatch": "Чтобы оформить заказ, соберите партию из {{count}} книг"
+  },
+  "checkout": {
+    "title": "Подтверждение заказа",
+    "description": "Проверьте заказ перед оформлением",
+    "batches": "Партии",
+    "totalBooks": "Всего книг",
+    "totalAmount": "Итоговая сумма",
+    "placeOrder": "Оформить заказ",
+    "placedTitle": "Заказ оформлен!",
+    "placedText": "Ваш заказ успешно оформлен."
+  },
+  "brand": {
+    "logoAlt": "Логотип Little Dragon"
+  },
+  "pagination": {
+    "previous": "Назад",
+    "next": "Вперёд",
+    "previousAria": "Предыдущая страница",
+    "nextAria": "Следующая страница",
+    "morePages": "Другие страницы"
   }
 }

@@ -153,7 +153,7 @@ export default function CustomerPortal() {
       <div className="flex-1 overflow-y-auto" onScroll={handleScroll}>
         <div className="container mx-auto px-4 py-6">
           <p className="text-muted-foreground mb-4">
-            Showing {books.length} of {total} books
+            {t('home.showingCount', { shown: books.length, total })}
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -179,13 +179,13 @@ export default function CustomerPortal() {
 
           {!isLoading && !error && books.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-muted-foreground">No books found matching your criteria.</p>
+              <p className="text-muted-foreground">{t('home.noResults')}</p>
             </div>
           )}
 
           {!isLoading && !error && hasMore && (
             <div className="text-center py-8">
-              <p className="text-muted-foreground">Scroll down to load more books...</p>
+              <p className="text-muted-foreground">{t('home.scrollForMore')}</p>
             </div>
           )}
         </div>
