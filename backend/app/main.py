@@ -69,6 +69,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         response.headers.setdefault("X-Frame-Options", "DENY")
         if request.url.path.startswith("/api/"):
             response.headers.setdefault("Cache-Control", "no-store")
+            # JSON only: nothing in an API response may load or run anything. (Not applied to
+            # /docs, which loads Swagger UI from a CDN.)
+            response.headers.setdefault(
+                "Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'"
+            )
         return response
 
     register_exception_handlers(app)
