@@ -138,10 +138,13 @@ def _render(kind: NotificationKind, user: User, order: Order, app_url: str) -> t
         ),
     }
     subject, english, russian = texts[kind]
+    subject = f"{subject} (#{order.number})"
     body = (
-        f"Hello {user.full_name},\n\n{english}\n\n— Little Dragon library\n\n"
+        f"Hello {user.full_name},\n\nOrder #{order.number}: {english}\n\n"
+        "— Little Dragon library\n\n"
         f"----------------------------------------\n\n"
-        f"Здравствуйте, {user.full_name}!\n\n{russian}\n\n— Библиотека Little Dragon\n"
+        f"Здравствуйте, {user.full_name}!\n\nЗаказ №{order.number}: {russian}\n\n"
+        "— Библиотека Little Dragon\n"
     )
     return subject, body
 

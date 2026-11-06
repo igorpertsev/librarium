@@ -4,6 +4,7 @@ import smtplib
 import uuid
 from datetime import UTC, date, datetime, timedelta
 from email.message import EmailMessage
+from typing import Any
 
 from fastapi import FastAPI
 from sqlalchemy import select, update
@@ -21,11 +22,11 @@ async def _notifications(app: FastAPI) -> list[Notification]:
         )
 
 
-async def _order(customer: ApiUser, create_book: CreateBook, title: str) -> dict[str, str]:
+async def _order(customer: ApiUser, create_book: CreateBook, title: str) -> dict[str, Any]:
     await fill_cart(customer, [await create_book(title)])
     response = await place_order(customer)
     assert response.status_code == 201
-    order: dict[str, str] = response.json()
+    order: dict[str, Any] = response.json()
     return order
 
 
@@ -102,15 +103,18 @@ async def test_delivery_sends_a_bilingual_email(
     app: FastAPI, customer: ApiUser, create_book: CreateBook, set_batch: SetBatch
 ) -> None:
     await set_batch(1)
-    await _order(customer, create_book, "The Left Hand of Darkness")
+    order = await _order(customer, create_book, "The Left Hand of Darkness")
     send = FakeSender()
     await _deliver(app, send)
 
     assert len(send.messages) == 1
     message = send.messages[0]
     assert customer.email in message["To"]
-    assert message["Subject"] == "We received your request · Заявка получена"
+    number = order["number"]
+    assert message["Subject"] == f"We received your request · Заявка получена (#{number})"
     body = message.get_content()
+    assert f"Order #{number}: we have received" in body
+    assert f"Заказ №{number}: мы получили" in body
     assert "Hello Charlie Customer" in body
     assert "Здравствуйте, Charlie Customer!" in body
     assert "The Left Hand of Darkness" in body

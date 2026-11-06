@@ -4,13 +4,15 @@ import { Layers } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { Progress } from './ui/progress';
 import { Button } from './ui/button';
+import { useFormat } from '../utils/format';
 
 /**
  * Explains batch lending on the catalogue and shows how far the cart is from the
  * next complete batch (only complete batches can be ordered).
  */
 export function BatchProgress() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
+  const fmt = useFormat();
   const navigate = useNavigate();
   const { cart, batchConfig, currency, isLoaded } = useCart();
   const perBatch = Math.max(batchConfig.booksPerBatch, 1);
@@ -21,14 +23,7 @@ export function BatchProgress() {
   // Until the server cart arrives the context holds defaults; never show a wrong price.
   if (!isLoaded) return null;
 
-  let price: string;
-  try {
-    price = new Intl.NumberFormat(i18n.language, { style: 'currency', currency }).format(
-      batchConfig.pricePerBatch,
-    );
-  } catch {
-    price = `${batchConfig.pricePerBatch.toFixed(2)} ${currency}`;
-  }
+  const price = fmt.money(batchConfig.pricePerBatch, currency);
 
   return (
     <div className="mb-6 rounded-lg border border-border bg-muted/40 p-4 flex flex-col md:flex-row md:items-center gap-3 md:gap-6">

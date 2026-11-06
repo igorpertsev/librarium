@@ -1,11 +1,9 @@
 """notifications
 
 Outbox table for customer emails (see app.services.notifications).
-Note: when merged together with the order-numbers branch (revision 0002), set
-down_revision here to "0002" so the history stays linear.
 
 Revision ID: 0003
-Revises: 0001
+Revises: 0002
 Create Date: 2026-11-06 15:33:31.224231+00:00
 """
 
@@ -16,7 +14,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = "0003"
-down_revision: str | None = "0001"
+down_revision: str | None = "0002"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

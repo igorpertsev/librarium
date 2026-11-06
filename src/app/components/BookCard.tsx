@@ -11,7 +11,7 @@ import useEmblaCarousel from 'embla-carousel-react';
 import { BookDetailsModal } from './BookDetailsModal';
 import { useTranslation } from 'react-i18next';
 import { getCartButtonLabel, getCategoryTranslation, getStatusTranslation } from '../utils/translations';
-import { formatCalendarDate } from '../utils/dates';
+import { useFormat } from '../utils/format';
 import { errorMessage } from '../utils/apiErrors';
 
 interface BookCardProps {
@@ -19,7 +19,8 @@ interface BookCardProps {
 }
 
 export function BookCard({ book }: BookCardProps) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
+  const fmt = useFormat();
   const { addBookToCart, isBookInCart } = useCart();
   const { isBookUnavailable } = useOrders();
   const inCart = isBookInCart(book.id);
@@ -168,7 +169,7 @@ export function BookCard({ book }: BookCardProps) {
           </div>
           {isOrderedByOther && book.availableFrom && (
             <p className="text-xs text-muted-foreground">
-              {t('availability.expectedBack', { date: formatCalendarDate(book.availableFrom, i18n.language) })}
+              {t('availability.expectedBack', { date: fmt.date(book.availableFrom) })}
             </p>
           )}
         </div>
