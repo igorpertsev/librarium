@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useSearchParams } from 'react-router';
 import { BookCard } from '../components/BookCard';
 import { BatchProgress } from '../components/BatchProgress';
 import { Input } from '../components/ui/input';
@@ -29,6 +30,18 @@ const SORT_OPTIONS: { value: SortKey; labelKey: string }[] = [
   { value: '-created_at', labelKey: 'catalog.sortRecentlyAdded' },
 ];
 
+const CATEGORIES: readonly BookCategory[] = [
+  'fiction', 'non-fiction', 'children', 'young-adult', 'science', 'history', 'biography',
+];
+const DEFAULT_SORT: SortKey = 'title';
+
+// Filters live in the address bar (?q=&category=&age=&available=1&sort=), so reloading,
+// sharing a link and the browser's Back button keep the catalogue view.
+const parseCategory = (value: string | null): BookCategory | 'all' =>
+  CATEGORIES.includes(value as BookCategory) ? (value as BookCategory) : 'all';
+const parseSort = (value: string | null): SortKey =>
+  SORT_OPTIONS.some((option) => option.value === value) ? (value as SortKey) : DEFAULT_SORT;
+
 function BookCardSkeleton() {
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden" aria-hidden="true">
@@ -58,12 +71,29 @@ function useDebounced<T>(value: T, delayMs: number): T {
 export default function CustomerPortal() {
   const { t } = useTranslation();
   const { version: catalogVersion } = useCatalog();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<BookCategory | 'all'>('all');
-  const [ageFilter, setAgeFilter] = useState<string>('all');
+  const [params, setParams] = useSearchParams();
+  const urlQuery = params.get('q') ?? '';
+  const categoryFilter = parseCategory(params.get('category'));
+  const ageFilter = params.get('age') || 'all';
+  const availableOnly = params.get('available') === '1';
+  const sort = parseSort(params.get('sort'));
+  const [searchQuery, setSearchQuery] = useState(urlQuery);
   const [ageRanges, setAgeRanges] = useState<string[]>([]);
-  const [availableOnly, setAvailableOnly] = useState(false);
-  const [sort, setSort] = useState<SortKey>('title');
+
+  /** Changes filters in the URL; `null` removes a parameter (its default). */
+  const updateParams = useCallback(
+    (changes: Record<string, string | null>, options: { replace?: boolean } = {}) => {
+      setParams((prev) => {
+        const next = new URLSearchParams(prev);
+        for (const [key, value] of Object.entries(changes)) {
+          if (value) next.set(key, value);
+          else next.delete(key);
+        }
+        return next;
+      }, options);
+    },
+    [setParams],
+  );
 
   const [books, setBooks] = useState<Book[]>([]);
   const [total, setTotal] = useState(0);
@@ -73,6 +103,19 @@ export default function CustomerPortal() {
   const requestRef = useRef<AbortController | null>(null);
 
   const search = useDebounced(searchQuery.trim(), 300);
+
+  // Typing updates the URL (without a history entry per keystroke)...
+  const urlQueryRef = useRef(urlQuery);
+  urlQueryRef.current = urlQuery;
+  useEffect(() => {
+    if (search !== urlQueryRef.current) updateParams({ q: search || null }, { replace: true });
+  }, [search, updateParams]);
+  // ...and Back/Forward put the URL's search text back into the box.
+  const searchRef = useRef(search);
+  searchRef.current = search;
+  useEffect(() => {
+    if (urlQuery !== searchRef.current) setSearchQuery(urlQuery);
+  }, [urlQuery]);
 
   const loadPage = useCallback(
     async (pageToLoad: number) => {
@@ -86,7 +129,7 @@ export default function CustomerPortal() {
           {
             page: pageToLoad,
             page_size: PAGE_SIZE,
-            q: search || undefined,
+            q: urlQuery || undefined,
             category: categoryFilter === 'all' ? undefined : categoryFilter,
             age_range: ageFilter === 'all' ? undefined : ageFilter,
             available: availableOnly ? true : undefined,
@@ -105,7 +148,7 @@ export default function CustomerPortal() {
         if (requestRef.current === controller) setIsLoading(false);
       }
     },
-    [search, categoryFilter, ageFilter, availableOnly, sort],
+    [urlQuery, categoryFilter, ageFilter, availableOnly, sort],
   );
 
   // Reload from the first page when filters change or availability may have changed.
@@ -152,7 +195,7 @@ export default function CustomerPortal() {
 
             <div className="space-y-2">
               <Label htmlFor="category">{t('bookForm.category')}</Label>
-              <Select value={categoryFilter} onValueChange={(value) => setCategoryFilter(value as BookCategory | 'all')}>
+              <Select value={categoryFilter} onValueChange={(value) => updateParams({ category: value === 'all' ? null : value })}>
                 <SelectTrigger id="category">
                   <SelectValue placeholder={t('home.allCategories')} />
                 </SelectTrigger>
@@ -171,7 +214,7 @@ export default function CustomerPortal() {
 
             <div className="space-y-2">
               <Label htmlFor="age">{t('home.ageRange')}</Label>
-              <Select value={ageFilter} onValueChange={setAgeFilter}>
+              <Select value={ageFilter} onValueChange={(value) => updateParams({ age: value === 'all' ? null : value })}>
                 <SelectTrigger id="age">
                   <SelectValue placeholder={t('home.allAges')} />
                 </SelectTrigger>
@@ -187,12 +230,12 @@ export default function CustomerPortal() {
 
           <div className="flex flex-wrap items-center justify-between gap-4 mt-4">
             <div className="flex items-center gap-2">
-              <Switch id="available-only" checked={availableOnly} onCheckedChange={setAvailableOnly} />
+              <Switch id="available-only" checked={availableOnly} onCheckedChange={(checked) => updateParams({ available: checked ? '1' : null })} />
               <Label htmlFor="available-only">{t('catalog.availableOnly')}</Label>
             </div>
             <div className="flex items-center gap-2">
               <Label htmlFor="sort" className="whitespace-nowrap">{t('catalog.sortBy')}</Label>
-              <Select value={sort} onValueChange={(value) => setSort(value as SortKey)}>
+              <Select value={sort} onValueChange={(value) => updateParams({ sort: value === DEFAULT_SORT ? null : value })}>
                 <SelectTrigger id="sort" className="w-56">
                   <SelectValue />
                 </SelectTrigger>
