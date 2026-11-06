@@ -68,6 +68,8 @@ export function bookFromDto(dto: BookDto | BookBriefDto): Book {
     book.isReserved = dto.is_reserved;
     book.isAvailable = dto.is_available;
     book.availableFrom = dto.available_from;
+    book.copies = dto.copies;
+    book.copiesAvailable = dto.copies_available;
   }
   return book;
 }

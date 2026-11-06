@@ -2044,6 +2044,99 @@
         }
       }
     },
+    "/api/v1/admin/books/{book_id}/copies": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Add Copies",
+        "description": "Adds copies of a title (same catalogue data, status available). The catalogue lists the title once and counts its copies.",
+        "operationId": "admin_add_copies_api_v1_admin_books__book_id__copies_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddCopies"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BookRead"
+                  },
+                  "title": "Response Admin Add Copies Api V1 Admin Books  Book Id  Copies Post"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
     "/api/v1/admin/books/{book_id}": {
       "get": {
         "tags": [
@@ -3341,6 +3434,20 @@
         "title": "ActiveLoan",
         "description": "A book currently handed over to a customer (order status ``confirmed``)."
       },
+      "AddCopies": {
+        "properties": {
+          "count": {
+            "type": "integer",
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Count",
+            "default": 1
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "AddCopies"
+      },
       "AdminUserPage": {
         "properties": {
           "items": {
@@ -4006,6 +4113,17 @@
             "title": "Available From",
             "description": "While reserved: the due date of the order holding the copy, i.e. when it is expected back. null when the copy is not reserved."
           },
+          "copies": {
+            "type": "integer",
+            "title": "Copies",
+            "description": "Copies of this title in the library (active ones)",
+            "default": 1
+          },
+          "copies_available": {
+            "type": "integer",
+            "title": "Copies Available",
+            "description": "How many of those copies can be borrowed right now"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -4035,6 +4153,8 @@
           "is_reserved",
           "is_available",
           "available_from",
+          "copies",
+          "copies_available",
           "created_at",
           "updated_at"
         ],

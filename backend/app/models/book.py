@@ -13,9 +13,10 @@ from app.models.enums import BookCategory, BookStatus
 class Book(TimestampMixin, Base):
     """One physical copy of a book.
 
-    The frontend treats every book record as a single copy (``isBookUnavailable(bookId)``),
-    so reservations are tracked per ``book_id``. Two copies of the same title are two rows
-    and may share an ISBN, which is why ISBN is indexed but not unique.
+    Reservations are tracked per copy (``book_id``). Copies of the same title are separate
+    rows that share ``copy_group_id`` (NULL means "a group of its own"; the group key is
+    ``COALESCE(copy_group_id, id)``): the catalogue shows one entry per group, and edits to
+    the description apply to every copy of the group.
     """
 
     __tablename__ = "books"
@@ -50,3 +51,4 @@ class Book(TimestampMixin, Base):
     language: Mapped[str | None] = mapped_column(sa.String(16))
     publication_year: Mapped[int | None] = mapped_column(sa.SmallInteger)
     is_active: Mapped[bool] = mapped_column(default=True, server_default=sa.true())
+    copy_group_id: Mapped[uuid.UUID | None] = mapped_column(sa.Uuid, index=True)

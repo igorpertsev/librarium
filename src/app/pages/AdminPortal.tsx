@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Textarea } from '../components/ui/textarea';
 import { Badge } from '../components/ui/badge';
-import { Plus, Pencil, Trash2, Users, BookOpen as BookOpenIcon, ClipboardList, CheckCircle2, RotateCcw, Clock, Star, ImageDown, BellRing, BarChart3 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Users, BookOpen as BookOpenIcon, ClipboardList, CheckCircle2, RotateCcw, Clock, Star, ImageDown, BellRing, BarChart3, CopyPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -150,6 +150,17 @@ export default function AdminPortal() {
       setCurrentPage(newTotalPages);
     } else {
       await loadBooks(currentPage);
+    }
+  };
+
+  const handleAddCopy = async (book: Book) => {
+    const result = await runAction(() => adminApi.addCopies(book.id, 1));
+    if (result.ok) {
+      toast.success(t('copies.added', { title: book.title, count: result.data[0]?.copies ?? 2 }));
+      loadBooks(currentPage);
+      invalidateCatalog();
+    } else {
+      toast.error(errorMessage(t, result.error));
     }
   };
 
@@ -352,7 +363,14 @@ export default function AdminPortal() {
               <TableBody>
                 {paginatedBooks.map(book => (
                   <TableRow key={book.id}>
-                    <TableCell>{book.title}</TableCell>
+                    <TableCell>
+                      {book.title}
+                      {(book.copies ?? 1) > 1 && (
+                        <Badge variant="outline" className="ml-2" title={t('copies.inLibrary', { count: book.copies })}>
+                          ×{book.copies}
+                        </Badge>
+                      )}
+                    </TableCell>
                     <TableCell>{book.author}</TableCell>
                     <TableCell>
                       <Badge variant="outline">{getCategoryTranslation(t, book.category)}</Badge>
@@ -365,6 +383,15 @@ export default function AdminPortal() {
                     <TableCell>{book.ageRange}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleAddCopy(book)}
+                          aria-label={t('copies.addCopy', { title: book.title })}
+                          title={t('copies.addCopy', { title: book.title })}
+                        >
+                          <CopyPlus className="w-4 h-4" />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="sm"

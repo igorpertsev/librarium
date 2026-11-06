@@ -107,6 +107,8 @@ export const adminApi = {
       body: { csv },
       query: { dry_run: dryRun },
     }),
+  addCopies: (bookId: string, count = 1) =>
+    apiRequest<BookDto[]>(`/admin/books/${id(bookId)}/copies`, { method: 'POST', body: { count } }),
   createBook: (body: BookCreateDto) =>
     apiRequest<BookDto>('/admin/books', { method: 'POST', body }),
   updateBook: (bookId: string, body: BookUpdateDto) =>

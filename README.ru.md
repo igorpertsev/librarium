@@ -413,6 +413,7 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 | GET/POST | `/admin/books`, GET `/admin/books/stats`, GET/PATCH/DELETE `/admin/books/{id}` | admin |
 | POST | `/admin/books/import` (CSV, всё или ничего, `dry_run`), GET `/admin/isbn/{isbn}` (данные из Open Library) | admin |
 | GET | `/admin/reports/summary`, `/admin/reports/orders.csv` (`date_from`, `date_to`; по умолчанию последние 30 дней) | admin |
+| POST | `/admin/books/{id}/copies` (`{count}`: ещё экземпляры книги) | admin |
 | GET | `/admin/users` · PATCH `/admin/users/{id}` (роль, блокировка) | admin |
 | GET | `/admin/orders`, `/admin/orders/{id}` · PATCH `/admin/orders/{id}/status`, `/admin/orders/{id}/due-date` | admin |
 | GET/PATCH | `/admin/settings` (партия, цена, валюта, срок выдачи) | admin |

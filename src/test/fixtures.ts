@@ -19,6 +19,8 @@ export function bookDto(overrides: Partial<BookDto> = {}): BookDto {
     is_reserved: false,
     is_available: true,
     available_from: null,
+    copies: 1,
+    copies_available: 1,
     created_at: '2026-11-01T10:00:00Z',
     updated_at: '2026-11-01T10:00:00Z',
     ...overrides,

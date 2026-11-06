@@ -17,7 +17,15 @@ from app.core.exceptions import BadRequestError
 from app.models.enums import BookCategory, BookStatus, OrderStatus
 from app.repositories import orders as orders_repo
 from app.repositories.books import BookFilters
-from app.schemas.book import BookCreate, BookPage, BookRead, BookSort, BookStats, BookUpdate
+from app.schemas.book import (
+    AddCopies,
+    BookCreate,
+    BookPage,
+    BookRead,
+    BookSort,
+    BookStats,
+    BookUpdate,
+)
 from app.schemas.book_import import BookImportRequest, BookImportResult, BookLookup
 from app.schemas.common import error_responses
 from app.schemas.library_settings import LibrarySettingsRead, LibrarySettingsUpdate
@@ -115,6 +123,20 @@ async def admin_import_books(
 async def admin_lookup_isbn(isbn: str, openlibrary: OpenLibraryDep) -> BookLookup:
     details = await openlibrary.lookup(isbn)
     return BookLookup.model_validate(details, from_attributes=True)
+
+
+@router.post(
+    "/books/{book_id}/copies",
+    status_code=status.HTTP_201_CREATED,
+    response_model=list[BookRead],
+    responses=error_responses(404, 422),
+    description="Adds copies of a title (same catalogue data, status available). The catalogue "
+    "lists the title once and counts its copies.",
+)
+async def admin_add_copies(
+    book_id: uuid.UUID, body: AddCopies, session: SessionDep
+) -> list[BookRead]:
+    return await books_service.add_copies(session, book_id, body.count)
 
 
 @router.get("/books/{book_id}", response_model=BookRead, responses=error_responses(404, 422))

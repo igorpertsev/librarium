@@ -343,6 +343,9 @@ two copies of the same title are two records (ISBN is not unique).
 - Active order statuses: `ACTIVE_ORDER_STATUSES = {pending, confirmed}` (`app/models/enums.py`).
   `returned` and `cancelled` release the book.
 - A book is blocked by **any** active order, including one placed by the same user (as in the UI).
+- **Copies**: a book row is one physical copy. Copies of a title share `copy_group_id` (admin “Add a copy”); the
+  catalogue (`GET /books`) lists each title once, represented by a copy that can be borrowed if there is one, with
+  `copies` and `copies_available`. Catalogue edits apply to all copies of the title; status stays per copy.
 - The cart is not a reservation: the same book can sit in several users' carts; adding it checks
   availability, but the decisive check happens at checkout.
 - Pricing is per **batch**: `price_per_batch` for every complete set of `books_per_batch` books (library
@@ -380,7 +383,7 @@ Concurrency is covered by tests in which both requests are held at a barrier rig
 | Table | Key points |
 | --- | --- |
 | `users` | email unique and lower-case (CHECK), Argon2 hash, role `customer/admin`, contacts (nullable), `preferred_contact_method` |
-| `books` | `cover_url`, `image_urls[]`, `age_range`, `category`, `status` (`available/available-soon/not-available`), `language`, `publication_year`, `is_active` (soft delete) |
+| `books` | one row per physical copy: `cover_url`, `image_urls[]`, `age_range`, `category`, `status` (`available/available-soon/not-available`), `language`, `publication_year`, `is_active` (soft delete), `copy_group_id` (copies of one title) |
 | `library_settings` | single row: `books_per_batch`, `price_per_batch NUMERIC(10,2)`, `currency`, `loan_period_days`, `max_renewals` |
 | `carts`, `cart_items` | one cart per user, `UNIQUE(cart_id, book_id)` |
 | `waitlist_entries` | customer waiting for a book, `UNIQUE(user_id, book_id)` |
@@ -415,6 +418,7 @@ Differences (adapters in `src/api/mappers.ts`):
 | GET/POST | `/admin/books`, GET `/admin/books/stats`, GET/PATCH/DELETE `/admin/books/{id}` | admin |
 | POST | `/admin/books/import` (CSV, all or nothing, `dry_run`), GET `/admin/isbn/{isbn}` (details from Open Library) | admin |
 | GET | `/admin/reports/summary`, `/admin/reports/orders.csv` (`date_from`, `date_to`; default last 30 days) | admin |
+| POST | `/admin/books/{id}/copies` (`{count}`: more copies of a title) | admin |
 | GET | `/admin/users` · PATCH `/admin/users/{id}` (role, disable) | admin |
 | GET | `/admin/orders`, `/admin/orders/{id}` · PATCH `/admin/orders/{id}/status`, `/admin/orders/{id}/due-date` | admin |
 | GET/PATCH | `/admin/settings` (batch size, price, currency, loan period) | admin |
