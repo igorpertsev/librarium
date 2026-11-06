@@ -54,6 +54,7 @@ export type ReadingListItemDto = Schemas['ReadingListItemRead'];
 export type SeriesNeighboursDto = Schemas['SeriesNeighbours'];
 export type QualityIssueDto = Schemas['QualityIssue'];
 export type QualitySummaryDto = Schemas['QualitySummary'];
+export type DemandDto = Schemas['DemandRead'];
 export type BookTranslationInDto = Schemas['BookTranslationIn'];
 export type TranslationSuggestRequestDto = Schemas['TranslationSuggestRequest'];
 export type TranslationSuggestionDto = Schemas['TranslationSuggestion'];

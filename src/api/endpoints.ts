@@ -14,6 +14,7 @@ import type {
   BookStatsDto,
   BookUpdateDto,
   CartDto,
+  DemandDto,
   ChangePasswordDto,
   ForgotPasswordDto,
   LibraryRulesDto,
@@ -187,6 +188,8 @@ export const adminApi = {
   getSettings: () => apiRequest<LibrarySettingsDto>('/admin/settings'),
   reportSummary: (period: ReportPeriod) =>
     apiRequest<ReportSummaryDto>('/admin/reports/summary', { query: period }),
+  reportDemand: (period: ReportPeriod) =>
+    apiRequest<DemandDto>('/admin/reports/demand', { query: period }),
   ordersCsv: (period: ReportPeriod) => apiDownload('/admin/reports/orders.csv', { query: period }),
   updateSettings: (body: LibrarySettingsUpdateDto) =>
     apiRequest<LibrarySettingsDto>('/admin/settings', { method: 'PATCH', body }),

@@ -13,8 +13,17 @@ from sqlalchemy import ColumnElement, and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models import Order, OrderItem
+from app.models import (
+    Book,
+    Order,
+    OrderItem,
+    ReadingListEntry,
+    Tag,
+    WaitlistEntry,
+    book_tags,
+)
 from app.models.enums import OrderStatus
+from app.repositories.books import copy_group_key
 
 
 @dataclass
@@ -154,3 +163,83 @@ async def orders_csv(session: AsyncSession, date_from: date, date_to: date) -> s
             )
         )
     return buffer.getvalue()
+
+
+# --- Demand: what to buy more of ---------------------------------------------------------
+
+MAX_DEMAND_ROWS = 10
+
+
+@dataclass
+class WantedTitle:
+    title: str
+    author: str
+    readers: int  # waiting for it, or saved it to read
+    copies: int
+
+
+@dataclass
+class TagLoans:
+    slug: str
+    name_en: str
+    name_ru: str
+    loans: int
+
+
+@dataclass
+class Demand:
+    waiting: list[WantedTitle] = field(default_factory=list)
+    saved: list[WantedTitle] = field(default_factory=list)
+    tags: list[TagLoans] = field(default_factory=list)
+
+
+async def _wanted(session: AsyncSession, entries: Any) -> list[WantedTitle]:
+    """Titles by the number of readers in ``entries`` (a table with user_id and book_id)."""
+    group = copy_group_key()
+    readers = (
+        select(group.label("grp"), func.count(func.distinct(entries.user_id)).label("readers"))
+        .join(entries, entries.book_id == Book.id)
+        .where(Book.is_active.is_(True))
+        .group_by(group)
+        .subquery()
+    )
+    copies = (
+        select(group.label("grp"), func.count().label("copies"))
+        .where(Book.is_active.is_(True))
+        .group_by(group)
+        .subquery()
+    )
+    rows = (
+        await session.execute(
+            select(Book.title, Book.author, readers.c.readers, copies.c.copies)
+            .join(readers, readers.c.grp == Book.id)
+            .join(copies, copies.c.grp == Book.id)
+            .order_by(readers.c.readers.desc(), func.lower(Book.title))
+            .limit(MAX_DEMAND_ROWS)
+        )
+    ).all()
+    return [WantedTitle(title, author, int(n), int(c)) for title, author, n, c in rows]
+
+
+async def demand(session: AsyncSession, date_from: date, date_to: date) -> Demand:
+    """Titles with the longest waiting lists and the most "want to read" saves (now), and the
+    tags of the books lent in the period."""
+    start, end = _bounds(date_from, date_to)
+    report = Demand(
+        waiting=await _wanted(session, WaitlistEntry),
+        saved=await _wanted(session, ReadingListEntry),
+    )
+    rows = (
+        await session.execute(
+            select(Tag.slug, Tag.name_en, Tag.name_ru, func.count(OrderItem.id).label("loans"))
+            .join(book_tags, book_tags.c.tag_id == Tag.id)
+            .join(OrderItem, OrderItem.book_id == book_tags.c.book_id)
+            .join(Order, Order.id == OrderItem.order_id)
+            .where(_within(Order.confirmed_at, start, end))
+            .group_by(Tag.id)
+            .order_by(func.count(OrderItem.id).desc(), Tag.slug)
+            .limit(MAX_DEMAND_ROWS)
+        )
+    ).all()
+    report.tags = [TagLoans(slug, en, ru, int(n)) for slug, en, ru, n in rows]
+    return report

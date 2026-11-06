@@ -24,3 +24,23 @@ class ReportSummaryRead(ApiModel):
     revenue: Decimal
     currency: str | None
     top_books: list[TopBookRead]
+
+
+class WantedTitleRead(ApiModel):
+    title: str
+    author: str
+    readers: int
+    copies: int
+
+
+class TagLoansRead(ApiModel):
+    slug: str
+    name_en: str
+    name_ru: str
+    loans: int
+
+
+class DemandRead(ApiModel):
+    waiting: list[WantedTitleRead]
+    saved: list[WantedTitleRead]
+    tags: list[TagLoansRead]

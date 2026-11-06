@@ -51,7 +51,7 @@ from app.schemas.order import (
     OrderStatusUpdate,
     ReminderQueued,
 )
-from app.schemas.report import ReportSummaryRead
+from app.schemas.report import DemandRead, ReportSummaryRead
 from app.schemas.translation import TranslationSuggestion, TranslationSuggestRequest
 from app.schemas.user import AdminUserPage, AdminUserUpdate, UserRead
 from app.services import book_import, catalog, duplicates, reports
@@ -467,6 +467,23 @@ async def admin_report_summary(
     start, end = _period(date_from, date_to)
     report = await reports.summary(session, start, end)
     return ReportSummaryRead.model_validate(report, from_attributes=True)
+
+
+@router.get(
+    "/reports/demand",
+    response_model=DemandRead,
+    responses=error_responses(400, 422),
+    description="What readers want: the titles with the most readers waiting and the most "
+    '"want to read" saves (right now, with the number of copies), and the tags of the books '
+    "lent in the period. Default period: the last 30 days.",
+)
+async def admin_report_demand(
+    session: SessionDep, date_from: date | None = None, date_to: date | None = None
+) -> DemandRead:
+    start, end = _period(date_from, date_to)
+    return DemandRead.model_validate(
+        await reports.demand(session, start, end), from_attributes=True
+    )
 
 
 @router.get(

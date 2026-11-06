@@ -1069,6 +1069,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/reports/demand": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin Report Demand
+         * @description What readers want: the titles with the most readers waiting and the most "want to read" saves (right now, with the number of copies), and the tags of the books lent in the period. Default period: the last 30 days.
+         */
+        get: operations["admin_report_demand_api_v1_admin_reports_demand_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/reports/orders.csv": {
         parameters: {
             query?: never;
@@ -1640,6 +1660,15 @@ export interface components {
              */
             password: string;
         };
+        /** DemandRead */
+        DemandRead: {
+            /** Waiting */
+            waiting: components["schemas"]["WantedTitleRead"][];
+            /** Saved */
+            saved: components["schemas"]["WantedTitleRead"][];
+            /** Tags */
+            tags: components["schemas"]["TagLoansRead"][];
+        };
         /** ErrorBody */
         ErrorBody: {
             /**
@@ -2069,6 +2098,17 @@ export interface components {
             /** Name Ru */
             name_ru: string;
         };
+        /** TagLoansRead */
+        TagLoansRead: {
+            /** Slug */
+            slug: string;
+            /** Name En */
+            name_en: string;
+            /** Name Ru */
+            name_ru: string;
+            /** Loans */
+            loans: number;
+        };
         /** TagRead */
         TagRead: {
             /** Slug */
@@ -2277,6 +2317,17 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+        };
+        /** WantedTitleRead */
+        WantedTitleRead: {
+            /** Title */
+            title: string;
+            /** Author */
+            author: string;
+            /** Readers */
+            readers: number;
+            /** Copies */
+            copies: number;
         };
     };
     responses: never;
@@ -5503,6 +5554,65 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReportSummaryRead"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_report_demand_api_v1_admin_reports_demand_get: {
+        parameters: {
+            query?: {
+                date_from?: string | null;
+                date_to?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DemandRead"];
                 };
             };
             /** @description Bad Request */

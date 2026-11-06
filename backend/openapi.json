@@ -4734,6 +4734,109 @@
         }
       }
     },
+    "/api/v1/admin/reports/demand": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Report Demand",
+        "description": "What readers want: the titles with the most readers waiting and the most \"want to read\" saves (right now, with the number of copies), and the tags of the books lent in the period. Default period: the last 30 days.",
+        "operationId": "admin_report_demand_api_v1_admin_reports_demand_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemandRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
     "/api/v1/admin/reports/orders.csv": {
       "get": {
         "tags": [
@@ -6512,6 +6615,38 @@
         ],
         "title": "DeleteAccountRequest"
       },
+      "DemandRead": {
+        "properties": {
+          "waiting": {
+            "items": {
+              "$ref": "#/components/schemas/WantedTitleRead"
+            },
+            "type": "array",
+            "title": "Waiting"
+          },
+          "saved": {
+            "items": {
+              "$ref": "#/components/schemas/WantedTitleRead"
+            },
+            "type": "array",
+            "title": "Saved"
+          },
+          "tags": {
+            "items": {
+              "$ref": "#/components/schemas/TagLoansRead"
+            },
+            "type": "array",
+            "title": "Tags"
+          }
+        },
+        "type": "object",
+        "required": [
+          "waiting",
+          "saved",
+          "tags"
+        ],
+        "title": "DemandRead"
+      },
       "ErrorBody": {
         "properties": {
           "code": {
@@ -7695,6 +7830,34 @@
         ],
         "title": "TagCreate"
       },
+      "TagLoansRead": {
+        "properties": {
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "name_en": {
+            "type": "string",
+            "title": "Name En"
+          },
+          "name_ru": {
+            "type": "string",
+            "title": "Name Ru"
+          },
+          "loans": {
+            "type": "integer",
+            "title": "Loans"
+          }
+        },
+        "type": "object",
+        "required": [
+          "slug",
+          "name_en",
+          "name_ru",
+          "loans"
+        ],
+        "title": "TagLoansRead"
+      },
       "TagRead": {
         "properties": {
           "slug": {
@@ -8299,6 +8462,34 @@
           "created_at"
         ],
         "title": "WaitlistEntryRead"
+      },
+      "WantedTitleRead": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "author": {
+            "type": "string",
+            "title": "Author"
+          },
+          "readers": {
+            "type": "integer",
+            "title": "Readers"
+          },
+          "copies": {
+            "type": "integer",
+            "title": "Copies"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "author",
+          "readers",
+          "copies"
+        ],
+        "title": "WantedTitleRead"
       }
     },
     "securitySchemes": {

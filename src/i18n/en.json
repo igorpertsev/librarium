@@ -684,5 +684,16 @@
     "fix": "Edit",
     "previous": "Previous",
     "next": "Next"
+  },
+  "demand": {
+    "waitingTitle": "Most waited for (now)",
+    "savedTitle": "Most saved to “Want to read” (now)",
+    "tagsTitle": "Most borrowed tags in the period",
+    "waitingReaders": "Waiting",
+    "savedReaders": "Saved",
+    "copies": "Copies",
+    "buyMore": "Buy more",
+    "nobodyWaiting": "Nobody is waiting for a book.",
+    "nothingSaved": "Nobody has saved a book yet."
   }
 }
