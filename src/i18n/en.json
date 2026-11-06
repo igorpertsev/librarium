@@ -5,7 +5,9 @@
     "cart": "Cart",
     "admin": "Admin Portal",
     "logout": "Logout",
-    "login": "Login"
+    "login": "Login",
+    "menu": "Menu",
+    "openMenu": "Open menu"
   },
   "home": {
     "title": "Welcome to Our Library",
