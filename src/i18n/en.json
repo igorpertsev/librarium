@@ -219,7 +219,20 @@
     "instagram": "Instagram",
     "phone": "Phone Number",
     "starToMarkPreferred": "Click the star to mark your preferred contact method",
-    "markPreferred": "Mark as preferred"
+    "markPreferred": "Mark as preferred",
+    "forgotPassword": "Forgot password?",
+    "forgotTitle": "Reset your password",
+    "forgotDescription": "Enter the email of your account and we will send you a link to choose a new password.",
+    "sendResetLink": "Send reset link",
+    "resetLinkSent": "If an account uses {{email}}, a link to reset the password is on its way. Check your inbox and spam folder; the link works for one hour.",
+    "backToSignIn": "Back to sign in",
+    "resetTitle": "Choose a new password",
+    "resetDescription": "You will be signed out on all devices.",
+    "newPassword": "New password",
+    "setNewPassword": "Set new password",
+    "passwordResetDone": "Your password has been changed. Sign in with the new password.",
+    "invalidResetLink": "This link is invalid or has expired. Links work for one hour and only once.",
+    "requestNewLink": "Request a new link"
   },
   "userMenu": {
     "settings": "Settings",

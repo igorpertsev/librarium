@@ -18,6 +18,7 @@ from app.core.config import Settings, get_settings
 from app.core.database import Database
 from app.core.exceptions import register_exception_handlers
 from app.core.rate_limit import RateLimiter
+from app.services.notifications import make_smtp_sender
 
 logger = logging.getLogger("app")
 
@@ -46,6 +47,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.settings = settings
     app.state.db = database
     app.state.rate_limiter = RateLimiter(enabled=settings.rate_limit_enabled)
+    # Emails sent directly by the API (password reset); None when SMTP_HOST is not set.
+    app.state.mail_sender = make_smtp_sender(settings)
 
     app.add_middleware(
         CORSMiddleware,

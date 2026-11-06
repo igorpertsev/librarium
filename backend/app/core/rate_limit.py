@@ -36,6 +36,11 @@ REGISTER_PER_IP = Limit(10, 60 * 60)
 REFRESH_PER_IP = Limit(120, 5 * 60)
 # Wrong current passwords when changing the password, per user.
 PASSWORD_FAILURES_PER_USER = Limit(5, 15 * 60)
+# Password reset emails: per IP address and per email address (against mail flooding).
+FORGOT_PASSWORD_PER_IP = Limit(10, 60 * 60)
+FORGOT_PASSWORD_PER_EMAIL = Limit(3, 60 * 60)
+# Attempts to set a new password with a reset link, per IP address.
+RESET_PASSWORD_PER_IP = Limit(20, 15 * 60)
 
 
 class TooManyRequestsError(AppError):

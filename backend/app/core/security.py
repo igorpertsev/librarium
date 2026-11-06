@@ -18,6 +18,8 @@ from app.core.config import Settings
 from app.models.enums import UserRole
 
 ACCESS_TOKEN_TYPE = "access"  # noqa: S105 - token type marker, not a secret
+PASSWORD_RESET_TOKEN_TYPE = "password_reset"  # noqa: S105 - token type marker
+PASSWORD_RESET_AUDIENCE = "librarium-password-reset"  # noqa: S105 - JWT audience
 
 # argon2-cffi defaults: Argon2id, time_cost=3, memory_cost=64 MiB, parallelism=4.
 _password_hasher = PasswordHasher()
@@ -129,6 +131,59 @@ def decode_access_token(token: str, settings: Settings) -> AccessTokenClaims:
         issued_at=datetime.fromtimestamp(int(payload["iat"]), tz=UTC),
         expires_at=datetime.fromtimestamp(int(payload["exp"]), tz=UTC),
     )
+
+
+def password_fingerprint(password_hash: str) -> str:
+    """Changes whenever the password is set (Argon2 hashes carry a random salt)."""
+    return hashlib.sha256(password_hash.encode("utf-8")).hexdigest()[:32]
+
+
+class InvalidPasswordResetTokenError(Exception):
+    pass
+
+
+@dataclass(frozen=True, slots=True)
+class PasswordResetClaims:
+    user_id: uuid.UUID
+    fingerprint: str
+
+
+def create_password_reset_token(
+    *, user_id: uuid.UUID, password_hash: str, settings: Settings, now: datetime | None = None
+) -> str:
+    """Signed, short-lived link token. Nothing is stored: it becomes useless once the
+    password changes, because it carries a fingerprint of the current password hash."""
+    issued_at = now or datetime.now(UTC)
+    lifetime = timedelta(minutes=settings.password_reset_expire_minutes)
+    payload = {
+        "sub": str(user_id),
+        "type": PASSWORD_RESET_TOKEN_TYPE,
+        "pwf": password_fingerprint(password_hash),
+        "iat": int(issued_at.timestamp()),
+        "exp": int((issued_at + lifetime).timestamp()),
+        "iss": settings.jwt_issuer,
+        "aud": PASSWORD_RESET_AUDIENCE,
+    }
+    return jwt.encode(payload, settings.jwt_secret, algorithm=settings.jwt_algorithm)
+
+
+def decode_password_reset_token(token: str, settings: Settings) -> PasswordResetClaims:
+    try:
+        payload = jwt.decode(
+            token,
+            settings.jwt_secret,
+            algorithms=[settings.jwt_algorithm],
+            audience=PASSWORD_RESET_AUDIENCE,
+            issuer=settings.jwt_issuer,
+            options={"require": ["sub", "type", "pwf", "exp", "iat"]},
+        )
+        if payload["type"] != PASSWORD_RESET_TOKEN_TYPE:
+            raise InvalidPasswordResetTokenError
+        return PasswordResetClaims(
+            user_id=uuid.UUID(str(payload["sub"])), fingerprint=str(payload["pwf"])
+        )
+    except (jwt.PyJWTError, ValueError) as exc:
+        raise InvalidPasswordResetTokenError from exc
 
 
 def generate_refresh_token() -> str:

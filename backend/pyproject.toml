@@ -49,6 +49,7 @@ ignore = [
 "app/cli.py" = ["T201"]
 # Russian email text: Cyrillic letters are intentional, not look-alike typos.
 "app/services/notifications.py" = ["RUF001"]
+"app/services/password_reset.py" = ["RUF001"]
 
 [tool.ruff.format]
 quote-style = "double"

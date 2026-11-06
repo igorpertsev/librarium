@@ -1,11 +1,15 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Request, Response, status
+import logging
+from email.message import EmailMessage
+
+from fastapi import APIRouter, BackgroundTasks, Request, Response, status
 from fastapi.responses import JSONResponse
 
 from app.api.dependencies import (
     ClientMetaDep,
     CurrentUser,
+    MailSenderDep,
     RateLimiterDep,
     SessionDep,
     SettingsDep,
@@ -18,17 +22,31 @@ from app.core.exceptions import (
     error_payload,
 )
 from app.core.rate_limit import (
+    FORGOT_PASSWORD_PER_EMAIL,
+    FORGOT_PASSWORD_PER_IP,
     LOGIN_FAILURES_PER_EMAIL,
     LOGIN_PER_IP,
     PASSWORD_FAILURES_PER_USER,
     REFRESH_PER_IP,
     REGISTER_PER_IP,
+    RESET_PASSWORD_PER_IP,
 )
-from app.schemas.auth import ChangePasswordRequest, LoginRequest, RegisterRequest, TokenResponse
+from app.schemas.auth import (
+    ChangePasswordRequest,
+    ForgotPasswordRequest,
+    LoginRequest,
+    RegisterRequest,
+    ResetPasswordRequest,
+    TokenResponse,
+)
 from app.schemas.common import error_responses
 from app.schemas.user import UserRead
 from app.services import auth as auth_service
+from app.services import password_reset
 from app.services.auth import AuthResult, ClientMeta
+from app.services.notifications import Sender
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -209,3 +227,62 @@ async def change_password(
     limiter.reset(key)
     _set_refresh_cookie(response, settings, result.refresh_token)
     return _token_response(result)
+
+
+async def _send_reset_email(send: Sender, message: EmailMessage) -> None:
+    try:
+        await send(message)
+    except Exception:  # the client already got its answer; log and move on
+        logger.exception("Could not send the password reset email")
+
+
+@router.post(
+    "/forgot-password",
+    status_code=status.HTTP_202_ACCEPTED,
+    response_class=Response,
+    responses=error_responses(403, 422, 429),
+    description="Emails a password reset link if an active account uses this address. "
+    "The answer is the same either way, so it does not reveal which addresses are registered.",
+)
+async def forgot_password(
+    body: ForgotPasswordRequest,
+    request: Request,
+    background: BackgroundTasks,
+    session: SessionDep,
+    settings: SettingsDep,
+    meta: ClientMetaDep,
+    limiter: RateLimiterDep,
+    send: MailSenderDep,
+) -> Response:
+    _check_origin(request, settings)
+    limiter.consume(f"forgot-password:ip:{_client_ip(meta)}", FORGOT_PASSWORD_PER_IP)
+    limiter.consume(f"forgot-password:email:{body.email}", FORGOT_PASSWORD_PER_EMAIL)
+    message = await password_reset.build_reset_email(session, settings, body.email)
+    if message is not None:
+        if send is None:
+            logger.warning("SMTP_HOST is not set: the password reset email was not sent")
+        else:
+            background.add_task(_send_reset_email, send, message)
+    return Response(status_code=status.HTTP_202_ACCEPTED)
+
+
+@router.post(
+    "/reset-password",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
+    responses=error_responses(400, 403, 422, 429),
+    description="Sets a new password with the token from the reset email and signs the "
+    "account out everywhere. Fails with INVALID_RESET_TOKEN for expired or used links.",
+)
+async def reset_password(
+    body: ResetPasswordRequest,
+    request: Request,
+    session: SessionDep,
+    settings: SettingsDep,
+    meta: ClientMetaDep,
+    limiter: RateLimiterDep,
+) -> Response:
+    _check_origin(request, settings)
+    limiter.consume(f"reset-password:ip:{_client_ip(meta)}", RESET_PASSWORD_PER_IP)
+    await password_reset.reset_password(session, settings, body.token, body.new_password)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

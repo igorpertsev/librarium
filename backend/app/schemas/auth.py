@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import model_validator
+from pydantic import StringConstraints, model_validator
 
 from app.models.enums import ContactMethod
 from app.schemas.common import ApiModel, RequestModel
@@ -47,6 +47,15 @@ class LoginRequest(RequestModel):
 
 class ChangePasswordRequest(RequestModel):
     current_password: AnyPassword
+    new_password: Password
+
+
+class ForgotPasswordRequest(RequestModel):
+    email: NormalizedEmail
+
+
+class ResetPasswordRequest(RequestModel):
+    token: Annotated[str, StringConstraints(min_length=1, max_length=2000)]
     new_password: Password
 
 
