@@ -30,7 +30,7 @@ export function Header() {
           <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <img
               src={dragonLogo}
-              alt="Little Dragon Logo"
+              alt={t('brand.logoAlt')}
               className="w-24 h-24 object-contain"
             />
             <span className="text-xl">Little Dragon</span>

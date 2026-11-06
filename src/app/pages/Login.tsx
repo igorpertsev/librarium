@@ -44,7 +44,7 @@ export default function Login() {
           <div className="flex justify-center mb-4">
             <img
               src={dragonLogo}
-              alt="Little Dragon Logo"
+              alt={t('brand.logoAlt')}
               className="w-40 h-40 object-contain"
             />
           </div>

@@ -77,7 +77,7 @@ export default function Register() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <img src={dragonLogo} alt="Little Dragon Logo" className="w-40 h-40 object-contain" />
+            <img src={dragonLogo} alt={t('brand.logoAlt')} className="w-40 h-40 object-contain" />
           </div>
           <CardTitle>{t('auth.createAccount')}</CardTitle>
           <CardDescription>{t('auth.joinLibrary')}</CardDescription>

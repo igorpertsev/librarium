@@ -101,7 +101,7 @@ export function BookCard({ book }: BookCardProps) {
                 <div key={index} className="flex-[0_0_100%] min-w-0">
                   <img
                     src={image}
-                    alt={`${book.title} - Image ${index + 1}`}
+                    alt={t('bookDetails.imageAlt', { title: book.title, n: index + 1 })}
                     className="w-full h-full object-cover select-none"
                     draggable={false}
                   />

@@ -113,7 +113,7 @@ export function BookDetailsModal({ book, open, onOpenChange }: BookDetailsModalP
       <DialogContent className="sm:max-w-6xl max-h-[90vh] overflow-y-auto p-4 sm:p-8">
         <DialogHeader>
           <DialogTitle className="text-xl sm:text-3xl">{book.title}</DialogTitle>
-          <DialogDescription className="text-sm sm:text-lg">by {book.author}</DialogDescription>
+          <DialogDescription className="text-sm sm:text-lg">{t('bookDetails.byAuthor', { author: book.author })}</DialogDescription>
         </DialogHeader>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
@@ -128,7 +128,7 @@ export function BookDetailsModal({ book, open, onOpenChange }: BookDetailsModalP
                     <div key={index} className="flex-[0_0_100%] min-w-0">
                       <img
                         src={image}
-                        alt={`${book.title} - Image ${index + 1}`}
+                        alt={t('bookDetails.imageAlt', { title: book.title, n: index + 1 })}
                         className="w-full h-full object-cover select-none"
                         draggable={false}
                       />
@@ -177,7 +177,7 @@ export function BookDetailsModal({ book, open, onOpenChange }: BookDetailsModalP
                   >
                     <img
                       src={image}
-                      alt={`Thumbnail ${index + 1}`}
+                      alt={t('bookDetails.thumbnailAlt', { n: index + 1 })}
                       className="w-full h-full object-cover"
                     />
                   </button>
@@ -254,7 +254,7 @@ export function BookDetailsModal({ book, open, onOpenChange }: BookDetailsModalP
               >
                 <img
                   src={images[selectedIndex]}
-                  alt={`${book.title} - Zoomed Image ${selectedIndex + 1}`}
+                  alt={t('bookDetails.zoomedAlt', { title: book.title, n: selectedIndex + 1 })}
                   className="max-w-none transition-transform duration-200 cursor-zoom-in"
                   style={{ transform: `scale(${zoomScale})` }}
                   onClick={(e) => {
