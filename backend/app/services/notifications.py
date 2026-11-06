@@ -27,7 +27,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
 from app.core.exceptions import ConflictError
-from app.models import Book, Notification, Order, User
+from app.models import Book, BookTranslation, Notification, Order, User
 from app.models.enums import (
     BookStatus,
     NotificationKind,
@@ -139,43 +139,83 @@ def _date_ru(value: date) -> str:
     return f"{value.day} {_MONTHS_RU[value.month - 1]} {value.year} г."
 
 
-def _render(kind: NotificationKind, user: User, order: Order, app_url: str) -> tuple[str, str]:
-    books = "\n".join(f"  - {item.title} — {item.author}" for item in order.items)
+Translations = dict[uuid.UUID, dict[UiLanguage, BookTranslation]]
+
+
+async def _translations(session: AsyncSession, book_ids: list[uuid.UUID]) -> Translations:
+    found: Translations = {}
+    if book_ids:
+        rows = await session.scalars(
+            select(BookTranslation).where(BookTranslation.book_id.in_(book_ids))
+        )
+        for row in rows:
+            found.setdefault(row.book_id, {})[row.language] = row
+    return found
+
+
+def _titled(title: str, author: str, translation: BookTranslation | None) -> tuple[str, str]:
+    """Title and author in the translation's language; the shelf title stays in brackets so the
+    reader knows which book to look for."""
+    if translation is None:
+        return title, author
+    shown = translation.title if translation.title == title else f"{translation.title} ({title})"
+    return shown, translation.author or author
+
+
+def _book_lines(order: Order, translations: Translations, language: UiLanguage) -> str:
+    lines = []
+    for item in order.items:
+        title, author = _titled(
+            item.title, item.author, translations.get(item.book_id, {}).get(language)
+        )
+        lines.append(f"  - {title} — {author}")
+    return "\n".join(lines)
+
+
+def _render(
+    kind: NotificationKind,
+    user: User,
+    order: Order,
+    app_url: str,
+    translations: Translations | None = None,
+) -> tuple[str, str]:
+    books_en = _book_lines(order, translations or {}, UiLanguage.EN)
+    books_ru = _book_lines(order, translations or {}, UiLanguage.RU)
     due_en, due_ru = _date_en(order.due_date), _date_ru(order.due_date)
     profile = f"{app_url}/profile"
     texts: dict[NotificationKind, tuple[str, str, str]] = {
         NotificationKind.ORDER_RECEIVED: (
             "We received your request · Заявка получена",
-            f"we have received your request for these books:\n{books}\n\n"
+            f"we have received your request for these books:\n{books_en}\n\n"
             f"The library will confirm it soon. You can follow it on your profile: {profile}",
-            f"мы получили вашу заявку на эти книги:\n{books}\n\n"
+            f"мы получили вашу заявку на эти книги:\n{books_ru}\n\n"
             f"Библиотека скоро её подтвердит. Статус можно посмотреть в профиле: {profile}",
         ),
         NotificationKind.ORDER_CONFIRMED: (
             "Your books have been handed over · Книги выданы",
-            f"the library has confirmed your order and handed over these books:\n{books}\n\n"
+            f"the library has confirmed your order and handed over these books:\n{books_en}\n\n"
             f"Please return them by {due_en}.",
-            f"библиотека подтвердила заказ и выдала вам эти книги:\n{books}\n\n"
+            f"библиотека подтвердила заказ и выдала вам эти книги:\n{books_ru}\n\n"
             # The Russian date already ends with the year abbreviation and its period.
             f"Пожалуйста, верните их до {due_ru}",
         ),
         NotificationKind.ORDER_CANCELLED: (
             "Your request was cancelled · Заявка отменена",
-            f"the library has cancelled your request for these books:\n{books}\n\n"
+            f"the library has cancelled your request for these books:\n{books_en}\n\n"
             "If you think this is a mistake, please contact the library.",
-            f"библиотека отменила вашу заявку на эти книги:\n{books}\n\n"
+            f"библиотека отменила вашу заявку на эти книги:\n{books_ru}\n\n"
             "Если это ошибка, пожалуйста, свяжитесь с библиотекой.",
         ),
         NotificationKind.DUE_SOON: (
             f"Please return your books by {due_en} · Верните книги до {due_ru}",
-            f"a friendly reminder: please return these books by {due_en}:\n{books}",
-            f"напоминаем: пожалуйста, верните эти книги до {due_ru}:\n{books}",
+            f"a friendly reminder: please return these books by {due_en}:\n{books_en}",
+            f"напоминаем: пожалуйста, верните эти книги до {due_ru}:\n{books_ru}",
         ),
         NotificationKind.OVERDUE: (
             "Your books are overdue · Срок возврата истёк",
-            f"these books were due on {due_en} and have not been returned yet:\n{books}\n\n"
+            f"these books were due on {due_en} and have not been returned yet:\n{books_en}\n\n"
             "Please bring them back as soon as possible.",
-            f"срок возврата этих книг истёк {due_ru}, но они ещё не возвращены:\n{books}\n\n"
+            f"срок возврата этих книг истёк {due_ru}, но они ещё не возвращены:\n{books_ru}\n\n"
             "Пожалуйста, верните их как можно скорее.",
         ),
     }
@@ -214,24 +254,27 @@ def localized(
 
 
 def _render_book_available(user: User, book: Book, app_url: str) -> tuple[str, str]:
+    by_language = {item.language: item for item in book.translations}
+    title_en, author_en = _titled(book.title, book.author, by_language.get(UiLanguage.EN))
+    title_ru, author_ru = _titled(book.title, book.author, by_language.get(UiLanguage.RU))
     english = (
         f"Hello {user.full_name},\n\n"
-        f"good news: “{book.title}” by {book.author}, which you were waiting for, is back on "
+        f"good news: “{title_en}” by {author_en}, which you were waiting for, is back on "
         f"the shelf. Add it to your cart before someone else does: {app_url}/\n\n"
         "This is the only email about this book; ask again on the site if you miss it.\n\n"
         "— Little Dragon library\n"
     )
     russian = (
         f"Здравствуйте, {user.full_name}!\n\n"
-        f"хорошая новость: книга «{book.title}» ({book.author}), которую вы ждали, снова "
+        f"хорошая новость: книга «{title_ru}» ({author_ru}), которую вы ждали, снова "
         f"доступна. Добавьте её в корзину, пока её не заказал кто-то другой: {app_url}/\n\n"
         "Это единственное письмо об этой книге; если не успеете, подпишитесь снова на сайте.\n\n"
         "— Библиотека Little Dragon\n"
     )
     return localized(
         user,
-        f"“{book.title}” is available again",
-        f"«{book.title}» снова доступна",
+        f"“{title_en}” is available again",
+        f"«{title_ru}» снова доступна",
         english,
         russian,
     )
@@ -327,7 +370,10 @@ async def deliver_pending(
                 notification.status = NotificationStatus.EXPIRED
                 report.expired += 1
                 continue
-            subject, body = _render(notification.kind, user, order, settings.app_base_url)
+            translations = await _translations(session, [item.book_id for item in order.items])
+            subject, body = _render(
+                notification.kind, user, order, settings.app_base_url, translations
+            )
         notification.recipient = user.email
         notification.subject = subject[:300]
         try:

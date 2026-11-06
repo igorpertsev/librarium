@@ -239,3 +239,33 @@ async def test_emails_use_the_customers_language(
 
     response = await english.patch(f"{API}/users/me", json={"preferred_language": "de"})
     assert response.status_code == 422
+
+
+async def test_emails_use_the_title_in_the_readers_language(
+    app: FastAPI, admin: ApiUser, register_user: RegisterUser, set_batch: SetBatch
+) -> None:
+    await set_batch(1)
+    reader = await register_user()
+    assert (
+        await reader.patch(f"{API}/users/me", json={"preferred_language": "ru"})
+    ).status_code == 200
+    created = await admin.post(
+        f"{API}/admin/books",
+        json={
+            "title": "The Catcher in the Rye",
+            "author": "J. D. Salinger",
+            "category": "fiction",
+            "translations": [
+                {"language": "ru", "title": "Над пропастью во ржи", "author": "Джером Сэлинджер"}
+            ],
+        },
+    )
+    await fill_cart(reader, [created.json()["id"]])
+    assert (await place_order(reader)).status_code == 201
+
+    send = FakeSender()
+    await _deliver(app, send)
+    (message,) = send.messages
+    body = message.get_content()
+    # The translated title, with the title of the copy on the shelf in brackets.
+    assert "Над пропастью во ржи (The Catcher in the Rye) — Джером Сэлинджер" in body
