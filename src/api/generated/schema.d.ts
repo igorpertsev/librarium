@@ -608,6 +608,26 @@ export interface paths {
         patch: operations["admin_change_order_due_date_api_v1_admin_orders__order_id__due_date_patch"];
         trace?: never;
     };
+    "/api/v1/admin/orders/{order_id}/remind": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Admin Remind Customer
+         * @description Emails the customer a reminder (overdue, or due soon) with the next notifier run. Only for borrowed orders, at most once per 24 hours (409 REMINDER_RECENTLY_SENT).
+         */
+        post: operations["admin_remind_customer_api_v1_admin_orders__order_id__remind_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/settings": {
         parameters: {
             query?: never;
@@ -1051,6 +1071,11 @@ export interface components {
             /** Password */
             password: string;
         };
+        /**
+         * NotificationKind
+         * @enum {string}
+         */
+        NotificationKind: "order_received" | "order_confirmed" | "order_cancelled" | "due_soon" | "overdue" | "book_available";
         /** OrderDueDateUpdate */
         OrderDueDateUpdate: {
             /**
@@ -1196,6 +1221,15 @@ export interface components {
             /** Phone */
             phone?: string | null;
             preferred_contact_method?: components["schemas"]["ContactMethod"] | null;
+        };
+        /** ReminderQueued */
+        ReminderQueued: {
+            kind: components["schemas"]["NotificationKind"];
+            /**
+             * Queued At
+             * Format: date-time
+             */
+            queued_at: string;
         };
         /** ResetPasswordRequest */
         ResetPasswordRequest: {
@@ -3138,6 +3172,73 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_remind_customer_api_v1_admin_orders__order_id__remind_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReminderQueued"];
                 };
             };
             /** @description Unauthorized */

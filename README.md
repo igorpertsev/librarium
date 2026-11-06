@@ -441,6 +441,9 @@ English followed by Russian.
 - **Outbox:** a row in `notifications` is written in the same transaction as the order change, so
   an email is never lost or sent for a change that was rolled back. Each event happens at most once
   per order.
+- **Overdue loans:** the admin Orders tab has an *Overdue* filter (and the count in the statistics); *Remind*
+  (`POST /admin/orders/{id}/remind`) queues an overdue or due-soon email right away, at most once per order
+  every 24 hours (`409 REMINDER_RECENTLY_SENT`).
 - **Delivery:** `python -m app.cli notifications` queues due-date reminders and sends pending emails
   over SMTP (5 attempts with exponential backoff; messages older than 7 days expire).
   `--loop SECONDS` keeps it running; Docker Compose runs it as the `notifier` service.

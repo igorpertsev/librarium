@@ -173,7 +173,11 @@
     "maxRenewals": "Extensions per loan",
     "loanRulesHint": "Customers can extend a loan by one loan period this many times, as long as it is not overdue (0 turns extensions off).",
     "saveLoanRules": "Save loan rules",
-    "loanRulesUpdated": "Loan rules updated"
+    "loanRulesUpdated": "Loan rules updated",
+    "filterOverdue": "Overdue",
+    "overdueLoans": "Overdue loans",
+    "remind": "Remind",
+    "reminderQueued": "Reminder queued: the customer will get an email within a few minutes"
   },
   "bookForm": {
     "title": "Title",
@@ -337,7 +341,8 @@
     "renewalOverdue": "Overdue loans cannot be extended. Please return the books.",
     "renewalLimit": "This loan has already been extended as often as allowed.",
     "renewalNotAllowed": "This loan cannot be extended.",
-    "renewalRequested": "Another reader is waiting for one of these books, so the loan cannot be extended."
+    "renewalRequested": "Another reader is waiting for one of these books, so the loan cannot be extended.",
+    "reminderRecentlySent": "This customer was reminded less than 24 hours ago."
   },
   "checkout": {
     "title": "Confirm Order",

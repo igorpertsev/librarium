@@ -12,7 +12,13 @@ from app.repositories.books import BookFilters
 from app.schemas.book import BookCreate, BookPage, BookRead, BookSort, BookStats, BookUpdate
 from app.schemas.common import error_responses
 from app.schemas.library_settings import LibrarySettingsRead, LibrarySettingsUpdate
-from app.schemas.order import OrderDueDateUpdate, OrderPage, OrderRead, OrderStatusUpdate
+from app.schemas.order import (
+    OrderDueDateUpdate,
+    OrderPage,
+    OrderRead,
+    OrderStatusUpdate,
+    ReminderQueued,
+)
 from app.schemas.user import AdminUserPage, AdminUserUpdate, UserRead
 from app.services import books as books_service
 from app.services import library_settings as settings_service
@@ -174,6 +180,19 @@ async def admin_change_order_due_date(
 ) -> OrderRead:
     order = await orders_service.change_due_date(session, order_id, body.due_date)
     return OrderRead.model_validate(order)
+
+
+@router.post(
+    "/orders/{order_id}/remind",
+    status_code=status.HTTP_202_ACCEPTED,
+    response_model=ReminderQueued,
+    responses=error_responses(404, 409, 422),
+    description="Emails the customer a reminder (overdue, or due soon) with the next notifier "
+    "run. Only for borrowed orders, at most once per 24 hours (409 REMINDER_RECENTLY_SENT).",
+)
+async def admin_remind_customer(order_id: uuid.UUID, session: SessionDep) -> ReminderQueued:
+    notification = await orders_service.remind_customer(session, order_id)
+    return ReminderQueued(kind=notification.kind, queued_at=notification.created_at)
 
 
 # --- Library settings (batch configuration) --------------------------------------------

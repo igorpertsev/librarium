@@ -2708,6 +2708,95 @@
         }
       }
     },
+    "/api/v1/admin/orders/{order_id}/remind": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Remind Customer",
+        "description": "Emails the customer a reminder (overdue, or due soon) with the next notifier run. Only for borrowed orders, at most once per 24 hours (409 REMINDER_RECENTLY_SENT).",
+        "operationId": "admin_remind_customer_api_v1_admin_orders__order_id__remind_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReminderQueued"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
     "/api/v1/admin/settings": {
       "get": {
         "tags": [
@@ -4041,6 +4130,18 @@
         ],
         "title": "LoginRequest"
       },
+      "NotificationKind": {
+        "type": "string",
+        "enum": [
+          "order_received",
+          "order_confirmed",
+          "order_cancelled",
+          "due_soon",
+          "overdue",
+          "book_available"
+        ],
+        "title": "NotificationKind"
+      },
       "OrderDueDateUpdate": {
         "properties": {
           "due_date": {
@@ -4477,6 +4578,24 @@
           "full_name"
         ],
         "title": "RegisterRequest"
+      },
+      "ReminderQueued": {
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/NotificationKind"
+          },
+          "queued_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Queued At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "queued_at"
+        ],
+        "title": "ReminderQueued"
       },
       "ResetPasswordRequest": {
         "properties": {

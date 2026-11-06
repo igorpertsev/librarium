@@ -21,6 +21,8 @@ const MESSAGE_KEYS: Record<string, string> = {
   BOOK_NOT_FOUND: 'errors.bookNotFound',
   BOOK_AVAILABLE: 'waitlist.availableNow',
   ORDER_NOT_FOUND: 'errors.notFound',
+  REMINDER_RECENTLY_SENT: 'errors.reminderRecentlySent',
+  ORDER_NOT_BORROWED: 'errors.invalidTransition',
   USER_NOT_FOUND: 'errors.notFound',
   NOT_FOUND: 'errors.notFound',
 };

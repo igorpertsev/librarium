@@ -25,6 +25,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
+from app.core.exceptions import ConflictError
 from app.models import Book, Notification, Order, User
 from app.models.enums import BookStatus, NotificationKind, NotificationStatus, OrderStatus
 from app.repositories import orders as orders_repo
@@ -55,6 +56,39 @@ async def enqueue(
         .values(id=uuid.uuid4(), order_id=order_id, user_id=user_id, kind=kind)
         .on_conflict_do_nothing(index_elements=[Notification.order_id, Notification.kind])
     )
+
+
+MANUAL_REMINDER_INTERVAL = timedelta(hours=24)
+
+
+async def queue_manual_reminder(
+    session: AsyncSession, order: Order, *, today: date, now: datetime
+) -> Notification:
+    """A librarian asks to remind the customer now (overdue or due-soon email).
+
+    Replaces the order's earlier reminder of the same kind, at most once per 24 hours.
+    """
+    kind = NotificationKind.OVERDUE if order.due_date < today else NotificationKind.DUE_SOON
+    previous = await session.scalar(
+        select(Notification)
+        .where(Notification.order_id == order.id, Notification.kind == kind)
+        .with_for_update()
+    )
+    if previous is not None:
+        if now - previous.created_at < MANUAL_REMINDER_INTERVAL:
+            raise ConflictError(
+                "A reminder for this order was sent less than 24 hours ago",
+                code="REMINDER_RECENTLY_SENT",
+                details={"last_reminder_at": previous.created_at.isoformat()},
+            )
+        await session.delete(previous)
+        await session.flush()
+    notification = Notification(
+        id=uuid.uuid4(), order_id=order.id, user_id=order.user_id, kind=kind
+    )
+    session.add(notification)
+    await session.flush()
+    return notification
 
 
 async def queue_reminders(session: AsyncSession, *, today: date, due_soon_days: int) -> int:
