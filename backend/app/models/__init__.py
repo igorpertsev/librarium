@@ -4,6 +4,7 @@ from app.models.base import Base
 from app.models.book import Book
 from app.models.cart import Cart, CartItem
 from app.models.library_settings import LibrarySettings
+from app.models.notification import Notification
 from app.models.order import Order, OrderItem
 from app.models.refresh_token import RefreshToken
 from app.models.user import User
@@ -14,6 +15,7 @@ __all__ = [
     "Cart",
     "CartItem",
     "LibrarySettings",
+    "Notification",
     "Order",
     "OrderItem",
     "RefreshToken",

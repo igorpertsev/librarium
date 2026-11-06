@@ -26,6 +26,15 @@ x-backend-env: &backend-env
   FRONTEND_ORIGINS: https://${DOMAIN:?set DOMAIN in .env}
   SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-}
   SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
+  # Customer emails (optional): without SMTP_HOST they stay queued and are not sent.
+  SMTP_HOST: ${SMTP_HOST:-}
+  SMTP_PORT: ${SMTP_PORT:-587}
+  SMTP_STARTTLS: ${SMTP_STARTTLS:-true}
+  SMTP_SSL: ${SMTP_SSL:-false}
+  SMTP_USERNAME: ${SMTP_USERNAME:-}
+  SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+  MAIL_FROM: ${MAIL_FROM:-Little Dragon Library <no-reply@localhost>}
+  APP_BASE_URL: https://${DOMAIN:?set DOMAIN in .env}
 
 services:
   db:
@@ -62,6 +71,20 @@ services:
     build:
       context: ./backend
       target: runtime
+    environment: *backend-env
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    logging: *logging
+
+  # Sends customer emails (order updates, due-date reminders) every 5 minutes.
+  notifier:
+    image: librarium-backend:prod
+    build:
+      context: ./backend
+      target: runtime
+    command: ["python", "-m", "app.cli", "notifications", "--loop", "300"]
     environment: *backend-env
     depends_on:
       migrate:

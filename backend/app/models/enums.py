@@ -62,3 +62,18 @@ ORDER_STATUS_TRANSITIONS: dict[OrderStatus, frozenset[OrderStatus]] = {
 
 # Customers may only withdraw a request that has not been handed over yet.
 CUSTOMER_CANCELLABLE_STATUSES: frozenset[OrderStatus] = frozenset({OrderStatus.PENDING})
+
+
+class NotificationKind(StrEnum):
+    ORDER_RECEIVED = "order_received"  # the customer placed an order
+    ORDER_CONFIRMED = "order_confirmed"  # books handed over, due date known
+    ORDER_CANCELLED = "order_cancelled"  # cancelled by the library
+    DUE_SOON = "due_soon"  # reminder a few days before the due date
+    OVERDUE = "overdue"  # the due date has passed
+
+
+class NotificationStatus(StrEnum):
+    PENDING = "pending"
+    SENT = "sent"
+    FAILED = "failed"  # gave up after the maximum number of attempts
+    EXPIRED = "expired"  # too old to be useful, or the recipient can no longer receive it
