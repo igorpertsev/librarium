@@ -14,6 +14,8 @@ interface CartContextType {
   batchConfig: BatchConfig;
   currency: string;
   isLoading: boolean;
+  /** True once the server cart (and its pricing) has been loaded for the current user. */
+  isLoaded: boolean;
   error: ApiError | null;
   /** Cart books that can no longer be ordered (reserved, withdrawn or not available). */
   unavailableBookIds: ReadonlySet<string>;
@@ -45,18 +47,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [view, setView] = useState<CartView>(EMPTY_CART);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
+  const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
 
   const apply = (dto: CartDto) => setView(cartFromDto(dto));
 
   const refreshCart = useCallback(async () => {
     if (!user) {
       setView(EMPTY_CART);
+      setLoadedUserId(null);
       return;
     }
     setIsLoading(true);
     setError(null);
     try {
       setView(cartFromDto(await cartApi.get()));
+      setLoadedUserId(user.id);
     } catch (e) {
       setError(toApiError(e));
     } finally {
@@ -119,6 +124,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         batchConfig: view.batchConfig,
         currency: view.currency,
         isLoading,
+        isLoaded: user !== null && loadedUserId === user.id,
         error,
         unavailableBookIds: view.unavailableBookIds,
         addBookToCart,

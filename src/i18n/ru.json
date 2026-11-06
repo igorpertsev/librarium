@@ -289,5 +289,14 @@
     "bookUnavailable": "Некоторые книги больше недоступны",
     "bookUnavailableList": "Больше недоступны: {{titles}}. Удалите их из корзины и попробуйте снова.",
     "incompleteBatch": "Чтобы оформить заказ, соберите партию из {{count}} книг"
+  },
+  "batch": {
+    "info": "Книги выдаются партиями по {{count}} шт. за {{price}} за партию.",
+    "progress": "{{current}} из {{total}} книг в следующей партии",
+    "ready_one": "{{count}} партия готова",
+    "ready_few": "{{count}} партии готовы",
+    "ready_many": "{{count}} партий готово",
+    "ready_other": "{{count}} партии готовы",
+    "goToCart": "В корзину"
   }
 }

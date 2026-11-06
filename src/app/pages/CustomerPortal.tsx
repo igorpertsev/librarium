@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { BookCard } from '../components/BookCard';
+import { BatchProgress } from '../components/BatchProgress';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Button } from '../components/ui/button';
@@ -97,6 +98,8 @@ export default function CustomerPortal() {
       <div className="bg-card border-b border-border">
         <div className="container mx-auto px-4 py-6">
           <h1 className="mb-6">{t('home.availableBooks')}</h1>
+
+          <BatchProgress />
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">

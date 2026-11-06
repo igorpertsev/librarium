@@ -289,5 +289,12 @@
     "bookUnavailable": "Some books are no longer available",
     "bookUnavailableList": "No longer available: {{titles}}. Remove them from the cart and try again.",
     "incompleteBatch": "Add books to complete a batch of {{count}} before checking out"
+  },
+  "batch": {
+    "info": "Books are lent in batches of {{count}} for {{price}} per batch.",
+    "progress": "{{current}} of {{total}} books in your next batch",
+    "ready_one": "{{count}} batch ready",
+    "ready_other": "{{count}} batches ready",
+    "goToCart": "Go to cart"
   }
 }
