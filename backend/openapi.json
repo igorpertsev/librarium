@@ -2191,6 +2191,53 @@
         }
       }
     },
+    "/api/v1/share/books/{book_id}": {
+      "get": {
+        "tags": [
+          "share"
+        ],
+        "summary": "Share Book",
+        "description": "Open Graph page for a book, for link previews; people are redirected to the book in the app.",
+        "operationId": "share_book_api_v1_share_books__book_id__get",
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such book"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/books": {
       "get": {
         "tags": [

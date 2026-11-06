@@ -1,5 +1,5 @@
 import { createBrowserRouter, Navigate } from 'react-router';
-import { Layout, AdminLayout } from './components/Layout';
+import { Layout, AdminLayout, RequireAuth } from './components/Layout';
 import Login from './pages/Login';
 
 // Pages are loaded when first opened, so the sign-in page and the catalogue do not wait for
@@ -44,28 +44,38 @@ export const router = createBrowserRouter([
     path: '/',
     element: <Layout />,
     children: [
+      // The catalogue and book pages are open to everyone; borrowing needs an account.
       {
         index: true,
         lazy: page(() => import('./pages/CustomerPortal')),
       },
       {
-        path: 'profile',
-        lazy: page(() => import('./pages/Profile')),
+        path: 'books/:bookId',
+        lazy: page(() => import('./pages/CustomerPortal')),
       },
       {
-        path: 'cart',
-        lazy: page(() => import('./pages/Cart')),
-      },
-      {
-        path: 'admin',
-        element: <AdminLayout />,
+        element: <RequireAuth />,
         children: [
           {
-            index: true,
-            lazy: page(() => import('./pages/AdminPortal')),
-          }
-        ]
-      }
+            path: 'profile',
+            lazy: page(() => import('./pages/Profile')),
+          },
+          {
+            path: 'cart',
+            lazy: page(() => import('./pages/Cart')),
+          },
+          {
+            path: 'admin',
+            element: <AdminLayout />,
+            children: [
+              {
+                index: true,
+                lazy: page(() => import('./pages/AdminPortal')),
+              },
+            ],
+          },
+        ],
+      },
     ]
   },
   {

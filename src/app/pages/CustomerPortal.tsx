@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useNavigation, useSearchParams } from 'react-router';
+import { useNavigate, useNavigation, useParams, useSearchParams } from 'react-router';
+import { toast } from 'sonner';
+import { BookDetailsModal } from '../components/BookDetailsModal';
 import { BookCard } from '../components/BookCard';
 import { BatchProgress } from '../components/BatchProgress';
 import { AuthorBanner, SelectedTags, SeriesBanner, SeriesFilter, TagFilter } from '../components/CatalogFilters';
@@ -211,6 +213,38 @@ export default function CustomerPortal() {
   }, [catalogVersion]);
 
   const hasMore = books.length < total;
+
+  // /books/<id>: a shared link opens that book over the catalogue.
+  const { bookId } = useParams();
+  const navigate = useNavigate();
+  const [linkedBook, setLinkedBook] = useState<Book | null>(null);
+  useEffect(() => {
+    if (!bookId) {
+      setLinkedBook(null);
+      return;
+    }
+    let current = true;
+    booksApi
+      .get(bookId)
+      .then((dto) => current && setLinkedBook(bookFromDto(dto)))
+      .catch(() => {
+        if (!current) return;
+        toast.error(t('errors.bookNotFound'));
+        navigate({ pathname: '/', search: window.location.search }, { replace: true });
+      });
+    return () => {
+      current = false;
+    };
+  }, [bookId, navigate, t]);
+  useEffect(() => {
+    if (!linkedBook) return;
+    const previous = document.title;
+    document.title = `${textOf(linkedBook).title} — Little Dragon`;
+    return () => {
+      document.title = previous;
+    };
+  }, [linkedBook, textOf]);
+  const closeLinkedBook = () => navigate({ pathname: '/', search: window.location.search });
   // The new arrivals shelf belongs to the plain catalogue, not to a search or a filter.
   const hasFilters = Boolean(
     urlQuery || categoryFilter !== 'all' || ageFilter !== 'all' || availableOnly || tagFilter.length ||
@@ -409,6 +443,13 @@ export default function CustomerPortal() {
           )}
         </div>
       </div>
+      <BookDetailsModal
+        book={linkedBook}
+        open={Boolean(bookId && linkedBook)}
+        onOpenChange={(open) => {
+          if (!open) closeLinkedBook();
+        }}
+      />
     </div>
   );
 }

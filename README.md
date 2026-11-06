@@ -383,6 +383,9 @@ two copies of the same title are two records (ISBN is not unique).
   Anthropic's recommended model). `python -m app.cli translate-books --to ru [--no-machine] [--limit 50]` does the
   same for titles without a translation (pausing 1 s between titles); review the results in the admin portal.
   Fantlab is not used: its API documentation states no terms for reusing its user-written texts.
+- **Open catalogue**: the catalogue and book pages (`/books/<id>`, opening the book over the catalogue) need no
+  account; the cart, profile and admin portal do. A visitor's "Sign in to borrow" comes back to the same page after
+  signing in. Link-preview bots get a page with the book's title, description and cover (`/share/books/{id}`).
 - The cart is not a reservation: the same book can sit in several users' carts; adding it checks
   availability, but the decisive check happens at checkout.
 - Pricing is per **batch**: `price_per_batch` for every complete set of `books_per_batch` books (library
@@ -459,6 +462,7 @@ Differences (adapters in `src/api/mappers.ts`):
 | GET/DELETE | `/cart` · POST `/cart/items` · DELETE `/cart/items/{book_id}` | signed-in user |
 | POST/GET | `/orders` · GET `/orders/{id}` · POST `/orders/{id}/cancel`, `/orders/{id}/renew` | signed-in user (own orders only) |
 | GET | `/library/rules` (batch size and price, loan period, extensions per loan) | everyone |
+| GET | `/share/books/{id}` (Open Graph page for link previews; Caddy sends bots on `/books/<id>` here) | everyone |
 | GET `/waitlist` · POST/DELETE `/waitlist/{book_id}` | “email me when this book is back” | signed-in user |
 | GET `/reading-list` · POST/DELETE `/reading-list/{book_id}` | “want to read”: titles kept for later, separate from the cart | signed-in user |
 | GET/POST | `/admin/books`, GET `/admin/books/stats`, GET/PATCH/DELETE `/admin/books/{id}` | admin |

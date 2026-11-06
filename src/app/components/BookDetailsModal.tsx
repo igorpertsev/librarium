@@ -3,10 +3,12 @@ import { Book } from '../types';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { ChevronLeft, ChevronRight, ShoppingCart, Calendar, Hash, BookOpen, ZoomIn, ZoomOut, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ShoppingCart, Calendar, Hash, BookOpen, ZoomIn, ZoomOut, X, LogIn, Link2 } from 'lucide-react';
 import { Separator } from './ui/separator';
 import useEmblaCarousel from 'embla-carousel-react';
 import { useCart } from '../contexts/CartContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useSignInFirst } from '../utils/useSignInFirst';
 import { useOrders } from '../contexts/OrdersContext';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
@@ -28,6 +30,17 @@ interface BookDetailsModalProps {
 
 export function BookDetailsModal({ book: initialBook, open, onOpenChange }: BookDetailsModalProps) {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const signInFirst = useSignInFirst();
+  const copyLink = async (bookId: string) => {
+    const url = `${window.location.origin}/books/${bookId}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success(t('share.copied'));
+    } catch {
+      toast.info(url); // no clipboard access: show the link to copy by hand
+    }
+  };
   // "Previous / next volume" shows another book in the same dialog.
   const [shown, setShown] = useState<Book | null>(null);
   const book = shown ?? initialBook;
@@ -379,23 +392,41 @@ export function BookDetailsModal({ book: initialBook, open, onOpenChange }: Book
 
             <Separator />
 
-            <Button
-              onClick={handleAddToCart}
-              disabled={book.status !== 'available' || isPending || isOrderedByOther || adding}
-              className="w-full text-sm sm:text-lg py-5 sm:py-7"
-              size="lg"
-            >
-              <ShoppingCart className="w-4 h-4 sm:w-6 sm:h-6 mr-2 sm:mr-3" />
-              {getCartButtonLabel(t, { status: book.status, inCart: isPending, reserved: isOrderedByOther })}
-            </Button>
-            {(isOrderedByOther || book.status !== 'available') && !isPending && (
-              <div className="flex flex-col items-center gap-2 text-center">
-                <p className="text-sm text-muted-foreground">{t('waitlist.explain')}</p>
-                <WaitlistButton bookId={book.id} groupId={book.groupId} title={text.title} withLabel />
+            {user ? (
+              <>
+                <Button
+                  onClick={handleAddToCart}
+                  disabled={book.status !== 'available' || isPending || isOrderedByOther || adding}
+                  className="w-full text-sm sm:text-lg py-5 sm:py-7"
+                  size="lg"
+                >
+                  <ShoppingCart className="w-4 h-4 sm:w-6 sm:h-6 mr-2 sm:mr-3" />
+                  {getCartButtonLabel(t, { status: book.status, inCart: isPending, reserved: isOrderedByOther })}
+                </Button>
+                {(isOrderedByOther || book.status !== 'available') && !isPending && (
+                  <div className="flex flex-col items-center gap-2 text-center">
+                    <p className="text-sm text-muted-foreground">{t('waitlist.explain')}</p>
+                    <WaitlistButton bookId={book.id} groupId={book.groupId} title={text.title} withLabel />
+                  </div>
+                )}
+                <div className="flex justify-center">
+                  <ReadingListButton bookId={book.id} groupId={book.groupId} title={text.title} withLabel />
+                </div>
+              </>
+            ) : (
+              <div className="space-y-2 text-center">
+                <Button onClick={signInFirst} className="w-full text-sm sm:text-lg py-5 sm:py-7" size="lg">
+                  <LogIn className="w-4 h-4 sm:w-6 sm:h-6 mr-2 sm:mr-3" aria-hidden="true" />
+                  {t('guest.signInToBorrow')}
+                </Button>
+                <p className="text-sm text-muted-foreground">{t('guest.explain')}</p>
               </div>
             )}
             <div className="flex justify-center">
-              <ReadingListButton bookId={book.id} groupId={book.groupId} title={text.title} withLabel />
+              <Button variant="ghost" size="sm" onClick={() => void copyLink(book.id)}>
+                <Link2 className="w-4 h-4 mr-2" aria-hidden="true" />
+                {t('share.copyLink')}
+              </Button>
             </div>
           </div>
         </div>

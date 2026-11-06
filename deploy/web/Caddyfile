@@ -22,6 +22,17 @@
 		-Server
 	}
 
+	# Link previews: bots that fetch a shared /books/<id> link (they don't run JavaScript) get
+	# a small page with the book's title, description and cover; people get the app.
+	@preview {
+		path /books/*
+		header_regexp User-Agent (?i)(bot|crawler|spider|preview|facebookexternalhit|telegram|whatsapp|slack|discord|twitter|linkedin|vkshare|skype)
+	}
+	handle @preview {
+		rewrite * /api/v1/share{path}
+		reverse_proxy backend:8000
+	}
+
 	# API: everything under /api goes to FastAPI. Docs (/docs, /openapi.json) stay private.
 	handle /api/* {
 		reverse_proxy backend:8000

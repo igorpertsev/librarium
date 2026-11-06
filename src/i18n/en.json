@@ -7,7 +7,9 @@
     "logout": "Logout",
     "login": "Login",
     "menu": "Menu",
-    "openMenu": "Open menu"
+    "openMenu": "Open menu",
+    "signIn": "Sign in",
+    "register": "Register"
   },
   "home": {
     "title": "Welcome to Our Library",
@@ -244,7 +246,8 @@
     "setNewPassword": "Set new password",
     "passwordResetDone": "Your password has been changed. Sign in with the new password.",
     "invalidResetLink": "This link is invalid or has expired. Links work for one hour and only once.",
-    "requestNewLink": "Request a new link"
+    "requestNewLink": "Request a new link",
+    "browseCatalogue": "Browse the catalogue without signing in"
   },
   "userMenu": {
     "settings": "Settings",
@@ -696,5 +699,13 @@
     "buyMore": "Buy more",
     "nobodyWaiting": "Nobody is waiting for a book.",
     "nothingSaved": "Nobody has saved a book yet."
+  },
+  "guest": {
+    "signInToBorrow": "Sign in to borrow",
+    "explain": "Browsing is open to everyone; borrowing needs a free account."
+  },
+  "share": {
+    "copyLink": "Copy link to this book",
+    "copied": "Link copied"
   }
 }
