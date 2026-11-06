@@ -157,7 +157,9 @@
     "orderCancelled": "Cancelled",
     "cancelOrder": "Cancel",
     "orderCancelledMsg": "Order cancelled",
-    "dueDateUpdated": "Due date updated"
+    "dueDateUpdated": "Due date updated",
+    "searchOrders": "Search by customer, email, order number or book",
+    "showLess": "Show less"
   },
   "bookForm": {
     "title": "Title",

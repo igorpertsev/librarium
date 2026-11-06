@@ -29,6 +29,7 @@ class OrderItemRead(ApiModel):
 
 class OrderRead(ApiModel):
     id: uuid.UUID
+    number: int
     user_id: uuid.UUID
     status: OrderStatus
     total_amount: Decimal

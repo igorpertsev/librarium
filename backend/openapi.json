@@ -3659,6 +3659,10 @@
             "format": "uuid",
             "title": "Id"
           },
+          "number": {
+            "type": "integer",
+            "title": "Number"
+          },
           "user_id": {
             "type": "string",
             "format": "uuid",
@@ -3811,6 +3815,7 @@
         "type": "object",
         "required": [
           "id",
+          "number",
           "user_id",
           "status",
           "total_amount",

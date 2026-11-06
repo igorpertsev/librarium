@@ -28,6 +28,8 @@ class Order(TimestampMixin, Base):
     )
 
     id: Mapped[uuid.UUID] = uuid_pk()
+    # Human-friendly sequential number shown to customers and staff (#1001, #1002, ...).
+    number: Mapped[int] = mapped_column(sa.BigInteger, sa.Identity(start=1001), unique=True)
     user_id: Mapped[uuid.UUID] = mapped_column(sa.ForeignKey("users.id", ondelete="RESTRICT"))
     status: Mapped[OrderStatus] = mapped_column(
         str_enum(OrderStatus, "order_status"),

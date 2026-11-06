@@ -61,6 +61,8 @@ export type OrderStatus = 'pending' | 'confirmed' | 'returned' | 'cancelled';
 
 export interface Order {
   id: string;
+  /** Sequential, human-friendly number (#1001). */
+  number?: number;
   userId: string;
   userName: string;
   userEmail: string;

@@ -5,6 +5,10 @@ export const getCategoryTranslation = (t: TFunction, category: BookCategory): st
   return t(`categories.${category}`);
 };
 
+/** "#1042" for display; falls back to a short id for orders without a number. */
+export const orderLabel = (order: { id: string; number?: number }): string =>
+  `#${order.number ?? order.id.slice(-6).toUpperCase()}`;
+
 export const getStatusTranslation = (t: TFunction, status: BookStatus): string => {
   switch (status) {
     case 'available':
