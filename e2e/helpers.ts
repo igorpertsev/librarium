@@ -81,3 +81,13 @@ export async function setBatchSize(request: APIRequestContext, booksPerBatch: nu
   });
   expect(response.ok()).toBeTruthy();
 }
+
+/** The librarian hands an order over (status "confirmed"). */
+export async function confirmOrder(request: APIRequestContext, orderId: string) {
+  const token = await adminToken(request);
+  const response = await request.patch(`${API_URL}/admin/orders/${orderId}/status`, {
+    headers: { Authorization: `Bearer ${token}` },
+    data: { status: 'confirmed' },
+  });
+  expect(response.ok()).toBeTruthy();
+}

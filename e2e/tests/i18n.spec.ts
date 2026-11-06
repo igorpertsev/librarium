@@ -4,7 +4,7 @@ import { registerCustomer } from '../helpers';
 test('switching to Russian translates the interface and is remembered', async ({ page }) => {
   await registerCustomer(page);
   await page.getByRole('button', { name: 'Settings' }).click();
-  await page.getByRole('dialog').getByRole('combobox').click();
+  await page.getByRole('dialog').getByRole('combobox', { name: 'Language' }).click();
   await page.getByRole('option', { name: 'Russian' }).click();
   await page.keyboard.press('Escape');
 

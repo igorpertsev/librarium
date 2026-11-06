@@ -35,3 +35,27 @@ test('pages have no automatically detectable accessibility problems', async ({ p
   await page.getByRole('tab', { name: /Orders/ }).click();
   await expectNoViolations(page, 'admin orders');
 });
+
+test('the dark theme has no automatically detectable accessibility problems', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('theme', 'dark'));
+  await page.goto('/login');
+  await expect(page.locator('html')).toHaveClass(/dark/);
+  await expectNoViolations(page, 'sign-in (dark)');
+
+  await registerCustomer(page);
+  await expect(page.getByRole('heading', { name: 'Available Books' })).toBeVisible();
+  await expectNoViolations(page, 'catalogue (dark)');
+  await page.getByRole('button', { name: 'My Books' }).click();
+  await expectNoViolations(page, 'profile (dark)');
+
+  await signOut(page);
+  await signIn(page, ADMIN);
+  await page.goto('/admin');
+  await expect(page.getByText('Library Statistics')).toBeVisible();
+  await expectNoViolations(page, 'admin (dark)');
+  await page.getByRole('tab', { name: /Orders/ }).click();
+  await expectNoViolations(page, 'admin orders (dark)');
+  await page.getByRole('tab', { name: 'Reports' }).click();
+  await expect(page.getByText('Orders placed')).toBeVisible();
+  await expectNoViolations(page, 'admin reports (dark)');
+});
