@@ -2,7 +2,8 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router';
 import { BookCard } from '../components/BookCard';
 import { BatchProgress } from '../components/BatchProgress';
-import { SelectedTags, SeriesBanner, SeriesFilter, TagFilter } from '../components/CatalogFilters';
+import { AuthorBanner, SelectedTags, SeriesBanner, SeriesFilter, TagFilter } from '../components/CatalogFilters';
+import { useBookText } from '../utils/bookText';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Button } from '../components/ui/button';
@@ -90,6 +91,8 @@ export default function CustomerPortal() {
   const tagFilter = useMemo(() => parseTagParam(tagsParam), [tagsParam]);
   const tagKey = tagFilter.join(',');
   const seriesFilter = parseSeriesParam(params.get('series'));
+  const authorFilter = params.get('author')?.trim() || null;
+  const textOf = useBookText();
   const languageParam = params.get('language');
   const languageFilter = languageParam && /^[a-z]{2,3}$/.test(languageParam) ? languageParam : 'all';
   const sort = parseSort(params.get('sort'), seriesFilter !== null);
@@ -165,6 +168,7 @@ export default function CustomerPortal() {
             tags: tagKey || undefined,
             series: seriesFilter ?? undefined,
             language: languageFilter === 'all' ? undefined : languageFilter,
+            author: authorFilter ?? undefined,
             sort,
           },
           controller.signal,
@@ -180,7 +184,7 @@ export default function CustomerPortal() {
         if (requestRef.current === controller) setIsLoading(false);
       }
     },
-    [urlQuery, categoryFilter, ageFilter, availableOnly, tagKey, seriesFilter, languageFilter, sort],
+    [urlQuery, categoryFilter, ageFilter, availableOnly, tagKey, seriesFilter, languageFilter, authorFilter, sort],
   );
 
   // Reload from the first page when filters change or availability may have changed.
@@ -337,6 +341,14 @@ export default function CustomerPortal() {
 
       <div ref={resultsRef} className="flex-1 overflow-y-auto" onScroll={handleScroll}>
         <div className="container mx-auto px-4 py-6">
+          {authorFilter && (
+            <AuthorBanner
+              // The name as the reader sees it on the cards (translated when possible).
+              name={books[0] ? textOf(books[0]).author : authorFilter}
+              total={total}
+              onClear={() => updateParams({ author: null })}
+            />
+          )}
           {seriesFilter && (
             <SeriesBanner
               seriesId={seriesFilter}

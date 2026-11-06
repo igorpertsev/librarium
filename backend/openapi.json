@@ -792,6 +792,25 @@
             "description": "ISO 639 code of the book's language, e.g. en"
           },
           {
+            "name": "author",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 300
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Books by this author (exact name, any case)",
+              "title": "Author"
+            },
+            "description": "Books by this author (exact name, any case)"
+          },
+          {
             "name": "sort",
             "in": "query",
             "required": false,

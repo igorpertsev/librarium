@@ -641,5 +641,9 @@
     "next": "Next: {{title}}",
     "continueTitle": "Continue the series",
     "continueDescription": "The next book of each series you have been reading."
+  },
+  "author": {
+    "label": "Author",
+    "showBooks": "All books by {{name}}"
   }
 }

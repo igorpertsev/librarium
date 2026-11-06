@@ -15,7 +15,7 @@ import { useFormat } from '../utils/format';
 import { errorMessage } from '../utils/apiErrors';
 import { WaitlistButton } from './WaitlistButton';
 import { ReadingListButton } from './ReadingListButton';
-import { SeriesLink, TagChips } from './CatalogFilters';
+import { AuthorLink, SeriesLink, TagChips } from './CatalogFilters';
 import { useBookLanguageName, useBookText } from '../utils/bookText';
 import { booksApi } from '../../api/endpoints';
 import { bookFromDto } from '../../api/mappers';
@@ -354,7 +354,9 @@ export function BookDetailsModal({ book: initialBook, open, onOpenChange }: Book
                 <BookOpen className="w-4 h-4 sm:w-6 sm:h-6 text-muted-foreground" />
                 <div>
                   <p className="text-xs sm:text-sm text-muted-foreground mb-0.5 sm:mb-1">{t('bookDetails.author')}</p>
-                  <p className="text-sm sm:text-lg">{text.author}</p>
+                  <p className="text-sm sm:text-lg">
+                    <AuthorLink author={book.author} label={text.author} onNavigate={() => handleOpenChange(false)} />
+                  </p>
                 </div>
               </div>
 

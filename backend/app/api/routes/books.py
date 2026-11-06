@@ -52,6 +52,9 @@ async def list_books(
     tags: TagsQuery = None,
     series: Annotated[uuid.UUID | None, Query(description="Books of this series")] = None,
     language: LanguageQuery = None,
+    author: Annotated[
+        str | None, Query(max_length=300, description="Books by this author (exact name, any case)")
+    ] = None,
     sort: BookSort = BookSort.TITLE,
 ) -> BookPage:
     items, total = await books_service.list_books(
@@ -64,6 +67,7 @@ async def list_books(
             tags=tag_slugs(tags),
             series_id=series,
             language=language,
+            author=author,
         ),
         sort=sort,
         page=pagination.page,

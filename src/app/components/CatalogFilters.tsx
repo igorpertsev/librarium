@@ -373,3 +373,51 @@ export function TagChips({
     </ul>
   );
 }
+
+/** The author's name, linking to all their books in the catalogue. */
+export function AuthorLink({
+  author,
+  label,
+  className = '',
+  onNavigate,
+}: {
+  /** The name as stored on the book (what the catalogue filters by). */
+  author: string;
+  /** The name shown (translated when the reader's language has a translation). */
+  label: string;
+  className?: string;
+  onNavigate?: () => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <Link
+      to={{ pathname: '/', search: `?author=${encodeURIComponent(author)}` }}
+      onClick={onNavigate}
+      className={`hover:underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm ${className}`}
+      aria-label={t('author.showBooks', { name: label })}
+    >
+      {label}
+    </Link>
+  );
+}
+
+/** Above the results while one author's books are shown. */
+export function AuthorBanner({ name, total, onClear }: { name: string; total: number; onClear: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <section
+      aria-labelledby="author-banner-title"
+      className="rounded-lg border border-border bg-muted/40 p-4 mb-4 flex flex-wrap items-center justify-between gap-4"
+    >
+      <div>
+        <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('author.label')}</p>
+        <h2 id="author-banner-title" className="text-lg">{name}</h2>
+        <p className="text-sm text-muted-foreground">{t('series.titles', { count: total })}</p>
+      </div>
+      <Button variant="ghost" onClick={onClear}>
+        <X className="w-4 h-4 mr-2" aria-hidden="true" />
+        {t('series.showAll')}
+      </Button>
+    </section>
+  );
+}

@@ -2742,6 +2742,8 @@ export interface operations {
                 series?: string | null;
                 /** @description ISO 639 code of the book's language, e.g. en */
                 language?: string | null;
+                /** @description Books by this author (exact name, any case) */
+                author?: string | null;
                 sort?: components["schemas"]["BookSort"];
                 page?: number;
                 page_size?: number;

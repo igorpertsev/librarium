@@ -15,7 +15,7 @@ import { useFormat } from '../utils/format';
 import { errorMessage } from '../utils/apiErrors';
 import { WaitlistButton } from './WaitlistButton';
 import { ReadingListButton } from './ReadingListButton';
-import { SeriesLink, TagChips } from './CatalogFilters';
+import { AuthorLink, SeriesLink, TagChips } from './CatalogFilters';
 import { useBookLanguageName, useBookText } from '../utils/bookText';
 
 interface BookCardProps {
@@ -173,7 +173,9 @@ export function BookCard({ book }: BookCardProps) {
               {text.originalTitle}
             </p>
           )}
-          <p className="text-sm text-muted-foreground">{text.author}</p>
+          <p className="text-sm text-muted-foreground">
+            <AuthorLink author={book.author} label={text.author} />
+          </p>
           <SeriesLink book={book} className="text-sm max-w-full" />
           <div className="flex gap-2 flex-wrap">
             {getStatusBadge()}

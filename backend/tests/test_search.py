@@ -88,3 +88,19 @@ async def test_books_can_be_filtered_by_language(admin: ApiUser, client: AsyncCl
     assert (await client.get(f"{API}/books/languages")).json() == ["en", "ru"]
     bad = await client.get(f"{API}/books", params={"language": "English"})
     assert bad.status_code == 422
+
+
+async def test_books_can_be_listed_by_author(admin: ApiUser, client: AsyncClient) -> None:
+    for title, author in [
+        ("Emma", "Jane Austen"),
+        ("Persuasion", "jane austen"),
+        ("Dune", "Frank"),
+    ]:
+        response = await admin.post(
+            f"{API}/admin/books", json={"title": title, "author": author, "category": "fiction"}
+        )
+        assert response.status_code == 201, response.text
+    body = (
+        await client.get(f"{API}/books", params={"author": " JANE AUSTEN ", "sort": "title"})
+    ).json()
+    assert [book["title"] for book in body["items"]] == ["Emma", "Persuasion"]
