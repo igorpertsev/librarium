@@ -25,6 +25,7 @@ import {
   MAX_TAG_FILTERS,
   useSeriesList,
   useSeriesLabel,
+  useSeriesName,
   useTagList,
   useTagName,
 } from '../utils/catalogLists';
@@ -164,6 +165,7 @@ export function SeriesFilter({
   const { t } = useTranslation();
   const { items: series } = useSeriesList();
   const [open, setOpen] = useState(false);
+  const seriesName = useSeriesName();
   const current = series.find((item) => item.id === value);
   const options = series.filter((item) => item.book_count > 0 || item.id === value);
   const pick = (seriesId: string | null) => {
@@ -179,7 +181,7 @@ export function SeriesFilter({
         aria-expanded={open}
         className={filterTriggerClass}
       >
-        <span className="truncate">{current?.name ?? (value ? t('series.one') : t('series.all'))}</span>
+        <span className="truncate">{current ? seriesName(current) : value ? t('series.one') : t('series.all')}</span>
         <ChevronsUpDown className="w-4 h-4 opacity-50" aria-hidden="true" />
       </PopoverTrigger>
       <PopoverContent aria-label={t('series.label')} className="w-80 p-0" align="start">
@@ -193,12 +195,16 @@ export function SeriesFilter({
                 {t('series.all')}
               </CommandItem>
               {options.map((item) => (
-                <CommandItem key={item.id} value={`${item.id} ${item.name}`} onSelect={() => pick(item.id)}>
+                <CommandItem
+                  key={item.id}
+                  value={`${item.id} ${item.name} ${item.name_en ?? ''} ${item.name_ru ?? ''}`}
+                  onSelect={() => pick(item.id)}
+                >
                   <Check
                     className={`w-4 h-4 ${item.id === value ? 'opacity-100' : 'opacity-0'}`}
                     aria-hidden="true"
                   />
-                  <span className="flex-1">{item.name}</span>
+                  <span className="flex-1">{seriesName(item)}</span>
                   <span className="text-xs text-muted-foreground">{item.book_count}</span>
                 </CommandItem>
               ))}
@@ -215,6 +221,7 @@ export function SeriesBanner({ seriesId, onClear }: { seriesId: string; onClear:
   const { t } = useTranslation();
   const { version } = useCatalog();
   const { addBookToCart, isBookInCart } = useCart();
+  const seriesName = useSeriesName();
   const [series, setSeries] = useState<SeriesDto | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
   const [busy, setBusy] = useState(false);
@@ -287,7 +294,7 @@ export function SeriesBanner({ seriesId, onClear }: { seriesId: string; onClear:
         <Library className="w-6 h-6 text-primary shrink-0 mt-1" aria-hidden="true" />
         <div className="min-w-0">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('series.label')}</p>
-          <h2 id="series-banner-title" className="text-lg">{series?.name ?? '…'}</h2>
+          <h2 id="series-banner-title" className="text-lg">{series ? seriesName(series) : '…'}</h2>
           {series && (
             <p className="text-sm text-muted-foreground">{t('series.titles', { count: series.book_count })}</p>
           )}

@@ -299,6 +299,7 @@ async def test_demo_books_come_with_tags_and_series(
 
     listed = (await client.get(f"{API}/series", params={"q": "harry"})).json()
     assert [(s["name"], s["book_count"]) for s in listed] == [("Harry Potter", 3)]
+    assert listed[0]["name_ru"] == "Гарри Поттер"
     in_order = (
         await client.get(f"{API}/books", params={"series": listed[0]["id"], "sort": "series"})
     ).json()["items"]
@@ -306,3 +307,21 @@ async def test_demo_books_come_with_tags_and_series(
     assert await _titles(client, tags="dystopia") == ["1984", "Catching Fire", "The Hunger Games"]
     # Demo books come with Russian titles, which search finds.
     assert await _titles(client, q="пересмешника") == ["To Kill a Mockingbird"]
+
+
+async def test_series_have_names_in_both_languages(client: AsyncClient, admin: ApiUser) -> None:
+    created = await admin.post(
+        f"{API}/admin/series",
+        json={"name": "Harry Potter", "name_ru": "Гарри Поттер", "name_en": " "},
+    )
+    assert created.status_code == 201, created.text
+    series = created.json()
+    assert (series["name_ru"], series["name_en"]) == ("Гарри Поттер", None)  # blank: not set
+    book = await _book(admin, "Stone", series_name="Harry Potter", series_position=1)
+    assert book["series"]["name_ru"] == "Гарри Поттер"
+
+    assert await _titles(client, q="гарри") == ["Stone"]  # search finds the Russian name
+    listed = (await client.get(f"{API}/series", params={"q": "поттер"})).json()
+    assert [s["name"] for s in listed] == ["Harry Potter"]
+    renamed = await admin.patch(f"{API}/admin/series/{series['id']}", json={"name_ru": None})
+    assert renamed.json()["name_ru"] is None

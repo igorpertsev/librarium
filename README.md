@@ -423,7 +423,7 @@ Concurrency is covered by tests in which both requests are held at a barrier rig
 | `users` | email unique and lower-case (CHECK), Argon2 hash, role `customer/admin`, contacts (nullable), `preferred_contact_method` |
 | `books` | one row per physical copy: `cover_url`, `image_urls[]`, `age_range`, `category`, `status` (`available/available-soon/not-available`), `language`, `publication_year`, `is_active` (soft delete), `copy_group_id` (copies of one title), `series_id` + `series_position` (CHECK > 0) |
 | `tags`, `book_tags` | tag `slug` (unique, CHECK format), `name_en`, `name_ru`; book ↔ tag link table |
-| `series` | `name` (unique), `description`, `openlibrary_key` (unique, from ISBN lookups) |
+| `series` | `name` (unique), `name_en` / `name_ru` (names in each interface language, optional), `description`, `openlibrary_key` (unique, from ISBN lookups) |
 | `book_translations` | per book and language (`en`/`ru`): `title`, `author`, `description`, `title_source`/`description_source` (`manual/wikidata/wikipedia/machine`), `source_url` (Wikipedia attribution) |
 | `library_settings` | single row: `books_per_batch`, `price_per_batch NUMERIC(10,2)`, `currency`, `loan_period_days`, `max_renewals` |
 | `carts`, `cart_items` | one cart per user, `UNIQUE(cart_id, book_id)` |

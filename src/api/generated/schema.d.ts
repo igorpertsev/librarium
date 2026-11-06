@@ -2032,11 +2032,25 @@ export interface components {
             id: string;
             /** Name */
             name: string;
+            /**
+             * Name En
+             * @description English name, if it differs from name
+             */
+            name_en: string | null;
+            /**
+             * Name Ru
+             * @description Russian name, if it differs from name
+             */
+            name_ru: string | null;
         };
         /** SeriesCreate */
         SeriesCreate: {
             /** Name */
             name: string;
+            /** Name En */
+            name_en?: string | null;
+            /** Name Ru */
+            name_ru?: string | null;
             /**
              * Description
              * @default
@@ -2059,6 +2073,16 @@ export interface components {
             id: string;
             /** Name */
             name: string;
+            /**
+             * Name En
+             * @description English name, if it differs from name
+             */
+            name_en: string | null;
+            /**
+             * Name Ru
+             * @description Russian name, if it differs from name
+             */
+            name_ru: string | null;
             /** Description */
             description: string;
             /** Openlibrary Key */
@@ -2074,6 +2098,10 @@ export interface components {
         SeriesUpdate: {
             /** Name */
             name?: string | null;
+            /** Name En */
+            name_en?: string | null;
+            /** Name Ru */
+            name_ru?: string | null;
             /** Description */
             description?: string | null;
         };

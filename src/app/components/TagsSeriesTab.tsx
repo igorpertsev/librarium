@@ -184,6 +184,9 @@ export function TagsSeriesTab({ onChanged }: { onChanged: () => void }) {
                 <TableRow key={item.id}>
                   <TableCell>
                     <span>{item.name}</span>
+                    {(item.name_ru || item.name_en) && (
+                      <span className="text-muted-foreground"> / {[item.name_en, item.name_ru].filter(Boolean).join(' / ')}</span>
+                    )}
                     {item.openlibrary_key && (
                       <span className="block font-mono text-xs text-muted-foreground">Open Library {item.openlibrary_key}</span>
                     )}
@@ -334,16 +337,23 @@ function SeriesEditor({
   onSave,
 }: {
   series: SeriesDto;
-  onSave: (body: { name: string; description: string }) => Promise<void>;
+  onSave: (body: { name: string; name_en: string | null; name_ru: string | null; description: string }) => Promise<void>;
 }) {
   const { t } = useTranslation();
   const [name, setName] = useState(series.name);
+  const [nameEn, setNameEn] = useState(series.name_en ?? '');
+  const [nameRu, setNameRu] = useState(series.name_ru ?? '');
   const [description, setDescription] = useState(series.description);
   const [saving, setSaving] = useState(false);
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    await onSave({ name: name.trim(), description: description.trim() });
+    await onSave({
+      name: name.trim(),
+      name_en: nameEn.trim() || null,
+      name_ru: nameRu.trim() || null,
+      description: description.trim(),
+    });
     setSaving(false);
   };
   return (
@@ -356,6 +366,17 @@ function SeriesEditor({
         <Label htmlFor="edit-series-name">{t('catalogAdmin.seriesName')}</Label>
         <Input id="edit-series-name" value={name} maxLength={300} onChange={(e) => setName(e.target.value)} />
       </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="space-y-1">
+          <Label htmlFor="edit-series-name-en">{t('catalogAdmin.nameEn')}</Label>
+          <Input id="edit-series-name-en" value={nameEn} maxLength={300} placeholder={name} onChange={(e) => setNameEn(e.target.value)} />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="edit-series-name-ru">{t('catalogAdmin.nameRu')}</Label>
+          <Input id="edit-series-name-ru" value={nameRu} maxLength={300} placeholder={name} onChange={(e) => setNameRu(e.target.value)} />
+        </div>
+      </div>
+      <p className="text-xs text-muted-foreground -mt-2">{t('catalogAdmin.seriesNamesHint')}</p>
       <div className="space-y-1">
         <Label htmlFor="edit-series-description">{t('catalogAdmin.seriesDescription')}</Label>
         <Textarea

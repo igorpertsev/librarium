@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Any
 
 from pydantic import TypeAdapter
-from sqlalchemy import delete, or_, select
+from sqlalchemy import delete, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
@@ -27,7 +27,7 @@ from app.core.database import Database
 from app.core.http import make_http_client
 from app.core.security import hash_password
 from app.main import create_app
-from app.models import Book, RefreshToken, User
+from app.models import Book, RefreshToken, Series, User
 from app.models.enums import UiLanguage, UserRole
 from app.schemas.book import BookCreate
 from app.schemas.types import NormalizedEmail
@@ -44,6 +44,7 @@ from app.services.translation_lookup import (
 from app.services.translations import translate_catalogue
 
 DEMO_BOOKS_FILE = Path(__file__).parent / "seed_data" / "demo_books.json"
+DEMO_SERIES_RU = {"Harry Potter": "Гарри Поттер", "The Hunger Games": "Голодные игры"}
 MIN_ADMIN_PASSWORD_LENGTH = 12
 
 
@@ -135,6 +136,14 @@ async def _seed_demo_books(session: AsyncSession, *, refresh_covers: bool) -> No
         + (f", {translated} given translations" if translated else "")
         + (f", {refreshed} covers refreshed." if refresh_covers else ".")
     )
+
+    # Russian names of the demo series, unless a librarian has named them since.
+    for name, name_ru in DEMO_SERIES_RU.items():
+        await session.execute(
+            update(Series)
+            .where(Series.name == name, Series.name_ru.is_(None))
+            .values(name_ru=name_ru)
+        )
 
 
 async def _purge_tokens(settings: Settings, *, older_than_days: int) -> None:

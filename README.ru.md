@@ -421,7 +421,7 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 | `users` | email уникален и в нижнем регистре (CHECK), Argon2-хеш, роль `customer/admin`, контакты (nullable), `preferred_contact_method` |
 | `books` | `cover_url`, `image_urls[]`, `age_range`, `category`, `status` (`available/available-soon/not-available`), `language`, `publication_year`, `is_active` (мягкое удаление), `series_id` + `series_position` (CHECK > 0) |
 | `tags`, `book_tags` | `slug` тега (уникальный, CHECK формата), `name_en`, `name_ru`; связь книга ↔ тег |
-| `series` | `name` (уникальное), `description`, `openlibrary_key` (уникальный, из поиска по ISBN) |
+| `series` | `name` (уникальное), `name_en` / `name_ru` (названия на языках интерфейса, необязательно), `description`, `openlibrary_key` (уникальный, из поиска по ISBN) |
 | `book_translations` | на книгу и язык (`en`/`ru`): `title`, `author`, `description`, `title_source`/`description_source` (`manual/wikidata/wikipedia/machine`), `source_url` (ссылка на Википедию) |
 | `library_settings` | одна строка: `books_per_batch`, `price_per_batch NUMERIC(10,2)`, `currency`, `loan_period_days` |
 | `carts`, `cart_items` | одна корзина на пользователя, `UNIQUE(cart_id, book_id)` |

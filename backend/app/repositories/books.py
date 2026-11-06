@@ -144,6 +144,8 @@ def search_condition(text: str) -> ColumnElement[bool]:
             select(Series.id).where(
                 or_(
                     Series.name.ilike(pattern, escape="\\"),
+                    Series.name_en.ilike(pattern, escape="\\"),
+                    Series.name_ru.ilike(pattern, escape="\\"),
                     func.word_similarity(literal(text), Series.name) >= TYPO_SIMILARITY,
                 )
             )

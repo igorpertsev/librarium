@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from typing import Annotated, ClassVar
 
-from pydantic import Field, StringConstraints
+from pydantic import AfterValidator, Field, StringConstraints
 
 from app.schemas.common import ApiModel, PatchModel, RequestModel
 
@@ -53,6 +53,8 @@ class MergeInto(RequestModel):
 class SeriesBrief(ApiModel):
     id: uuid.UUID
     name: str
+    name_en: str | None = Field(None, description="English name, if it differs from name")
+    name_ru: str | None = Field(None, description="Russian name, if it differs from name")
 
 
 class SeriesRead(SeriesBrief):
@@ -61,8 +63,21 @@ class SeriesRead(SeriesBrief):
     book_count: int = Field(0, description="Titles in the series (copies counted once)")
 
 
+def _blank_none(value: str | None) -> str | None:
+    return value or None
+
+
+OptionalSeriesName = Annotated[
+    str | None,
+    StringConstraints(strip_whitespace=True, max_length=300),
+    AfterValidator(_blank_none),
+]
+
+
 class SeriesCreate(RequestModel):
     name: SeriesName
+    name_en: OptionalSeriesName = None
+    name_ru: OptionalSeriesName = None
     description: SeriesDescription = ""
 
 
@@ -70,4 +85,6 @@ class SeriesUpdate(PatchModel):
     non_nullable_fields: ClassVar[frozenset[str]] = frozenset({"name", "description"})
 
     name: SeriesName | None = None
+    name_en: OptionalSeriesName = None
+    name_ru: OptionalSeriesName = None
     description: SeriesDescription | None = None

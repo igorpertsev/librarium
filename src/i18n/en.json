@@ -596,7 +596,8 @@
     "mergeSeriesTitle": "Merge the series “{{name}}”",
     "mergeSeriesDesc": "Its books move to the chosen series (keeping their numbers), then this series is deleted.",
     "mergeInto": "Merge into",
-    "choose": "Choose…"
+    "choose": "Choose…",
+    "seriesNamesHint": "Readers see the name for their interface language; empty fields show the series name above."
   },
   "translation": {
     "originalTitleLabel": "Original title:",

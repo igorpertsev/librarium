@@ -26,6 +26,9 @@ export interface BookTranslation {
 export interface BookSeries {
   id: string;
   name: string;
+  /** Names readers of each interface language know it by; null: `name`. */
+  nameEn?: string | null;
+  nameRu?: string | null;
 }
 
 export interface Book {

@@ -7,7 +7,7 @@ import unicodedata
 import uuid
 from collections.abc import Iterable
 
-from sqlalchemy import ScalarSelect, Select, Uuid, delete, func, literal, select, update
+from sqlalchemy import ScalarSelect, Select, Uuid, delete, func, literal, or_, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -152,6 +152,8 @@ def _series_read(series: Series, book_count: int) -> SeriesRead:
     return SeriesRead(
         id=series.id,
         name=series.name,
+        name_en=series.name_en,
+        name_ru=series.name_ru,
         description=series.description,
         openlibrary_key=series.openlibrary_key,
         book_count=book_count,
@@ -161,7 +163,14 @@ def _series_read(series: Series, book_count: int) -> SeriesRead:
 async def list_series(session: AsyncSession, q: str | None = None) -> list[SeriesRead]:
     stmt = select(Series, _titles_in_series()).order_by(func.lower(Series.name))
     if q:
-        stmt = stmt.where(Series.name.ilike(f"%{q.strip()}%"))
+        pattern = f"%{q.strip()}%"
+        stmt = stmt.where(
+            or_(
+                Series.name.ilike(pattern),
+                Series.name_en.ilike(pattern),
+                Series.name_ru.ilike(pattern),
+            )
+        )
     rows = (await session.execute(stmt.limit(200))).all()
     return [_series_read(series, n) for series, n in rows]
 
@@ -186,7 +195,13 @@ async def _commit_series(session: AsyncSession) -> None:
 async def create_series(session: AsyncSession, data: SeriesCreate) -> SeriesRead:
     if await _series_by_name(session, data.name) is not None:
         raise ConflictError("A series with this name already exists", code="SERIES_EXISTS")
-    series = Series(id=uuid.uuid4(), name=data.name, description=data.description)
+    series = Series(
+        id=uuid.uuid4(),
+        name=data.name,
+        name_en=data.name_en,
+        name_ru=data.name_ru,
+        description=data.description,
+    )
     session.add(series)
     await _commit_series(session)
     return _series_read(series, 0)

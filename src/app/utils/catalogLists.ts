@@ -18,6 +18,28 @@ export function useTagName(): (tag: NamedTag) => string {
   );
 }
 
+type NamedSeries = { name: string; nameEn?: string | null; nameRu?: string | null } | {
+  name: string;
+  name_en?: string | null;
+  name_ru?: string | null;
+};
+
+/** A series' name in the reader's language ("Гарри Поттер"), else its own name. */
+export function useSeriesName(): (series: NamedSeries) => string {
+  const { i18n } = useTranslation();
+  const russian = i18n.language.startsWith('ru');
+  return useCallback(
+    (series: NamedSeries) => {
+      const names =
+        'nameEn' in series || 'nameRu' in series
+          ? { en: (series as { nameEn?: string | null }).nameEn, ru: (series as { nameRu?: string | null }).nameRu }
+          : { en: (series as { name_en?: string | null }).name_en, ru: (series as { name_ru?: string | null }).name_ru };
+      return (russian ? names.ru : names.en) || series.name;
+    },
+    [russian],
+  );
+}
+
 /** "3", "1.5": volume numbers are usually whole. */
 export function formatVolume(position: number, language: string): string {
   return Number.isInteger(position) ? String(position) : position.toLocaleString(language);
@@ -26,16 +48,15 @@ export function formatVolume(position: number, language: string): string {
 /** "Harry Potter, book 3" or just "Harry Potter"; null when the book is not in a series. */
 export function useSeriesLabel(): (book: Pick<Book, 'series' | 'seriesPosition'>) => string | null {
   const { t, i18n } = useTranslation();
+  const seriesName = useSeriesName();
   return useCallback(
     (book) => {
       if (!book.series) return null;
-      if (book.seriesPosition == null) return book.series.name;
-      return t('series.volume', {
-        name: book.series.name,
-        n: formatVolume(book.seriesPosition, i18n.language),
-      });
+      const name = seriesName(book.series);
+      if (book.seriesPosition == null) return name;
+      return t('series.volume', { name, n: formatVolume(book.seriesPosition, i18n.language) });
     },
-    [t, i18n.language],
+    [t, i18n.language, seriesName],
   );
 }
 

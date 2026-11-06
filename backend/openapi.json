@@ -7632,12 +7632,38 @@
           "name": {
             "type": "string",
             "title": "Name"
+          },
+          "name_en": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name En",
+            "description": "English name, if it differs from name"
+          },
+          "name_ru": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Ru",
+            "description": "Russian name, if it differs from name"
           }
         },
         "type": "object",
         "required": [
           "id",
-          "name"
+          "name",
+          "name_en",
+          "name_ru"
         ],
         "title": "SeriesBrief"
       },
@@ -7648,6 +7674,30 @@
             "maxLength": 300,
             "minLength": 1,
             "title": "Name"
+          },
+          "name_en": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name En"
+          },
+          "name_ru": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Ru"
           },
           "description": {
             "type": "string",
@@ -7706,6 +7756,30 @@
             "type": "string",
             "title": "Name"
           },
+          "name_en": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name En",
+            "description": "English name, if it differs from name"
+          },
+          "name_ru": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Ru",
+            "description": "Russian name, if it differs from name"
+          },
           "description": {
             "type": "string",
             "title": "Description"
@@ -7732,6 +7806,8 @@
         "required": [
           "id",
           "name",
+          "name_en",
+          "name_ru",
           "description",
           "openlibrary_key",
           "book_count"
@@ -7752,6 +7828,30 @@
               }
             ],
             "title": "Name"
+          },
+          "name_en": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name En"
+          },
+          "name_ru": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Ru"
           },
           "description": {
             "anyOf": [
