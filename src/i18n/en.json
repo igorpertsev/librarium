@@ -381,5 +381,16 @@
     "cancelEdit": "Cancel editing",
     "markPreferred": "Mark {{method}} as preferred contact",
     "skipToContent": "Skip to main content"
+  },
+  "copies": {
+    "available_one": "{{available}} of {{count}} copy available",
+    "available_other": "{{available}} of {{count}} copies available",
+    "allOut_one": "The only copy is out",
+    "allOut_other": "All {{count}} copies are out",
+    "inLibrary_one": "{{count}} copy in the library",
+    "inLibrary_other": "{{count}} copies in the library",
+    "addCopy": "Add a copy of “{{title}}”",
+    "added_one": "Copy added: “{{title}}” now has {{count}} copy",
+    "added_other": "Copy added: “{{title}}” now has {{count}} copies"
   }
 }

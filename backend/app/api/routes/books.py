@@ -42,6 +42,7 @@ async def list_books(
         sort=sort,
         page=pagination.page,
         page_size=pagination.page_size,
+        group_copies=True,  # one entry per title; see BookRead.copies
     )
     return BookPage(items=items, total=total, page=pagination.page, page_size=pagination.page_size)
 

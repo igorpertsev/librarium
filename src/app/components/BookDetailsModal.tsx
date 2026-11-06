@@ -206,6 +206,13 @@ export function BookDetailsModal({ book, open, onOpenChange }: BookDetailsModalP
                 {t('availability.expectedBack', { date: fmt.date(book.availableFrom) })}
               </p>
             )}
+            {(book.copies ?? 1) > 1 && (
+              <p className="text-sm text-muted-foreground">
+                {(book.copiesAvailable ?? 0) > 0
+                  ? t('copies.available', { available: book.copiesAvailable, count: book.copies })
+                  : t('copies.allOut', { count: book.copies })}
+              </p>
+            )}
 
             <Separator />
 

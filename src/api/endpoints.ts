@@ -70,6 +70,8 @@ export const ordersApi = {
 export const adminApi = {
   listBooks: (query: AdminBookListQuery) => apiRequest<BookPageDto>('/admin/books', { query }),
   bookStats: () => apiRequest<BookStatsDto>('/admin/books/stats'),
+  addCopies: (bookId: string, count = 1) =>
+    apiRequest<BookDto[]>(`/admin/books/${id(bookId)}/copies`, { method: 'POST', body: { count } }),
   createBook: (body: BookCreateDto) =>
     apiRequest<BookDto>('/admin/books', { method: 'POST', body }),
   updateBook: (bookId: string, body: BookUpdateDto) =>

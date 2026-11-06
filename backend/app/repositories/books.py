@@ -8,13 +8,18 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Any
 
-from sqlalchemy import ColumnElement, Exists, ScalarSelect, exists, func, or_, select
+from sqlalchemy import ColumnElement, Exists, ScalarSelect, and_, case, exists, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import InstrumentedAttribute
 
 from app.models import Book, Order, OrderItem
 from app.models.enums import ACTIVE_ORDER_STATUSES, BookCategory, BookStatus
 from app.schemas.book import BookSort
+
+
+def copy_group_key() -> ColumnElement[uuid.UUID]:
+    """Copies of one title share this key (a copy without a group is its own group)."""
+    return func.coalesce(Book.copy_group_id, Book.id)
 
 
 def active_reservation_exists(book_id: InstrumentedAttribute[uuid.UUID]) -> Exists:
@@ -80,7 +85,9 @@ class BookFilters:
     include_inactive: bool = False
 
 
-def _conditions(filters: BookFilters) -> list[ColumnElement[bool]]:
+def _conditions(
+    filters: BookFilters, *, per_copy_availability: bool = True
+) -> list[ColumnElement[bool]]:
     conditions: list[ColumnElement[bool]] = []
     if not filters.include_inactive:
         conditions.append(Book.is_active.is_(True))
@@ -99,11 +106,19 @@ def _conditions(filters: BookFilters) -> list[ColumnElement[bool]]:
         conditions.append(Book.age_range == filters.age_range)
     if filters.status is not None:
         conditions.append(Book.status == filters.status)
-    if filters.available is not None:
+    if filters.available is not None and per_copy_availability:
         reserved = active_reservation_exists(Book.id)
         is_available = Book.is_active.is_(True) & (Book.status == BookStatus.AVAILABLE) & ~reserved
         conditions.append(is_available if filters.available else ~is_available)
     return conditions
+
+
+@dataclass(frozen=True, slots=True)
+class ListedBook:
+    book: Book
+    reserved_until: date | None  # due date of the active order holding this copy
+    copies: int  # copies of the title matching the filters
+    copies_available: int
 
 
 async def list_books(
@@ -113,19 +128,79 @@ async def list_books(
     sort: BookSort,
     page: int,
     page_size: int,
-) -> tuple[list[tuple[Book, date | None]], int]:
-    """Books of one page, each with the due date of the order reserving it (or None)."""
-    conditions = _conditions(filters)
-    total = await session.scalar(select(func.count()).select_from(Book).where(*conditions))
+    group_copies: bool = False,
+) -> tuple[list[ListedBook], int]:
+    """Books of one page with their reservation state and copy counts.
+
+    ``group_copies``: one entry per title (copy group), represented by its best copy: an
+    available one if there is any, otherwise the reserved copy expected back first. The
+    ``available`` filter then applies to the title (any copy available) instead of the copy.
+    """
+    group = copy_group_key()
+    copies = (
+        select(
+            Book.id.label("id"),
+            group.label("grp"),
+            active_reservation_due_date(Book.id).label("reserved_until"),
+            (Book.is_active.is_(True) & (Book.status == BookStatus.AVAILABLE)).label("lendable"),
+        )
+        .where(*_conditions(filters, per_copy_availability=not group_copies))
+        .subquery("copies")
+    )
+    available = and_(copies.c.lendable, copies.c.reserved_until.is_(None))
+    ranked = select(
+        copies.c.id,
+        copies.c.reserved_until,
+        func.row_number()
+        .over(
+            partition_by=copies.c.grp if group_copies else copies.c.id,
+            order_by=(
+                case((available, 0), else_=1),
+                copies.c.reserved_until.asc().nulls_last(),
+                copies.c.id,
+            ),
+        )
+        .label("rank"),
+        func.count().over(partition_by=copies.c.grp).label("copies"),
+        # sum(CASE) rather than count(*) FILTER: PostgreSQL cannot use the latter as a
+        # "run condition" for the filter below ("WindowFunc not found in subplan target lists").
+        func.sum(case((available, 1), else_=0))
+        .over(partition_by=copies.c.grp)
+        .label("copies_available"),
+    ).subquery("ranked")
+
+    outer: list[ColumnElement[bool]] = [ranked.c.rank == 1]
+    if group_copies and filters.available is not None:
+        outer.append(
+            ranked.c.copies_available > 0 if filters.available else ranked.c.copies_available == 0
+        )
+    total = await session.scalar(select(func.count()).select_from(ranked).where(*outer))
     stmt = (
-        select(Book, active_reservation_due_date(Book.id).label("reserved_until"))
-        .where(*conditions)
+        select(Book, ranked.c.reserved_until, ranked.c.copies, ranked.c.copies_available)
+        .join(ranked, ranked.c.id == Book.id)
+        .where(*outer)
         .order_by(_SORT_COLUMNS[sort], Book.id)
         .limit(page_size)
         .offset((page - 1) * page_size)
     )
     rows = (await session.execute(stmt)).all()
-    return [(row[0], row[1]) for row in rows], int(total or 0)
+    return [ListedBook(row[0], row[1], int(row[2]), int(row[3])) for row in rows], int(total or 0)
+
+
+async def copy_counts(session: AsyncSession, book: Book) -> tuple[int, int]:
+    """(active copies, copies available now) of the book's title."""
+    group = copy_group_key()
+    key = book.copy_group_id or book.id
+    reserved = active_reservation_exists(Book.id)
+    available = Book.status == BookStatus.AVAILABLE
+    row = (
+        await session.execute(
+            select(func.count(), func.count().filter(available & ~reserved)).where(
+                group == key, Book.is_active.is_(True)
+            )
+        )
+    ).one()
+    return int(row[0]), int(row[1])
 
 
 async def get_book_with_reservation(

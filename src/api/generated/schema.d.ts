@@ -360,6 +360,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/books/{book_id}/copies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Admin Add Copies
+         * @description Adds copies of a title (same catalogue data, status available). The catalogue lists the title once and counts its copies.
+         */
+        post: operations["admin_add_copies_api_v1_admin_books__book_id__copies_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/books/{book_id}": {
         parameters: {
             query?: never;
@@ -538,6 +558,14 @@ export interface components {
              */
             due_date: string;
         };
+        /** AddCopies */
+        AddCopies: {
+            /**
+             * Count
+             * @default 1
+             */
+            count: number;
+        };
         /** AdminUserPage */
         AdminUserPage: {
             /** Items */
@@ -714,6 +742,17 @@ export interface components {
              * @description While reserved: the due date of the order holding the copy, i.e. when it is expected back. null when the copy is not reserved.
              */
             available_from: string | null;
+            /**
+             * Copies
+             * @description Copies of this title in the library (active ones)
+             * @default 1
+             */
+            copies: number;
+            /**
+             * Copies Available
+             * @description How many of those copies can be borrowed right now
+             */
+            copies_available: number;
             /**
              * Created At
              * Format: date-time
@@ -2097,6 +2136,68 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_add_copies_api_v1_admin_books__book_id__copies_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddCopies"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookRead"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -256,6 +256,9 @@ two copies of the same title are two records (ISBN is not unique).
 - Active order statuses: `ACTIVE_ORDER_STATUSES = {pending, confirmed}` (`app/models/enums.py`).
   `returned` and `cancelled` release the book.
 - A book is blocked by **any** active order, including one placed by the same user (as in the UI).
+- **Copies**: a book row is one physical copy. Copies of a title share `copy_group_id` (admin “Add a copy”); the
+  catalogue (`GET /books`) lists each title once, represented by a copy that can be borrowed if there is one, with
+  `copies` and `copies_available`. Catalogue edits apply to all copies of the title; status stays per copy.
 - The cart is not a reservation: the same book can sit in several users' carts; adding it checks
   availability, but the decisive check happens at checkout.
 - Pricing is per **batch**: `price_per_batch` for every complete set of `books_per_batch` books (library
@@ -283,7 +286,7 @@ Concurrency is covered by tests in which both requests are held at a barrier rig
 | Table | Key points |
 | --- | --- |
 | `users` | email unique and lower-case (CHECK), Argon2 hash, role `customer/admin`, contacts (nullable), `preferred_contact_method` |
-| `books` | `cover_url`, `image_urls[]`, `age_range`, `category`, `status` (`available/available-soon/not-available`), `language`, `publication_year`, `is_active` (soft delete) |
+| `books` | one row per physical copy: `cover_url`, `image_urls[]`, `age_range`, `category`, `status` (`available/available-soon/not-available`), `language`, `publication_year`, `is_active` (soft delete), `copy_group_id` (copies of one title) |
 | `library_settings` | single row: `books_per_batch`, `price_per_batch NUMERIC(10,2)`, `currency`, `loan_period_days` |
 | `carts`, `cart_items` | one cart per user, `UNIQUE(cart_id, book_id)` |
 | `orders` | status, total/currency, batch price and contact snapshot, `due_date`, `confirmed_at/returned_at/cancelled_at`, CHECK `total = price × batches` |
@@ -313,6 +316,7 @@ Differences (adapters in `src/api/mappers.ts`):
 | GET/DELETE | `/cart` · POST `/cart/items` · DELETE `/cart/items/{book_id}` | signed-in user |
 | POST/GET | `/orders` · GET `/orders/{id}` · POST `/orders/{id}/cancel` | signed-in user (own orders only) |
 | GET/POST | `/admin/books`, GET `/admin/books/stats`, GET/PATCH/DELETE `/admin/books/{id}` | admin |
+| POST | `/admin/books/{id}/copies` (`{count}`: more copies of a title) | admin |
 | GET | `/admin/users` · PATCH `/admin/users/{id}` (role, disable) | admin |
 | GET | `/admin/orders`, `/admin/orders/{id}` · PATCH `/admin/orders/{id}/status`, `/admin/orders/{id}/due-date` | admin |
 | GET/PATCH | `/admin/settings` (batch size, price, currency, loan period) | admin |

@@ -383,5 +383,24 @@
     "cancelEdit": "Отменить изменение",
     "markPreferred": "Сделать {{method}} предпочтительным способом связи",
     "skipToContent": "Перейти к основному содержимому"
+  },
+  "copies": {
+    "available_one": "Доступно {{available}} из {{count}} экземпляра",
+    "available_few": "Доступно {{available}} из {{count}} экземпляров",
+    "available_many": "Доступно {{available}} из {{count}} экземпляров",
+    "available_other": "Доступно {{available}} из {{count}} экземпляров",
+    "allOut_one": "Единственный экземпляр выдан",
+    "allOut_few": "Все {{count}} экземпляра выданы",
+    "allOut_many": "Все {{count}} экземпляров выданы",
+    "allOut_other": "Все {{count}} экземпляра выданы",
+    "inLibrary_one": "{{count}} экземпляр в библиотеке",
+    "inLibrary_few": "{{count}} экземпляра в библиотеке",
+    "inLibrary_many": "{{count}} экземпляров в библиотеке",
+    "inLibrary_other": "{{count}} экземпляра в библиотеке",
+    "addCopy": "Добавить экземпляр «{{title}}»",
+    "added_one": "Экземпляр добавлен: у «{{title}}» теперь {{count}} экземпляр",
+    "added_few": "Экземпляр добавлен: у «{{title}}» теперь {{count}} экземпляра",
+    "added_many": "Экземпляр добавлен: у «{{title}}» теперь {{count}} экземпляров",
+    "added_other": "Экземпляр добавлен: у «{{title}}» теперь {{count}} экземпляра"
   }
 }

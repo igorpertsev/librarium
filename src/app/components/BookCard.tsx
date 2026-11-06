@@ -172,6 +172,13 @@ export function BookCard({ book }: BookCardProps) {
               {t('availability.expectedBack', { date: fmt.date(book.availableFrom) })}
             </p>
           )}
+          {(book.copies ?? 1) > 1 && (
+            <p className="text-xs text-muted-foreground">
+              {(book.copiesAvailable ?? 0) > 0
+                ? t('copies.available', { available: book.copiesAvailable, count: book.copies })
+                : t('copies.allOut', { count: book.copies })}
+            </p>
+          )}
         </div>
       </CardContent>
       <CardFooter className="p-4 pt-0">

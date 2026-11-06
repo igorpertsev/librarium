@@ -72,27 +72,43 @@ class BookRead(BookBrief):
         description="While reserved: the due date of the order holding the copy, i.e. when it "
         "is expected back. null when the copy is not reserved."
     )
+    copies: int = Field(1, description="Copies of this title in the library (active ones)")
+    copies_available: int = Field(description="How many of those copies can be borrowed right now")
     created_at: datetime
     updated_at: datetime
 
     @classmethod
-    def from_book(cls, book: Book, *, reserved_until: date | None) -> BookRead:
+    def from_book(
+        cls,
+        book: Book,
+        *,
+        reserved_until: date | None,
+        copies: int = 1,
+        copies_available: int | None = None,
+    ) -> BookRead:
         """``reserved_until``: due date of the active order holding the copy, if any."""
-        computed = {"is_reserved", "is_available", "available_from"}
+        computed = {"is_reserved", "is_available", "available_from", "copies", "copies_available"}
         data: dict[str, Any] = {
             name: getattr(book, name) for name in cls.model_fields if name not in computed
         }
         is_reserved = reserved_until is not None
+        is_available = book.is_active and book.status is BookStatus.AVAILABLE and not is_reserved
         return cls(
             **data,
             is_reserved=is_reserved,
-            is_available=book.is_active and book.status is BookStatus.AVAILABLE and not is_reserved,
+            is_available=is_available,
             available_from=reserved_until,
+            copies=copies,
+            copies_available=int(is_available) if copies_available is None else copies_available,
         )
 
 
 class BookPage(Page[BookRead]):
     pass
+
+
+class AddCopies(RequestModel):
+    count: Annotated[int, Field(ge=1, le=20)] = 1
 
 
 class BookCreate(RequestModel):

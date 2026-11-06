@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from collections.abc import Sequence
 
-from sqlalchemy import case, delete, func, select
+from sqlalchemy import case, delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError
@@ -18,13 +18,44 @@ def book_not_found() -> NotFoundError:
     return NotFoundError("Book not found", code="BOOK_NOT_FOUND")
 
 
+# Catalogue data that every copy of a title shares; status stays per copy.
+SHARED_FIELDS = frozenset(
+    {
+        "title",
+        "author",
+        "description",
+        "category",
+        "age_range",
+        "cover_url",
+        "image_urls",
+        "isbn",
+        "language",
+        "publication_year",
+    }
+)
+
+
 async def list_books(
-    session: AsyncSession, filters: BookFilters, *, sort: BookSort, page: int, page_size: int
+    session: AsyncSession,
+    filters: BookFilters,
+    *,
+    sort: BookSort,
+    page: int,
+    page_size: int,
+    group_copies: bool = False,
 ) -> tuple[list[BookRead], int]:
     rows, total = await books_repo.list_books(
-        session, filters, sort=sort, page=page, page_size=page_size
+        session, filters, sort=sort, page=page, page_size=page_size, group_copies=group_copies
     )
-    return [BookRead.from_book(book, reserved_until=until) for book, until in rows], total
+    return [
+        BookRead.from_book(
+            row.book,
+            reserved_until=row.reserved_until,
+            copies=row.copies,
+            copies_available=row.copies_available,
+        )
+        for row in rows
+    ], total
 
 
 async def get_book(
@@ -34,7 +65,10 @@ async def get_book(
     if found is None or (not include_inactive and not found[0].is_active):
         raise book_not_found()
     book, reserved_until = found
-    return BookRead.from_book(book, reserved_until=reserved_until)
+    copies, copies_available = await books_repo.copy_counts(session, book)
+    return BookRead.from_book(
+        book, reserved_until=reserved_until, copies=copies, copies_available=copies_available
+    )
 
 
 async def age_ranges(session: AsyncSession) -> Sequence[str]:
@@ -52,11 +86,41 @@ async def update_book(session: AsyncSession, book_id: uuid.UUID, patch: BookUpda
     book = await session.get(Book, book_id, with_for_update=True)
     if book is None or not book.is_active:
         raise book_not_found()
-    for field, value in patch.changes().items():
+    changes = patch.changes()
+    for field, value in changes.items():
         setattr(book, field, value)
+    shared = {field: value for field, value in changes.items() if field in SHARED_FIELDS}
+    if shared and book.copy_group_id is not None:
+        # The other copies of the title get the same catalogue data.
+        await session.execute(
+            update(Book)
+            .where(Book.copy_group_id == book.copy_group_id, Book.id != book.id)
+            .values(**shared)
+        )
     await session.commit()
     # Existing orders keep their snapshot; only the catalogue entry changes.
     return await get_book(session, book_id)
+
+
+async def add_copies(session: AsyncSession, book_id: uuid.UUID, count: int) -> list[BookRead]:
+    """New copies of a title, with the same catalogue data, available for lending."""
+    book = await session.get(Book, book_id, with_for_update=True)
+    if book is None or not book.is_active:
+        raise book_not_found()
+    if book.copy_group_id is None:
+        book.copy_group_id = book.id  # the first copy names the group
+    copies = [
+        Book(
+            id=uuid.uuid4(),
+            copy_group_id=book.copy_group_id,
+            status=BookStatus.AVAILABLE,
+            **{field: getattr(book, field) for field in SHARED_FIELDS},
+        )
+        for _ in range(count)
+    ]
+    session.add_all(copies)
+    await session.commit()
+    return [await get_book(session, copy.id) for copy in copies]
 
 
 async def deactivate_book(session: AsyncSession, book_id: uuid.UUID) -> None:
