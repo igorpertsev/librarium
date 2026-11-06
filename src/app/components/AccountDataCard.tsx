@@ -66,7 +66,7 @@ export function AccountDataCard() {
           {t('accountData.download')}
         </Button>
         {user?.role !== 'admin' && (
-          <Button variant="outline" className="text-destructive" onClick={() => setOpen(true)}>
+          <Button variant="outline" className="text-destructive dark:text-red-400" onClick={() => setOpen(true)}>
             <Trash2 className="w-4 h-4 mr-2" aria-hidden="true" />
             {t('accountData.delete')}
           </Button>

@@ -13,7 +13,7 @@ function SessionLoading() {
 }
 
 export function Layout() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, signedOut } = useAuth();
   const location = useLocation();
   const { t } = useTranslation();
 
@@ -22,8 +22,11 @@ export function Layout() {
   }
 
   if (!isAuthenticated) {
-    // Back to this page after signing in (e.g. a link from an email).
-    return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
+    // Back to this page after signing in (e.g. a link from an email), unless the reader has
+    // just signed out on purpose: the next person to sign in starts on the catalogue.
+    return (
+      <Navigate to="/login" replace state={signedOut ? undefined : { from: location.pathname + location.search }} />
+    );
   }
 
   return (

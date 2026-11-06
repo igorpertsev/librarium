@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useSearchParams } from 'react-router';
+import { useNavigation, useSearchParams } from 'react-router';
 import { BookCard } from '../components/BookCard';
 import { BatchProgress } from '../components/BatchProgress';
 import { AuthorBanner, SelectedTags, SeriesBanner, SeriesFilter, TagFilter } from '../components/CatalogFilters';
@@ -137,12 +137,16 @@ export default function CustomerPortal() {
 
   // The search text that the box and the URL last agreed on.
   const syncedQuery = useRef(urlQuery);
+  // While another page is loading (pages load on demand), the catalogue is still on screen;
+  // writing the search into the URL then would cancel that navigation.
+  const navigation = useNavigation();
+  const leaving = navigation.state !== 'idle' && navigation.location.pathname !== '/';
   // Typing updates the URL (without a history entry per keystroke)...
   useEffect(() => {
-    if (search === syncedQuery.current) return;
+    if (leaving || search === syncedQuery.current) return;
     syncedQuery.current = search;
     updateParams({ q: search || null }, { replace: true });
-  }, [search, updateParams]);
+  }, [search, updateParams, leaving]);
   // ...and Back/Forward put the URL's search text back into the box.
   useEffect(() => {
     if (urlQuery === syncedQuery.current) return;

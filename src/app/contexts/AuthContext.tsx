@@ -23,6 +23,8 @@ interface AuthContextType {
   setLanguage: (language: UiLanguage) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
+  /** True after the reader signed out themselves (not when a session expired). */
+  signedOut: boolean;
 }
 
 const currentLanguage = (language: string): UiLanguage | null =>
@@ -46,9 +48,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [savedLanguage, i18n]);
 
+  const [signedOut, setSignedOut] = useState(false);
+
   const applyTokens = useCallback((response: TokenResponseDto) => {
     setAccessToken(response.access_token);
     setUser(userFromDto(response.user));
+    setSignedOut(false);
   }, []);
 
   const clearSession = useCallback(() => {
@@ -144,6 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
   const logout = () => {
+    setSignedOut(true);
     // Revoke the refresh token server-side; local state is cleared immediately either way.
     authApi.logout().catch(() => undefined);
     clearSession();
@@ -162,6 +168,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       refreshUsers,
       setLanguage,
       logout,
+      signedOut,
       isAuthenticated: !!user
     }}>
       {children}
