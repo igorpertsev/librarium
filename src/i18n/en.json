@@ -673,5 +673,16 @@
   "duplicates": {
     "title": "This book may already be in the library:",
     "addCopy": "Add a copy instead"
+  },
+  "quality": {
+    "tab": "Data quality",
+    "title": "Data quality",
+    "description_one": "Gaps in the catalogue data of {{count}} title. Choose a gap to see the titles and fix them.",
+    "description_other": "Gaps in the catalogue data of {{count}} titles. Choose a gap to see the titles and fix them.",
+    "issue": {"machine_translation": "Machine translations to check", "no_cover": "No cover", "no_description": "No description", "no_tags": "No tags", "no_translation": "No translation", "no_isbn": "No ISBN"},
+    "none": "Nothing to fix here.",
+    "fix": "Edit",
+    "previous": "Previous",
+    "next": "Next"
   }
 }

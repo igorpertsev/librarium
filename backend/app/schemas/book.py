@@ -120,6 +120,22 @@ class BookPage(Page[BookRead]):
     pass
 
 
+class QualityIssue(StrEnum):
+    """Gaps in a title's catalogue data, for the admin data-quality page."""
+
+    NO_COVER = "no_cover"
+    NO_DESCRIPTION = "no_description"
+    NO_TAGS = "no_tags"
+    NO_ISBN = "no_isbn"
+    NO_TRANSLATION = "no_translation"
+    MACHINE_TRANSLATION = "machine_translation"  # not yet checked by a librarian
+
+
+class QualitySummary(ApiModel):
+    titles: int = Field(description="Active titles in the catalogue")
+    issues: dict[QualityIssue, int] = Field(description="Titles with each gap")
+
+
 class SeriesNeighbours(ApiModel):
     previous: BookRead | None = Field(description="The volume before this one")
     next: BookRead | None = Field(description="The volume after this one")

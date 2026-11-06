@@ -464,6 +464,7 @@ Differences (adapters in `src/api/mappers.ts`):
 | GET/POST | `/admin/books`, GET `/admin/books/stats`, GET/PATCH/DELETE `/admin/books/{id}` | admin |
 | POST | `/admin/books/import` (CSV, all or nothing, `dry_run`; `warnings` for rows that look like books already there), GET `/admin/isbn/{isbn}` (details from Open Library) | admin |
 | GET | `/admin/books/duplicates?isbn&title&author` (titles with the same ISBN, or the same title and author) | admin |
+| GET | `/admin/books/quality` (titles without cover, description, tags, ISBN or translation; unchecked machine translations) · `/admin/books?quality=<issue>` lists them | admin |
 | GET | `/admin/reports/summary`, `/admin/reports/orders.csv` (`date_from`, `date_to`; default last 30 days) | admin |
 | POST | `/admin/books/{id}/copies` (`{count}`: more copies of a title) | admin |
 | POST/PATCH/DELETE | `/admin/tags`, `/admin/tags/{id}` · POST `/admin/tags/{id}/merge`; the same for `/admin/series` | admin |

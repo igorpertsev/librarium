@@ -17,6 +17,7 @@ from app.api.dependencies import (
 from app.api.routes.books import LanguageQuery, TagsQuery, tag_slugs
 from app.core.exceptions import BadRequestError
 from app.models.enums import BookCategory, BookStatus, OrderStatus
+from app.repositories import books as books_repo
 from app.repositories import orders as orders_repo
 from app.repositories.books import BookFilters
 from app.schemas.book import (
@@ -27,6 +28,8 @@ from app.schemas.book import (
     BookSort,
     BookStats,
     BookUpdate,
+    QualityIssue,
+    QualitySummary,
 )
 from app.schemas.book_import import BookImportRequest, BookImportResult, BookLookup, LookupSeries
 from app.schemas.catalog import (
@@ -82,6 +85,10 @@ async def admin_list_books(
     tags: TagsQuery = None,
     series: uuid.UUID | None = None,
     language: LanguageQuery = None,
+    quality: Annotated[
+        QualityIssue | None,
+        Query(description="Titles with this gap (one entry per title, like the catalogue)"),
+    ] = None,
     sort: BookSort = BookSort.CREATED_AT,
 ) -> BookPage:
     items, total = await books_service.list_books(
@@ -95,12 +102,26 @@ async def admin_list_books(
             tags=tag_slugs(tags),
             series_id=series,
             language=language,
+            quality=quality,
         ),
         sort=sort,
         page=pagination.page,
         page_size=pagination.page_size,
+        group_copies=quality is not None,
     )
     return BookPage(items=items, total=total, page=pagination.page, page_size=pagination.page_size)
+
+
+@router.get(
+    "/books/quality",
+    response_model=QualitySummary,
+    description="How many titles lack a cover, description, tags, ISBN or translation, and how "
+    "many have machine translations nobody has checked. List them with GET "
+    "/admin/books?quality=<issue>.",
+)
+async def admin_book_quality(session: SessionDep) -> QualitySummary:
+    titles, issues = await books_repo.quality_counts(session)
+    return QualitySummary(titles=titles, issues=issues)
 
 
 @router.get(

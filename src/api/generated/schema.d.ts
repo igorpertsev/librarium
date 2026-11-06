@@ -649,6 +649,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/books/quality": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin Book Quality
+         * @description How many titles lack a cover, description, tags, ISBN or translation, and how many have machine translations nobody has checked. List them with GET /admin/books?quality=<issue>.
+         */
+        get: operations["admin_book_quality_api_v1_admin_books_quality_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/books/duplicates": {
         parameters: {
             query?: never;
@@ -1874,6 +1894,27 @@ export interface components {
         /** OrderStatusUpdate */
         OrderStatusUpdate: {
             status: components["schemas"]["OrderStatus"];
+        };
+        /**
+         * QualityIssue
+         * @description Gaps in a title's catalogue data, for the admin data-quality page.
+         * @enum {string}
+         */
+        QualityIssue: "no_cover" | "no_description" | "no_tags" | "no_isbn" | "no_translation" | "machine_translation";
+        /** QualitySummary */
+        QualitySummary: {
+            /**
+             * Titles
+             * @description Active titles in the catalogue
+             */
+            titles: number;
+            /**
+             * Issues
+             * @description Titles with each gap
+             */
+            issues: {
+                [key: string]: number;
+            };
         };
         /** ReadingListItemRead */
         ReadingListItemRead: {
@@ -3835,6 +3876,8 @@ export interface operations {
                 series?: string | null;
                 /** @description ISO 639 code of the book's language, e.g. en */
                 language?: string | null;
+                /** @description Titles with this gap (one entry per title, like the catalogue) */
+                quality?: components["schemas"]["QualityIssue"] | null;
                 sort?: components["schemas"]["BookSort"];
                 page?: number;
                 page_size?: number;
@@ -3925,6 +3968,44 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_book_quality_api_v1_admin_books_quality_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QualitySummary"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

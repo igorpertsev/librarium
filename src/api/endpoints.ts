@@ -25,6 +25,7 @@ import type {
   OrderPageDto,
   OrderStatusDto,
   Paged,
+  QualitySummaryDto,
   ReadingListItemDto,
   SeriesNeighboursDto,
   RegisterDto,
@@ -130,6 +131,7 @@ export const libraryApi = {
 export const adminApi = {
   listBooks: (query: AdminBookListQuery) => apiRequest<BookPageDto>('/admin/books', { query }),
   bookStats: () => apiRequest<BookStatsDto>('/admin/books/stats'),
+  bookQuality: () => apiRequest<QualitySummaryDto>('/admin/books/quality'),
   findDuplicates: (query: { isbn?: string; title?: string; author?: string }) =>
     apiRequest<BookDto[]>('/admin/books/duplicates', { query }),
   lookupIsbn: (isbn: string) => apiRequest<BookLookupDto>(`/admin/isbn/${id(isbn)}`),

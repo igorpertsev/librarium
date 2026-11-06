@@ -25,8 +25,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import InstrumentedAttribute
 
 from app.models import Book, BookTranslation, Order, OrderItem, Series, Tag, book_tags
-from app.models.enums import ACTIVE_ORDER_STATUSES, BookCategory, BookStatus
-from app.schemas.book import BookSort
+from app.models.enums import ACTIVE_ORDER_STATUSES, BookCategory, BookStatus, TranslationSource
+from app.schemas.book import BookSort, QualityIssue
 
 
 def copy_group_key() -> ColumnElement[uuid.UUID]:
@@ -172,6 +172,35 @@ def relevance(text: str) -> ColumnElement[float]:
     return full_text + words + func.similarity(literal(text), Book.title)
 
 
+def quality_condition(issue: QualityIssue) -> ColumnElement[bool]:
+    has_translation = exists().where(BookTranslation.book_id == Book.id)
+    conditions: dict[QualityIssue, ColumnElement[bool]] = {
+        QualityIssue.NO_COVER: or_(Book.cover_url.is_(None), Book.cover_url == ""),
+        QualityIssue.NO_DESCRIPTION: Book.description == "",
+        QualityIssue.NO_TAGS: ~exists().where(book_tags.c.book_id == Book.id),
+        QualityIssue.NO_ISBN: or_(Book.isbn.is_(None), Book.isbn == ""),
+        QualityIssue.NO_TRANSLATION: ~has_translation,
+        QualityIssue.MACHINE_TRANSLATION: exists().where(
+            BookTranslation.book_id == Book.id,
+            or_(
+                BookTranslation.title_source == TranslationSource.MACHINE,
+                BookTranslation.description_source == TranslationSource.MACHINE,
+            ),
+        ),
+    }
+    return conditions[issue]
+
+
+async def quality_counts(session: AsyncSession) -> tuple[int, dict[QualityIssue, int]]:
+    """Active titles, and how many of them have each gap (copies of a title count once)."""
+    group = copy_group_key()
+    columns = [func.count(func.distinct(group))] + [
+        func.count(func.distinct(case((quality_condition(issue), group)))) for issue in QualityIssue
+    ]
+    row = (await session.execute(select(*columns).where(Book.is_active.is_(True)))).one()
+    return int(row[0]), {issue: int(row[i + 1]) for i, issue in enumerate(QualityIssue)}
+
+
 @dataclass(frozen=True, slots=True)
 class BookFilters:
     q: str | None = None
@@ -185,6 +214,7 @@ class BookFilters:
     language: str | None = None  # ISO 639 code
     groups: tuple[uuid.UUID, ...] | None = None  # only these titles (copy groups)
     author: str | None = None  # exact name, any case
+    quality: QualityIssue | None = None
 
 
 def _conditions(
@@ -217,6 +247,8 @@ def _conditions(
         conditions.append(copy_group_key().in_(filters.groups))
     if filters.author:
         conditions.append(func.lower(Book.author) == filters.author.strip().lower())
+    if filters.quality is not None:
+        conditions.append(quality_condition(filters.quality))
     if filters.available is not None and per_copy_availability:
         reserved = active_reservation_exists(Book.id)
         is_available = Book.is_active.is_(True) & (Book.status == BookStatus.AVAILABLE) & ~reserved

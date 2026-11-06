@@ -2336,6 +2336,24 @@
             "description": "ISO 639 code of the book's language, e.g. en"
           },
           {
+            "name": "quality",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/QualityIssue"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Titles with this gap (one entry per title, like the catalogue)",
+              "title": "Quality"
+            },
+            "description": "Titles with this gap (one entry per title, like the catalogue)"
+          },
+          {
             "name": "sort",
             "in": "query",
             "required": false,
@@ -2475,6 +2493,53 @@
             "description": "Unprocessable Entity"
           }
         }
+      }
+    },
+    "/api/v1/admin/books/quality": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Book Quality",
+        "description": "How many titles lack a cover, description, tags, ISBN or translation, and how many have machine translations nobody has checked. List them with GET /admin/books?quality=<issue>.",
+        "operationId": "admin_book_quality_api_v1_admin_books_quality_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QualitySummary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/api/v1/admin/books/duplicates": {
@@ -7150,6 +7215,45 @@
           "status"
         ],
         "title": "OrderStatusUpdate"
+      },
+      "QualityIssue": {
+        "type": "string",
+        "enum": [
+          "no_cover",
+          "no_description",
+          "no_tags",
+          "no_isbn",
+          "no_translation",
+          "machine_translation"
+        ],
+        "title": "QualityIssue",
+        "description": "Gaps in a title's catalogue data, for the admin data-quality page."
+      },
+      "QualitySummary": {
+        "properties": {
+          "titles": {
+            "type": "integer",
+            "title": "Titles",
+            "description": "Active titles in the catalogue"
+          },
+          "issues": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/QualityIssue"
+            },
+            "type": "object",
+            "title": "Issues",
+            "description": "Titles with each gap"
+          }
+        },
+        "type": "object",
+        "required": [
+          "titles",
+          "issues"
+        ],
+        "title": "QualitySummary"
       },
       "ReadingListItemRead": {
         "properties": {

@@ -461,6 +461,7 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 | GET/POST | `/admin/books`, GET `/admin/books/stats`, GET/PATCH/DELETE `/admin/books/{id}` | admin |
 | POST | `/admin/books/import` (CSV, всё или ничего, `dry_run`; `warnings` — строки, похожие на уже имеющиеся книги), GET `/admin/isbn/{isbn}` (данные из Open Library) | admin |
 | GET | `/admin/books/duplicates?isbn&title&author` (издания с тем же ISBN или с тем же названием и автором) | admin |
+| GET | `/admin/books/quality` (издания без обложки, описания, тегов, ISBN или перевода; непроверенный машинный перевод) · `/admin/books?quality=<issue>` — их список | admin |
 | GET | `/admin/reports/summary`, `/admin/reports/orders.csv` (`date_from`, `date_to`; по умолчанию последние 30 дней) | admin |
 | POST | `/admin/books/{id}/copies` (`{count}`: ещё экземпляры книги) | admin |
 | POST/PATCH/DELETE | `/admin/tags`, `/admin/tags/{id}` · POST `/admin/tags/{id}/merge`; то же для `/admin/series` | admin |
