@@ -21,6 +21,7 @@ import { WaitlistButton } from '../components/WaitlistButton';
 import { ReadingListCard } from '../components/ReadingListCard';
 import { NextInSeriesCard } from '../components/NextInSeriesCard';
 import { ExtendFromLink } from '../components/ExtendFromLink';
+import { AccountDataCard } from '../components/AccountDataCard';
 import { useBookText } from '../utils/bookText';
 import type { Order } from '../types';
 import { BorrowingHistory } from '../components/BorrowingHistory';
@@ -500,6 +501,7 @@ export default function Profile() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <AccountDataCard />
       {confirmDialog}
     </div>
   );

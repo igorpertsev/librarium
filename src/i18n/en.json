@@ -357,7 +357,9 @@
     "sameMergeTarget": "Choose a different item to merge into.",
     "seriesNotFound": "This series no longer exists.",
     "seriesExists": "A series with this name already exists.",
-    "unknownTags": "Unknown tags: {{tags}}"
+    "unknownTags": "Unknown tags: {{tags}}",
+    "activeOrders": "Return or cancel your current orders first, then delete the account.",
+    "adminAccount": "Administrators cannot delete their own account. Ask another administrator."
   },
   "checkout": {
     "title": "Confirm Order",
@@ -654,5 +656,16 @@
     "description": "The books are due back on {{date}}. Extending moves the date by one loan period.",
     "confirm": "Extend",
     "notBorrowed": "Order {{order}} is not on loan any more, so there is nothing to extend."
+  },
+  "accountData": {
+    "title": "Your data",
+    "description": "Download everything the library stores about you, or delete your account.",
+    "download": "Download my data",
+    "delete": "Delete account",
+    "deleteTitle": "Delete your account?",
+    "deleteDescription": "Your profile, contacts, cart, waiting list and saved books are deleted and you are signed out. Your past orders stay in the library's records without your name or contacts. This cannot be undone.",
+    "password": "Your password",
+    "deleteConfirm": "Delete my account",
+    "deleted": "Your account has been deleted."
   }
 }

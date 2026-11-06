@@ -69,7 +69,7 @@ def _set_refresh_cookie(response: Response, settings: Settings, token: str) -> N
     )
 
 
-def _clear_refresh_cookie(response: Response, settings: Settings) -> None:
+def clear_refresh_cookie(response: Response, settings: Settings) -> None:
     response.delete_cookie(
         key=settings.refresh_cookie_name,
         path=settings.refresh_cookie_path,
@@ -179,7 +179,7 @@ async def refresh(
             content=error_payload(exc.code, exc.message),
             headers=exc.headers,
         )
-        _clear_refresh_cookie(error, settings)
+        clear_refresh_cookie(error, settings)
         return error
     _set_refresh_cookie(response, settings, result.refresh_token)
     return _token_response(result)
@@ -190,7 +190,7 @@ async def logout(request: Request, session: SessionDep, settings: SettingsDep) -
     _check_origin(request, settings)
     await auth_service.logout(session, _refresh_cookie(request, settings))
     response = Response(status_code=status.HTTP_204_NO_CONTENT)
-    _clear_refresh_cookie(response, settings)
+    clear_refresh_cookie(response, settings)
     return response
 
 

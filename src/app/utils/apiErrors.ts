@@ -27,6 +27,8 @@ const MESSAGE_KEYS: Record<string, string> = {
   USER_NOT_FOUND: 'errors.notFound',
   NOT_FOUND: 'errors.notFound',
   TAG_NOT_FOUND: 'errors.tagNotFound',
+  ACTIVE_ORDERS: 'errors.activeOrders',
+  ADMIN_ACCOUNT: 'errors.adminAccount',
   TAG_EXISTS: 'errors.tagExists',
   TAG_SLUG: 'errors.tagSlug',
   SAME_TAG: 'errors.sameMergeTarget',

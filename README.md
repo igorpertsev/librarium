@@ -453,6 +453,7 @@ Differences (adapters in `src/api/mappers.ts`):
 | POST | `/auth/register`, `/auth/login`, `/auth/refresh`, `/auth/logout`, `/auth/forgot-password`, `/auth/reset-password` | everyone |
 | GET | `/auth/me`, `/users/me` · PATCH `/users/me` · POST `/auth/change-password` | signed-in user |
 | GET | `/users/me/next-in-series` (the next volume of each series the reader borrowed from) | signed-in user |
+| GET | `/users/me/export` (everything stored about the reader, JSON) · DELETE `/users/me` (`{password}`; orders are kept without name and contacts; 409 `ACTIVE_ORDERS` / `ADMIN_ACCOUNT`) | signed-in user |
 | GET | `/books?q&category&age_range&available&tags&series&language&author&sort&page&page_size`, `/books/age-ranges`, `/books/languages`, `/books/{id}`, `/books/{id}/series-neighbours` | everyone |
 | GET | `/tags` (with title counts), `/series?q`, `/series/{id}` | everyone |
 | GET/DELETE | `/cart` · POST `/cart/items` · DELETE `/cart/items/{book_id}` | signed-in user |

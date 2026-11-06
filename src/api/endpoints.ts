@@ -70,6 +70,9 @@ export const authApi = {
 export const usersApi = {
   updateMe: (body: UserUpdateDto) => apiRequest<UserDto>('/users/me', { method: 'PATCH', body }),
   nextInSeries: () => apiRequest<BookDto[]>('/users/me/next-in-series'),
+  exportData: () => apiDownload('/users/me/export'),
+  deleteMe: (password: string) =>
+    apiRequest<void>('/users/me', { method: 'DELETE', body: { password } }),
 };
 
 export const booksApi = {

@@ -4,10 +4,10 @@ import uuid
 from datetime import date, datetime
 from typing import ClassVar
 
-from pydantic import model_validator
+from pydantic import Field, model_validator
 
 from app.models.enums import ContactMethod, UiLanguage, UserRole
-from app.schemas.common import ApiModel, Page, PatchModel
+from app.schemas.common import ApiModel, Page, PatchModel, RequestModel
 from app.schemas.types import FullName, Handle, NormalizedEmail, PhoneLike
 
 CONTACT_FIELDS: tuple[str, ...] = ("whatsapp", "telegram", "instagram", "phone")
@@ -85,3 +85,7 @@ class AdminUserUpdate(PatchModel):
 
 class AdminUserPage(Page[AdminUserRead]):
     pass
+
+
+class DeleteAccountRequest(RequestModel):
+    password: str = Field(min_length=1, max_length=128, description="The current password")

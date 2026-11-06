@@ -200,7 +200,11 @@ export interface paths {
         get: operations["read_me_api_v1_users_me_get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Delete Me
+         * @description Deletes the account after checking the password: personal data is removed, orders stay for the library's records without the reader's name or contacts. 409 ACTIVE_ORDERS while books are requested or on loan; 409 ADMIN_ACCOUNT for administrators.
+         */
+        delete: operations["delete_me_api_v1_users_me_delete"];
         options?: never;
         head?: never;
         /** Update Me */
@@ -219,6 +223,26 @@ export interface paths {
          * @description For each series the reader has borrowed from, the first volume after the furthest one they borrowed that they have not borrowed yet.
          */
         get: operations["my_next_in_series_api_v1_users_me_next_in_series_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/me/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export My Data
+         * @description Everything stored about the signed-in reader, as a JSON file.
+         */
+        get: operations["export_my_data_api_v1_users_me_export_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1551,6 +1575,14 @@ export interface components {
          * @enum {string}
          */
         ContactMethod: "whatsapp" | "telegram" | "instagram" | "phone" | "email";
+        /** DeleteAccountRequest */
+        DeleteAccountRequest: {
+            /**
+             * Password
+             * @description The current password
+             */
+            password: string;
+        };
         /** ErrorBody */
         ErrorBody: {
             /**
@@ -2647,6 +2679,64 @@ export interface operations {
             };
         };
     };
+    delete_me_api_v1_users_me_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteAccountRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     update_me_api_v1_users_me_patch: {
         parameters: {
             query?: never;
@@ -2714,6 +2804,35 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BookRead"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    export_my_data_api_v1_users_me_export_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Unauthorized */
