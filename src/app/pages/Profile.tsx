@@ -12,6 +12,7 @@ import { UserContacts, PreferredContact } from '../types';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { errorMessage } from '../utils/apiErrors';
+import { useConfirm } from '../components/ConfirmDialog';
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -43,6 +44,7 @@ export default function Profile() {
   const { user, updateUser, changePassword } = useAuth();
   const { getOrdersForUser, cancelOrder } = useOrders();
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const { confirm, confirmDialog } = useConfirm();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
 
@@ -256,7 +258,16 @@ export default function Profile() {
                     variant="outline"
                     size="sm"
                     disabled={cancellingId === order.id}
-                    onClick={() => handleCancelRequest(order.id)}
+                    onClick={async () => {
+                      const confirmed = await confirm({
+                        title: t('confirm.cancelRequestTitle'),
+                        description: t('confirm.cancelRequestDesc'),
+                        confirmLabel: t('confirm.cancelRequest'),
+                        cancelLabel: t('confirm.keepRequest'),
+                        destructive: true,
+                      });
+                      if (confirmed) handleCancelRequest(order.id);
+                    }}
                   >
                     {t('profile.cancelRequest')}
                   </Button>
@@ -439,6 +450,7 @@ export default function Profile() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {confirmDialog}
     </div>
   );
 }

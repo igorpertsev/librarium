@@ -12,6 +12,7 @@ import { ShoppingCart, Trash2, X, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { errorMessage } from '../utils/apiErrors';
+import { useConfirm } from '../components/ConfirmDialog';
 import { useCatalog } from '../contexts/CatalogContext';
 import type { ActionResult } from '../../api/errors';
 
@@ -41,7 +42,17 @@ export default function Cart() {
   };
   const removeBookFromCart = async (batchId: string, bookId: string) =>
     reportFailure(await removeBookRequest(batchId, bookId));
-  const removeBatch = async (batchId: string) => reportFailure(await removeBatchRequest(batchId));
+  const { confirm, confirmDialog } = useConfirm();
+  const removeBatch = async (batchId: string) => {
+    const count = cart.find((batch) => batch.batchId === batchId)?.books.length ?? 0;
+    const confirmed = await confirm({
+      title: t('confirm.removeBatchTitle'),
+      description: t('confirm.removeBatchDesc', { count }),
+      confirmLabel: t('confirm.remove'),
+      destructive: true,
+    });
+    if (confirmed) reportFailure(await removeBatchRequest(batchId));
+  };
 
   const handleCheckout = () => {
     setShowCheckoutDialog(true);
@@ -342,6 +353,7 @@ export default function Cart() {
           )}
         </DialogContent>
       </Dialog>
+      {confirmDialog}
     </div>
   );
 }
