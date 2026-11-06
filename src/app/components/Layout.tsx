@@ -1,9 +1,23 @@
 import { Outlet, Navigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { Header } from './Header';
+import { useTranslation } from 'react-i18next';
+
+function SessionLoading() {
+  const { t } = useTranslation();
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background text-muted-foreground">
+      {t('common.loading')}
+    </div>
+  );
+}
 
 export function Layout() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <SessionLoading />;
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -20,7 +34,11 @@ export function Layout() {
 }
 
 export function AdminLayout() {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <SessionLoading />;
+  }
 
   if (!user || user.role !== 'admin') {
     return <Navigate to="/" replace />;

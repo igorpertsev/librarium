@@ -1,145 +1,143 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { Order, OrderStatus, Book } from '../types';
-import { mockBooks } from '../data/mockBooks';
+import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from 'react';
+import { Order, OrderStatus } from '../types';
+import { adminApi, fetchAllPages, ordersApi } from '../../api/endpoints';
+import { ActionResult, ApiError, runAction, toApiError } from '../../api/errors';
+import { orderFromDto } from '../../api/mappers';
+import type { OrderDto } from '../../api/types';
+import { useAuth } from './AuthContext';
+import { useCatalog } from './CatalogContext';
 
-interface PlaceOrderParams {
-  userId: string;
-  userName: string;
-  userEmail: string;
-  books: Book[];
-  totalPrice: number;
-}
+const ACTIVE_STATUSES: ReadonlySet<OrderStatus> = new Set<OrderStatus>(['pending', 'confirmed']);
 
 interface OrdersContextType {
+  /** Customers: their own orders. Admins: every order. */
   orders: Order[];
-  placeOrder: (params: PlaceOrderParams) => void;
-  confirmOrder: (orderId: string) => void;
-  markReturned: (orderId: string) => void;
-  cancelOrder: (orderId: string) => void;
-  updateDueDate: (orderId: string, dueDate: string) => void;
+  isLoading: boolean;
+  error: ApiError | null;
+  /** Creates an order from the server-side cart; price and books are decided by the server. */
+  placeOrder: () => Promise<ActionResult<Order>>;
+  confirmOrder: (orderId: string) => Promise<ActionResult>;
+  markReturned: (orderId: string) => Promise<ActionResult>;
+  cancelOrder: (orderId: string) => Promise<ActionResult>;
+  updateDueDate: (orderId: string, dueDate: string) => Promise<ActionResult>;
+  /**
+   * UX hint only: true if the copy is in an active order we know about. The server makes
+   * the final decision when adding to the cart and when the order is placed.
+   */
   isBookUnavailable: (bookId: string) => boolean;
+  markBooksUnavailable: (bookIds: string[]) => void;
   getOrdersForUser: (userId: string) => Order[];
+  refreshOrders: () => Promise<void>;
 }
 
 const OrdersContext = createContext<OrdersContextType | undefined>(undefined);
 
-function daysFromNow(days: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + days);
-  return d.toISOString().split('T')[0];
-}
-
-function daysAgo(days: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - days);
-  return d.toISOString().split('T')[0];
-}
-
-const seedOrders: Order[] = [
-  {
-    id: 'order-seed-1',
-    userId: '1',
-    userName: 'John Customer',
-    userEmail: 'customer@library.com',
-    books: mockBooks.slice(0, 5),
-    status: 'pending',
-    totalPrice: 15.99,
-    orderedAt: daysAgo(2),
-    dueDate: daysFromNow(28),
-  },
-  {
-    id: 'order-seed-2',
-    userId: '1',
-    userName: 'John Customer',
-    userEmail: 'customer@library.com',
-    books: mockBooks.slice(5, 10),
-    status: 'confirmed',
-    totalPrice: 15.99,
-    orderedAt: daysAgo(20),
-    dueDate: daysFromNow(10),
-    confirmedAt: daysAgo(18),
-  },
-  {
-    id: 'order-seed-3',
-    userId: '1',
-    userName: 'John Customer',
-    userEmail: 'customer@library.com',
-    books: mockBooks.slice(2, 7),
-    status: 'returned',
-    totalPrice: 15.99,
-    orderedAt: daysAgo(60),
-    dueDate: daysAgo(30),
-    confirmedAt: daysAgo(58),
-    returnedAt: daysAgo(32),
-  },
-];
-
 export function OrdersProvider({ children }: { children: ReactNode }) {
-  const [orders, setOrders] = useState<Order[]>(seedOrders);
+  const { user } = useAuth();
+  const { invalidateCatalog } = useCatalog();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [knownReserved, setKnownReserved] = useState<ReadonlySet<string>>(new Set());
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<ApiError | null>(null);
+  const isAdmin = user?.role === 'admin';
 
-  const placeOrder = ({ userId, userName, userEmail, books, totalPrice }: PlaceOrderParams) => {
-    const now = new Date().toISOString().split('T')[0];
-    const due = new Date();
-    due.setDate(due.getDate() + 30);
+  const refreshOrders = useCallback(async () => {
+    if (!user) {
+      setOrders([]);
+      return;
+    }
+    setIsLoading(true);
+    setError(null);
+    try {
+      const all = await fetchAllPages((page, page_size) =>
+        isAdmin ? adminApi.listOrders({ page, page_size }) : ordersApi.list({ page, page_size }),
+      );
+      setOrders(all.map(orderFromDto));
+    } catch (e) {
+      setError(toApiError(e));
+    } finally {
+      setIsLoading(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, isAdmin]);
 
-    const newOrder: Order = {
-      id: `order-${Date.now()}`,
-      userId,
-      userName,
-      userEmail,
-      books,
-      status: 'pending',
-      totalPrice,
-      orderedAt: now,
-      dueDate: due.toISOString().split('T')[0],
-    };
+  useEffect(() => {
+    setKnownReserved(new Set());
+    refreshOrders();
+  }, [refreshOrders]);
 
-    setOrders(prev => [newOrder, ...prev]);
+  const replaceOrder = (dto: OrderDto) => {
+    const updated = orderFromDto(dto);
+    setOrders((prev) => prev.map((o) => (o.id === updated.id ? updated : o)));
+    return updated;
   };
 
-  const confirmOrder = (orderId: string) => {
-    const now = new Date().toISOString().split('T')[0];
-    setOrders(prev =>
-      prev.map(o =>
-        o.id === orderId ? { ...o, status: 'confirmed' as OrderStatus, confirmedAt: now } : o
-      )
-    );
+  const markBooksUnavailable = useCallback((bookIds: string[]) => {
+    if (bookIds.length === 0) return;
+    setKnownReserved((prev) => new Set([...prev, ...bookIds]));
+  }, []);
+
+  const placeOrder = async (): Promise<ActionResult<Order>> => {
+    const result = await runAction(() => ordersApi.place());
+    if (!result.ok) {
+      if (result.error.code === 'BOOK_UNAVAILABLE') {
+        markBooksUnavailable(result.error.unavailableBookIds);
+        invalidateCatalog();
+      }
+      return result;
+    }
+    const order = orderFromDto(result.data);
+    setOrders((prev) => [order, ...prev]);
+    invalidateCatalog();
+    return { ok: true, data: order };
   };
 
-  const markReturned = (orderId: string) => {
-    const now = new Date().toISOString().split('T')[0];
-    setOrders(prev =>
-      prev.map(o =>
-        o.id === orderId ? { ...o, status: 'returned' as OrderStatus, returnedAt: now } : o
-      )
-    );
-  };
+  const changeStatus = (orderId: string, status: OrderStatus) =>
+    runAction(async () => {
+      replaceOrder(await adminApi.setOrderStatus(orderId, status));
+      if (!ACTIVE_STATUSES.has(status)) invalidateCatalog();
+    });
 
-  const cancelOrder = (orderId: string) => {
-    setOrders(prev =>
-      prev.map(o =>
-        o.id === orderId ? { ...o, status: 'cancelled' as OrderStatus } : o
-      )
-    );
-  };
+  const confirmOrder = (orderId: string) => changeStatus(orderId, 'confirmed');
+  const markReturned = (orderId: string) => changeStatus(orderId, 'returned');
 
-  const updateDueDate = (orderId: string, dueDate: string) => {
-    setOrders(prev =>
-      prev.map(o => o.id === orderId ? { ...o, dueDate } : o)
-    );
-  };
+  const cancelOrder = (orderId: string) =>
+    isAdmin
+      ? changeStatus(orderId, 'cancelled')
+      : runAction(async () => {
+          replaceOrder(await ordersApi.cancel(orderId));
+          invalidateCatalog();
+        });
+
+  const updateDueDate = (orderId: string, dueDate: string) =>
+    runAction(async () => {
+      replaceOrder(await adminApi.setOrderDueDate(orderId, dueDate));
+    });
 
   const isBookUnavailable = (bookId: string): boolean =>
-    orders.some(
-      o => (o.status === 'pending' || o.status === 'confirmed') &&
-      o.books.some(b => b.id === bookId)
-    );
+    knownReserved.has(bookId) ||
+    orders.some((o) => ACTIVE_STATUSES.has(o.status) && o.books.some((b) => b.id === bookId));
 
   const getOrdersForUser = (userId: string): Order[] =>
     orders.filter(o => o.userId === userId);
 
   return (
-    <OrdersContext.Provider value={{ orders, placeOrder, confirmOrder, markReturned, cancelOrder, updateDueDate, isBookUnavailable, getOrdersForUser }}>
+    <OrdersContext.Provider
+      value={{
+        orders,
+        isLoading,
+        error,
+        placeOrder,
+        confirmOrder,
+        markReturned,
+        cancelOrder,
+        updateDueDate,
+        isBookUnavailable,
+        markBooksUnavailable,
+        getOrdersForUser,
+        refreshOrders,
+      }}
+    >
       {children}
     </OrdersContext.Provider>
   );

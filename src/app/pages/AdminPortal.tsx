@@ -1,6 +1,5 @@
-import { useState } from 'react';
-import { mockBooks } from '../data/mockBooks';
-import { Book, BookCategory, BookStatus, Order } from '../types';
+import { useCallback, useEffect, useState } from 'react';
+import { BatchConfig, Book, BookCategory, BookStatus, Order } from '../types';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -20,18 +19,65 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from '../components/ui/pagination';
 import { useTranslation } from 'react-i18next';
 import { getCategoryTranslation, getStatusTranslation } from '../utils/translations';
+import { errorMessage } from '../utils/apiErrors';
+import { useCatalog } from '../contexts/CatalogContext';
+import { adminApi } from '../../api/endpoints';
+import { ActionResult, ApiError, runAction, toApiError } from '../../api/errors';
+import { bookFormToDto, bookFromDto } from '../../api/mappers';
+import type { BookStatsDto } from '../../api/types';
 
 export default function AdminPortal() {
   const { t } = useTranslation();
-  const [books, setBooks] = useState<Book[]>(mockBooks);
+  const [books, setBooks] = useState<Book[]>([]);
+  const [totalBooks, setTotalBooks] = useState(0);
+  const [stats, setStats] = useState<BookStatsDto | null>(null);
+  const [booksLoading, setBooksLoading] = useState(true);
+  const [booksError, setBooksError] = useState<ApiError | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingBook, setEditingBook] = useState<Book | null>(null);
   const { batchConfig, updateBatchConfig } = useCart();
-  const { users, updateUserRole } = useAuth();
+  const [batchDraft, setBatchDraft] = useState<BatchConfig>(batchConfig);
+  const { users, updateUserRole, refreshUsers } = useAuth();
   const { orders, confirmOrder, markReturned, cancelOrder, updateDueDate } = useOrders();
+  const { invalidateCatalog } = useCatalog();
   const [currentPage, setCurrentPage] = useState(1);
   const booksPerPage = 10;
+
+  useEffect(() => {
+    setBatchDraft(batchConfig);
+  }, [batchConfig.booksPerBatch, batchConfig.pricePerBatch]);
+
+  const loadBooks = useCallback(async (page: number) => {
+    setBooksLoading(true);
+    setBooksError(null);
+    try {
+      const [pageResult, statsResult] = await Promise.all([
+        adminApi.listBooks({ page, page_size: booksPerPage, sort: 'created_at' }),
+        adminApi.bookStats(),
+      ]);
+      setBooks(pageResult.items.map(bookFromDto));
+      setTotalBooks(pageResult.total);
+      setStats(statsResult);
+    } catch (e) {
+      setBooksError(toApiError(e));
+    } finally {
+      setBooksLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadBooks(currentPage);
+  }, [currentPage, loadBooks]);
+
+  function reportResult<T>(result: ActionResult<T>, successKey: string): boolean {
+    if (result.ok) {
+      toast.success(t(successKey));
+      return true;
+    }
+    toast.error(errorMessage(t, result.error));
+    return false;
+  }
 
   const [formData, setFormData] = useState({
     title: '',
@@ -61,47 +107,44 @@ export default function AdminPortal() {
     });
   };
 
-  const handleAddBook = () => {
-    const newBook: Book = {
-      id: `book-${Date.now()}`,
-      ...formData,
-      images: formData.images.length > 0 ? formData.images : [formData.coverImage]
-    };
-    setBooks([...books, newBook]);
+  const handleAddBook = async () => {
+    const result = await runAction(() => adminApi.createBook(bookFormToDto(formData)));
+    if (!reportResult(result, 'admin.bookAdded')) return;
     setIsAddDialogOpen(false);
     resetForm();
-    setCurrentPage(1);
-    toast.success(t('admin.bookAdded'));
+    invalidateCatalog();
+    if (currentPage === 1) await loadBooks(1);
+    else setCurrentPage(1);
   };
 
-  const handleEditBook = () => {
+  const handleEditBook = async () => {
     if (!editingBook) return;
-
-    const updatedBook = {
-      ...editingBook,
-      ...formData,
-      images: formData.images.length > 0 ? formData.images : [formData.coverImage]
-    };
-
-    setBooks(books.map(book =>
-      book.id === editingBook.id ? updatedBook : book
-    ));
+    const result = await runAction(() =>
+      adminApi.updateBook(editingBook.id, bookFormToDto(formData)),
+    );
+    if (!reportResult(result, 'admin.bookUpdated')) return;
     setIsEditDialogOpen(false);
     setEditingBook(null);
     resetForm();
-    toast.success(t('admin.bookUpdated'));
+    invalidateCatalog();
+    await loadBooks(currentPage);
   };
 
-  const handleDeleteBook = (id: string) => {
-    const newBooks = books.filter(book => book.id !== id);
-    setBooks(newBooks);
-
-    const newTotalPages = Math.ceil(newBooks.length / booksPerPage);
+  const handleDeleteBook = async (id: string) => {
+    const result = await runAction(() => adminApi.deleteBook(id));
+    if (!reportResult(result, 'admin.bookDeleted')) return;
+    invalidateCatalog();
+    const newTotalPages = Math.ceil((totalBooks - 1) / booksPerPage);
     if (currentPage > newTotalPages && newTotalPages > 0) {
       setCurrentPage(newTotalPages);
+    } else {
+      await loadBooks(currentPage);
     }
+  };
 
-    toast.success(t('admin.bookDeleted'));
+  const handleSaveBatchConfig = async () => {
+    const result = await updateBatchConfig(batchDraft);
+    reportResult(result, 'admin.configUpdated');
   };
 
   const openEditDialog = (book: Book) => {
@@ -121,22 +164,22 @@ export default function AdminPortal() {
     setIsEditDialogOpen(true);
   };
 
-  const totalPages = Math.ceil(books.length / booksPerPage);
+  const totalPages = Math.ceil(totalBooks / booksPerPage);
   const startIndex = (currentPage - 1) * booksPerPage;
   const endIndex = startIndex + booksPerPage;
-  const paginatedBooks = books.slice(startIndex, endIndex);
+  const paginatedBooks = books; // the server returns exactly one page
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleRoleChange = (userId: string, newRole: 'customer' | 'admin') => {
-    const success = updateUserRole(userId, newRole);
-    if (success) {
+  const handleRoleChange = async (userId: string, newRole: 'customer' | 'admin') => {
+    const result = await updateUserRole(userId, newRole);
+    if (result.ok) {
       toast.success(t('admin.roleUpdated'));
     } else {
-      toast.error(t('admin.roleUpdateFailed'));
+      toast.error(`${t('admin.roleUpdateFailed')}: ${errorMessage(t, result.error)}`);
     }
   };
 
@@ -176,8 +219,8 @@ export default function AdminPortal() {
                 id="booksPerBatch"
                 type="number"
                 min="1"
-                value={batchConfig.booksPerBatch}
-                onChange={(e) => updateBatchConfig({ ...batchConfig, booksPerBatch: parseInt(e.target.value) || 5 })}
+                value={batchDraft.booksPerBatch}
+                onChange={(e) => setBatchDraft({ ...batchDraft, booksPerBatch: parseInt(e.target.value) || 5 })}
               />
             </div>
             <div className="space-y-2">
@@ -187,11 +230,11 @@ export default function AdminPortal() {
                 type="number"
                 min="0"
                 step="0.01"
-                value={batchConfig.pricePerBatch}
-                onChange={(e) => updateBatchConfig({ ...batchConfig, pricePerBatch: parseFloat(e.target.value) || 0 })}
+                value={batchDraft.pricePerBatch}
+                onChange={(e) => setBatchDraft({ ...batchDraft, pricePerBatch: parseFloat(e.target.value) || 0 })}
               />
             </div>
-            <Button onClick={() => toast.success(t('admin.configUpdated'))}>
+            <Button onClick={handleSaveBatchConfig}>
               {t('admin.saveConfig')}
             </Button>
           </CardContent>
@@ -205,19 +248,19 @@ export default function AdminPortal() {
           <CardContent className="space-y-2">
             <div className="flex justify-between">
               <span className="text-muted-foreground">{t('admin.totalBooks')}:</span>
-              <span>{books.length}</span>
+              <span>{stats?.total ?? '—'}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">{t('admin.available')}:</span>
-              <span>{books.filter(b => b.status === 'available').length}</span>
+              <span>{stats?.available ?? '—'}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">{t('admin.availableSoon')}:</span>
-              <span>{books.filter(b => b.status === 'available-soon').length}</span>
+              <span>{stats?.available_soon ?? '—'}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">{t('admin.notAvailable')}:</span>
-              <span>{books.filter(b => b.status === 'not-available').length}</span>
+              <span>{stats?.not_available ?? '—'}</span>
             </div>
           </CardContent>
         </Card>
@@ -251,6 +294,15 @@ export default function AdminPortal() {
             </TabsList>
 
             <TabsContent value="books">
+          {booksError && (
+            <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md mb-4 flex items-center justify-between gap-2">
+              <span>{errorMessage(t, booksError)}</span>
+              <Button size="sm" variant="outline" onClick={() => loadBooks(currentPage)}>{t('common.retry')}</Button>
+            </div>
+          )}
+          {booksLoading && books.length === 0 && (
+            <p className="text-muted-foreground text-sm py-8 text-center">{t('common.loading')}</p>
+          )}
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -349,7 +401,7 @@ export default function AdminPortal() {
               </Pagination>
 
               <p className="text-sm text-muted-foreground text-center mt-4">
-                {t('admin.showing')} {startIndex + 1}-{Math.min(endIndex, books.length)} {t('admin.of')} {books.length} {t('admin.books')}
+                {t('admin.showing')} {startIndex + 1}-{Math.min(endIndex, totalBooks)} {t('admin.of')} {totalBooks} {t('admin.books')}
               </p>
             </div>
           )}
@@ -430,7 +482,18 @@ export default function AdminPortal() {
             </TabsContent>
 
             <TabsContent value="orders">
-              <OrdersTab orders={orders} onConfirm={confirmOrder} onMarkReturned={markReturned} onCancel={cancelOrder} onUpdateDueDate={updateDueDate} t={t} />
+              <OrdersTab
+                orders={orders}
+                onConfirm={confirmOrder}
+                onMarkReturned={markReturned}
+                onCancel={cancelOrder}
+                onUpdateDueDate={updateDueDate}
+                onChanged={() => {
+                  refreshUsers().catch(() => undefined);
+                  loadBooks(currentPage);
+                }}
+                t={t}
+              />
             </TabsContent>
           </Tabs>
         </CardContent>
@@ -697,23 +760,42 @@ function OrdersTab({
   onMarkReturned,
   onCancel,
   onUpdateDueDate,
+  onChanged,
   t,
 }: {
   orders: Order[];
-  onConfirm: (id: string) => void;
-  onMarkReturned: (id: string) => void;
-  onCancel: (id: string) => void;
-  onUpdateDueDate: (id: string, date: string) => void;
+  onConfirm: (id: string) => Promise<ActionResult>;
+  onMarkReturned: (id: string) => Promise<ActionResult>;
+  onCancel: (id: string) => Promise<ActionResult>;
+  onUpdateDueDate: (id: string, date: string) => Promise<ActionResult>;
+  onChanged: () => void;
   t: any;
 }) {
   const { users } = useAuth();
+  const [busyOrderId, setBusyOrderId] = useState<string | null>(null);
+
+  const runOrderAction = async (
+    orderId: string,
+    action: () => Promise<ActionResult>,
+    successKey: string,
+  ) => {
+    setBusyOrderId(orderId);
+    const result = await action();
+    setBusyOrderId(null);
+    if (result.ok) {
+      toast.success(t(successKey));
+      onChanged();
+    } else {
+      toast.error(errorMessage(t, result.error));
+    }
+  };
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'confirmed' | 'returned' | 'cancelled'>('all');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [editingDueDateId, setEditingDueDateId] = useState<string | null>(null);
   const [dueDateInput, setDueDateInput] = useState('');
 
   const selectedUserContacts = selectedOrder
-    ? users.find(u => u.id === selectedOrder.userId)?.contacts
+    ? users.find(u => u.id === selectedOrder.userId)?.contacts ?? selectedOrder.contacts
     : undefined;
 
   const filtered = statusFilter === 'all' ? orders : orders.filter(o => o.status === statusFilter);
@@ -765,8 +847,9 @@ function OrdersTab({
                   <TableCell>
                     {(() => {
                       const u = users.find(u => u.id === order.userId);
-                      const pref = u?.contacts?.preferred;
-                      const prefValue = pref ? u?.contacts?.[pref] : undefined;
+                      const contacts = u?.contacts ?? order.contacts;
+                      const pref = contacts?.preferred;
+                      const prefValue = pref ? contacts?.[pref] : undefined;
                       return (
                         <div>
                           <p className="font-medium">{order.userName}</p>
@@ -808,7 +891,7 @@ function OrdersTab({
                           className="border border-border rounded px-2 py-1 text-sm bg-background"
                         />
                         <Button size="sm" className="h-7 px-2" onClick={() => {
-                          if (dueDateInput) { onUpdateDueDate(order.id, dueDateInput); toast.success(t('admin.dueDateUpdated')); }
+                          if (dueDateInput) runOrderAction(order.id, () => onUpdateDueDate(order.id, dueDateInput), 'admin.dueDateUpdated');
                           setEditingDueDateId(null);
                         }}>✓</Button>
                         <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => setEditingDueDateId(null)}>✕</Button>
@@ -829,7 +912,8 @@ function OrdersTab({
                         <>
                           <Button
                             size="sm"
-                            onClick={() => { onConfirm(order.id); toast.success(t('admin.orderConfirmedMsg')); }}
+                            disabled={busyOrderId === order.id}
+                            onClick={() => runOrderAction(order.id, () => onConfirm(order.id), 'admin.orderConfirmedMsg')}
                           >
                             <CheckCircle2 className="w-4 h-4 mr-1" />
                             {t('admin.confirmOrder')}
@@ -837,7 +921,8 @@ function OrdersTab({
                           <Button
                             size="sm"
                             variant="destructive"
-                            onClick={() => { onCancel(order.id); toast.success(t('admin.orderCancelledMsg')); }}
+                            disabled={busyOrderId === order.id}
+                            onClick={() => runOrderAction(order.id, () => onCancel(order.id), 'admin.orderCancelledMsg')}
                           >
                             {t('admin.cancelOrder')}
                           </Button>
@@ -847,7 +932,8 @@ function OrdersTab({
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => { onMarkReturned(order.id); toast.success(t('admin.orderReturnedMsg')); }}
+                          disabled={busyOrderId === order.id}
+                          onClick={() => runOrderAction(order.id, () => onMarkReturned(order.id), 'admin.orderReturnedMsg')}
                         >
                           <RotateCcw className="w-4 h-4 mr-1" />
                           {t('admin.markReturned')}

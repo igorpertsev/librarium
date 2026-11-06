@@ -38,3 +38,23 @@
 !/app/assets/builds/.keep
 
 /node_modules
+
+# --- Librarium (FastAPI backend + Vite frontend) ---
+# Environment files: only the templates are committed.
+!/.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Frontend build output
+/dist

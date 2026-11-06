@@ -11,6 +11,7 @@ import useEmblaCarousel from 'embla-carousel-react';
 import { BookDetailsModal } from './BookDetailsModal';
 import { useTranslation } from 'react-i18next';
 import { getCategoryTranslation, getStatusTranslation } from '../utils/translations';
+import { errorMessage } from '../utils/apiErrors';
 
 interface BookCardProps {
   book: Book;
@@ -21,7 +22,8 @@ export function BookCard({ book }: BookCardProps) {
   const { addBookToCart, isBookInCart } = useCart();
   const { isBookUnavailable } = useOrders();
   const inCart = isBookInCart(book.id);
-  const inActiveOrder = isBookUnavailable(book.id);
+  // Client-side hint only; the server re-checks availability on add and on checkout.
+  const inActiveOrder = Boolean(book.isReserved) || isBookUnavailable(book.id);
   const isPending = book.status === 'pending' || inCart;
   const isOrderedByOther = inActiveOrder && !inCart;
   const images = book.images || [book.coverImage];
@@ -29,10 +31,18 @@ export function BookCard({ book }: BookCardProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleAddToCart = () => {
-    if (book.status === 'available' && !inCart && !inActiveOrder) {
-      addBookToCart(book);
-      toast.success(`${book.title} ${t('cart.bookRemoved')}`);
+  const [adding, setAdding] = useState(false);
+
+  const handleAddToCart = async () => {
+    if (book.status === 'available' && !inCart && !inActiveOrder && !adding) {
+      setAdding(true);
+      const result = await addBookToCart(book);
+      setAdding(false);
+      if (result.ok) {
+        toast.success(`${book.title}: ${t('cart.bookAdded')}`);
+      } else {
+        toast.error(errorMessage(t, result.error));
+      }
     }
   };
 
@@ -144,7 +154,7 @@ export function BookCard({ book }: BookCardProps) {
       <CardFooter className="p-4 pt-0">
         <Button
           onClick={handleAddToCart}
-          disabled={book.status !== 'available' || isPending || isOrderedByOther}
+          disabled={book.status !== 'available' || isPending || isOrderedByOther || adding}
           className="w-full"
         >
           <ShoppingCart className="w-4 h-4 mr-2" />

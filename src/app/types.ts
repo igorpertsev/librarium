@@ -14,6 +14,11 @@ export interface Book {
   description: string;
   isbn: string;
   publishedYear: number;
+  /** Server-computed: the copy belongs to an active order (pending/confirmed). */
+  isReserved?: boolean;
+  /** Server-computed: active, status "available" and not reserved. */
+  isAvailable?: boolean;
+  language?: string | null;
 }
 
 export type PreferredContact = 'whatsapp' | 'telegram' | 'instagram' | 'phone';
@@ -66,4 +71,7 @@ export interface Order {
   dueDate: string;
   confirmedAt?: string;
   returnedAt?: string;
+  currency?: string;
+  /** Contact details captured when the order was placed. */
+  contacts?: UserContacts;
 }

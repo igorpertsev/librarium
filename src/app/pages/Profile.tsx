@@ -7,10 +7,13 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
-import { Calendar, Mail, User as UserIcon, BookOpen, Pencil, MessageCircle, Star, CheckCircle2 } from 'lucide-react';
+import { Calendar, Mail, User as UserIcon, BookOpen, Pencil, MessageCircle, Star, CheckCircle2, Clock } from 'lucide-react';
 import { UserContacts, PreferredContact } from '../types';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { errorMessage } from '../utils/apiErrors';
+
+const MIN_PASSWORD_LENGTH = 8;
 
 function ContactRow({ label, value, isPreferred }: { label: string; value?: string; isPreferred?: boolean }) {
   if (!value) return null;
@@ -38,7 +41,8 @@ const CONTACT_FIELDS: { key: PreferredContact; labelKey: string; placeholder: st
 export default function Profile() {
   const { t } = useTranslation();
   const { user, updateUser, changePassword } = useAuth();
-  const { getOrdersForUser } = useOrders();
+  const { getOrdersForUser, cancelOrder } = useOrders();
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
 
@@ -59,6 +63,15 @@ export default function Profile() {
   if (!user) return null;
 
   const userOrders = getOrdersForUser(user.id);
+  const pendingOrders = userOrders.filter(o => o.status === 'pending');
+
+  const handleCancelRequest = async (orderId: string) => {
+    setCancellingId(orderId);
+    const result = await cancelOrder(orderId);
+    setCancellingId(null);
+    if (result.ok) toast.success(t('profile.requestCancelled'));
+    else toast.error(errorMessage(t, result.error));
+  };
   const borrowedBooks = userOrders
     .filter(o => o.status === 'confirmed')
     .flatMap(o => o.books.map(book => ({
@@ -110,12 +123,16 @@ export default function Profile() {
       return;
     }
 
-    const success = await updateUser(editName, editEmail, contacts);
-    if (success) {
+    const result = await updateUser(editName, editEmail, contacts);
+    if (result.ok) {
       setIsEditDialogOpen(false);
       toast.success(t('profile.profileUpdated'));
     } else {
-      setError(t('profile.emailTaken'));
+      setError(
+        result.error.code === 'EMAIL_ALREADY_EXISTS'
+          ? t('profile.emailTaken')
+          : errorMessage(t, result.error),
+      );
     }
   };
 
@@ -127,15 +144,15 @@ export default function Profile() {
   const handleChangePassword = async () => {
     setPasswordError('');
     if (!currentPassword) { setPasswordError(t('profile.enterCurrentPasswordError')); return; }
-    if (newPassword.length < 6) { setPasswordError(t('profile.passwordLengthError')); return; }
+    if (newPassword.length < MIN_PASSWORD_LENGTH) { setPasswordError(t('profile.passwordLengthError')); return; }
     if (newPassword !== confirmPassword) { setPasswordError(t('profile.passwordsNoMatch')); return; }
 
-    const success = await changePassword(currentPassword, newPassword);
-    if (success) {
+    const result = await changePassword(currentPassword, newPassword);
+    if (result.ok) {
       setIsPasswordDialogOpen(false);
       toast.success(t('profile.passwordChanged'));
     } else {
-      setPasswordError(t('profile.incorrectPassword'));
+      setPasswordError(errorMessage(t, result.error));
     }
   };
 
@@ -219,6 +236,43 @@ export default function Profile() {
           </CardContent>
         </Card>
       </div>
+
+      {pendingOrders.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('profile.pendingRequests')}</CardTitle>
+            <CardDescription>{t('profile.pendingRequestsDesc')}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {pendingOrders.map(order => (
+              <div key={order.id} className="p-4 border border-border rounded-lg space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Clock className="w-4 h-4" />
+                    <span>{t('profile.requestedOn')}: {new Date(order.orderedAt).toLocaleDateString()}</span>
+                    <Badge variant="outline">{order.books.length} {t('cart.books')}</Badge>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={cancellingId === order.id}
+                    onClick={() => handleCancelRequest(order.id)}
+                  >
+                    {t('profile.cancelRequest')}
+                  </Button>
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  {order.books.map(book => (
+                    <div key={book.id} className="w-10 h-14 overflow-hidden rounded bg-muted" title={book.title}>
+                      <img src={book.coverImage} alt={book.title} className="w-full h-full object-cover" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

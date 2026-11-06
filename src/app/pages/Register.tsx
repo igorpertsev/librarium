@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router';
+import { useNavigate, Link, Navigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -9,6 +9,9 @@ import dragonLogo from '../../imports/dragon.png';
 import { useTranslation } from 'react-i18next';
 import { PreferredContact } from '../types';
 import { Star } from 'lucide-react';
+import { errorMessage } from '../utils/apiErrors';
+
+const MIN_PASSWORD_LENGTH = 8;
 
 const CONTACT_FIELDS: { key: PreferredContact; labelKey: string; placeholder: string; type: string }[] = [
   { key: 'whatsapp',  labelKey: 'auth.whatsapp',  placeholder: '+1 234 567 8900', type: 'text' },
@@ -28,7 +31,8 @@ export default function Register() {
   });
   const [preferred, setPreferred] = useState<PreferredContact | ''>('');
   const [error, setError] = useState('');
-  const { register } = useAuth();
+  const [submitting, setSubmitting] = useState(false);
+  const { register, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
 
   const setContact = (key: PreferredContact, value: string) => {
@@ -41,7 +45,7 @@ export default function Register() {
     setError('');
 
     if (!name.trim()) { setError(t('auth.nameRequired')); return; }
-    if (password.length < 6) { setError(t('auth.passwordLength')); return; }
+    if (password.length < MIN_PASSWORD_LENGTH) { setError(t('auth.passwordLength')); return; }
     if (password !== confirmPassword) { setError(t('auth.passwordMismatch')); return; }
 
     const contacts = {
@@ -57,10 +61,16 @@ export default function Register() {
       return;
     }
 
-    const success = await register(name, email, password, contacts);
-    if (success) navigate('/');
-    else setError(t('auth.emailExists'));
+    setSubmitting(true);
+    const result = await register(name, email, password, contacts);
+    setSubmitting(false);
+    if (result.ok) navigate('/');
+    else setError(errorMessage(t, result.error));
   };
+
+  if (!isLoading && isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -127,7 +137,7 @@ export default function Register() {
             </div>
 
             {error && <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">{error}</div>}
-            <Button type="submit" className="w-full">{t('auth.createAccountBtn')}</Button>
+            <Button type="submit" className="w-full" disabled={submitting}>{t('auth.createAccountBtn')}</Button>
           </form>
         </CardContent>
         <CardFooter className="flex justify-center">

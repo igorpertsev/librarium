@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router';
+import { useNavigate, Link, Navigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -8,27 +8,34 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import dragonLogo from '../../imports/dragon.png';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { errorMessage } from '../utils/apiErrors';
 
 export default function Login() {
   const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const { login } = useAuth();
+  const [submitting, setSubmitting] = useState(false);
+  const { login, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
-    const success = await login(email, password);
-    if (success) {
+    setSubmitting(true);
+    const result = await login(email, password);
+    setSubmitting(false);
+    if (result.ok) {
       toast.success(t('auth.loginSuccess'));
       navigate('/');
     } else {
-      setError('Invalid credentials. Try customer@library.com or admin@library.com with password: password');
+      setError(errorMessage(t, result.error));
     }
   };
+
+  if (!isLoading && isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -53,7 +60,7 @@ export default function Login() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="customer@library.com"
+                placeholder="your@email.com"
                 required
               />
             </div>
@@ -64,7 +71,7 @@ export default function Login() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="password"
+                autoComplete="current-password"
                 required
               />
             </div>
@@ -73,14 +80,9 @@ export default function Login() {
                 {error}
               </div>
             )}
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="w-full" disabled={submitting}>
               {t('auth.signIn')}
             </Button>
-            <div className="text-sm text-muted-foreground text-center pt-2">
-              <p>Demo accounts:</p>
-              <p>customer@library.com / password</p>
-              <p>admin@library.com / password</p>
-            </div>
           </form>
         </CardContent>
         <CardFooter className="flex justify-center">

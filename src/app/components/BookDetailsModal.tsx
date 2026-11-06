@@ -11,6 +11,7 @@ import { useOrders } from '../contexts/OrdersContext';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { getCategoryTranslation } from '../utils/translations';
+import { errorMessage } from '../utils/apiErrors';
 
 interface BookDetailsModalProps {
   book: Book | null;
@@ -23,7 +24,7 @@ export function BookDetailsModal({ book, open, onOpenChange }: BookDetailsModalP
   const { addBookToCart, isBookInCart } = useCart();
   const { isBookUnavailable } = useOrders();
   const inCart = book ? isBookInCart(book.id) : false;
-  const inActiveOrder = book ? isBookUnavailable(book.id) : false;
+  const inActiveOrder = book ? Boolean(book.isReserved) || isBookUnavailable(book.id) : false;
   const isPending = book?.status === 'pending' || inCart;
   const isOrderedByOther = inActiveOrder && !inCart;
   const images = book?.images || (book ? [book.coverImage] : []);
@@ -72,10 +73,18 @@ export function BookDetailsModal({ book, open, onOpenChange }: BookDetailsModalP
     };
   }, [emblaApi, onSelect]);
 
-  const handleAddToCart = () => {
-    if (book && book.status === 'available' && !inCart && !inActiveOrder) {
-      addBookToCart(book);
-      toast.success(t('cart.bookRemoved'));
+  const [adding, setAdding] = useState(false);
+
+  const handleAddToCart = async () => {
+    if (book && book.status === 'available' && !inCart && !inActiveOrder && !adding) {
+      setAdding(true);
+      const result = await addBookToCart(book);
+      setAdding(false);
+      if (result.ok) {
+        toast.success(t('cart.bookAdded'));
+      } else {
+        toast.error(errorMessage(t, result.error));
+      }
     }
   };
 
@@ -223,7 +232,7 @@ export function BookDetailsModal({ book, open, onOpenChange }: BookDetailsModalP
 
             <Button
               onClick={handleAddToCart}
-              disabled={book.status !== 'available' || isPending || isOrderedByOther}
+              disabled={book.status !== 'available' || isPending || isOrderedByOther || adding}
               className="w-full text-sm sm:text-lg py-5 sm:py-7"
               size="lg"
             >

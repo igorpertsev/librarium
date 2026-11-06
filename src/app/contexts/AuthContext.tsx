@@ -1,154 +1,129 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, UserContacts } from '../types';
-
-interface UserWithPassword extends User {
-  password: string;
-}
+import { refreshSession, setAccessToken, setAuthListeners } from '../../api/client';
+import { adminApi, authApi, fetchAllPages, usersApi } from '../../api/endpoints';
+import { ActionResult, runAction } from '../../api/errors';
+import { contactsToDto, userFromDto } from '../../api/mappers';
+import type { TokenResponseDto } from '../../api/types';
 
 interface AuthContextType {
   user: User | null;
+  /** Admin only: all users with their active loans. */
   users: User[];
-  login: (email: string, password: string) => Promise<boolean>;
-  register: (name: string, email: string, password: string, contacts: UserContacts) => Promise<boolean>;
-  updateUser: (name: string, email: string, contacts: UserContacts) => Promise<boolean>;
-  changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
-  updateUserRole: (userId: string, role: 'customer' | 'admin') => boolean;
+  /** True while the session is being restored from the refresh cookie on page load. */
+  isLoading: boolean;
+  login: (email: string, password: string) => Promise<ActionResult>;
+  register: (name: string, email: string, password: string, contacts: UserContacts) => Promise<ActionResult>;
+  updateUser: (name: string, email: string, contacts: UserContacts) => Promise<ActionResult>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<ActionResult>;
+  updateUserRole: (userId: string, role: 'customer' | 'admin') => Promise<ActionResult>;
+  refreshUsers: () => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Import mock books for borrowed books data
-import { mockBooks } from '../data/mockBooks';
-
-const mockUsersWithPasswords: UserWithPassword[] = [
-  {
-    id: '1',
-    name: 'John Customer',
-    email: 'customer@library.com',
-    role: 'customer',
-    borrowedBooks: [
-      {
-        bookId: '1',
-        book: mockBooks[0],
-        borrowedDate: '2026-05-10',
-        returnDate: '2026-06-10'
-      },
-      {
-        bookId: '2',
-        book: mockBooks[1],
-        borrowedDate: '2026-05-15',
-        returnDate: '2026-06-15'
-      }
-    ],
-    contacts: { whatsapp: '+1234567890', telegram: '@johncustomer', preferred: 'whatsapp' },
-    password: 'password'
-  },
-  {
-    id: '2',
-    name: 'Admin User',
-    email: 'admin@library.com',
-    role: 'admin',
-    borrowedBooks: [],
-    contacts: { phone: '+9876543210' },
-    password: 'password'
-  }
-];
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [usersWithPasswords, setUsersWithPasswords] = useState<UserWithPassword[]>(mockUsersWithPasswords);
+  const [users, setUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const users = usersWithPasswords.map(({ password, ...user }) => user);
+  const applyTokens = useCallback((response: TokenResponseDto) => {
+    setAccessToken(response.access_token);
+    setUser(userFromDto(response.user));
+  }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
-    const foundUser = usersWithPasswords.find(u => u.email === email);
-    if (foundUser && password === foundUser.password) {
-      const { password: _, ...userWithoutPassword } = foundUser;
-      setUser(userWithoutPassword);
-      return true;
+  const clearSession = useCallback(() => {
+    setAccessToken(null);
+    setUser(null);
+    setUsers([]);
+  }, []);
+
+  useEffect(() => {
+    setAuthListeners({
+      onSessionExpired: clearSession,
+      onTokenRefreshed: (response) => setUser(userFromDto(response.user)),
+    });
+    // Restore the session from the HttpOnly refresh cookie (if any).
+    refreshSession()
+      .catch(() => null)
+      .finally(() => setIsLoading(false));
+    return () => setAuthListeners({});
+  }, [clearSession]);
+
+  const refreshUsers = useCallback(async () => {
+    const all = await fetchAllPages((page, page_size) => adminApi.listUsers({ page, page_size }));
+    setUsers(all.map(userFromDto));
+  }, []);
+
+  useEffect(() => {
+    if (user?.role === 'admin') {
+      refreshUsers().catch(() => setUsers([]));
+    } else {
+      setUsers([]);
     }
-    return false;
-  };
+  }, [user?.id, user?.role, refreshUsers]);
 
-  const register = async (name: string, email: string, password: string, contacts: UserContacts): Promise<boolean> => {
-    const existingUser = usersWithPasswords.find(u => u.email === email);
-    if (existingUser) return false;
+  const login = (email: string, password: string) =>
+    runAction(async () => {
+      applyTokens(await authApi.login({ email, password }));
+    });
 
-    const newUser: UserWithPassword = {
-      id: `user-${Date.now()}`,
-      name,
-      email,
-      role: 'customer',
-      borrowedBooks: [],
-      contacts,
-      password
-    };
+  const register = (name: string, email: string, password: string, contacts: UserContacts) =>
+    runAction(async () => {
+      applyTokens(
+        await authApi.register({ email, password, full_name: name, ...contactsToDto(contacts) }),
+      );
+    });
 
-    setUsersWithPasswords([...usersWithPasswords, newUser]);
-    const { password: _, ...userWithoutPassword } = newUser;
-    setUser(userWithoutPassword);
-    return true;
-  };
+  const updateUser = (name: string, email: string, contacts: UserContacts) =>
+    runAction(async () => {
+      const updated = await usersApi.updateMe({
+        full_name: name,
+        email,
+        ...contactsToDto(contacts),
+      });
+      setUser(userFromDto(updated));
+    });
 
-  const updateUser = async (name: string, email: string, contacts: UserContacts): Promise<boolean> => {
-    if (!user) return false;
+  const changePassword = (currentPassword: string, newPassword: string) =>
+    runAction(async () => {
+      // Other sessions are signed out by the server; this one receives fresh tokens.
+      applyTokens(
+        await authApi.changePassword({
+          current_password: currentPassword,
+          new_password: newPassword,
+        }),
+      );
+    });
 
-    const existingUser = usersWithPasswords.find(u => u.email === email && u.id !== user.id);
-    if (existingUser) return false;
-
-    const updatedUser = { ...user, name, email, contacts };
-    setUser(updatedUser);
-    setUsersWithPasswords(usersWithPasswords.map(u =>
-      u.id === user.id ? { ...u, name, email, contacts } : u
-    ));
-    return true;
-  };
-
-  const changePassword = async (currentPassword: string, newPassword: string): Promise<boolean> => {
-    if (!user) return false;
-
-    const userWithPassword = usersWithPasswords.find(u => u.id === user.id);
-    if (!userWithPassword || userWithPassword.password !== currentPassword) {
-      return false;
-    }
-
-    setUsersWithPasswords(usersWithPasswords.map(u =>
-      u.id === user.id ? { ...u, password: newPassword } : u
-    ));
-    return true;
-  };
-
-  const updateUserRole = (userId: string, role: 'customer' | 'admin'): boolean => {
-    const targetUser = usersWithPasswords.find(u => u.id === userId);
-    if (!targetUser) return false;
-
-    setUsersWithPasswords(usersWithPasswords.map(u =>
-      u.id === userId ? { ...u, role } : u
-    ));
-
-    // Update current user if they're the one being modified
-    if (user?.id === userId) {
-      setUser({ ...user, role });
-    }
-
-    return true;
-  };
+  const updateUserRole = (userId: string, role: 'customer' | 'admin') =>
+    runAction(async () => {
+      const updated = await adminApi.updateUser(userId, { role });
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...userFromDto(updated), borrowedBooks: u.borrowedBooks } : u)),
+      );
+      if (user?.id === userId) setUser((prev) => (prev ? { ...prev, role } : prev));
+    });
 
   const logout = () => {
-    setUser(null);
+    // Revoke the refresh token server-side; local state is cleared immediately either way.
+    authApi.logout().catch(() => undefined);
+    clearSession();
   };
 
   return (
     <AuthContext.Provider value={{
       user,
       users,
+      isLoading,
       login,
       register,
       updateUser,
       changePassword,
       updateUserRole,
+      refreshUsers,
       logout,
       isAuthenticated: !!user
     }}>
@@ -164,3 +139,5 @@ export function useAuth() {
   }
   return context;
 }
+
+export type { AuthContextType };

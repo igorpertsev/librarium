@@ -11,34 +11,61 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { ShoppingCart, Trash2, X, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { errorMessage } from '../utils/apiErrors';
+import { useCatalog } from '../contexts/CatalogContext';
+import type { ActionResult } from '../../api/errors';
 
 export default function Cart() {
   const { t } = useTranslation();
-  const { cart, batchConfig, removeBookFromCart, removeBatch, clearCart, getTotalPrice } = useCart();
+  const {
+    cart,
+    batchConfig,
+    removeBookFromCart: removeBookRequest,
+    removeBatch: removeBatchRequest,
+    getTotalPrice,
+    refreshCart,
+    unavailableBookIds,
+    isLoading,
+    error,
+  } = useCart();
   const { user } = useAuth();
   const { placeOrder } = useOrders();
+  const { invalidateCatalog } = useCatalog();
   const [showCheckoutDialog, setShowCheckoutDialog] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
+
+  const reportFailure = (result: ActionResult) => {
+    if (!result.ok) toast.error(errorMessage(t, result.error));
+  };
+  const removeBookFromCart = async (batchId: string, bookId: string) =>
+    reportFailure(await removeBookRequest(batchId, bookId));
+  const removeBatch = async (batchId: string) => reportFailure(await removeBatchRequest(batchId));
 
   const handleCheckout = () => {
     setShowCheckoutDialog(true);
   };
 
-  const confirmCheckout = () => {
-    if (user) {
-      const allBooks = completeBatches.flatMap(b => b.books);
-      placeOrder({
-        userId: user.id,
-        userName: user.name,
-        userEmail: user.email,
-        books: allBooks,
-        totalPrice,
-      });
+  const confirmCheckout = async () => {
+    if (!user || submitting) return;
+    setSubmitting(true);
+    // The server builds the order from its copy of the cart and computes the total.
+    const result = await placeOrder();
+    setSubmitting(false);
+    if (!result.ok) {
+      // 409 BOOK_UNAVAILABLE: nothing was created; show which books and resync.
+      setShowCheckoutDialog(false);
+      toast.error(errorMessage(t, result.error));
+      invalidateCatalog();
+      await refreshCart();
+      return;
     }
     setOrderComplete(true);
     setTimeout(() => {
-      clearCart();
+      // Resync after the confirmation: ordered books left the cart, an incomplete batch stays.
+      // (Refreshing earlier would empty the cart and unmount this dialog.)
+      refreshCart();
       setShowCheckoutDialog(false);
       setOrderComplete(false);
       toast.success(t('cart.checkoutSuccess'));
@@ -49,6 +76,21 @@ export default function Cart() {
   const totalPrice = getTotalPrice();
   const completeBatches = cart.filter(batch => batch.books.length === batchConfig.booksPerBatch);
   const incompleteBatches = cart.filter(batch => batch.books.length < batchConfig.booksPerBatch);
+
+  if (cart.length === 0 && (isLoading || error)) {
+    return (
+      <div className="container mx-auto px-4 py-12 text-center space-y-3">
+        {isLoading ? (
+          <p className="text-muted-foreground">{t('common.loading')}</p>
+        ) : error ? (
+          <>
+            <p className="text-destructive">{errorMessage(t, error)}</p>
+            <Button variant="outline" onClick={() => refreshCart()}>{t('common.retry')}</Button>
+          </>
+        ) : null}
+      </div>
+    );
+  }
 
   if (cart.length === 0) {
     return (
@@ -114,6 +156,9 @@ export default function Cart() {
                         <div className="flex-1 min-w-0">
                           <p className="truncate">{book.title}</p>
                           <p className="text-sm text-muted-foreground truncate">{book.author}</p>
+                          {unavailableBookIds.has(book.id) && (
+                            <Badge variant="destructive" className="mt-1">{t('cart.unavailable')}</Badge>
+                          )}
                         </div>
                         <Button
                           variant="ghost"
@@ -164,8 +209,13 @@ export default function Cart() {
                           <img
                             src={book.coverImage}
                             alt={book.title}
-                            className="w-full h-full object-cover"
+                            className={`w-full h-full object-cover ${unavailableBookIds.has(book.id) ? 'opacity-40' : ''}`}
                           />
+                          {unavailableBookIds.has(book.id) && (
+                            <Badge variant="destructive" className="absolute bottom-1 left-1 text-[10px] px-1 py-0">
+                              {t('cart.unavailable')}
+                            </Badge>
+                          )}
                           <button
                             onClick={() => removeBookFromCart(batch.batchId, book.id)}
                             className="absolute top-1 right-1 p-1 bg-destructive rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
@@ -212,6 +262,12 @@ export default function Cart() {
               {incompleteBatches.length > 0 && (
                 <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
                   {t('cart.incompleteBatchNote')}
+                </div>
+              )}
+
+              {unavailableBookIds.size > 0 && (
+                <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
+                  {t('cart.unavailableNote')}
                 </div>
               )}
             </CardContent>
@@ -266,7 +322,7 @@ export default function Cart() {
                 <Button variant="outline" onClick={() => setShowCheckoutDialog(false)}>
                   Cancel
                 </Button>
-                <Button onClick={confirmCheckout}>
+                <Button onClick={confirmCheckout} disabled={submitting}>
                   Place Order
                 </Button>
               </DialogFooter>
