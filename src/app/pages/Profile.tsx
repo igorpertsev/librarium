@@ -170,7 +170,7 @@ export default function Profile() {
               <CardTitle>{t('profile.personalInfo')}</CardTitle>
               <CardDescription>{t('profile.personalInfoDesc')}</CardDescription>
             </div>
-            <Button variant="ghost" size="icon" onClick={handleEditClick}>
+            <Button variant="ghost" size="icon" onClick={handleEditClick} aria-label={t('profile.editProfile')}>
               <Pencil className="w-4 h-4" />
             </Button>
           </CardHeader>
@@ -387,6 +387,8 @@ export default function Profile() {
                       <button
                         type="button"
                         title={t('auth.markPreferred')}
+                        aria-label={t('a11y.markPreferred', { method: t(labelKey) })}
+                        aria-pressed={editPreferred === key}
                         disabled={!vals[key].trim()}
                         onClick={() => setEditPreferred(prev => prev === key ? '' : key)}
                         className={`px-2 rounded-md border transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${
@@ -402,7 +404,7 @@ export default function Profile() {
                 ));
               })()}
             </div>
-            {error && <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">{error}</div>}
+            {error && <div role="alert" className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">{error}</div>}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>{t('admin.cancel')}</Button>
@@ -431,7 +433,7 @@ export default function Profile() {
               <Label htmlFor="confirm-password">{t('profile.confirmPassword')}</Label>
               <Input id="confirm-password" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder={t('profile.repeatPassword')} />
             </div>
-            {passwordError && <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">{passwordError}</div>}
+            {passwordError && <div role="alert" className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">{passwordError}</div>}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsPasswordDialogOpen(false)}>{t('admin.cancel')}</Button>

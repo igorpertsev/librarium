@@ -172,7 +172,7 @@ export default function CustomerPortal() {
           )}
 
           {isLoading && (
-            <div className="text-center py-8">
+            <div role="status" className="text-center py-8">
               <p className="text-muted-foreground">{t('common.loading')}</p>
             </div>
           )}

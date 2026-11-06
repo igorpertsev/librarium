@@ -139,14 +139,18 @@ export function BookDetailsModal({ book, open, onOpenChange }: BookDetailsModalP
               {images.length > 1 && (
                 <>
                   <button
+                    type="button"
                     onClick={scrollPrev}
-                    className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-black/90 text-white p-2 sm:p-3 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10 shadow-lg"
+                    aria-label={t('a11y.previousImage')}
+                    className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-black/90 text-white p-2 sm:p-3 rounded-full opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity z-10 shadow-lg"
                   >
                     <ChevronLeft className="w-5 h-5 sm:w-7 sm:h-7" />
                   </button>
                   <button
+                    type="button"
                     onClick={scrollNext}
-                    className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-black/90 text-white p-2 sm:p-3 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10 shadow-lg"
+                    aria-label={t('a11y.nextImage')}
+                    className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-black/90 text-white p-2 sm:p-3 rounded-full opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity z-10 shadow-lg"
                   >
                     <ChevronRight className="w-5 h-5 sm:w-7 sm:h-7" />
                   </button>
@@ -154,6 +158,9 @@ export function BookDetailsModal({ book, open, onOpenChange }: BookDetailsModalP
                     {images.map((_, index) => (
                       <button
                         key={index}
+                        type="button"
+                        aria-label={t('a11y.showImage', { n: index + 1 })}
+                        aria-current={index === selectedIndex}
                         onClick={() => emblaApi?.scrollTo(index)}
                         className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full transition-all shadow-md ${
                           index === selectedIndex ? 'bg-white scale-125' : 'bg-white/60 hover:bg-white/80'
@@ -196,7 +203,7 @@ export function BookDetailsModal({ book, open, onOpenChange }: BookDetailsModalP
             <Separator />
 
             <div>
-              <h4 className="mb-2 sm:mb-4 text-base sm:text-xl">{t('bookDetails.description')}</h4>
+              <h3 className="mb-2 sm:mb-4 text-base sm:text-xl">{t('bookDetails.description')}</h3>
               <p className="text-muted-foreground leading-relaxed text-sm sm:text-base">{book.description}</p>
             </div>
 
@@ -268,6 +275,8 @@ export function BookDetailsModal({ book, open, onOpenChange }: BookDetailsModalP
 
               <div className="absolute top-4 right-4 flex gap-2">
                 <button
+                  type="button"
+                  aria-label={t('a11y.zoomOut')}
                   onClick={(e) => { e.stopPropagation(); handleZoomOut(); }}
                   disabled={zoomScale <= 1}
                   className="bg-black/60 hover:bg-black/80 text-white p-3 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
@@ -275,6 +284,8 @@ export function BookDetailsModal({ book, open, onOpenChange }: BookDetailsModalP
                   <ZoomOut className="w-6 h-6" />
                 </button>
                 <button
+                  type="button"
+                  aria-label={t('a11y.zoomIn')}
                   onClick={(e) => { e.stopPropagation(); handleZoomIn(); }}
                   disabled={zoomScale >= 3}
                   className="bg-black/60 hover:bg-black/80 text-white p-3 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
@@ -282,6 +293,8 @@ export function BookDetailsModal({ book, open, onOpenChange }: BookDetailsModalP
                   <ZoomIn className="w-6 h-6" />
                 </button>
                 <button
+                  type="button"
+                  aria-label={t('a11y.closeZoom')}
                   onClick={handleCloseZoom}
                   className="bg-black/60 hover:bg-black/80 text-white p-3 rounded-full transition-opacity"
                 >
@@ -292,12 +305,16 @@ export function BookDetailsModal({ book, open, onOpenChange }: BookDetailsModalP
               {images.length > 1 && (
                 <>
                   <button
+                    type="button"
+                    aria-label={t('a11y.previousImage')}
                     onClick={(e) => { e.stopPropagation(); scrollPrev(); }}
                     className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-4 rounded-full transition-opacity"
                   >
                     <ChevronLeft className="w-8 h-8" />
                   </button>
                   <button
+                    type="button"
+                    aria-label={t('a11y.nextImage')}
                     onClick={(e) => { e.stopPropagation(); scrollNext(); }}
                     className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-4 rounded-full transition-opacity"
                   >
@@ -307,6 +324,8 @@ export function BookDetailsModal({ book, open, onOpenChange }: BookDetailsModalP
                     {images.map((_, index) => (
                       <button
                         key={index}
+                        type="button"
+                        aria-label={t('a11y.showImage', { n: index + 1 })}
                         onClick={(e) => { e.stopPropagation(); emblaApi?.scrollTo(index); }}
                         className={`w-3 h-3 rounded-full transition-all ${
                           index === selectedIndex ? 'bg-white scale-125' : 'bg-white/60 hover:bg-white/80'
