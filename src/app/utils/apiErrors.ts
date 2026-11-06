@@ -38,6 +38,11 @@ const MESSAGE_KEYS: Record<string, string> = {
   SERIES_EXISTS: 'errors.seriesExists',
   SAME_SERIES: 'errors.sameMergeTarget',
   NO_LATE_FEE: 'errors.noLateFee',
+  PICKUP_REQUIRED: 'errors.pickupRequired',
+  INVALID_PICKUP_SLOT: 'errors.invalidPickupSlot',
+  PICKUP_SLOT_FULL: 'errors.pickupSlotFull',
+  PICKUP_POINT_NOT_FOUND: 'errors.pickupPointNotFound',
+  PICKUP_POINT_IN_USE: 'errors.pickupPointInUse',
 };
 
 /** Translated, user-facing message for an API error. */

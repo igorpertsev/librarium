@@ -56,3 +56,18 @@ describe('useFormat', () => {
     expect(result.current.money(5, 'NOT_A_CURRENCY')).toBe('5.00 NOT_A_CURRENCY');
   });
 });
+
+describe('useFormat().zoned', () => {
+  it('shows moments in the library time zone and groups them by its calendar day', () => {
+    const { result } = renderHook(() => useFormat());
+    const moscow = result.current.zoned('Europe/Moscow');
+    // 22:30 UTC on 8 November is already 01:30 on 9 November in Moscow.
+    expect(moscow.dayKey('2026-11-08T22:30:00Z')).toBe('2026-11-09');
+    expect(moscow.time('2026-11-08T22:30:00Z')).toMatch(/\b1:30/);
+  });
+
+  it('falls back to the reader time zone for an unknown zone', () => {
+    const { result } = renderHook(() => useFormat());
+    expect(() => result.current.zoned('Mars/Olympus').day('2026-11-08T10:00:00Z')).not.toThrow();
+  });
+});

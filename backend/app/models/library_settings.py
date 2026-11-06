@@ -45,6 +45,8 @@ class LibrarySettings(TimestampMixin, Base):
     late_fee_per_day: Mapped[Decimal] = mapped_column(
         sa.Numeric(10, 2), default=Decimal("0.00"), server_default="0"
     )
+    # IANA time zone of the library: opening hours, pickup slots and times in emails.
+    timezone: Mapped[str] = mapped_column(sa.String(64), default="UTC", server_default="UTC")
 
 
 DEFAULT_LIBRARY_SETTINGS = {
@@ -57,4 +59,5 @@ DEFAULT_LIBRARY_SETTINGS = {
     "hold_hours": 48,
     "block_overdue": True,
     "late_fee_per_day": Decimal("0.00"),
+    "timezone": "UTC",
 }

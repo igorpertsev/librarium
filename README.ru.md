@@ -416,6 +416,17 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 если платить нечего) — это заполняет `late_fee_settled_at`. Приложение не принимает платежи: штраф платят в
 библиотеке.
 
+**Пункты выдачи**: библиотека может указать, где забирают заказы (вкладка администратора *Выдача*): название,
+адрес, подсказку, часы работы по дням недели в часовом поясе библиотеки (`library_settings.timezone`, имя IANA,
+по умолчанию `UTC`), длину интервала (15–240 минут) и, при желании, сколько заказов помещается в интервал. Пока
+включён хотя бы один пункт, при оформлении нужно выбрать пункт и интервал (`GET /library/pickup-points`,
+`GET /library/pickup-points/{id}/slots` — ближайшие две недели, не раньше чем через час, с числом мест `left`), а
+`POST /orders` требует `{"pickup_point_id", "pickup_at"}` (`400 PICKUP_REQUIRED` / `INVALID_PICKUP_SLOT`,
+`409 PICKUP_SLOT_FULL`; строка пункта блокируется, чтобы двое не заняли последнее место). Отменённые заказы
+освобождают место. Без включённых пунктов всё работает как раньше. Место и время видны в письме «заявка получена»,
+в профиле и в списке заказов администратора. Пункт, который есть в заказах, удалить нельзя
+(`409 PICKUP_POINT_IN_USE`) — его отключают.
+
 `POST /api/v1/orders` выполняется в одной транзакции (`app/services/orders.py`):
 
 1. `SELECT … FOR UPDATE` строки корзины (защита от двойного клика/двух вкладок);
@@ -441,11 +452,12 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 | `tags`, `book_tags` | `slug` тега (уникальный, CHECK формата), `name_en`, `name_ru`; связь книга ↔ тег |
 | `series` | `name` (уникальное), `name_en` / `name_ru` (названия на языках интерфейса, необязательно), `description`, `openlibrary_key` (уникальный, из поиска по ISBN) |
 | `book_translations` | на книгу и язык (`en`/`ru`): `title`, `author`, `description`, `title_source`/`description_source` (`manual/wikidata/wikipedia/machine`), `source_url` (ссылка на Википедию) |
-| `library_settings` | одна строка: `books_per_batch`, `price_per_batch NUMERIC(10,2)`, `currency`, `loan_period_days`, `max_renewals`, `hold_hours`, `block_overdue`, `late_fee_per_day NUMERIC(10,2)` |
+| `library_settings` | одна строка: `books_per_batch`, `price_per_batch NUMERIC(10,2)`, `currency`, `loan_period_days`, `max_renewals`, `hold_hours`, `block_overdue`, `late_fee_per_day NUMERIC(10,2)`, `timezone` |
+| `pickup_points` | `name`, `address`, `notes`, `hours JSONB` (`[{weekday, opens, closes}]`), `slot_minutes`, `slot_capacity` (NULL — без ограничений), `active` |
 | `carts`, `cart_items` | одна корзина на пользователя, `UNIQUE(cart_id, book_id)` |
 | `reading_list_entries` | «хочу прочитать», одна запись на читателя и издание, `UNIQUE(user_id, book_id)` |
 | `reviews` | оценка 1–5 (CHECK), текст, `status` (`pending/published/rejected`), одна на читателя и издание |
-| `orders` | статус, сумма/валюта, снимок цены партии и контактов, `due_date`, `renewal_count`, `confirmed_at/returned_at/cancelled_at`, `late_fee`/`late_fee_settled_at`, CHECK `total = price × batches` |
+| `orders` | статус, сумма/валюта, снимок цены партии и контактов, `due_date`, `renewal_count`, `confirmed_at/returned_at/cancelled_at`, `late_fee`/`late_fee_settled_at`, `pickup_point_id`/`pickup_at`, CHECK `total = price × batches` |
 | `order_items` | снимок книги и `unit_price`, `reservation_active` + частичный уникальный индекс |
 | `refresh_tokens` | `token_hash`, `family_id`, `expires_at`, `revoked_at`, `replaced_by_token_id`, user-agent/IP |
 
@@ -474,7 +486,7 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 | GET | `/tags` (с числом изданий), `/series?q`, `/series/{id}` | все |
 | GET/DELETE | `/cart` · POST `/cart/items` · DELETE `/cart/items/{book_id}` | пользователь |
 | POST/GET | `/orders` · GET `/orders/{id}` · POST `/orders/{id}/cancel`, `/orders/{id}/renew` | пользователь (только свои) |
-| GET | `/library/rules` (размер и цена партии, срок выдачи, число продлений) | все |
+| GET | `/library/rules` (размер и цена партии, срок выдачи, число продлений, часовой пояс) · `/library/pickup-points`, `/library/pickup-points/{id}/slots` | все |
 | GET | `/share/books/{id}` (страница Open Graph для превью ссылок; Caddy отправляет сюда ботов с `/books/<id>`) | все |
 | GET `/waitlist` · POST/DELETE `/waitlist/{book_id}` | «сообщите, когда книга вернётся» | пользователь |
 | GET `/reading-list` · POST/DELETE `/reading-list/{book_id}` | «хочу прочитать»: книги на потом, отдельно от корзины | пользователь |
@@ -491,6 +503,7 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 | POST/PATCH/DELETE | `/admin/tags`, `/admin/tags/{id}` · POST `/admin/tags/{id}/merge`; то же для `/admin/series` | admin |
 | POST | `/admin/translations/suggest` (название, автор и описание на другом языке; ничего не сохраняет) | admin |
 | GET | `/admin/users` · PATCH `/admin/users/{id}` (роль, блокировка) | admin |
+| GET/POST | `/admin/pickup-points` · PATCH/DELETE `/admin/pickup-points/{id}` | admin |
 | GET | `/admin/orders`, `/admin/orders/{id}` · PATCH `/admin/orders/{id}/status`, `/admin/orders/{id}/due-date`, `/admin/orders/{id}/late-fee` | admin |
 | GET/PATCH | `/admin/settings` (партия, цена, валюта, срок выдачи) | admin |
 

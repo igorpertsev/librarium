@@ -52,6 +52,7 @@ from app.schemas.order import (
     OrderStatusUpdate,
     ReminderQueued,
 )
+from app.schemas.pickup import PickupPointCreate, PickupPointRead, PickupPointUpdate
 from app.schemas.report import DemandRead, ReportSummaryRead
 from app.schemas.review import (
     ModerateReview,
@@ -61,7 +62,7 @@ from app.schemas.review import (
 )
 from app.schemas.translation import TranslationSuggestion, TranslationSuggestRequest
 from app.schemas.user import AdminUserPage, AdminUserUpdate, UserRead
-from app.services import book_import, catalog, duplicates, reports, reviews
+from app.services import book_import, catalog, duplicates, pickup, reports, reviews
 from app.services import books as books_service
 from app.services import library_settings as settings_service
 from app.services import orders as orders_service
@@ -600,4 +601,45 @@ async def admin_moderate_review(
 )
 async def admin_delete_review(review_id: uuid.UUID, session: SessionDep) -> Response:
     await reviews.delete(session, review_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+# --- Pickup points ------------------------------------------------------------------------
+
+
+@router.get("/pickup-points", response_model=list[PickupPointRead])
+async def admin_list_pickup_points(session: SessionDep) -> list[PickupPointRead]:
+    """Every pickup point, active ones first."""
+    return [PickupPointRead.model_validate(p) for p in await pickup.list_all(session)]
+
+
+@router.post(
+    "/pickup-points",
+    status_code=status.HTTP_201_CREATED,
+    response_model=PickupPointRead,
+    responses=error_responses(422),
+)
+async def admin_create_pickup_point(
+    body: PickupPointCreate, session: SessionDep
+) -> PickupPointRead:
+    return PickupPointRead.model_validate(await pickup.create(session, body))
+
+
+@router.patch(
+    "/pickup-points/{point_id}", response_model=PickupPointRead, responses=error_responses(404, 422)
+)
+async def admin_update_pickup_point(
+    point_id: uuid.UUID, body: PickupPointUpdate, session: SessionDep
+) -> PickupPointRead:
+    return PickupPointRead.model_validate(await pickup.update(session, point_id, body))
+
+
+@router.delete(
+    "/pickup-points/{point_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses=error_responses(404, 409, 422),
+)
+async def admin_delete_pickup_point(point_id: uuid.UUID, session: SessionDep) -> Response:
+    """Only points no order used; switch the others off (active = false)."""
+    await pickup.delete(session, point_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

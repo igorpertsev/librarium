@@ -566,7 +566,7 @@ export interface paths {
         put?: never;
         /**
          * Place Order
-         * @description Places an order for every complete batch in the cart. Books of an incomplete trailing batch stay in the cart. Prices are computed by the server. Responds 409 BOOK_UNAVAILABLE (details.book_ids) when any copy is no longer available; in that case nothing is created.
+         * @description Places an order for every complete batch in the cart. Books of an incomplete trailing batch stay in the cart. Prices are computed by the server. Responds 409 BOOK_UNAVAILABLE (details.book_ids) when any copy is no longer available; in that case nothing is created. While the library has active pickup points the body must name one and one of its slots (400 PICKUP_REQUIRED / INVALID_PICKUP_SLOT, 409 PICKUP_SLOT_FULL).
          */
         post: operations["place_order_api_v1_orders_post"];
         delete?: never;
@@ -641,6 +641,47 @@ export interface paths {
          * @description Batch size and price, loan period and how often a loan can be extended.
          */
         get: operations["library_rules_api_v1_library_rules_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/library/pickup-points": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Pickup Points
+         * @description Where readers can collect their orders (active points only). An empty list means
+         *     orders need no pickup point.
+         */
+        get: operations["pickup_points_api_v1_library_pickup_points_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/library/pickup-points/{point_id}/slots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Pickup Slots
+         * @description Pickup times for the next two weeks, starting at least an hour from now.
+         */
+        get: operations["pickup_slots_api_v1_library_pickup_points__point_id__slots_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1330,6 +1371,48 @@ export interface paths {
         patch: operations["admin_moderate_review_api_v1_admin_reviews__review_id__patch"];
         trace?: never;
     };
+    "/api/v1/admin/pickup-points": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin List Pickup Points
+         * @description Every pickup point, active ones first.
+         */
+        get: operations["admin_list_pickup_points_api_v1_admin_pickup_points_get"];
+        put?: never;
+        /** Admin Create Pickup Point */
+        post: operations["admin_create_pickup_point_api_v1_admin_pickup_points_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pickup-points/{point_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Admin Delete Pickup Point
+         * @description Only points no order used; switch the others off (active = false).
+         */
+        delete: operations["admin_delete_pickup_point_api_v1_admin_pickup_points__point_id__delete"];
+        options?: never;
+        head?: never;
+        /** Admin Update Pickup Point */
+        patch: operations["admin_update_pickup_point_api_v1_admin_pickup_points__point_id__patch"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1967,6 +2050,11 @@ export interface components {
              * @description Charged per day late when books come back (0: none)
              */
             late_fee_per_day: string;
+            /**
+             * Timezone
+             * @description IANA time zone of opening hours and pickup slots
+             */
+            timezone: string;
         };
         /** LibrarySettingsRead */
         LibrarySettingsRead: {
@@ -1996,6 +2084,11 @@ export interface components {
              */
             late_fee_per_day: string;
             /**
+             * Timezone
+             * @description IANA time zone of opening hours and pickup slots
+             */
+            timezone: string;
+            /**
              * Updated At
              * Format: date-time
              */
@@ -2019,6 +2112,8 @@ export interface components {
             block_overdue?: boolean | null;
             /** Late Fee Per Day */
             late_fee_per_day?: number | string | null;
+            /** Timezone */
+            timezone?: string | null;
         };
         /** LoginRequest */
         LoginRequest: {
@@ -2117,6 +2212,24 @@ export interface components {
          * @enum {string}
          */
         NotificationKind: "order_received" | "order_confirmed" | "order_cancelled" | "due_soon" | "overdue" | "book_available" | "book_held";
+        /**
+         * OpeningHours
+         * @description One opening period on a weekday (0 = Monday), in the library's time zone.
+         */
+        OpeningHours: {
+            /** Weekday */
+            weekday: number;
+            /**
+             * Opens
+             * Format: time
+             */
+            opens: string;
+            /**
+             * Closes
+             * Format: time
+             */
+            closes: string;
+        };
         /** OrderDueDateUpdate */
         OrderDueDateUpdate: {
             /**
@@ -2224,6 +2337,9 @@ export interface components {
              * @description When it was paid or waived
              */
             late_fee_settled_at: string | null;
+            pickup_point: components["schemas"]["PickupPointBrief"] | null;
+            /** Pickup At */
+            pickup_at: string | null;
             /** Confirmed At */
             confirmed_at: string | null;
             /** Returned At */
@@ -2251,6 +2367,111 @@ export interface components {
         /** OrderStatusUpdate */
         OrderStatusUpdate: {
             status: components["schemas"]["OrderStatus"];
+        };
+        /**
+         * PickupChoice
+         * @description Optional body of POST /orders: where and when the reader collects the books.
+         */
+        PickupChoice: {
+            /** Pickup Point Id */
+            pickup_point_id?: string | null;
+            /** Pickup At */
+            pickup_at?: string | null;
+        };
+        /** PickupPointBrief */
+        PickupPointBrief: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Address */
+            address: string;
+        };
+        /** PickupPointCreate */
+        PickupPointCreate: {
+            /** Name */
+            name: string;
+            /** Address */
+            address: string;
+            /** Notes */
+            notes?: string | null;
+            /** Hours */
+            hours: components["schemas"]["OpeningHours"][];
+            /**
+             * Slot Minutes
+             * @default 60
+             */
+            slot_minutes: number;
+            /** Slot Capacity */
+            slot_capacity?: number | null;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+        };
+        /** PickupPointRead */
+        PickupPointRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Address */
+            address: string;
+            /** Notes */
+            notes: string | null;
+            /** Hours */
+            hours: components["schemas"]["OpeningHours"][];
+            /** Slot Minutes */
+            slot_minutes: number;
+            /**
+             * Slot Capacity
+             * @description Orders per slot (null: no limit)
+             */
+            slot_capacity: number | null;
+            /** Active */
+            active: boolean;
+        };
+        /** PickupPointUpdate */
+        PickupPointUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Address */
+            address?: string | null;
+            /** Notes */
+            notes?: string | null;
+            /** Hours */
+            hours?: components["schemas"]["OpeningHours"][] | null;
+            /** Slot Minutes */
+            slot_minutes?: number | null;
+            /** Slot Capacity */
+            slot_capacity?: number | null;
+            /** Active */
+            active?: boolean | null;
+        };
+        /** PickupSlot */
+        PickupSlot: {
+            /**
+             * Starts At
+             * Format: date-time
+             */
+            starts_at: string;
+            /**
+             * Ends At
+             * Format: date-time
+             */
+            ends_at: string;
+            /**
+             * Left
+             * @description Orders that still fit (null: no limit; 0: full)
+             */
+            left: number | null;
         };
         /** PublicReviewRead */
         PublicReviewRead: {
@@ -4052,7 +4273,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PickupChoice"] | null;
+            };
+        };
         responses: {
             /** @description Successful Response */
             201: {
@@ -4088,6 +4313,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -4273,6 +4507,66 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LibraryRules"];
+                };
+            };
+        };
+    };
+    pickup_points_api_v1_library_pickup_points_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PickupPointRead"][];
+                };
+            };
+        };
+    };
+    pickup_slots_api_v1_library_pickup_points__point_id__slots_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                point_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PickupSlot"][];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
         };
@@ -6808,6 +7102,222 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReviewRead"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_list_pickup_points_api_v1_admin_pickup_points_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PickupPointRead"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_create_pickup_point_api_v1_admin_pickup_points_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PickupPointCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PickupPointRead"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_delete_pickup_point_api_v1_admin_pickup_points__point_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                point_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_update_pickup_point_api_v1_admin_pickup_points__point_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                point_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PickupPointUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PickupPointRead"];
                 };
             };
             /** @description Unauthorized */

@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import re
+from functools import cache
 from typing import Annotated
 from urllib.parse import urlparse
+from zoneinfo import available_timezones
 
 from pydantic import AfterValidator, BeforeValidator, EmailStr, StringConstraints
 
@@ -75,3 +77,32 @@ Isbn = Annotated[_Isbn | None, BeforeValidator(_blank_to_none)]
 _Language = Annotated[str, StringConstraints(pattern=r"^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$")]
 LanguageCode = Annotated[_Language | None, BeforeValidator(_blank_to_none)]
 CurrencyCode = Annotated[str, StringConstraints(strip_whitespace=True, pattern=r"^[A-Z]{3}$")]
+
+PlaceName = Annotated[
+    str,
+    StringConstraints(strip_whitespace=True, min_length=1, max_length=120),
+    AfterValidator(_no_control_chars),
+]
+Address = Annotated[
+    str,
+    StringConstraints(strip_whitespace=True, min_length=1, max_length=255),
+    AfterValidator(_no_control_chars),
+]
+_Note = Annotated[str, StringConstraints(strip_whitespace=True, max_length=500)]
+OptionalNote = Annotated[_Note | None, BeforeValidator(_blank_to_none)]
+
+
+@cache
+def _time_zones() -> frozenset[str]:
+    return frozenset(available_timezones())
+
+
+def _time_zone(value: str) -> str:
+    if value not in _time_zones():
+        raise ValueError("must be an IANA time zone such as Europe/Moscow")
+    return value
+
+
+TimeZoneName = Annotated[
+    str, StringConstraints(strip_whitespace=True, max_length=64), AfterValidator(_time_zone)
+]

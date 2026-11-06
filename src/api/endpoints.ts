@@ -26,6 +26,11 @@ import type {
   OrderListQuery,
   OrderPageDto,
   OrderStatusDto,
+  PickupChoiceDto,
+  PickupPointCreateDto,
+  PickupPointDto,
+  PickupPointUpdateDto,
+  PickupSlotDto,
   Paged,
   ModerationReviewPageDto,
   MyReviewDto,
@@ -117,7 +122,8 @@ export const cartApi = {
 };
 
 export const ordersApi = {
-  place: () => apiRequest<OrderDto>('/orders', { method: 'POST' }),
+  place: (pickup?: PickupChoiceDto) =>
+    apiRequest<OrderDto>('/orders', { method: 'POST', body: pickup }),
   list: (query: OrderListQuery) => apiRequest<OrderPageDto>('/orders', { query }),
   get: (orderId: string) => apiRequest<OrderDto>(`/orders/${id(orderId)}`),
   cancel: (orderId: string) =>
@@ -148,6 +154,9 @@ export const readingListApi = {
 
 export const libraryApi = {
   rules: () => apiRequest<LibraryRulesDto>('/library/rules', { auth: false }),
+  pickupPoints: () => apiRequest<PickupPointDto[]>('/library/pickup-points', { auth: false }),
+  pickupSlots: (pointId: string) =>
+    apiRequest<PickupSlotDto[]>(`/library/pickup-points/${id(pointId)}/slots`, { auth: false }),
 };
 
 export const adminApi = {
@@ -217,6 +226,13 @@ export const adminApi = {
       method: 'PATCH',
       body: { action },
     }),
+  listPickupPoints: () => apiRequest<PickupPointDto[]>('/admin/pickup-points'),
+  createPickupPoint: (body: PickupPointCreateDto) =>
+    apiRequest<PickupPointDto>('/admin/pickup-points', { method: 'POST', body }),
+  updatePickupPoint: (pointId: string, body: PickupPointUpdateDto) =>
+    apiRequest<PickupPointDto>(`/admin/pickup-points/${id(pointId)}`, { method: 'PATCH', body }),
+  deletePickupPoint: (pointId: string) =>
+    apiRequest<void>(`/admin/pickup-points/${id(pointId)}`, { method: 'DELETE' }),
   getSettings: () => apiRequest<LibrarySettingsDto>('/admin/settings'),
   reportSummary: (period: ReportPeriod) =>
     apiRequest<ReportSummaryDto>('/admin/reports/summary', { query: period }),

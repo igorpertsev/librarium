@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Textarea } from '../components/ui/textarea';
 import { Badge } from '../components/ui/badge';
-import { Plus, Pencil, Trash2, Users, BookOpen as BookOpenIcon, ClipboardList, CheckCircle2, RotateCcw, Clock, Star, ImageDown, BellRing, BarChart3, CopyPlus, Tags, ListChecks, MessageSquare } from 'lucide-react';
+import { Plus, Pencil, Trash2, Users, BookOpen as BookOpenIcon, ClipboardList, CheckCircle2, RotateCcw, Clock, Star, ImageDown, BellRing, BarChart3, CopyPlus, Tags, ListChecks, MapPin, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -16,6 +16,8 @@ import { useOrders } from '../contexts/OrdersContext';
 import { BookDetailsModal } from '../components/BookDetailsModal';
 import { useConfirm } from '../components/ConfirmDialog';
 import { LoanRulesSettings } from '../components/LoanRulesSettings';
+import { PickupLine } from '../components/PickupLine';
+import { PickupPointsTab } from '../components/PickupPointsTab';
 import { ReportsTab } from '../components/ReportsTab';
 import { BookCatalogFields } from '../components/BookCatalogFields';
 import { BookTranslationFields } from '../components/BookTranslationFields';
@@ -345,7 +347,7 @@ export default function AdminPortal() {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="books" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 h-auto mb-6">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 h-auto mb-6">
               <TabsTrigger value="books" className="flex items-center gap-2">
                 <BookOpenIcon className="w-4 h-4" />
                 {t('admin.booksTab')}
@@ -378,6 +380,10 @@ export default function AdminPortal() {
               <TabsTrigger value="reports" className="flex items-center gap-2">
                 <BarChart3 className="w-4 h-4" />
                 {t('reports.tab')}
+              </TabsTrigger>
+              <TabsTrigger value="pickup" className="flex items-center gap-2">
+                <MapPin className="w-4 h-4" />
+                {t('pickup.tab')}
               </TabsTrigger>
             </TabsList>
 
@@ -633,6 +639,10 @@ export default function AdminPortal() {
 
             <TabsContent value="reports">
               <ReportsTab />
+            </TabsContent>
+
+            <TabsContent value="pickup">
+              <PickupPointsTab />
             </TabsContent>
           </Tabs>
         </CardContent>
@@ -1148,7 +1158,12 @@ function OrdersTab({
                     </div>
                   </TableCell>
                   <TableCell>{orderStatusBadge(order.status, t)}</TableCell>
-                  <TableCell className="text-sm">{fmt.date(order.orderedAt)}</TableCell>
+                  <TableCell className="text-sm">
+                    {fmt.date(order.orderedAt)}
+                    {order.status === 'pending' && (
+                      <PickupLine order={order} className="flex items-start gap-1 text-xs text-muted-foreground mt-1 max-w-[220px]" />
+                    )}
+                  </TableCell>
                   <TableCell onClick={e => e.stopPropagation()}>
                     {order.status === 'returned' || order.status === 'cancelled' ? (
                       <span className="text-sm text-muted-foreground">—</span>

@@ -125,6 +125,9 @@ export interface Order {
   lateFee?: number;
   /** When the fee was paid or waived; unset while it is still owed. */
   lateFeeSettledAt?: string;
+  /** Where and when the reader collects the books (if the library has pickup points). */
+  pickup?: { id: string; name: string; address: string };
+  pickupAt?: string;
   currency?: string;
   /** Contact details captured when the order was placed. */
   contacts?: UserContacts;

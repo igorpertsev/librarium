@@ -40,7 +40,7 @@ export async function registerCustomer(page: Page): Promise<Customer> {
   return customer;
 }
 
-async function adminToken(request: APIRequestContext): Promise<string> {
+export async function adminToken(request: APIRequestContext): Promise<string> {
   const response = await request.post(`${API_URL}/auth/login`, { data: ADMIN });
   expect(response.ok()).toBeTruthy();
   return (await response.json()).access_token as string;

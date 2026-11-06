@@ -14,6 +14,8 @@ export interface LibraryRules {
   /** Fee per day for late returns (0: no fees). */
   lateFeePerDay: number;
   currency: string;
+  /** IANA time zone of opening hours and pickup slots. */
+  timezone: string;
 }
 
 let cached: Promise<LibraryRules> | null = null;
@@ -29,6 +31,7 @@ function loadRules(): Promise<LibraryRules> {
       blockOverdue: dto.block_overdue,
       lateFeePerDay: toMoney(dto.late_fee_per_day),
       currency: dto.currency,
+      timezone: dto.timezone,
     }))
     .catch((error: unknown) => {
       cached = null; // try again next time

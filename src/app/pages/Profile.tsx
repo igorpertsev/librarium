@@ -17,6 +17,7 @@ import { useConfirm } from '../components/ConfirmDialog';
 import { orderLabel } from '../utils/translations';
 import { useLibraryRules } from '../utils/useLibraryRules';
 import { LateReturnsCard } from '../components/LateReturnsCard';
+import { PickupLine } from '../components/PickupLine';
 import { useWaitlist } from '../contexts/WaitlistContext';
 import { WaitlistButton } from '../components/WaitlistButton';
 import { ReadingListCard } from '../components/ReadingListCard';
@@ -332,6 +333,7 @@ export default function Profile() {
                     {t('profile.cancelRequest')}
                   </Button>
                 </div>
+                <PickupLine order={order} />
                 <div className="flex gap-2 flex-wrap">
                   {order.books.map(book => (
                     <div key={book.id} className="w-10 h-14 overflow-hidden rounded bg-muted" title={book.title}>

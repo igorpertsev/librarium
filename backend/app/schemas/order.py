@@ -10,6 +10,7 @@ from pydantic import Field
 from app.models.enums import BookCategory, ContactMethod, NotificationKind, OrderStatus
 from app.schemas.book import BookBrief
 from app.schemas.common import ApiModel, Page, RequestModel
+from app.schemas.pickup import PickupPointBrief
 
 
 class OrderItemRead(ApiModel):
@@ -51,6 +52,8 @@ class OrderRead(ApiModel):
     renewal_count: int
     late_fee: Decimal | None = Field(description="Charged for returning the books late")
     late_fee_settled_at: datetime | None = Field(description="When it was paid or waived")
+    pickup_point: PickupPointBrief | None
+    pickup_at: datetime | None
     confirmed_at: datetime | None
     returned_at: datetime | None
     cancelled_at: datetime | None

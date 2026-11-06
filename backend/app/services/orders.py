@@ -34,7 +34,8 @@ from app.models.enums import (
 )
 from app.repositories import orders as orders_repo
 from app.repositories.books import reserved_book_ids
-from app.services import holds, notifications, waitlist
+from app.schemas.pickup import PickupChoice
+from app.services import holds, notifications, pickup, waitlist
 from app.services.library_settings import get_library_settings
 
 ACTIVE_BOOK_INDEX = "uq_order_items_active_book"
@@ -59,7 +60,9 @@ def _today() -> date:
     return datetime.now(UTC).date()
 
 
-async def place_order(session: AsyncSession, user: User) -> Order:
+async def place_order(
+    session: AsyncSession, user: User, pickup_choice: PickupChoice | None = None
+) -> Order:
     """Create an order from the complete batches of the user's cart, in one transaction."""
     # 1. Serialise checkouts of the same cart (double click, two tabs).
     cart = await session.scalar(select(Cart).where(Cart.user_id == user.id).with_for_update())
@@ -107,6 +110,7 @@ async def place_order(session: AsyncSession, user: User) -> Order:
         )
     selected = items[: batch_count * per_batch]
     book_ids = [item.book_id for item in selected]
+    pickup_point, pickup_at = await pickup.choose(session, pickup_choice)
 
     # 3. Lock the copies (deterministic order prevents deadlocks).
     locked = (
@@ -151,6 +155,8 @@ async def place_order(session: AsyncSession, user: User) -> Order:
         contact_phone=user.phone,
         contact_preferred_method=user.preferred_contact_method,
         due_date=_today() + timedelta(days=library.loan_period_days),
+        pickup_point_id=pickup_point.id if pickup_point else None,
+        pickup_at=pickup_at,
     )
     # 10-11. Items keep a snapshot of title, author and price at the time of the order.
     order.items = [

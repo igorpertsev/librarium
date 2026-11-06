@@ -1722,13 +1722,30 @@
           "orders"
         ],
         "summary": "Place Order",
-        "description": "Places an order for every complete batch in the cart. Books of an incomplete trailing batch stay in the cart. Prices are computed by the server. Responds 409 BOOK_UNAVAILABLE (details.book_ids) when any copy is no longer available; in that case nothing is created.",
+        "description": "Places an order for every complete batch in the cart. Books of an incomplete trailing batch stay in the cart. Prices are computed by the server. Responds 409 BOOK_UNAVAILABLE (details.book_ids) when any copy is no longer available; in that case nothing is created. While the library has active pickup points the body must name one and one of its slots (400 PICKUP_REQUIRED / INVALID_PICKUP_SLOT, 409 PICKUP_SLOT_FULL).",
         "operationId": "place_order_api_v1_orders_post",
         "security": [
           {
             "HTTPBearer": []
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/PickupChoice"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": "Successful Response",
@@ -1769,6 +1786,16 @@
               }
             },
             "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       },
@@ -2102,6 +2129,90 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/v1/library/pickup-points": {
+      "get": {
+        "tags": [
+          "library"
+        ],
+        "summary": "Pickup Points",
+        "description": "Where readers can collect their orders (active points only). An empty list means\norders need no pickup point.",
+        "operationId": "pickup_points_api_v1_library_pickup_points_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PickupPointRead"
+                  },
+                  "type": "array",
+                  "title": "Response Pickup Points Api V1 Library Pickup Points Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/library/pickup-points/{point_id}/slots": {
+      "get": {
+        "tags": [
+          "library"
+        ],
+        "summary": "Pickup Slots",
+        "description": "Pickup times for the next two weeks, starting at least an hour from now.",
+        "operationId": "pickup_slots_api_v1_library_pickup_points__point_id__slots_get",
+        "parameters": [
+          {
+            "name": "point_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Point Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PickupSlot"
+                  },
+                  "title": "Response Pickup Slots Api V1 Library Pickup Points  Point Id  Slots Get"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
           }
         }
       }
@@ -5901,6 +6012,289 @@
           }
         }
       }
+    },
+    "/api/v1/admin/pickup-points": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin List Pickup Points",
+        "description": "Every pickup point, active ones first.",
+        "operationId": "admin_list_pickup_points_api_v1_admin_pickup_points_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PickupPointRead"
+                  },
+                  "type": "array",
+                  "title": "Response Admin List Pickup Points Api V1 Admin Pickup Points Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Create Pickup Point",
+        "operationId": "admin_create_pickup_point_api_v1_admin_pickup_points_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PickupPointCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PickupPointRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/pickup-points/{point_id}": {
+      "patch": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Update Pickup Point",
+        "operationId": "admin_update_pickup_point_api_v1_admin_pickup_points__point_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "point_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Point Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PickupPointUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PickupPointRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Delete Pickup Point",
+        "description": "Only points no order used; switch the others off (active = false).",
+        "operationId": "admin_delete_pickup_point_api_v1_admin_pickup_points__point_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "point_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Point Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -7683,6 +8077,11 @@
             "type": "string",
             "title": "Late Fee Per Day",
             "description": "Charged per day late when books come back (0: none)"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone",
+            "description": "IANA time zone of opening hours and pickup slots"
           }
         },
         "type": "object",
@@ -7694,7 +8093,8 @@
           "max_renewals",
           "hold_hours",
           "block_overdue",
-          "late_fee_per_day"
+          "late_fee_per_day",
+          "timezone"
         ],
         "title": "LibraryRules",
         "description": "Lending rules every reader may know (GET /library/rules)."
@@ -7736,6 +8136,11 @@
             "title": "Late Fee Per Day",
             "description": "Charged per day late when books come back (0: none)"
           },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone",
+            "description": "IANA time zone of opening hours and pickup slots"
+          },
           "updated_at": {
             "type": "string",
             "format": "date-time",
@@ -7752,6 +8157,7 @@
           "hold_hours",
           "block_overdue",
           "late_fee_per_day",
+          "timezone",
           "updated_at"
         ],
         "title": "LibrarySettingsRead"
@@ -7862,6 +8268,18 @@
               }
             ],
             "title": "Late Fee Per Day"
+          },
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone"
           }
         },
         "additionalProperties": false,
@@ -8104,6 +8522,34 @@
           "book_held"
         ],
         "title": "NotificationKind"
+      },
+      "OpeningHours": {
+        "properties": {
+          "weekday": {
+            "type": "integer",
+            "maximum": 6.0,
+            "minimum": 0.0,
+            "title": "Weekday"
+          },
+          "opens": {
+            "type": "string",
+            "format": "time",
+            "title": "Opens"
+          },
+          "closes": {
+            "type": "string",
+            "format": "time",
+            "title": "Closes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "weekday",
+          "opens",
+          "closes"
+        ],
+        "title": "OpeningHours",
+        "description": "One opening period on a weekday (0 = Monday), in the library's time zone."
       },
       "OrderDueDateUpdate": {
         "properties": {
@@ -8373,6 +8819,28 @@
             "title": "Late Fee Settled At",
             "description": "When it was paid or waived"
           },
+          "pickup_point": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PickupPointBrief"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "pickup_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pickup At"
+          },
           "confirmed_at": {
             "anyOf": [
               {
@@ -8449,6 +8917,8 @@
           "renewal_count",
           "late_fee",
           "late_fee_settled_at",
+          "pickup_point",
+          "pickup_at",
           "confirmed_at",
           "returned_at",
           "cancelled_at",
@@ -8480,6 +8950,328 @@
           "status"
         ],
         "title": "OrderStatusUpdate"
+      },
+      "PickupChoice": {
+        "properties": {
+          "pickup_point_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pickup Point Id"
+          },
+          "pickup_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pickup At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "PickupChoice",
+        "description": "Optional body of POST /orders: where and when the reader collects the books."
+      },
+      "PickupPointBrief": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "address": {
+            "type": "string",
+            "title": "Address"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "address"
+        ],
+        "title": "PickupPointBrief"
+      },
+      "PickupPointCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "address": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Address"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "hours": {
+            "items": {
+              "$ref": "#/components/schemas/OpeningHours"
+            },
+            "type": "array",
+            "maxItems": 28,
+            "title": "Hours"
+          },
+          "slot_minutes": {
+            "type": "integer",
+            "maximum": 240.0,
+            "minimum": 15.0,
+            "title": "Slot Minutes",
+            "default": 60
+          },
+          "slot_capacity": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slot Capacity"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active",
+            "default": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "address",
+          "hours"
+        ],
+        "title": "PickupPointCreate"
+      },
+      "PickupPointRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "address": {
+            "type": "string",
+            "title": "Address"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "hours": {
+            "items": {
+              "$ref": "#/components/schemas/OpeningHours"
+            },
+            "type": "array",
+            "title": "Hours"
+          },
+          "slot_minutes": {
+            "type": "integer",
+            "title": "Slot Minutes"
+          },
+          "slot_capacity": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slot Capacity",
+            "description": "Orders per slot (null: no limit)"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "address",
+          "notes",
+          "hours",
+          "slot_minutes",
+          "slot_capacity",
+          "active"
+        ],
+        "title": "PickupPointRead"
+      },
+      "PickupPointUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "hours": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/OpeningHours"
+                },
+                "type": "array",
+                "maxItems": 28
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hours"
+          },
+          "slot_minutes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 240.0,
+                "minimum": 15.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slot Minutes"
+          },
+          "slot_capacity": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slot Capacity"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "PickupPointUpdate"
+      },
+      "PickupSlot": {
+        "properties": {
+          "starts_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Starts At"
+          },
+          "ends_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Ends At"
+          },
+          "left": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Left",
+            "description": "Orders that still fit (null: no limit; 0: full)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "starts_at",
+          "ends_at",
+          "left"
+        ],
+        "title": "PickupSlot"
       },
       "PublicReviewRead": {
         "properties": {

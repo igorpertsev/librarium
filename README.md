@@ -413,6 +413,15 @@ two copies of the same title are two records (ISBN is not unique).
   late on the order. The librarian records it as paid or waives it (`PATCH /admin/orders/{id}/late-fee` with
   `{"action": "paid" | "waived"}`; waiving sets the fee to 0; `409 NO_LATE_FEE` if nothing is owed), which sets
   `late_fee_settled_at`. The app does not take payments: the fee is paid at the library.
+- **Pickup points**: the library can list where orders are collected (admin tab *Pickup*): name, address, a note,
+  weekly opening hours in the library's time zone (`library_settings.timezone`, IANA name, default `UTC`), slot
+  length (15–240 minutes) and optionally how many orders fit in a slot. While at least one point is active, checkout
+  asks for a point and a slot (`GET /library/pickup-points`, `GET /library/pickup-points/{id}/slots`: the next two
+  weeks, from an hour ahead, with `left` places) and `POST /orders` needs `{"pickup_point_id", "pickup_at"}`
+  (`400 PICKUP_REQUIRED` / `INVALID_PICKUP_SLOT`, `409 PICKUP_SLOT_FULL`; the point's row is locked so two readers
+  cannot take the last place). Cancelled orders free their place. Without active points nothing changes. The
+  "order received" email, the profile and the admin order list show the place and time. A point used by orders
+  cannot be deleted (`409 PICKUP_POINT_IN_USE`); switch it off instead.
 
 `POST /api/v1/orders` runs in a single transaction (`app/services/orders.py`):
 
@@ -439,12 +448,13 @@ Concurrency is covered by tests in which both requests are held at a barrier rig
 | `tags`, `book_tags` | tag `slug` (unique, CHECK format), `name_en`, `name_ru`; book ↔ tag link table |
 | `series` | `name` (unique), `name_en` / `name_ru` (names in each interface language, optional), `description`, `openlibrary_key` (unique, from ISBN lookups) |
 | `book_translations` | per book and language (`en`/`ru`): `title`, `author`, `description`, `title_source`/`description_source` (`manual/wikidata/wikipedia/machine`), `source_url` (Wikipedia attribution) |
-| `library_settings` | single row: `books_per_batch`, `price_per_batch NUMERIC(10,2)`, `currency`, `loan_period_days`, `max_renewals`, `hold_hours`, `block_overdue`, `late_fee_per_day NUMERIC(10,2)` |
+| `library_settings` | single row: `books_per_batch`, `price_per_batch NUMERIC(10,2)`, `currency`, `loan_period_days`, `max_renewals`, `hold_hours`, `block_overdue`, `late_fee_per_day NUMERIC(10,2)`, `timezone` |
+| `pickup_points` | `name`, `address`, `notes`, `hours JSONB` (`[{weekday, opens, closes}]`), `slot_minutes`, `slot_capacity` (NULL: no limit), `active` |
 | `carts`, `cart_items` | one cart per user, `UNIQUE(cart_id, book_id)` |
 | `waitlist_entries` | customer waiting for a book, `UNIQUE(user_id, book_id)` |
 | `reading_list_entries` | “want to read”, one per reader and title, `UNIQUE(user_id, book_id)` |
 | `reviews` | rating 1–5 (CHECK), text, `status` (`pending/published/rejected`), one per reader and title |
-| `orders` | status, total/currency, batch price and contact snapshot, `due_date`, `renewal_count`, `confirmed_at/returned_at/cancelled_at`, `late_fee`/`late_fee_settled_at`, CHECK `total = price × batches` |
+| `orders` | status, total/currency, batch price and contact snapshot, `due_date`, `renewal_count`, `confirmed_at/returned_at/cancelled_at`, `late_fee`/`late_fee_settled_at`, `pickup_point_id`/`pickup_at`, CHECK `total = price × batches` |
 | `order_items` | book snapshot and `unit_price`, `reservation_active` + partial unique index |
 | `refresh_tokens` | `token_hash`, `family_id`, `expires_at`, `revoked_at`, `replaced_by_token_id`, user agent/IP |
 
@@ -473,7 +483,7 @@ Differences (adapters in `src/api/mappers.ts`):
 | GET | `/tags` (with title counts), `/series?q`, `/series/{id}` | everyone |
 | GET/DELETE | `/cart` · POST `/cart/items` · DELETE `/cart/items/{book_id}` | signed-in user |
 | POST/GET | `/orders` · GET `/orders/{id}` · POST `/orders/{id}/cancel`, `/orders/{id}/renew` | signed-in user (own orders only) |
-| GET | `/library/rules` (batch size and price, loan period, extensions per loan) | everyone |
+| GET | `/library/rules` (batch size and price, loan period, extensions per loan, time zone) · `/library/pickup-points`, `/library/pickup-points/{id}/slots` | everyone |
 | GET | `/share/books/{id}` (Open Graph page for link previews; Caddy sends bots on `/books/<id>` here) | everyone |
 | GET `/waitlist` · POST/DELETE `/waitlist/{book_id}` | “email me when this book is back” | signed-in user |
 | GET `/reading-list` · POST/DELETE `/reading-list/{book_id}` | “want to read”: titles kept for later, separate from the cart | signed-in user |
@@ -490,6 +500,7 @@ Differences (adapters in `src/api/mappers.ts`):
 | POST/PATCH/DELETE | `/admin/tags`, `/admin/tags/{id}` · POST `/admin/tags/{id}/merge`; the same for `/admin/series` | admin |
 | POST | `/admin/translations/suggest` (title, author and description in another language; saves nothing) | admin |
 | GET | `/admin/users` · PATCH `/admin/users/{id}` (role, disable) | admin |
+| GET/POST | `/admin/pickup-points` · PATCH/DELETE `/admin/pickup-points/{id}` | admin |
 | GET | `/admin/orders`, `/admin/orders/{id}` · PATCH `/admin/orders/{id}/status`, `/admin/orders/{id}/due-date`, `/admin/orders/{id}/late-fee` | admin |
 | GET/PATCH | `/admin/settings` (batch size, price, currency, loan period) | admin |
 

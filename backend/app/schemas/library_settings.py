@@ -7,7 +7,7 @@ from typing import Annotated, ClassVar
 from pydantic import AfterValidator, Field
 
 from app.schemas.common import ApiModel, PatchModel
-from app.schemas.types import CurrencyCode
+from app.schemas.types import CurrencyCode, TimeZoneName
 
 CENT = Decimal("0.01")
 # Canonical two-decimal value, identical to what NUMERIC(10, 2) stores.
@@ -33,6 +33,7 @@ class LibraryRules(ApiModel):
     late_fee_per_day: Decimal = Field(
         description="Charged per day late when books come back (0: none)"
     )
+    timezone: str = Field(description="IANA time zone of opening hours and pickup slots")
 
 
 class LibrarySettingsRead(LibraryRules):
@@ -50,6 +51,7 @@ class LibrarySettingsUpdate(PatchModel):
             "hold_hours",
             "block_overdue",
             "late_fee_per_day",
+            "timezone",
         }
     )
 
@@ -61,3 +63,4 @@ class LibrarySettingsUpdate(PatchModel):
     hold_hours: Annotated[int, Field(ge=0, le=336)] | None = None
     block_overdue: bool | None = None
     late_fee_per_day: Money | None = None
+    timezone: TimeZoneName | None = None

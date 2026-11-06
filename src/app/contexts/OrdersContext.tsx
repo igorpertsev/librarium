@@ -3,7 +3,7 @@ import { Order, OrderStatus } from '../types';
 import { adminApi, fetchAllPages, ordersApi } from '../../api/endpoints';
 import { ActionResult, ApiError, runAction, toApiError } from '../../api/errors';
 import { orderFromDto } from '../../api/mappers';
-import type { OrderDto } from '../../api/types';
+import type { OrderDto, PickupChoiceDto } from '../../api/types';
 import { useAuth } from './AuthContext';
 import { useCatalog } from './CatalogContext';
 
@@ -15,7 +15,7 @@ interface OrdersContextType {
   isLoading: boolean;
   error: ApiError | null;
   /** Creates an order from the server-side cart; price and books are decided by the server. */
-  placeOrder: () => Promise<ActionResult<Order>>;
+  placeOrder: (pickup?: PickupChoiceDto) => Promise<ActionResult<Order>>;
   confirmOrder: (orderId: string) => Promise<ActionResult>;
   markReturned: (orderId: string) => Promise<ActionResult>;
   cancelOrder: (orderId: string) => Promise<ActionResult>;
@@ -81,8 +81,8 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
     setKnownReserved((prev) => new Set([...prev, ...bookIds]));
   }, []);
 
-  const placeOrder = async (): Promise<ActionResult<Order>> => {
-    const result = await runAction(() => ordersApi.place());
+  const placeOrder = async (pickup?: PickupChoiceDto): Promise<ActionResult<Order>> => {
+    const result = await runAction(() => ordersApi.place(pickup));
     if (!result.ok) {
       if (result.error.code === 'BOOK_UNAVAILABLE') {
         markBooksUnavailable(result.error.unavailableBookIds);

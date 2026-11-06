@@ -92,8 +92,10 @@ async def test_total_is_computed_by_server_and_leftovers_stay_in_cart(
     books = [await create_book() for _ in range(11)]
     await fill_cart(customer, books)
 
-    # Anything the client sends is ignored: the endpoint has no body.
-    response = await customer.post(ORDERS, json={"total_amount": "0.01", "price_per_batch": 0})
+    # Prices cannot be sent: the body only names a pickup point, other fields are refused.
+    refused = await customer.post(ORDERS, json={"total_amount": "0.01", "price_per_batch": 0})
+    assert refused.status_code == 422
+    response = await customer.post(ORDERS)
     assert response.status_code == 201, response.text
     order = response.json()
     assert order["batch_count"] == 2

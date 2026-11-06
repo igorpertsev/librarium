@@ -7,6 +7,7 @@ from app.models.hold import BookHold
 from app.models.library_settings import LibrarySettings
 from app.models.notification import Notification
 from app.models.order import Order, OrderItem
+from app.models.pickup import PickupPoint
 from app.models.reading_list import ReadingListEntry
 from app.models.refresh_token import RefreshToken
 from app.models.review import Review
@@ -27,6 +28,7 @@ __all__ = [
     "Notification",
     "Order",
     "OrderItem",
+    "PickupPoint",
     "ReadingListEntry",
     "RefreshToken",
     "Review",
