@@ -32,6 +32,19 @@ describe('bookFromDto', () => {
     expect(book.isbn).toBe('');
     expect(book.publishedYear).toBe(0);
   });
+
+  it('maps tags and the series with the volume number', () => {
+    const book = bookFromDto(
+      bookDto({
+        tags: [{ slug: 'fantasy', name_en: 'Fantasy', name_ru: 'Фэнтези' }],
+        series: { id: 'series-1', name: 'Middle-earth' },
+        series_position: 1,
+      }),
+    );
+    expect(book.tags).toEqual([{ slug: 'fantasy', nameEn: 'Fantasy', nameRu: 'Фэнтези' }]);
+    expect(book.series).toEqual({ id: 'series-1', name: 'Middle-earth' });
+    expect(book.seriesPosition).toBe(1);
+  });
 });
 
 describe('bookFormToDto', () => {
@@ -46,6 +59,9 @@ describe('bookFormToDto', () => {
     description: 'Spice.',
     isbn: '  ',
     publishedYear: Number.NaN,
+    tags: ['science-fiction'],
+    seriesName: '  ',
+    seriesPosition: 2,
   };
 
   it('trims URLs, drops empty values and never stores the UI-only "pending" status', () => {
@@ -60,6 +76,22 @@ describe('bookFormToDto', () => {
       description: 'Spice.',
       isbn: null,
       publication_year: null,
+      tags: ['science-fiction'],
+      series_id: null,
+    });
+  });
+
+  it('sends the series by name with its volume and Open Library key', () => {
+    expect(
+      bookFormToDto({ ...form, seriesName: ' Dune ', seriesOpenlibraryKey: 'OL1L' }),
+    ).toMatchObject({
+      series_name: 'Dune',
+      series_position: 2,
+      series_openlibrary_key: 'OL1L',
+    });
+    expect(bookFormToDto({ ...form, seriesName: 'Dune', seriesPosition: 0 })).toMatchObject({
+      series_name: 'Dune',
+      series_position: null,
     });
   });
 

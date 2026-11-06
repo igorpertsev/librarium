@@ -72,6 +72,29 @@ export async function createBooks(request: APIRequestContext, prefix: string, co
   return titles;
 }
 
+/** Creates one available book through the admin API (tags by slug, series by name). */
+export async function createBook(
+  request: APIRequestContext,
+  book: { title: string; tags?: string[]; series_name?: string; series_position?: number },
+) {
+  const token = await adminToken(request);
+  const response = await request.post(`${API_URL}/admin/books`, {
+    headers: { Authorization: `Bearer ${token}` },
+    data: {
+      author: 'E2E Author',
+      description: 'Created by the browser tests.',
+      category: 'fiction',
+      age_range: '12+',
+      cover_url: null,
+      image_urls: [],
+      isbn: null,
+      publication_year: 2020,
+      ...book,
+    },
+  });
+  expect(response.status()).toBe(201);
+}
+
 /** Sets the batch size so a test controls how many books make an order. */
 export async function setBatchSize(request: APIRequestContext, booksPerBatch: number) {
   const token = await adminToken(request);

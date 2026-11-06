@@ -2,6 +2,18 @@ export type BookStatus = 'available' | 'available-soon' | 'not-available' | 'pen
 
 export type BookCategory = 'fiction' | 'non-fiction' | 'children' | 'young-adult' | 'science' | 'history' | 'biography';
 
+/** A subject tag; the catalogue shows the name in the reader's language. */
+export interface BookTag {
+  slug: string;
+  nameEn: string;
+  nameRu: string;
+}
+
+export interface BookSeries {
+  id: string;
+  name: string;
+}
+
 export interface Book {
   id: string;
   title: string;
@@ -26,6 +38,10 @@ export interface Book {
   copies?: number;
   copiesAvailable?: number;
   language?: string | null;
+  tags?: BookTag[];
+  series?: BookSeries | null;
+  /** Volume number within the series (may be fractional, e.g. 1.5 for a novella). */
+  seriesPosition?: number | null;
 }
 
 export type PreferredContact = 'whatsapp' | 'telegram' | 'instagram' | 'phone';

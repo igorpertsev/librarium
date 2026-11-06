@@ -26,6 +26,13 @@ const MESSAGE_KEYS: Record<string, string> = {
   INVALID_PERIOD: 'errors.invalidPeriod',
   USER_NOT_FOUND: 'errors.notFound',
   NOT_FOUND: 'errors.notFound',
+  TAG_NOT_FOUND: 'errors.tagNotFound',
+  TAG_EXISTS: 'errors.tagExists',
+  TAG_SLUG: 'errors.tagSlug',
+  SAME_TAG: 'errors.sameMergeTarget',
+  SERIES_NOT_FOUND: 'errors.seriesNotFound',
+  SERIES_EXISTS: 'errors.seriesExists',
+  SAME_SERIES: 'errors.sameMergeTarget',
 };
 
 /** Translated, user-facing message for an API error. */
@@ -53,6 +60,10 @@ export function errorMessage(t: TFunction, error: ApiError): string {
   if (error.code === 'INCOMPLETE_BATCH') {
     const count = Number(error.details?.books_per_batch ?? 0);
     return t('errors.incompleteBatch', { count });
+  }
+  if (error.code === 'UNKNOWN_TAGS') {
+    const tags = Array.isArray(error.details?.tags) ? error.details.tags.join(', ') : '';
+    return t('errors.unknownTags', { tags });
   }
   const key = MESSAGE_KEYS[error.code];
   return key ? t(key) : t('errors.generic');

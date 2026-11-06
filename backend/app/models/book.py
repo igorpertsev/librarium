@@ -4,10 +4,12 @@ import uuid
 
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, str_enum, uuid_pk
 from app.models.enums import BookCategory, BookStatus
+from app.models.series import Series
+from app.models.tag import Tag, book_tags
 
 # "simple" configuration: no stemming, so it treats English and Russian text alike.
 SEARCH_VECTOR_SQL = (
@@ -33,6 +35,9 @@ class Book(TimestampMixin, Base):
             name="publication_year_range",
         ),
         sa.Index("ix_books_active_status", "is_active", "status"),
+        sa.CheckConstraint(
+            "series_position IS NULL OR series_position > 0", name="series_position_positive"
+        ),
         # Full-text search (title, author, description) and typo-tolerant matching (pg_trgm).
         sa.Index("ix_books_search_vector", "search_vector", postgresql_using="gin"),
         sa.Index(
@@ -73,6 +78,15 @@ class Book(TimestampMixin, Base):
     publication_year: Mapped[int | None] = mapped_column(sa.SmallInteger)
     is_active: Mapped[bool] = mapped_column(default=True, server_default=sa.true())
     copy_group_id: Mapped[uuid.UUID | None] = mapped_column(sa.Uuid, index=True)
+    # Volume of a series ("book 3"); fractional numbers fit novellas between volumes (2.5).
+    series_id: Mapped[uuid.UUID | None] = mapped_column(
+        sa.ForeignKey("series.id", ondelete="SET NULL"), index=True
+    )
+    series_position: Mapped[float | None] = mapped_column(sa.Numeric(6, 2, asdecimal=False))
+
+    # Loaded together with the book (one extra query per batch of books).
+    tags: Mapped[list[Tag]] = relationship(secondary=book_tags, lazy="selectin", order_by=Tag.slug)
+    series: Mapped[Series | None] = relationship(lazy="selectin")
 
     @property
     def group_id(self) -> uuid.UUID:

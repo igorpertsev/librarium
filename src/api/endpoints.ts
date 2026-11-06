@@ -29,6 +29,12 @@ import type {
   ReminderQueuedDto,
   ResetPasswordDto,
   ReportSummaryDto,
+  SeriesCreateDto,
+  SeriesDto,
+  SeriesUpdateDto,
+  TagCreateDto,
+  TagDto,
+  TagUpdateDto,
   TokenResponseDto,
   UserDto,
   UserUpdateDto,
@@ -66,6 +72,13 @@ export const booksApi = {
     apiRequest<BookPageDto>('/books', { query, signal, auth: false }),
   get: (bookId: string) => apiRequest<BookDto>(`/books/${id(bookId)}`, { auth: false }),
   ageRanges: () => apiRequest<string[]>('/books/age-ranges', { auth: false }),
+};
+
+export const catalogApi = {
+  tags: () => apiRequest<TagDto[]>('/tags', { auth: false }),
+  series: (q?: string) => apiRequest<SeriesDto[]>('/series', { query: { q }, auth: false }),
+  getSeries: (seriesId: string) =>
+    apiRequest<SeriesDto>(`/series/${id(seriesId)}`, { auth: false }),
 };
 
 export const cartApi = {
@@ -115,6 +128,23 @@ export const adminApi = {
     apiRequest<BookDto>(`/admin/books/${id(bookId)}`, { method: 'PATCH', body }),
   deleteBook: (bookId: string) =>
     apiRequest<void>(`/admin/books/${id(bookId)}`, { method: 'DELETE' }),
+  createTag: (body: TagCreateDto) => apiRequest<TagDto>('/admin/tags', { method: 'POST', body }),
+  updateTag: (tagId: string, body: TagUpdateDto) =>
+    apiRequest<TagDto>(`/admin/tags/${id(tagId)}`, { method: 'PATCH', body }),
+  deleteTag: (tagId: string) => apiRequest<void>(`/admin/tags/${id(tagId)}`, { method: 'DELETE' }),
+  mergeTag: (tagId: string, intoId: string) =>
+    apiRequest<void>(`/admin/tags/${id(tagId)}/merge`, { method: 'POST', body: { into_id: intoId } }),
+  createSeries: (body: SeriesCreateDto) =>
+    apiRequest<SeriesDto>('/admin/series', { method: 'POST', body }),
+  updateSeries: (seriesId: string, body: SeriesUpdateDto) =>
+    apiRequest<SeriesDto>(`/admin/series/${id(seriesId)}`, { method: 'PATCH', body }),
+  deleteSeries: (seriesId: string) =>
+    apiRequest<void>(`/admin/series/${id(seriesId)}`, { method: 'DELETE' }),
+  mergeSeries: (seriesId: string, intoId: string) =>
+    apiRequest<void>(`/admin/series/${id(seriesId)}/merge`, {
+      method: 'POST',
+      body: { into_id: intoId },
+    }),
   listUsers: (query: AdminUserListQuery) => apiRequest<AdminUserPageDto>('/admin/users', { query }),
   updateUser: (userId: string, body: AdminUserUpdateDto) =>
     apiRequest<UserDto>(`/admin/users/${id(userId)}`, { method: 'PATCH', body }),

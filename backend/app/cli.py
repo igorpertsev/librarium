@@ -19,6 +19,7 @@ from typing import Any
 
 from pydantic import TypeAdapter
 from sqlalchemy import delete, or_, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
 from app.core.database import Database
@@ -28,6 +29,8 @@ from app.models import Book, RefreshToken, User
 from app.models.enums import UserRole
 from app.schemas.book import BookCreate
 from app.schemas.types import NormalizedEmail
+from app.services import catalog
+from app.services.books import new_book
 from app.services.library_settings import ensure_library_settings
 from app.services.notifications import deliver_pending, make_smtp_sender, queue_reminders
 
@@ -79,28 +82,46 @@ async def _seed(
                 print("SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD not set: skipping admin user.")
 
             if demo_books:
-                raw: list[dict[str, Any]] = json.loads(DEMO_BOOKS_FILE.read_text("utf-8"))
-                created = refreshed = 0
-                for item in raw:
-                    data = BookCreate.model_validate(item)
-                    existing = await session.scalar(
-                        select(Book).where(Book.isbn == data.isbn, Book.title == data.title)
-                    )
-                    if existing is None:
-                        session.add(Book(id=uuid.uuid4(), **data.model_dump()))
-                        created += 1
-                    elif refresh_demo_covers and existing.cover_url != data.cover_url:
-                        existing.cover_url = data.cover_url
-                        existing.image_urls = data.image_urls
-                        refreshed += 1
-                print(
-                    f"Demo books: {created} created, {len(raw) - created} already present"
-                    + (f", {refreshed} covers refreshed." if refresh_demo_covers else ".")
-                )
+                await _seed_demo_books(session, refresh_covers=refresh_demo_covers)
 
             await session.commit()
     finally:
         await db.dispose()
+
+
+async def _seed_demo_books(session: AsyncSession, *, refresh_covers: bool) -> None:
+    raw: list[dict[str, Any]] = json.loads(DEMO_BOOKS_FILE.read_text("utf-8"))
+    # Starter tags a librarian has deleted or merged since are left out.
+    known_tags = set((await catalog.tag_lookup(session)).values())
+    created = refreshed = linked = 0
+    for item in raw:
+        data = BookCreate.model_validate(item)
+        data.tags = [slug for slug in data.tags if slug in known_tags]
+        existing = await session.scalar(
+            select(Book).where(Book.isbn == data.isbn, Book.title == data.title)
+        )
+        if existing is None:
+            await new_book(session, data)
+            await session.flush()  # a later book may belong to the same new series
+            created += 1
+            continue
+        if refresh_covers and existing.cover_url != data.cover_url:
+            existing.cover_url = data.cover_url
+            existing.image_urls = data.image_urls
+            refreshed += 1
+        # Demo books from before tags and series get them, unless edited since.
+        if not existing.tags and existing.series_id is None:
+            existing.tags = await catalog.resolve_tags(session, data.tags)
+            if data.series_name:
+                series = await catalog.find_or_create_series(session, name=data.series_name)
+                existing.series_id = series.id
+                existing.series_position = data.series_position
+            linked += bool(existing.tags or data.series_name)
+    print(
+        f"Demo books: {created} created, {len(raw) - created} already present"
+        + (f", {linked} given tags/series" if linked else "")
+        + (f", {refreshed} covers refreshed." if refresh_covers else ".")
+    )
 
 
 async def _purge_tokens(settings: Settings, *, older_than_days: int) -> None:

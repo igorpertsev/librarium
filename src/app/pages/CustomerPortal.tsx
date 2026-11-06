@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router';
 import { BookCard } from '../components/BookCard';
 import { BatchProgress } from '../components/BatchProgress';
+import { SelectedTags, SeriesBanner, SeriesFilter, TagFilter } from '../components/CatalogFilters';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Button } from '../components/ui/button';
@@ -17,6 +18,7 @@ import { bookFromDto } from '../../api/mappers';
 import { useCatalog } from '../contexts/CatalogContext';
 import { errorMessage } from '../utils/apiErrors';
 import type { BookListQuery } from '../../api/types';
+import { parseSeriesParam, parseTagParam } from '../utils/catalogLists';
 
 const PAGE_SIZE = 24;
 
@@ -31,6 +33,8 @@ const SORT_OPTIONS: { value: SortKey; labelKey: string }[] = [
   { value: '-publication_year', labelKey: 'catalog.sortYearNewest' },
   { value: '-created_at', labelKey: 'catalog.sortRecentlyAdded' },
 ];
+// Offered (and the default) while one series is shown: volume 1, 2, 3...
+const SERIES_SORT: { value: SortKey; labelKey: string } = { value: 'series', labelKey: 'catalog.sortSeries' };
 
 const CATEGORIES: readonly BookCategory[] = [
   'fiction', 'non-fiction', 'children', 'young-adult', 'science', 'history', 'biography',
@@ -38,12 +42,15 @@ const CATEGORIES: readonly BookCategory[] = [
 // Best match while searching, alphabetical otherwise.
 const DEFAULT_SORT: SortKey = 'relevance';
 
-// Filters live in the address bar (?q=&category=&age=&available=1&sort=), so reloading,
+// Filters live in the address bar (?q=&category=&age=&tags=a,b&series=&available=1&sort=), so reloading,
 // sharing a link and the browser's Back button keep the catalogue view.
 const parseCategory = (value: string | null): BookCategory | 'all' =>
   CATEGORIES.includes(value as BookCategory) ? (value as BookCategory) : 'all';
-const parseSort = (value: string | null): SortKey =>
-  SORT_OPTIONS.some((option) => option.value === value) ? (value as SortKey) : DEFAULT_SORT;
+const parseSort = (value: string | null, inSeries: boolean): SortKey => {
+  const options = inSeries ? [...SORT_OPTIONS, SERIES_SORT] : SORT_OPTIONS;
+  if (options.some((option) => option.value === value)) return value as SortKey;
+  return inSeries ? SERIES_SORT.value : DEFAULT_SORT;
+};
 
 function BookCardSkeleton() {
   return (
@@ -79,7 +86,13 @@ export default function CustomerPortal() {
   const categoryFilter = parseCategory(params.get('category'));
   const ageFilter = params.get('age') || 'all';
   const availableOnly = params.get('available') === '1';
-  const sort = parseSort(params.get('sort'));
+  const tagsParam = params.get('tags');
+  const tagFilter = useMemo(() => parseTagParam(tagsParam), [tagsParam]);
+  const tagKey = tagFilter.join(',');
+  const seriesFilter = parseSeriesParam(params.get('series'));
+  const sort = parseSort(params.get('sort'), seriesFilter !== null);
+  const defaultSort: SortKey = seriesFilter ? SERIES_SORT.value : DEFAULT_SORT;
+  const sortOptions = seriesFilter ? [SERIES_SORT, ...SORT_OPTIONS] : SORT_OPTIONS;
   const [searchQuery, setSearchQuery] = useState(urlQuery);
   const [ageRanges, setAgeRanges] = useState<string[]>([]);
 
@@ -104,6 +117,7 @@ export default function CustomerPortal() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<ApiError | null>(null);
   const requestRef = useRef<AbortController | null>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   const search = useDebounced(searchQuery.trim(), 300);
 
@@ -138,6 +152,8 @@ export default function CustomerPortal() {
             category: categoryFilter === 'all' ? undefined : categoryFilter,
             age_range: ageFilter === 'all' ? undefined : ageFilter,
             available: availableOnly ? true : undefined,
+            tags: tagKey || undefined,
+            series: seriesFilter ?? undefined,
             sort,
           },
           controller.signal,
@@ -153,7 +169,7 @@ export default function CustomerPortal() {
         if (requestRef.current === controller) setIsLoading(false);
       }
     },
-    [urlQuery, categoryFilter, ageFilter, availableOnly, sort],
+    [urlQuery, categoryFilter, ageFilter, availableOnly, tagKey, seriesFilter, sort],
   );
 
   // Reload from the first page when filters change or availability may have changed.
@@ -161,6 +177,13 @@ export default function CustomerPortal() {
     loadPage(1);
     return () => requestRef.current?.abort();
   }, [loadPage, catalogVersion]);
+
+  // New filters (e.g. a series or tag link on a card) show their results from the top.
+  useEffect(() => {
+    // The list scrolls on its own on tall screens; otherwise the page does.
+    resultsRef.current?.scrollTo({ top: 0 });
+    window.scrollTo({ top: 0 });
+  }, [loadPage]);
 
   useEffect(() => {
     booksApi.ageRanges().then(setAgeRanges).catch(() => setAgeRanges([]));
@@ -183,8 +206,8 @@ export default function CustomerPortal() {
 
           <BatchProgress />
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div className="space-y-2 md:col-span-3 lg:col-span-1">
               <Label htmlFor="search">{t('home.search')}</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -231,7 +254,31 @@ export default function CustomerPortal() {
                 </SelectContent>
               </Select>
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="tag-filter">{t('tags.label')}</Label>
+              <TagFilter
+                id="tag-filter"
+                selected={tagFilter}
+                onChange={(slugs) => updateParams({ tags: slugs.join(',') || null })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="series-filter">{t('series.label')}</Label>
+              <SeriesFilter
+                id="series-filter"
+                value={seriesFilter}
+                // The series' own order replaces a sort chosen for the whole catalogue.
+                onChange={(id) => updateParams({ series: id, sort: null })}
+              />
+            </div>
           </div>
+
+          <SelectedTags
+            selected={tagFilter}
+            onChange={(slugs) => updateParams({ tags: slugs.join(',') || null })}
+          />
 
           <div className="flex flex-wrap items-center justify-between gap-4 mt-4">
             <div className="flex items-center gap-2">
@@ -240,12 +287,12 @@ export default function CustomerPortal() {
             </div>
             <div className="flex items-center gap-2">
               <Label htmlFor="sort" className="whitespace-nowrap">{t('catalog.sortBy')}</Label>
-              <Select value={sort} onValueChange={(value) => updateParams({ sort: value === DEFAULT_SORT ? null : value })}>
+              <Select value={sort} onValueChange={(value) => updateParams({ sort: value === defaultSort ? null : value })}>
                 <SelectTrigger id="sort" className="w-56">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {SORT_OPTIONS.map(({ value, labelKey }) => (
+                  {sortOptions.map(({ value, labelKey }) => (
                     <SelectItem key={value} value={value}>{t(labelKey)}</SelectItem>
                   ))}
                 </SelectContent>
@@ -255,8 +302,14 @@ export default function CustomerPortal() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto" onScroll={handleScroll}>
+      <div ref={resultsRef} className="flex-1 overflow-y-auto" onScroll={handleScroll}>
         <div className="container mx-auto px-4 py-6">
+          {seriesFilter && (
+            <SeriesBanner
+              seriesId={seriesFilter}
+              onClear={() => updateParams({ series: null, sort: null })}
+            />
+          )}
           <p className="text-muted-foreground mb-4">
             {t('home.showingCount', { shown: books.length, total })}
           </p>

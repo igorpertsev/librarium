@@ -8,15 +8,16 @@ from __future__ import annotations
 
 import csv
 import io
-import uuid
+import re
 from dataclasses import dataclass, field
 from typing import Any
 
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Book
 from app.schemas.book import BookCreate
+from app.services import catalog
+from app.services.books import new_book
 
 MAX_ROWS = 500
 REQUIRED_COLUMNS = ("title", "author", "category")
@@ -28,11 +29,15 @@ _ALIASES = {
     "cover": "cover_url",
     "cover_image": "cover_url",
     "images": "image_urls",
+    "series": "series_name",
+    "volume": "series_position",
+    "series_number": "series_position",
 }
 _FIELDS = set(BookCreate.model_fields)
 TEMPLATE = (
-    "title,author,category,age_range,isbn,publication_year,language,status,cover_url,description\n"
-    "The Hobbit,J.R.R. Tolkien,fiction,8+,9780547928227,1937,en,available,,"
+    "title,author,category,age_range,isbn,publication_year,language,status,tags,series,"
+    "series_position,cover_url,description\n"
+    "The Hobbit,J.R.R. Tolkien,fiction,8+,9780547928227,1937,en,available,fantasy|adventure,,,,"
     '"A hobbit, a dragon and a long journey."\n'
 )
 
@@ -55,7 +60,20 @@ def _column(name: str) -> str:
     return _ALIASES.get(key, key)
 
 
-def _row_values(raw: dict[str, str | None]) -> dict[str, Any]:
+class UnknownTagsError(ValueError):
+    pass
+
+
+def _tags(text: str, lookup: dict[str, str]) -> list[str]:
+    """Tags by slug or by English/Russian name, separated by | ; or ,."""
+    names = [name.strip() for name in re.split(r"[|;,]", text) if name.strip()]
+    unknown = [name for name in names if name.lower() not in lookup]
+    if unknown:
+        raise UnknownTagsError(f"tags: unknown tag(s) {', '.join(unknown)}")
+    return [lookup[name.lower()] for name in names]
+
+
+def _row_values(raw: dict[str, str | None], tag_lookup: dict[str, str]) -> dict[str, Any]:
     values: dict[str, Any] = {}
     for column, value in raw.items():
         text = (value or "").strip()
@@ -63,6 +81,8 @@ def _row_values(raw: dict[str, str | None]) -> dict[str, Any]:
             continue
         if column == "image_urls":
             values[column] = [url for url in text.replace("|", " ").split() if url]
+        elif column == "tags":
+            values[column] = _tags(text, tag_lookup)
         elif column in {"category", "status"}:
             values[column] = text.lower().replace(" ", "-").replace("_", "-")
         else:
@@ -70,7 +90,7 @@ def _row_values(raw: dict[str, str | None]) -> dict[str, Any]:
     return values
 
 
-def parse(text: str) -> tuple[list[BookCreate], ImportResult]:
+def parse(text: str, tag_lookup: dict[str, str]) -> tuple[list[BookCreate], ImportResult]:
     result = ImportResult()
     reader = csv.DictReader(io.StringIO(text.lstrip("﻿")))
     if reader.fieldnames is None:
@@ -92,7 +112,9 @@ def parse(text: str) -> tuple[list[BookCreate], ImportResult]:
             result.errors.append(RowError(line, f"At most {MAX_ROWS} books per import"))
             break
         try:
-            books.append(BookCreate.model_validate(_row_values(raw)))
+            books.append(BookCreate.model_validate(_row_values(raw, tag_lookup)))
+        except UnknownTagsError as exc:
+            result.errors.append(RowError(line, str(exc)))
         except ValidationError as exc:
             for error in exc.errors():
                 where = ".".join(str(part) for part in error["loc"]) or "row"
@@ -101,10 +123,12 @@ def parse(text: str) -> tuple[list[BookCreate], ImportResult]:
 
 
 async def import_books(session: AsyncSession, text: str, *, dry_run: bool) -> ImportResult:
-    books, result = parse(text)
+    books, result = parse(text, await catalog.tag_lookup(session))
     if result.errors or dry_run:
         return result
-    session.add_all(Book(id=uuid.uuid4(), **book.model_dump()) for book in books)
+    for book in books:  # one transaction: the series a file names are created once
+        await new_book(session, book)
+        await session.flush()
     await session.commit()
     result.created = len(books)
     return result

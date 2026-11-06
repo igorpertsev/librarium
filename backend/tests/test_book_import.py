@@ -52,6 +52,11 @@ async def test_any_invalid_row_rejects_the_whole_file(admin: ApiUser) -> None:
 async def test_missing_columns_and_template(admin: ApiUser) -> None:
     body = (await _import(admin, "title,author\nA,B\n")).json()
     assert body["errors"] == [{"row": 1, "message": "Missing column(s): category"}]
+    for slug, en, ru in [
+        ("fantasy", "Fantasy", "Фэнтези"),
+        ("adventure", "Adventure", "Приключения"),
+    ]:
+        await admin.post(f"{API}/admin/tags", json={"slug": slug, "name_en": en, "name_ru": ru})
     assert (await _import(admin, TEMPLATE)).json()["created"] == 1
 
 
@@ -108,6 +113,8 @@ async def test_isbn_lookup_fills_in_the_details(
         "publication_year": 2012,
         "cover_url": "https://covers.openlibrary.org/b/id/12645114-L.jpg",
         "language": "en",
+        "series": None,
+        "suggested_tags": [],
     }
     missing = await admin.get(f"{API}/admin/isbn/9780000000002")
     assert missing.status_code == 404

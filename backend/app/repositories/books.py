@@ -24,7 +24,7 @@ from sqlalchemy import (
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import InstrumentedAttribute
 
-from app.models import Book, Order, OrderItem
+from app.models import Book, Order, OrderItem, Series, Tag, book_tags
 from app.models.enums import ACTIVE_ORDER_STATUSES, BookCategory, BookStatus
 from app.schemas.book import BookSort
 
@@ -85,6 +85,7 @@ _SORT_COLUMNS: dict[BookSort, ColumnElement[Any]] = {
     BookSort.CREATED_AT: Book.created_at.asc(),
     BookSort.CREATED_AT_DESC: Book.created_at.desc(),
     BookSort.RELEVANCE: func.lower(Book.title).asc(),  # without a search text
+    BookSort.SERIES: Book.series_position.asc().nulls_last(),
 }
 
 # word_similarity() above which a title or author counts as a (possibly misspelt) match:
@@ -107,6 +108,30 @@ def search_condition(text: str) -> ColumnElement[bool]:
         func.word_similarity(literal(text), Book.title) >= TYPO_SIMILARITY,
         func.word_similarity(literal(text), Book.author) >= TYPO_SIMILARITY,
     ]
+    # Tag names in both languages and series names (also misspelt) find their books.
+    clauses.append(
+        Book.id.in_(
+            select(book_tags.c.book_id)
+            .join(Tag, Tag.id == book_tags.c.tag_id)
+            .where(
+                or_(
+                    Tag.name_en.ilike(pattern, escape="\\"),
+                    Tag.name_ru.ilike(pattern, escape="\\"),
+                    Tag.slug.ilike(pattern, escape="\\"),
+                )
+            )
+        )
+    )
+    clauses.append(
+        Book.series_id.in_(
+            select(Series.id).where(
+                or_(
+                    Series.name.ilike(pattern, escape="\\"),
+                    func.word_similarity(literal(text), Series.name) >= TYPO_SIMILARITY,
+                )
+            )
+        )
+    )
     digits = re.sub(r"[^0-9Xx]", "", text)
     if len(digits) >= 4 and len(digits) >= len(text.replace(" ", "")) - 4:  # looks like an ISBN
         clauses.append(func.regexp_replace(Book.isbn, "[^0-9Xx]", "", "g").ilike(f"%{digits}%"))
@@ -132,6 +157,8 @@ class BookFilters:
     status: BookStatus | None = None
     available: bool | None = None
     include_inactive: bool = False
+    tags: tuple[str, ...] = ()  # slugs; a book must have every one of them
+    series_id: uuid.UUID | None = None
 
 
 def _conditions(
@@ -148,6 +175,16 @@ def _conditions(
         conditions.append(Book.age_range == filters.age_range)
     if filters.status is not None:
         conditions.append(Book.status == filters.status)
+    for slug in filters.tags:
+        conditions.append(
+            Book.id.in_(
+                select(book_tags.c.book_id)
+                .join(Tag, Tag.id == book_tags.c.tag_id)
+                .where(Tag.slug == slug)
+            )
+        )
+    if filters.series_id is not None:
+        conditions.append(Book.series_id == filters.series_id)
     if filters.available is not None and per_copy_availability:
         reserved = active_reservation_exists(Book.id)
         is_available = Book.is_active.is_(True) & (Book.status == BookStatus.AVAILABLE) & ~reserved

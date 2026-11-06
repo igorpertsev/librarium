@@ -15,8 +15,21 @@ from app.services import books as books_service
 router = APIRouter(prefix="/books", tags=["books"])
 
 SearchQuery = Annotated[
-    str | None, Query(max_length=200, description="Matches title, author or ISBN")
+    str | None,
+    Query(max_length=200, description="Matches title, author, ISBN, description, tags, series"),
 ]
+TagsQuery = Annotated[
+    str | None,
+    Query(
+        max_length=300,
+        pattern=r"^[a-z0-9-]+(,[a-z0-9-]+){0,9}$",
+        description="Comma-separated tag slugs; a book must have all of them",
+    ),
+]
+
+
+def tag_slugs(tags: str | None) -> tuple[str, ...]:
+    return tuple(dict.fromkeys(tags.split(","))) if tags else ()
 
 
 @router.get("", response_model=BookPage, responses=error_responses(422))
@@ -29,6 +42,8 @@ async def list_books(
     available: Annotated[
         bool | None, Query(description="true: can be borrowed now; false: cannot")
     ] = None,
+    tags: TagsQuery = None,
+    series: Annotated[uuid.UUID | None, Query(description="Books of this series")] = None,
     sort: BookSort = BookSort.TITLE,
 ) -> BookPage:
     items, total = await books_service.list_books(
@@ -38,6 +53,8 @@ async def list_books(
             category=category,
             age_range=age_range,
             available=available,
+            tags=tag_slugs(tags),
+            series_id=series,
         ),
         sort=sort,
         page=pagination.page,

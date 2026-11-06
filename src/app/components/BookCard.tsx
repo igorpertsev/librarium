@@ -14,6 +14,7 @@ import { getCartButtonLabel, getCategoryTranslation, getStatusTranslation } from
 import { useFormat } from '../utils/format';
 import { errorMessage } from '../utils/apiErrors';
 import { WaitlistButton } from './WaitlistButton';
+import { SeriesLink, TagChips } from './CatalogFilters';
 
 interface BookCardProps {
   book: Book;
@@ -163,11 +164,13 @@ export function BookCard({ book }: BookCardProps) {
             </button>
           </h2>
           <p className="text-sm text-muted-foreground">{book.author}</p>
+          <SeriesLink book={book} className="text-sm max-w-full" />
           <div className="flex gap-2 flex-wrap">
             {getStatusBadge()}
             <Badge variant="outline">{getCategoryTranslation(t, book.category)}</Badge>
             <Badge variant="outline">{book.ageRange}</Badge>
           </div>
+          <TagChips tags={book.tags} limit={3} />
           {isOrderedByOther && book.availableFrom && (
             <p className="text-xs text-muted-foreground">
               {t('availability.expectedBack', { date: fmt.date(book.availableFrom) })}

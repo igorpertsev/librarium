@@ -258,6 +258,63 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Tags
+         * @description Every tag with the number of titles that have it (filter: GET /books?tags=a,b).
+         */
+        get: operations["list_tags_api_v1_tags_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/series": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Series
+         * @description Series by name (books of one: GET /books?series=<id>&sort=series).
+         */
+        get: operations["list_series_api_v1_series_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/series/{series_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Series */
+        get: operations["get_series_api_v1_series__series_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/cart": {
         parameters: {
             query?: never;
@@ -510,7 +567,7 @@ export interface paths {
         };
         /**
          * Admin Lookup Isbn
-         * @description Title, author, description, year, language and cover for an ISBN, from Open Library. 404 ISBN_NOT_FOUND, 502 LOOKUP_UNAVAILABLE.
+         * @description Title, author, description, year, language, cover, series and suggested tags for an ISBN, from Open Library. 404 ISBN_NOT_FOUND, 502 LOOKUP_UNAVAILABLE.
          */
         get: operations["admin_lookup_isbn_api_v1_admin_isbn__isbn__get"];
         put?: never;
@@ -682,6 +739,122 @@ export interface paths {
          * @description Emails the customer a reminder (overdue, or due soon) with the next notifier run. Only for borrowed orders, at most once per 24 hours (409 REMINDER_RECENTLY_SENT).
          */
         post: operations["admin_remind_customer_api_v1_admin_orders__order_id__remind_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Admin Create Tag */
+        post: operations["admin_create_tag_api_v1_admin_tags_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tags/{tag_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Admin Delete Tag
+         * @description The tag disappears from every book.
+         */
+        delete: operations["admin_delete_tag_api_v1_admin_tags__tag_id__delete"];
+        options?: never;
+        head?: never;
+        /** Admin Update Tag */
+        patch: operations["admin_update_tag_api_v1_admin_tags__tag_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/tags/{tag_id}/merge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Admin Merge Tag
+         * @description Books with this tag get the tag `into_id` instead; this tag is deleted.
+         */
+        post: operations["admin_merge_tag_api_v1_admin_tags__tag_id__merge_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/series": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Admin Create Series */
+        post: operations["admin_create_series_api_v1_admin_series_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/series/{series_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Admin Delete Series
+         * @description Deletes the series; its books stay in the catalogue without a series.
+         */
+        delete: operations["admin_delete_series_api_v1_admin_series__series_id__delete"];
+        options?: never;
+        head?: never;
+        /** Admin Update Series */
+        patch: operations["admin_update_series_api_v1_admin_series__series_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/series/{series_id}/merge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Admin Merge Series
+         * @description Moves the books to the series `into_id` (keeping their volume numbers) and deletes this series.
+         */
+        post: operations["admin_merge_series_api_v1_admin_series__series_id__merge_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -877,6 +1050,14 @@ export interface components {
              * @description The same for every copy of a title
              */
             group_id: string;
+            /** Tags */
+            tags: components["schemas"]["TagBrief"][];
+            series: components["schemas"]["SeriesBrief"] | null;
+            /**
+             * Series Position
+             * @description Volume number within the series
+             */
+            series_position: number | null;
             /** Is Active */
             is_active: boolean;
         };
@@ -914,6 +1095,22 @@ export interface components {
             language?: string | null;
             /** Publication Year */
             publication_year?: number | null;
+            /**
+             * Tags
+             * @description Tag slugs (GET /tags)
+             */
+            tags?: string[];
+            /** Series Id */
+            series_id?: string | null;
+            /**
+             * Series Name
+             * @description Finds the series by name (any case) or creates it
+             */
+            series_name?: string | null;
+            /** Series Openlibrary Key */
+            series_openlibrary_key?: string | null;
+            /** Series Position */
+            series_position?: number | null;
         };
         /** BookImportError */
         BookImportError: {
@@ -952,6 +1149,12 @@ export interface components {
             cover_url: string | null;
             /** Language */
             language: string | null;
+            series: components["schemas"]["LookupSeries"] | null;
+            /**
+             * Suggested Tags
+             * @description Library tags matching the book's Open Library subjects
+             */
+            suggested_tags: components["schemas"]["TagBrief"][];
         };
         /** BookPage */
         BookPage: {
@@ -997,6 +1200,14 @@ export interface components {
              * @description The same for every copy of a title
              */
             group_id: string;
+            /** Tags */
+            tags: components["schemas"]["TagBrief"][];
+            series: components["schemas"]["SeriesBrief"] | null;
+            /**
+             * Series Position
+             * @description Volume number within the series
+             */
+            series_position: number | null;
             /** Is Active */
             is_active: boolean;
             /**
@@ -1041,7 +1252,7 @@ export interface components {
          * @description Allow-list of sort keys; ``-`` prefix means descending. Never interpolated into SQL.
          * @enum {string}
          */
-        BookSort: "title" | "-title" | "author" | "-author" | "publication_year" | "-publication_year" | "created_at" | "-created_at" | "relevance";
+        BookSort: "title" | "-title" | "author" | "-author" | "publication_year" | "-publication_year" | "created_at" | "-created_at" | "relevance" | "series";
         /** BookStats */
         BookStats: {
             /** Total */
@@ -1083,6 +1294,22 @@ export interface components {
             language?: string | null;
             /** Publication Year */
             publication_year?: number | null;
+            /**
+             * Tags
+             * @description Replaces the book's tags
+             */
+            tags?: string[] | null;
+            /**
+             * Series Id
+             * @description null removes the book from its series
+             */
+            series_id?: string | null;
+            /** Series Name */
+            series_name?: string | null;
+            /** Series Openlibrary Key */
+            series_openlibrary_key?: string | null;
+            /** Series Position */
+            series_position?: number | null;
         };
         /** CartItemCreate */
         CartItemCreate: {
@@ -1245,6 +1472,29 @@ export interface components {
             email: string;
             /** Password */
             password: string;
+        };
+        /** LookupSeries */
+        LookupSeries: {
+            /**
+             * Id
+             * @description The library's series, if it already has it
+             */
+            id: string | null;
+            /** Name */
+            name: string;
+            /** Openlibrary Key */
+            openlibrary_key: string | null;
+            /** Position */
+            position: number | null;
+        };
+        /** MergeInto */
+        MergeInto: {
+            /**
+             * Into Id
+             * Format: uuid
+             * @description Books move to this one; the merged one is deleted
+             */
+            into_id: string;
         };
         /**
          * NotificationKind
@@ -1444,6 +1694,103 @@ export interface components {
             token: string;
             /** New Password */
             new_password: string;
+        };
+        /** SeriesBrief */
+        SeriesBrief: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+        };
+        /** SeriesCreate */
+        SeriesCreate: {
+            /** Name */
+            name: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+        };
+        /** SeriesRead */
+        SeriesRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Openlibrary Key */
+            openlibrary_key: string | null;
+            /**
+             * Book Count
+             * @description Titles in the series (copies counted once)
+             * @default 0
+             */
+            book_count: number;
+        };
+        /** SeriesUpdate */
+        SeriesUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+        };
+        /** TagBrief */
+        TagBrief: {
+            /** Slug */
+            slug: string;
+            /** Name En */
+            name_en: string;
+            /** Name Ru */
+            name_ru: string;
+        };
+        /** TagCreate */
+        TagCreate: {
+            /**
+             * Slug
+             * @description Generated from name_en when omitted
+             */
+            slug?: string | null;
+            /** Name En */
+            name_en: string;
+            /** Name Ru */
+            name_ru: string;
+        };
+        /** TagRead */
+        TagRead: {
+            /** Slug */
+            slug: string;
+            /** Name En */
+            name_en: string;
+            /** Name Ru */
+            name_ru: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Book Count
+             * @description Titles with this tag (copies counted once)
+             * @default 0
+             */
+            book_count: number;
+        };
+        /** TagUpdate */
+        TagUpdate: {
+            /** Slug */
+            slug?: string | null;
+            /** Name En */
+            name_en?: string | null;
+            /** Name Ru */
+            name_ru?: string | null;
         };
         /**
          * TokenResponse
@@ -2092,12 +2439,16 @@ export interface operations {
     list_books_api_v1_books_get: {
         parameters: {
             query?: {
-                /** @description Matches title, author or ISBN */
+                /** @description Matches title, author, ISBN, description, tags, series */
                 q?: string | null;
                 category?: components["schemas"]["BookCategory"] | null;
                 age_range?: string | null;
                 /** @description true: can be borrowed now; false: cannot */
                 available?: boolean | null;
+                /** @description Comma-separated tag slugs; a book must have all of them */
+                tags?: string | null;
+                /** @description Books of this series */
+                series?: string | null;
                 sort?: components["schemas"]["BookSort"];
                 page?: number;
                 page_size?: number;
@@ -2166,6 +2517,98 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BookRead"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_tags_api_v1_tags_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagRead"][];
+                };
+            };
+        };
+    };
+    list_series_api_v1_series_get: {
+        parameters: {
+            query?: {
+                /** @description Part of the name */
+                q?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeriesRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_series_api_v1_series__series_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                series_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeriesRead"];
                 };
             };
             /** @description Not Found */
@@ -2762,6 +3205,9 @@ export interface operations {
                 status?: components["schemas"]["BookStatus"] | null;
                 available?: boolean | null;
                 include_inactive?: boolean;
+                /** @description Comma-separated tag slugs; a book must have all of them */
+                tags?: string | null;
+                series?: string | null;
                 sort?: components["schemas"]["BookSort"];
                 page?: number;
                 page_size?: number;
@@ -3689,6 +4135,527 @@ export interface operations {
             };
             /** @description Conflict */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_create_tag_api_v1_admin_tags_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TagCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagRead"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_delete_tag_api_v1_admin_tags__tag_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tag_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_update_tag_api_v1_admin_tags__tag_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tag_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TagUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagRead"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_merge_tag_api_v1_admin_tags__tag_id__merge_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tag_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MergeInto"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_create_series_api_v1_admin_series_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SeriesCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeriesRead"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_delete_series_api_v1_admin_series__series_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                series_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_update_series_api_v1_admin_series__series_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                series_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SeriesUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeriesRead"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_merge_series_api_v1_admin_series__series_id__merge_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                series_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MergeInto"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

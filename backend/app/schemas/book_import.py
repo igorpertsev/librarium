@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import uuid
 from typing import Annotated
 
-from pydantic import StringConstraints
+from pydantic import Field, StringConstraints
 
+from app.schemas.catalog import TagBrief
 from app.schemas.common import ApiModel, RequestModel
 
 
@@ -22,6 +24,13 @@ class BookImportResult(ApiModel):
     errors: list[BookImportError]
 
 
+class LookupSeries(ApiModel):
+    id: uuid.UUID | None = Field(description="The library's series, if it already has it")
+    name: str
+    openlibrary_key: str | None
+    position: float | None
+
+
 class BookLookup(ApiModel):
     isbn: str
     title: str
@@ -30,3 +39,7 @@ class BookLookup(ApiModel):
     publication_year: int | None
     cover_url: str | None
     language: str | None
+    series: LookupSeries | None
+    suggested_tags: list[TagBrief] = Field(
+        description="Library tags matching the book's Open Library subjects"
+    )

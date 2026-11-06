@@ -39,6 +39,34 @@ class BookDetails:
     publication_year: int | None
     cover_url: str | None
     language: str | None
+    series_name: str | None = None
+    series_key: str | None = None  # Open Library series key, e.g. "OL326110L"
+    series_position: float | None = None
+    subjects: tuple[str, ...] = ()
+
+
+_SERIES_KEY = re.compile(r"^/series/(OL\d+L)$")
+_SERIES_TEXT = re.compile(
+    r"^(?P<name>.*?)[\s,;:#(-]*(?:\b(?:bk|book|vol|volume|no|v|t|т|том|кн|книга)\b\.?\s*)?"
+    r"(?P<number>\d+(?:\.\d+)?)\)?\s*$",
+    re.IGNORECASE,
+)
+
+
+def _position(value: Any) -> float | None:
+    try:
+        number = float(str(value).strip())
+    except ValueError:
+        return None
+    return number if 0 < number < 10000 else None
+
+
+def parse_series_text(text: str) -> tuple[str, float | None]:
+    """'Dune chronicles -- bk. 1' -> ('Dune chronicles', 1.0); no number -> (text, None)."""
+    match = _SERIES_TEXT.match(text.strip())
+    if match and match.group("name").strip(" ,;:#(-"):
+        return match.group("name").strip(" ,;:#(-"), _position(match.group("number"))
+    return text.strip(), None
 
 
 def normalize_isbn(value: str) -> str | None:
@@ -110,7 +138,17 @@ class OpenLibraryClient:
         language_key = (
             languages[0].get("key", "") if languages and isinstance(languages[0], dict) else ""
         )
+        series_name, series_key, series_position = await self._series(edition, work)
+        subjects = [
+            text
+            for value in [*(work.get("subjects") or []), *(edition.get("subjects") or [])]
+            if (text := _text(value))
+        ]
         return BookDetails(
+            series_name=series_name,
+            series_key=series_key,
+            series_position=series_position,
+            subjects=tuple(dict.fromkeys(subjects))[:200],
             isbn=normalized,
             title=str(_text(edition.get("title"))),
             author=", ".join(authors) or None,
@@ -119,3 +157,23 @@ class OpenLibraryClient:
             cover_url=f"https://covers.openlibrary.org/b/id/{covers[0]}-L.jpg" if covers else None,
             language=_LANGUAGES.get(language_key.rsplit("/", 1)[-1]),
         )
+
+    async def _series(
+        self, edition: dict[str, Any], work: dict[str, Any]
+    ) -> tuple[str | None, str | None, float | None]:
+        """The story series: from the work record (key + position, the same for editions in
+        every language), else from the edition's free-text series ("Dune chronicles, 1")."""
+        for ref in work.get("series") or []:
+            key_ref = ref.get("series", {}).get("key") if isinstance(ref, dict) else None
+            match = _SERIES_KEY.match(key_ref) if isinstance(key_ref, str) else None
+            if match is None:
+                continue
+            record = await self._get_json(f"/series/{match.group(1)}.json")
+            name = _text(record.get("name")) if isinstance(record, dict) else None
+            if name:
+                return name[:300], match.group(1), _position(ref.get("position"))
+        for text in edition.get("series") or []:
+            if isinstance(text, str) and text.strip():
+                name, position = parse_series_text(text)
+                return name[:300], None, position
+        return None, None, None

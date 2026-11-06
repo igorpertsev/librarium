@@ -40,6 +40,15 @@ export type ReminderQueuedDto = Schemas['ReminderQueued'];
 export type BookLookupDto = Schemas['BookLookup'];
 export type BookImportResultDto = Schemas['BookImportResult'];
 export type ReportSummaryDto = Schemas['ReportSummaryRead'];
+export type TagBriefDto = Schemas['TagBrief'];
+export type TagDto = Schemas['TagRead'];
+export type TagCreateDto = Schemas['TagCreate'];
+export type TagUpdateDto = Schemas['TagUpdate'];
+export type SeriesBriefDto = Schemas['SeriesBrief'];
+export type SeriesDto = Schemas['SeriesRead'];
+export type SeriesCreateDto = Schemas['SeriesCreate'];
+export type SeriesUpdateDto = Schemas['SeriesUpdate'];
+export type LookupSeriesDto = Schemas['LookupSeries'];
 
 export type BookListQuery = NonNullable<paths['/api/v1/books']['get']['parameters']['query']>;
 export type AdminBookListQuery = NonNullable<

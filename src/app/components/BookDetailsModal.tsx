@@ -14,6 +14,7 @@ import { getCartButtonLabel, getCategoryTranslation } from '../utils/translation
 import { useFormat } from '../utils/format';
 import { errorMessage } from '../utils/apiErrors';
 import { WaitlistButton } from './WaitlistButton';
+import { SeriesLink, TagChips } from './CatalogFilters';
 
 interface BookDetailsModalProps {
   book: Book | null;
@@ -202,6 +203,12 @@ export function BookDetailsModal({ book, open, onOpenChange }: BookDetailsModalP
               <Badge variant="outline" className="text-xs sm:text-base px-2 sm:px-4 py-0.5 sm:py-1.5">{getCategoryTranslation(t, book.category)}</Badge>
               <Badge variant="outline" className="text-xs sm:text-base px-2 sm:px-4 py-0.5 sm:py-1.5">{book.ageRange}</Badge>
             </div>
+            {(book.series || (book.tags?.length ?? 0) > 0) && (
+              <div className="space-y-2">
+                <SeriesLink book={book} onNavigate={() => onOpenChange(false)} className="text-sm sm:text-base" />
+                <TagChips tags={book.tags} onNavigate={() => onOpenChange(false)} />
+              </div>
+            )}
             {isOrderedByOther && book.availableFrom && (
               <p className="text-sm text-muted-foreground">
                 {t('availability.expectedBack', { date: fmt.date(book.availableFrom) })}

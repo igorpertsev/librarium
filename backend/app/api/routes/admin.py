@@ -13,6 +13,7 @@ from app.api.dependencies import (
     SessionDep,
     require_admin,
 )
+from app.api.routes.books import TagsQuery, tag_slugs
 from app.core.exceptions import BadRequestError
 from app.models.enums import BookCategory, BookStatus, OrderStatus
 from app.repositories import orders as orders_repo
@@ -26,7 +27,17 @@ from app.schemas.book import (
     BookStats,
     BookUpdate,
 )
-from app.schemas.book_import import BookImportRequest, BookImportResult, BookLookup
+from app.schemas.book_import import BookImportRequest, BookImportResult, BookLookup, LookupSeries
+from app.schemas.catalog import (
+    MergeInto,
+    SeriesCreate,
+    SeriesRead,
+    SeriesUpdate,
+    TagBrief,
+    TagCreate,
+    TagRead,
+    TagUpdate,
+)
 from app.schemas.common import error_responses
 from app.schemas.library_settings import LibrarySettingsRead, LibrarySettingsUpdate
 from app.schemas.order import (
@@ -38,11 +49,12 @@ from app.schemas.order import (
 )
 from app.schemas.report import ReportSummaryRead
 from app.schemas.user import AdminUserPage, AdminUserUpdate, UserRead
-from app.services import book_import, reports
+from app.services import book_import, catalog, reports
 from app.services import books as books_service
 from app.services import library_settings as settings_service
 from app.services import orders as orders_service
 from app.services import users as users_service
+from app.services.tag_suggestions import suggest_tags
 
 # Every route below requires an authenticated administrator (checked server-side).
 router = APIRouter(
@@ -65,6 +77,8 @@ async def admin_list_books(
     book_status: Annotated[BookStatus | None, Query(alias="status")] = None,
     available: bool | None = None,
     include_inactive: bool = False,
+    tags: TagsQuery = None,
+    series: uuid.UUID | None = None,
     sort: BookSort = BookSort.CREATED_AT,
 ) -> BookPage:
     items, total = await books_service.list_books(
@@ -75,6 +89,8 @@ async def admin_list_books(
             status=book_status,
             available=available,
             include_inactive=include_inactive,
+            tags=tag_slugs(tags),
+            series_id=series,
         ),
         sort=sort,
         page=pagination.page,
@@ -117,12 +133,37 @@ async def admin_import_books(
     "/isbn/{isbn}",
     response_model=BookLookup,
     responses=error_responses(404, 502),
-    description="Title, author, description, year, language and cover for an ISBN, from Open "
+    description="Title, author, description, year, language, cover, series and suggested tags "
+    "for an ISBN, from Open "
     "Library. 404 ISBN_NOT_FOUND, 502 LOOKUP_UNAVAILABLE.",
 )
-async def admin_lookup_isbn(isbn: str, openlibrary: OpenLibraryDep) -> BookLookup:
+async def admin_lookup_isbn(
+    isbn: str, openlibrary: OpenLibraryDep, session: SessionDep
+) -> BookLookup:
     details = await openlibrary.lookup(isbn)
-    return BookLookup.model_validate(details, from_attributes=True)
+    series = None
+    if details.series_name:
+        existing = await catalog.find_series(
+            session, name=details.series_name, openlibrary_key=details.series_key
+        )
+        series = LookupSeries(
+            id=existing.id if existing else None,
+            name=existing.name if existing else details.series_name,
+            openlibrary_key=details.series_key,
+            position=details.series_position,
+        )
+    suggested = await suggest_tags(session, details.subjects)
+    return BookLookup(
+        isbn=details.isbn,
+        title=details.title,
+        author=details.author,
+        description=details.description,
+        publication_year=details.publication_year,
+        cover_url=details.cover_url,
+        language=details.language,
+        series=series,
+        suggested_tags=[TagBrief.model_validate(tag) for tag in suggested],
+    )
 
 
 @router.post(
@@ -253,6 +294,90 @@ async def admin_change_order_due_date(
 async def admin_remind_customer(order_id: uuid.UUID, session: SessionDep) -> ReminderQueued:
     notification = await orders_service.remind_customer(session, order_id)
     return ReminderQueued(kind=notification.kind, queued_at=notification.created_at)
+
+
+# --- Tags and series ------------------------------------------------------------------------
+
+
+@router.post(
+    "/tags",
+    status_code=status.HTTP_201_CREATED,
+    response_model=TagRead,
+    responses=error_responses(400, 409, 422),
+)
+async def admin_create_tag(body: TagCreate, session: SessionDep) -> TagRead:
+    tag = await catalog.create_tag(session, body)
+    return TagRead(id=tag.id, slug=tag.slug, name_en=tag.name_en, name_ru=tag.name_ru)
+
+
+@router.patch("/tags/{tag_id}", response_model=TagRead, responses=error_responses(404, 409, 422))
+async def admin_update_tag(tag_id: uuid.UUID, body: TagUpdate, session: SessionDep) -> TagRead:
+    await catalog.update_tag(session, tag_id, body)
+    return next(t for t in await catalog.list_tags(session) if t.id == tag_id)
+
+
+@router.delete(
+    "/tags/{tag_id}", status_code=status.HTTP_204_NO_CONTENT, responses=error_responses(404, 422)
+)
+async def admin_delete_tag(tag_id: uuid.UUID, session: SessionDep) -> Response:
+    """The tag disappears from every book."""
+    await catalog.delete_tag(session, tag_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post(
+    "/tags/{tag_id}/merge",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses=error_responses(400, 404, 422),
+    description="Books with this tag get the tag `into_id` instead; this tag is deleted.",
+)
+async def admin_merge_tag(tag_id: uuid.UUID, body: MergeInto, session: SessionDep) -> Response:
+    await catalog.merge_tags(session, tag_id, body.into_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post(
+    "/series",
+    status_code=status.HTTP_201_CREATED,
+    response_model=SeriesRead,
+    responses=error_responses(409, 422),
+)
+async def admin_create_series(body: SeriesCreate, session: SessionDep) -> SeriesRead:
+    return await catalog.create_series(session, body)
+
+
+@router.patch(
+    "/series/{series_id}", response_model=SeriesRead, responses=error_responses(404, 409, 422)
+)
+async def admin_update_series(
+    series_id: uuid.UUID, body: SeriesUpdate, session: SessionDep
+) -> SeriesRead:
+    return await catalog.update_series(session, series_id, body)
+
+
+@router.delete(
+    "/series/{series_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses=error_responses(404, 422),
+    description="Deletes the series; its books stay in the catalogue without a series.",
+)
+async def admin_delete_series(series_id: uuid.UUID, session: SessionDep) -> Response:
+    await catalog.delete_series(session, series_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post(
+    "/series/{series_id}/merge",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses=error_responses(400, 404, 422),
+    description="Moves the books to the series `into_id` (keeping their volume numbers) and "
+    "deletes this series.",
+)
+async def admin_merge_series(
+    series_id: uuid.UUID, body: MergeInto, session: SessionDep
+) -> Response:
+    await catalog.merge_series(session, series_id, body.into_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 # --- Reports -----------------------------------------------------------------------------

@@ -173,7 +173,9 @@ The application never calls `metadata.create_all()`.
 
 - creates/activates the administrator from `SEED_ADMIN_EMAIL` + `SEED_ADMIN_PASSWORD` (no password is stored in code);
   an existing admin's password is only changed with `--reset-admin-password`;
-- `--demo-books` adds 16 books from `backend/app/seed_data/demo_books.json`; refuses to run in production;
+- `--demo-books` adds 19 books from `backend/app/seed_data/demo_books.json`, with tags and two series (*Harry Potter*,
+  *The Hunger Games*); demo books loaded before tags existed get their tags and series unless they were edited since;
+  starter tags a librarian deleted are skipped; refuses to run in production;
 - `--refresh-demo-covers` (with `--demo-books`) updates the covers of demo books that already exist
   (the demo data uses real covers from Open Library);
 - ensures the library settings row exists. Running it again never duplicates anything.
@@ -353,7 +355,20 @@ two copies of the same title are two records (ISBN is not unique).
 - **Search** (`GET /books?q=`): PostgreSQL full-text search over title, author and description (generated
   `search_vector`, `simple` configuration, so English and Russian are treated alike; web-search syntax: `"phrase"`,
   `-word`), substring matches on title, author and ISBN (hyphens ignored), and typo tolerance via `pg_trgm`
-  (`word_similarity` ≥ 0.5: “hobit” finds *The Hobbit*). `sort=relevance` ranks the best match first.
+  (`word_similarity` ≥ 0.5: “hobit” finds *The Hobbit*). `sort=relevance` ranks the best match first. Tag names
+  (English and Russian) and series names (also misspelt) match as well.
+- **Tags** (`GET /tags`, filter `GET /books?tags=fantasy,magic`: a book must have **every** listed tag, up to 10):
+  a curated list kept by librarians (admin “Tags & series” tab: create, rename, merge, delete), each with an English
+  and a Russian name; 20 starter tags come with migration 0009. Tags belong to the title (all copies get them).
+  The catalogue keeps the selection in the address bar (`?tags=`).
+- **Series** (`GET /series`, `GET /books?series=<id>&sort=series`): a book has at most one series and a volume
+  number (`series_position`, may be fractional, e.g. 1.5). The book form, the CSV import and the API take a series
+  by name (`series_name`, matched in any case, created when new) or by `series_id`; `series_id: null` takes a book
+  out of its series. “Fill in from ISBN” reads the series from the Open Library work record (key and volume, the same
+  for every edition and language) or from the edition's free-text series (“Dune chronicles, bk. 1”), stores the
+  Open Library key with the series so other editions find it, and suggests tags from the book's subjects. The
+  catalogue shows the series on each card (link to the series), lists a series in volume order and can put every
+  available volume into the cart (“Take the whole series”).
 - The cart is not a reservation: the same book can sit in several users' carts; adding it checks
   availability, but the decisive check happens at checkout.
 - Pricing is per **batch**: `price_per_batch` for every complete set of `books_per_batch` books (library
@@ -392,7 +407,9 @@ Concurrency is covered by tests in which both requests are held at a barrier rig
 | Table | Key points |
 | --- | --- |
 | `users` | email unique and lower-case (CHECK), Argon2 hash, role `customer/admin`, contacts (nullable), `preferred_contact_method` |
-| `books` | one row per physical copy: `cover_url`, `image_urls[]`, `age_range`, `category`, `status` (`available/available-soon/not-available`), `language`, `publication_year`, `is_active` (soft delete), `copy_group_id` (copies of one title) |
+| `books` | one row per physical copy: `cover_url`, `image_urls[]`, `age_range`, `category`, `status` (`available/available-soon/not-available`), `language`, `publication_year`, `is_active` (soft delete), `copy_group_id` (copies of one title), `series_id` + `series_position` (CHECK > 0) |
+| `tags`, `book_tags` | tag `slug` (unique, CHECK format), `name_en`, `name_ru`; book ↔ tag link table |
+| `series` | `name` (unique), `description`, `openlibrary_key` (unique, from ISBN lookups) |
 | `library_settings` | single row: `books_per_batch`, `price_per_batch NUMERIC(10,2)`, `currency`, `loan_period_days`, `max_renewals` |
 | `carts`, `cart_items` | one cart per user, `UNIQUE(cart_id, book_id)` |
 | `waitlist_entries` | customer waiting for a book, `UNIQUE(user_id, book_id)` |
@@ -419,7 +436,8 @@ Differences (adapters in `src/api/mappers.ts`):
 | GET | `/health` (liveness), `/api/v1/health` (DB) | everyone |
 | POST | `/auth/register`, `/auth/login`, `/auth/refresh`, `/auth/logout`, `/auth/forgot-password`, `/auth/reset-password` | everyone |
 | GET | `/auth/me`, `/users/me` · PATCH `/users/me` · POST `/auth/change-password` | signed-in user |
-| GET | `/books?q&category&age_range&available&sort&page&page_size`, `/books/age-ranges`, `/books/{id}` | everyone |
+| GET | `/books?q&category&age_range&available&tags&series&sort&page&page_size`, `/books/age-ranges`, `/books/{id}` | everyone |
+| GET | `/tags` (with title counts), `/series?q`, `/series/{id}` | everyone |
 | GET/DELETE | `/cart` · POST `/cart/items` · DELETE `/cart/items/{book_id}` | signed-in user |
 | POST/GET | `/orders` · GET `/orders/{id}` · POST `/orders/{id}/cancel`, `/orders/{id}/renew` | signed-in user (own orders only) |
 | GET | `/library/rules` (batch size and price, loan period, extensions per loan) | everyone |
@@ -428,11 +446,13 @@ Differences (adapters in `src/api/mappers.ts`):
 | POST | `/admin/books/import` (CSV, all or nothing, `dry_run`), GET `/admin/isbn/{isbn}` (details from Open Library) | admin |
 | GET | `/admin/reports/summary`, `/admin/reports/orders.csv` (`date_from`, `date_to`; default last 30 days) | admin |
 | POST | `/admin/books/{id}/copies` (`{count}`: more copies of a title) | admin |
+| POST/PATCH/DELETE | `/admin/tags`, `/admin/tags/{id}` · POST `/admin/tags/{id}/merge`; the same for `/admin/series` | admin |
 | GET | `/admin/users` · PATCH `/admin/users/{id}` (role, disable) | admin |
 | GET | `/admin/orders`, `/admin/orders/{id}` · PATCH `/admin/orders/{id}/status`, `/admin/orders/{id}/due-date` | admin |
 | GET/PATCH | `/admin/settings` (batch size, price, currency, loan period) | admin |
 
-Book sorting is allow-listed: `title`, `author`, `publication_year`, `created_at` (prefix `-` for descending).
+Book sorting is allow-listed: `title`, `author`, `publication_year`, `created_at` (prefix `-` for descending),
+`relevance`, `series` (volume order).
 Status transitions: `pending → confirmed | cancelled`, `confirmed → returned`; customers can only cancel `pending` orders.
 
 Error format (the same for every status):
@@ -443,7 +463,7 @@ Error format (the same for every status):
 ```
 
 400 `CART_EMPTY`/`INCOMPLETE_BATCH`/`INVALID_CURRENT_PASSWORD`, 401 `NOT_AUTHENTICATED`/`INVALID_CREDENTIALS`/`TOKEN_EXPIRED`/`REFRESH_TOKEN_*`,
-403 `FORBIDDEN`/`ACCOUNT_DISABLED`, 404 `*_NOT_FOUND`, 409 `BOOK_UNAVAILABLE`/`EMAIL_ALREADY_EXISTS`/`INVALID_STATUS_TRANSITION`,
+400 `UNKNOWN_TAGS` (`details.tags`), 403 `FORBIDDEN`/`ACCOUNT_DISABLED`, 404 `*_NOT_FOUND`, 409 `BOOK_UNAVAILABLE`/`EMAIL_ALREADY_EXISTS`/`INVALID_STATUS_TRANSITION`/`TAG_EXISTS`/`SERIES_EXISTS`,
 422 `VALIDATION_ERROR` (submitted values are not echoed back), 500 `INTERNAL_ERROR` (no stack trace).
 
 ## Email notifications

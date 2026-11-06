@@ -5,10 +5,11 @@ from datetime import UTC, date, datetime
 from enum import StrEnum
 from typing import Annotated, Any, ClassVar
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 
 from app.models.book import Book
 from app.models.enums import BookCategory, BookStatus
+from app.schemas.catalog import SeriesBrief, SeriesName, SeriesPosition, TagBrief, TagSlug
 from app.schemas.common import ApiModel, Page, PatchModel, RequestModel
 from app.schemas.types import (
     AgeRange,
@@ -44,6 +45,8 @@ class BookSort(StrEnum):
     CREATED_AT_DESC = "-created_at"
     # Best match for the search text first (falls back to title without a search).
     RELEVANCE = "relevance"
+    # Order within a series (volume 1, 2, ...); books without a position come last.
+    SERIES = "series"
 
 
 class BookBrief(ApiModel):
@@ -62,6 +65,9 @@ class BookBrief(ApiModel):
     language: str | None
     publication_year: int | None
     group_id: uuid.UUID = Field(description="The same for every copy of a title")
+    tags: list[TagBrief]
+    series: SeriesBrief | None
+    series_position: float | None = Field(description="Volume number within the series")
     is_active: bool
 
 
@@ -114,6 +120,14 @@ class AddCopies(RequestModel):
     count: Annotated[int, Field(ge=1, le=20)] = 1
 
 
+Tags = Annotated[list[TagSlug], Field(max_length=20)]
+
+
+def _one_series_reference(model: BookCreate | BookUpdate) -> None:
+    if model.series_id is not None and model.series_name is not None:
+        raise ValueError("Give series_id or series_name, not both")
+
+
 class BookCreate(RequestModel):
     title: Title
     author: AuthorName
@@ -126,13 +140,25 @@ class BookCreate(RequestModel):
     isbn: Isbn = None
     language: LanguageCode = None
     publication_year: PublicationYear | None = None
+    tags: Tags = Field(default_factory=list, description="Tag slugs (GET /tags)")
+    series_id: uuid.UUID | None = None
+    series_name: SeriesName | None = Field(
+        None, description="Finds the series by name (any case) or creates it"
+    )
+    series_openlibrary_key: str | None = Field(None, max_length=32, pattern=r"^OL\d+L$")
+    series_position: SeriesPosition | None = None
 
     _year = field_validator("publication_year")(_check_year)
+
+    @model_validator(mode="after")
+    def _series(self) -> BookCreate:
+        _one_series_reference(self)
+        return self
 
 
 class BookUpdate(PatchModel):
     non_nullable_fields: ClassVar[frozenset[str]] = frozenset(
-        {"title", "author", "description", "category", "age_range", "status", "image_urls"}
+        {"title", "author", "description", "category", "age_range", "status", "image_urls", "tags"}
     )
 
     title: Title | None = None
@@ -146,8 +172,18 @@ class BookUpdate(PatchModel):
     isbn: Isbn = None
     language: LanguageCode = None
     publication_year: PublicationYear | None = None
+    tags: Tags | None = Field(None, description="Replaces the book's tags")
+    series_id: uuid.UUID | None = Field(None, description="null removes the book from its series")
+    series_name: SeriesName | None = None
+    series_openlibrary_key: str | None = Field(None, max_length=32, pattern=r"^OL\d+L$")
+    series_position: SeriesPosition | None = None
 
     _year = field_validator("publication_year")(_check_year)
+
+    @model_validator(mode="after")
+    def _series(self) -> BookUpdate:
+        _one_series_reference(self)
+        return self
 
 
 class BookStats(ApiModel):

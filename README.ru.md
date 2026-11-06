@@ -171,7 +171,9 @@ docker compose --profile dev run --rm backend-dev alembic check
 
 - создаёт/активирует администратора из `SEED_ADMIN_EMAIL` + `SEED_ADMIN_PASSWORD` (пароль в коде не хранится);
   пароль существующего админа меняется только с `--reset-admin-password`;
-- `--demo-books` добавляет 16 книг из `backend/app/seed_data/demo_books.json`; в production отказывается работать;
+- `--demo-books` добавляет 19 книг из `backend/app/seed_data/demo_books.json` с тегами и двумя сериями (*Harry Potter*,
+  *The Hunger Games*); демо-книги, загруженные до появления тегов, получают теги и серию, если их с тех пор не меняли;
+  удалённые библиотекарем стартовые теги пропускаются; в production отказывается работать;
 - `--refresh-demo-covers` (вместе с `--demo-books`) обновляет обложки уже существующих демо-книг
   (демо-данные используют настоящие обложки из Open Library);
 - гарантирует строку настроек библиотеки. Повторный запуск ничего не дублирует.
@@ -354,6 +356,20 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 `search_vector`, конфигурация `simple` — английский и русский обрабатываются одинаково; синтаксис веб-поиска:
 `"фраза"`, `-слово`), поиск подстроки в названии, авторе и ISBN (дефисы не важны) и устойчивость к опечаткам через
 `pg_trgm` (`word_similarity` ≥ 0,5: «hobit» находит *The Hobbit*). `sort=relevance` ставит лучшие совпадения первыми.
+Находятся и названия тегов (английские и русские), и названия серий (в том числе с опечатками).
+
+**Теги** (`GET /tags`, фильтр `GET /books?tags=fantasy,magic`: у книги должны быть **все** указанные теги, не более 10):
+список ведут библиотекари (вкладка «Теги и серии» в админ-панели: создать, переименовать, объединить, удалить), у
+каждого тега английское и русское название; 20 стартовых тегов добавляет миграция 0009. Теги относятся к изданию
+(их получают все экземпляры). Каталог хранит выбор в адресной строке (`?tags=`).
+
+**Серии** (`GET /series`, `GET /books?series=<id>&sort=series`): у книги не больше одной серии и номер тома
+(`series_position`, может быть дробным, например 1.5). Форма книги, импорт CSV и API принимают серию по названию
+(`series_name`, регистр не важен, новая создаётся) или по `series_id`; `series_id: null` убирает книгу из серии.
+«Заполнить по ISBN» берёт серию из записи work в Open Library (ключ и номер тома — одни для всех изданий и языков)
+или из текстового поля серии издания («Dune chronicles, bk. 1»), сохраняет ключ Open Library у серии, чтобы другие
+издания находили её, и предлагает теги по темам книги. Каталог показывает серию на карточке (ссылка на серию),
+выводит серию по порядку томов и умеет положить в корзину все доступные тома («Взять всю серию»).
 
 **Продление выдачи**: `POST /orders/{id}/renew` переносит срок возврата выданного (`confirmed`) заказа на
 `loan_period_days`, не более `max_renewals` раз на заказ (настройки библиотеки, по умолчанию 1; 0 — продление
@@ -388,7 +404,9 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 | Таблица | Ключевое |
 | --- | --- |
 | `users` | email уникален и в нижнем регистре (CHECK), Argon2-хеш, роль `customer/admin`, контакты (nullable), `preferred_contact_method` |
-| `books` | `cover_url`, `image_urls[]`, `age_range`, `category`, `status` (`available/available-soon/not-available`), `language`, `publication_year`, `is_active` (мягкое удаление) |
+| `books` | `cover_url`, `image_urls[]`, `age_range`, `category`, `status` (`available/available-soon/not-available`), `language`, `publication_year`, `is_active` (мягкое удаление), `series_id` + `series_position` (CHECK > 0) |
+| `tags`, `book_tags` | `slug` тега (уникальный, CHECK формата), `name_en`, `name_ru`; связь книга ↔ тег |
+| `series` | `name` (уникальное), `description`, `openlibrary_key` (уникальный, из поиска по ISBN) |
 | `library_settings` | одна строка: `books_per_batch`, `price_per_batch NUMERIC(10,2)`, `currency`, `loan_period_days` |
 | `carts`, `cart_items` | одна корзина на пользователя, `UNIQUE(cart_id, book_id)` |
 | `orders` | статус, сумма/валюта, снимок цены партии и контактов, `due_date`, `confirmed_at/returned_at/cancelled_at`, CHECK `total = price × batches` |
@@ -414,7 +432,8 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 | GET | `/health` (liveness), `/api/v1/health` (DB) | все |
 | POST | `/auth/register`, `/auth/login`, `/auth/refresh`, `/auth/logout`, `/auth/forgot-password`, `/auth/reset-password` | все |
 | GET | `/auth/me`, `/users/me` · PATCH `/users/me` · POST `/auth/change-password` | пользователь |
-| GET | `/books?q&category&age_range&available&sort&page&page_size`, `/books/age-ranges`, `/books/{id}` | все |
+| GET | `/books?q&category&age_range&available&tags&series&sort&page&page_size`, `/books/age-ranges`, `/books/{id}` | все |
+| GET | `/tags` (с числом изданий), `/series?q`, `/series/{id}` | все |
 | GET/DELETE | `/cart` · POST `/cart/items` · DELETE `/cart/items/{book_id}` | пользователь |
 | POST/GET | `/orders` · GET `/orders/{id}` · POST `/orders/{id}/cancel`, `/orders/{id}/renew` | пользователь (только свои) |
 | GET | `/library/rules` (размер и цена партии, срок выдачи, число продлений) | все |
@@ -423,11 +442,13 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 | POST | `/admin/books/import` (CSV, всё или ничего, `dry_run`), GET `/admin/isbn/{isbn}` (данные из Open Library) | admin |
 | GET | `/admin/reports/summary`, `/admin/reports/orders.csv` (`date_from`, `date_to`; по умолчанию последние 30 дней) | admin |
 | POST | `/admin/books/{id}/copies` (`{count}`: ещё экземпляры книги) | admin |
+| POST/PATCH/DELETE | `/admin/tags`, `/admin/tags/{id}` · POST `/admin/tags/{id}/merge`; то же для `/admin/series` | admin |
 | GET | `/admin/users` · PATCH `/admin/users/{id}` (роль, блокировка) | admin |
 | GET | `/admin/orders`, `/admin/orders/{id}` · PATCH `/admin/orders/{id}/status`, `/admin/orders/{id}/due-date` | admin |
 | GET/PATCH | `/admin/settings` (партия, цена, валюта, срок выдачи) | admin |
 
-Сортировка книг — только из списка: `title`, `author`, `publication_year`, `created_at` (с `-` для убывания).
+Сортировка книг — только из списка: `title`, `author`, `publication_year`, `created_at` (с `-` для убывания),
+`relevance`, `series` (по порядку томов).
 Переходы статусов: `pending → confirmed | cancelled`, `confirmed → returned`; клиент может отменить только `pending`.
 
 Формат ошибок (единый для всех статусов):
@@ -438,7 +459,7 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 ```
 
 400 `CART_EMPTY`/`INCOMPLETE_BATCH`/`INVALID_CURRENT_PASSWORD`, 401 `NOT_AUTHENTICATED`/`INVALID_CREDENTIALS`/`TOKEN_EXPIRED`/`REFRESH_TOKEN_*`,
-403 `FORBIDDEN`/`ACCOUNT_DISABLED`, 404 `*_NOT_FOUND`, 409 `BOOK_UNAVAILABLE`/`EMAIL_ALREADY_EXISTS`/`INVALID_STATUS_TRANSITION`,
+400 `UNKNOWN_TAGS` (`details.tags`), 403 `FORBIDDEN`/`ACCOUNT_DISABLED`, 404 `*_NOT_FOUND`, 409 `BOOK_UNAVAILABLE`/`EMAIL_ALREADY_EXISTS`/`INVALID_STATUS_TRANSITION`/`TAG_EXISTS`/`SERIES_EXISTS`,
 422 `VALIDATION_ERROR` (без эха введённых значений), 500 `INTERNAL_ERROR` (без stack trace).
 
 ## Email-уведомления

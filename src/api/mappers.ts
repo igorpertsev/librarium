@@ -16,6 +16,7 @@ import type {
   BatchConfig,
   Book,
   BookStatus,
+  BookTag,
   BorrowedBook,
   CartItem,
   Order,
@@ -33,6 +34,7 @@ import type {
   LibrarySettingsDto,
   OrderDto,
   OrderItemDto,
+  TagBriefDto,
   UserDto,
   UserUpdateDto,
 } from './types';
@@ -47,6 +49,10 @@ export function toMoney(value: string | number): number {
 function imagesOf(cover: string | null, images: string[]): string[] {
   if (images.length > 0) return images;
   return cover ? [cover] : [];
+}
+
+export function tagFromDto(dto: TagBriefDto): BookTag {
+  return { slug: dto.slug, nameEn: dto.name_en, nameRu: dto.name_ru };
 }
 
 export function bookFromDto(dto: BookDto | BookBriefDto): Book {
@@ -64,6 +70,9 @@ export function bookFromDto(dto: BookDto | BookBriefDto): Book {
     publishedYear: dto.publication_year ?? 0,
     language: dto.language,
     groupId: dto.group_id,
+    tags: dto.tags.map(tagFromDto),
+    series: dto.series,
+    seriesPosition: dto.series_position,
   };
   if ('is_reserved' in dto) {
     book.isReserved = dto.is_reserved;
@@ -86,6 +95,13 @@ export interface BookFormValues {
   description: string;
   isbn: string;
   publishedYear: number;
+  /** Tag slugs. */
+  tags: string[];
+  /** Blank: not in a series. An unknown name creates the series. */
+  seriesName: string;
+  seriesPosition: number | null;
+  /** Open Library series key from an ISBN lookup, so later editions find the same series. */
+  seriesOpenlibraryKey?: string | null;
 }
 
 export function bookFormToDto(form: BookFormValues): BookCreateDto {
@@ -103,6 +119,25 @@ export function bookFormToDto(form: BookFormValues): BookCreateDto {
     description: form.description,
     isbn: form.isbn.trim() || null,
     publication_year: Number.isFinite(form.publishedYear) ? form.publishedYear : null,
+    tags: form.tags,
+    ...seriesToDto(form),
+  };
+}
+
+function seriesToDto(form: BookFormValues): Pick<
+  BookCreateDto,
+  'series_id' | 'series_name' | 'series_openlibrary_key' | 'series_position'
+> {
+  const name = form.seriesName.trim();
+  // series_id null takes the book out of its series when an edit clears the name.
+  if (!name) return { series_id: null };
+  return {
+    series_name: name,
+    series_openlibrary_key: form.seriesOpenlibraryKey || null,
+    series_position:
+      form.seriesPosition !== null && Number.isFinite(form.seriesPosition) && form.seriesPosition > 0
+        ? form.seriesPosition
+        : null,
   };
 }
 

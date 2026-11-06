@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Textarea } from '../components/ui/textarea';
 import { Badge } from '../components/ui/badge';
-import { Plus, Pencil, Trash2, Users, BookOpen as BookOpenIcon, ClipboardList, CheckCircle2, RotateCcw, Clock, Star, ImageDown, BellRing, BarChart3, CopyPlus } from 'lucide-react';
+import { Plus, Pencil, Trash2, Users, BookOpen as BookOpenIcon, ClipboardList, CheckCircle2, RotateCcw, Clock, Star, ImageDown, BellRing, BarChart3, CopyPlus, Tags } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -17,6 +17,8 @@ import { BookDetailsModal } from '../components/BookDetailsModal';
 import { useConfirm } from '../components/ConfirmDialog';
 import { LoanRulesSettings } from '../components/LoanRulesSettings';
 import { ReportsTab } from '../components/ReportsTab';
+import { BookCatalogFields } from '../components/BookCatalogFields';
+import { TagsSeriesTab } from '../components/TagsSeriesTab';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from '../components/ui/pagination';
@@ -100,7 +102,11 @@ export default function AdminPortal() {
     images: [] as string[],
     description: '',
     isbn: '',
-    publishedYear: new Date().getFullYear()
+    publishedYear: new Date().getFullYear(),
+    tags: [],
+    seriesName: '',
+    seriesPosition: null,
+    seriesOpenlibraryKey: null,
   });
 
   const resetForm = () => {
@@ -114,7 +120,11 @@ export default function AdminPortal() {
       images: [],
       description: '',
       isbn: '',
-      publishedYear: new Date().getFullYear()
+      publishedYear: new Date().getFullYear(),
+      tags: [],
+      seriesName: '',
+      seriesPosition: null,
+      seriesOpenlibraryKey: null,
     });
   };
 
@@ -181,7 +191,11 @@ export default function AdminPortal() {
       images: book.images || [book.coverImage],
       description: book.description,
       isbn: book.isbn,
-      publishedYear: book.publishedYear
+      publishedYear: book.publishedYear,
+      tags: (book.tags ?? []).map((tag) => tag.slug),
+      seriesName: book.series?.name ?? '',
+      seriesPosition: book.seriesPosition ?? null,
+      seriesOpenlibraryKey: null,
     });
     setIsEditDialogOpen(true);
   };
@@ -314,7 +328,7 @@ export default function AdminPortal() {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="books" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto mb-6">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 h-auto mb-6">
               <TabsTrigger value="books" className="flex items-center gap-2">
                 <BookOpenIcon className="w-4 h-4" />
                 {t('admin.booksTab')}
@@ -331,6 +345,10 @@ export default function AdminPortal() {
                     {orders.filter(o => o.status === 'pending').length}
                   </Badge>
                 )}
+              </TabsTrigger>
+              <TabsTrigger value="catalog" className="flex items-center gap-2">
+                <Tags className="w-4 h-4" />
+                {t('catalogAdmin.tab')}
               </TabsTrigger>
               <TabsTrigger value="reports" className="flex items-center gap-2">
                 <BarChart3 className="w-4 h-4" />
@@ -369,6 +387,12 @@ export default function AdminPortal() {
                         <Badge variant="outline" className="ml-2" title={t('copies.inLibrary', { count: book.copies })}>
                           ×{book.copies}
                         </Badge>
+                      )}
+                      {book.series && (
+                        <p className="text-xs text-muted-foreground">
+                          {book.series.name}
+                          {book.seriesPosition != null && ` · #${book.seriesPosition}`}
+                        </p>
                       )}
                     </TableCell>
                     <TableCell>{book.author}</TableCell>
@@ -569,6 +593,10 @@ export default function AdminPortal() {
               />
             </TabsContent>
 
+            <TabsContent value="catalog">
+              <TagsSeriesTab onChanged={() => loadBooks(currentPage)} />
+            </TabsContent>
+
             <TabsContent value="reports">
               <ReportsTab />
             </TabsContent>
@@ -622,8 +650,20 @@ function BookForm({ formData, setFormData, t }: {
           : formData.publishedYear,
         coverImage: cover,
         images: keepGallery || !cover ? formData.images : [cover],
+        ...(details.series && !formData.seriesName.trim()
+          ? {
+              seriesName: details.series.name,
+              seriesPosition: details.series.position ?? null,
+              seriesOpenlibraryKey: details.series.openlibrary_key ?? null,
+            }
+          : {}),
+        // Suggestions from the book's subjects; the librarian can remove any of them.
+        tags: formData.tags.length > 0 ? formData.tags : details.suggested_tags.map((tag) => tag.slug),
       });
       toast.success(t('bookForm.detailsFound'));
+      if (details.series && !formData.seriesName.trim()) {
+        toast.info(t('series.foundByIsbn', { name: details.series.name }));
+      }
     } else if (result.status === 'invalid-isbn') {
       toast.error(t('bookForm.coverInvalidIsbn'));
     } else if (result.status === 'not-found') {
@@ -634,7 +674,8 @@ function BookForm({ formData, setFormData, t }: {
   };
 
   return (
-    <div className="grid gap-4">
+    // grid-cols-1 (minmax(0, 1fr)): a long description must not widen the dialog.
+    <div className="grid grid-cols-1 gap-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="title">{t('bookForm.title')}</Label>
@@ -697,6 +738,8 @@ function BookForm({ formData, setFormData, t }: {
           />
         </div>
       </div>
+
+      <BookCatalogFields value={formData} onChange={(changes) => setFormData({ ...formData, ...changes })} />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">

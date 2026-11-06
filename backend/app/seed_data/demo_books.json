@@ -12,7 +12,12 @@
     ],
     "isbn": "978-0061120084",
     "language": "en",
-    "publication_year": 1960
+    "publication_year": 1960,
+    "tags": [
+      "classics",
+      "coming-of-age",
+      "family"
+    ]
   },
   {
     "title": "1984",
@@ -27,7 +32,12 @@
     ],
     "isbn": "978-0452284234",
     "language": "en",
-    "publication_year": 1949
+    "publication_year": 1949,
+    "tags": [
+      "classics",
+      "dystopia",
+      "science-fiction"
+    ]
   },
   {
     "title": "The Great Gatsby",
@@ -42,7 +52,11 @@
     ],
     "isbn": "978-0743273565",
     "language": "en",
-    "publication_year": 1925
+    "publication_year": 1925,
+    "tags": [
+      "classics",
+      "romance"
+    ]
   },
   {
     "title": "Pride and Prejudice",
@@ -57,7 +71,12 @@
     ],
     "isbn": "978-0141439518",
     "language": "en",
-    "publication_year": 1813
+    "publication_year": 1813,
+    "tags": [
+      "classics",
+      "romance",
+      "family"
+    ]
   },
   {
     "title": "The Catcher in the Rye",
@@ -72,7 +91,12 @@
     ],
     "isbn": "978-0316769174",
     "language": "en",
-    "publication_year": 1951
+    "publication_year": 1951,
+    "tags": [
+      "classics",
+      "coming-of-age",
+      "school"
+    ]
   },
   {
     "title": "A Brief History of Time",
@@ -87,7 +111,8 @@
     ],
     "isbn": "978-0553380163",
     "language": "en",
-    "publication_year": 1988
+    "publication_year": 1988,
+    "tags": []
   },
   {
     "title": "Sapiens",
@@ -102,7 +127,10 @@
     ],
     "isbn": "978-0062316110",
     "language": "en",
-    "publication_year": 2011
+    "publication_year": 2011,
+    "tags": [
+      "historical"
+    ]
   },
   {
     "title": "The Diary of a Young Girl",
@@ -117,7 +145,13 @@
     ],
     "isbn": "978-0553296983",
     "language": "en",
-    "publication_year": 1947
+    "publication_year": 1947,
+    "tags": [
+      "true-story",
+      "war",
+      "historical",
+      "coming-of-age"
+    ]
   },
   {
     "title": "Harry Potter and the Sorcerer's Stone",
@@ -132,7 +166,15 @@
     ],
     "isbn": "978-0590353427",
     "language": "en",
-    "publication_year": 1997
+    "publication_year": 1997,
+    "tags": [
+      "fantasy",
+      "magic",
+      "school",
+      "friendship"
+    ],
+    "series_name": "Harry Potter",
+    "series_position": 1
   },
   {
     "title": "The Hunger Games",
@@ -147,7 +189,14 @@
     ],
     "isbn": "978-0439023481",
     "language": "en",
-    "publication_year": 2008
+    "publication_year": 2008,
+    "tags": [
+      "dystopia",
+      "adventure",
+      "science-fiction"
+    ],
+    "series_name": "The Hunger Games",
+    "series_position": 1
   },
   {
     "title": "Educated",
@@ -162,7 +211,12 @@
     ],
     "isbn": "978-0399590504",
     "language": "en",
-    "publication_year": 2018
+    "publication_year": 2018,
+    "tags": [
+      "true-story",
+      "family",
+      "coming-of-age"
+    ]
   },
   {
     "title": "The Hobbit",
@@ -177,7 +231,12 @@
     ],
     "isbn": "978-0547928227",
     "language": "en",
-    "publication_year": 1937
+    "publication_year": 1937,
+    "tags": [
+      "fantasy",
+      "adventure",
+      "classics"
+    ]
   },
   {
     "title": "Cosmos",
@@ -192,7 +251,8 @@
     ],
     "isbn": "978-0345539434",
     "language": "en",
-    "publication_year": 1980
+    "publication_year": 1980,
+    "tags": []
   },
   {
     "title": "The Book Thief",
@@ -207,7 +267,12 @@
     ],
     "isbn": "978-0375842207",
     "language": "en",
-    "publication_year": 2005
+    "publication_year": 2005,
+    "tags": [
+      "historical",
+      "war",
+      "coming-of-age"
+    ]
   },
   {
     "title": "Charlotte's Web",
@@ -224,7 +289,12 @@
     ],
     "isbn": "978-0064400558",
     "language": "en",
-    "publication_year": 1952
+    "publication_year": 1952,
+    "tags": [
+      "animals",
+      "friendship",
+      "classics"
+    ]
   },
   {
     "title": "Becoming",
@@ -239,6 +309,77 @@
     ],
     "isbn": "978-1524763138",
     "language": "en",
-    "publication_year": 2018
+    "publication_year": 2018,
+    "tags": [
+      "true-story"
+    ]
+  },
+  {
+    "title": "Harry Potter and the Chamber of Secrets",
+    "author": "J.K. Rowling",
+    "description": "Harry's second year at Hogwarts, and a hidden chamber is opened again.",
+    "category": "children",
+    "age_range": "8+",
+    "status": "available",
+    "cover_url": "https://covers.openlibrary.org/b/id/15253784-L.jpg",
+    "image_urls": [
+      "https://covers.openlibrary.org/b/id/15253784-L.jpg"
+    ],
+    "isbn": "978-0439064873",
+    "language": "en",
+    "publication_year": 1999,
+    "tags": [
+      "fantasy",
+      "magic",
+      "school",
+      "friendship"
+    ],
+    "series_name": "Harry Potter",
+    "series_position": 2
+  },
+  {
+    "title": "Harry Potter and the Prisoner of Azkaban",
+    "author": "J.K. Rowling",
+    "description": "A dangerous prisoner escapes, and Harry learns more about his past.",
+    "category": "children",
+    "age_range": "10+",
+    "status": "available",
+    "cover_url": "https://covers.openlibrary.org/b/id/14656874-L.jpg",
+    "image_urls": [
+      "https://covers.openlibrary.org/b/id/14656874-L.jpg"
+    ],
+    "isbn": "978-0439136365",
+    "language": "en",
+    "publication_year": 1999,
+    "tags": [
+      "fantasy",
+      "magic",
+      "school",
+      "friendship"
+    ],
+    "series_name": "Harry Potter",
+    "series_position": 3
+  },
+  {
+    "title": "Catching Fire",
+    "author": "Suzanne Collins",
+    "description": "Katniss is drawn into the Games once more as rebellion stirs.",
+    "category": "young-adult",
+    "age_range": "12+",
+    "status": "available",
+    "cover_url": "https://covers.openlibrary.org/b/id/15256830-L.jpg",
+    "image_urls": [
+      "https://covers.openlibrary.org/b/id/15256830-L.jpg"
+    ],
+    "isbn": "978-0439023498",
+    "language": "en",
+    "publication_year": 2009,
+    "tags": [
+      "dystopia",
+      "adventure",
+      "science-fiction"
+    ],
+    "series_name": "The Hunger Games",
+    "series_position": 2
   }
 ]
