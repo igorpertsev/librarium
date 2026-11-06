@@ -7,6 +7,7 @@ const MESSAGE_KEYS: Record<string, string> = {
   ACCOUNT_DISABLED: 'errors.accountDisabled',
   EMAIL_ALREADY_EXISTS: 'auth.emailExists',
   INVALID_CURRENT_PASSWORD: 'profile.incorrectPassword',
+  INVALID_RESET_TOKEN: 'auth.invalidResetLink',
   PASSWORD_UNCHANGED: 'errors.passwordUnchanged',
   VALIDATION_ERROR: 'errors.validation',
   NOT_AUTHENTICATED: 'errors.sessionExpired',

@@ -115,6 +115,7 @@ Docker Compose and Vite read the root `.env` (template: `.env.example`). Filled-
 | `VITE_API_URL` | `http://localhost:8000/api/v1` | API base URL for the frontend |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_STARTTLS`, `SMTP_SSL`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `MAIL_FROM` | empty / `587` / `true` / `false` | outgoing email; empty `SMTP_HOST` disables sending |
 | `APP_BASE_URL`, `DUE_SOON_DAYS` | `http://localhost:5173`, `3` | links in emails; reminder lead time in days |
+| `PASSWORD_RESET_EXPIRE_MINUTES` | `60` | lifetime of password reset links (5–1440) |
 
 In production the app refuses to start with a missing/weak `JWT_SECRET_KEY`, `COOKIE_SECURE=false`
 or an `http://` origin in `FRONTEND_ORIGINS`.
@@ -281,6 +282,12 @@ conversion to UI models in `src/api/mappers.ts`. After an API change: export the
 - **Rotation**: every `POST /auth/refresh` issues a new token in the same “family” and revokes the old one
   (`replaced_by_token_id`). Presenting a revoked token again is treated as theft → the whole family is revoked
   (`REFRESH_TOKEN_REUSED`).
+- **Password reset**: `POST /auth/forgot-password` emails a link (`APP_BASE_URL/reset-password#token=…`) to an
+  active account and answers `202` whether or not the address is registered. The token is a signed JWT with its
+  own audience; nothing is stored. It expires after `PASSWORD_RESET_EXPIRE_MINUTES` and carries a fingerprint
+  of the current password hash, so it stops working once the password has changed (one use).
+  `POST /auth/reset-password` sets the new password and revokes every session (`INVALID_RESET_TOKEN` otherwise).
+  The email is sent right away by the API (not through the notifier queue); without `SMTP_HOST` it is not sent.
 - **Logout** revokes the current refresh token and deletes the cookie. **Changing the password** revokes all sessions
   and issues a new family. **Disabling** a user (`is_active=false`) revokes their refresh tokens, and their
   access tokens stop working immediately (`ACCOUNT_DISABLED`).
@@ -297,6 +304,8 @@ conversion to UI models in `src/api/mappers.ts`. After an API change: export the
   | Registrations per IP address | 10 per hour |
   | Token refreshes per IP address | 120 per 5 minutes |
   | Wrong current passwords when changing the password, per user | 5 per 15 minutes |
+  | Password reset emails per IP address / per email address | 10 / 3 per hour |
+  | New-password attempts with a reset link per IP address | 20 per 15 minutes |
 
   The counters are kept in memory, which suits the single backend process of the Docker stacks; with several
   processes each would count separately. Behind Caddy the client IP comes from `X-Forwarded-For`
@@ -373,7 +382,7 @@ Differences (adapters in `src/api/mappers.ts`):
 | Method | Path | Access |
 | --- | --- | --- |
 | GET | `/health` (liveness), `/api/v1/health` (DB) | everyone |
-| POST | `/auth/register`, `/auth/login`, `/auth/refresh`, `/auth/logout` | everyone |
+| POST | `/auth/register`, `/auth/login`, `/auth/refresh`, `/auth/logout`, `/auth/forgot-password`, `/auth/reset-password` | everyone |
 | GET | `/auth/me`, `/users/me` · PATCH `/users/me` · POST `/auth/change-password` | signed-in user |
 | GET | `/books?q&category&age_range&available&sort&page&page_size`, `/books/age-ranges`, `/books/{id}` | everyone |
 | GET/DELETE | `/cart` · POST `/cart/items` · DELETE `/cart/items/{book_id}` | signed-in user |

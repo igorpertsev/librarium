@@ -13,6 +13,7 @@ import type {
   BookUpdateDto,
   CartDto,
   ChangePasswordDto,
+  ForgotPasswordDto,
   LibrarySettingsDto,
   LibrarySettingsUpdateDto,
   LoginDto,
@@ -22,6 +23,7 @@ import type {
   OrderStatusDto,
   Paged,
   RegisterDto,
+  ResetPasswordDto,
   TokenResponseDto,
   UserDto,
   UserUpdateDto,
@@ -38,6 +40,10 @@ export const authApi = {
   me: () => apiRequest<UserDto>('/auth/me'),
   changePassword: (body: ChangePasswordDto) =>
     apiRequest<TokenResponseDto>('/auth/change-password', { method: 'POST', body }),
+  forgotPassword: (body: ForgotPasswordDto) =>
+    apiRequest<void>('/auth/forgot-password', { method: 'POST', body, auth: false }),
+  resetPassword: (body: ResetPasswordDto) =>
+    apiRequest<void>('/auth/reset-password', { method: 'POST', body, auth: false }),
 };
 
 export const usersApi = {

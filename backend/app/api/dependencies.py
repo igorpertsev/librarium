@@ -17,6 +17,7 @@ from app.core.security import InvalidAccessTokenError, decode_access_token
 from app.models import User
 from app.models.enums import UserRole
 from app.services.auth import ClientMeta
+from app.services.notifications import Sender
 
 
 def get_settings_dep(request: Request) -> Settings:
@@ -37,7 +38,13 @@ def get_rate_limiter(request: Request) -> RateLimiter:
     return limiter
 
 
+def get_mail_sender(request: Request) -> Sender | None:
+    sender: Sender | None = request.app.state.mail_sender
+    return sender
+
+
 SettingsDep = Annotated[Settings, Depends(get_settings_dep)]
+MailSenderDep = Annotated[Sender | None, Depends(get_mail_sender)]
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 RateLimiterDep = Annotated[RateLimiter, Depends(get_rate_limiter)]
 

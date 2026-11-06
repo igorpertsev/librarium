@@ -113,6 +113,7 @@ Docker Compose и Vite — корневой `.env` (шаблон `.env.example`)
 | `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | — | для `app.cli seed`, пароль ≥ 12 символов |
 | `TEST_DATABASE_URL` | `…/bookstore_test` | только для тестов; имя БД обязано оканчиваться на `_test` |
 | `VITE_API_URL` | `http://localhost:8000/api/v1` | адрес API для frontend |
+| `PASSWORD_RESET_EXPIRE_MINUTES` | `60` | срок действия ссылки для сброса пароля (5–1440) |
 
 В production приложение не стартует при отсутствующем/слабом `JWT_SECRET_KEY`, `COOKIE_SECURE=false`
 или `http://` в `FRONTEND_ORIGINS`.
@@ -279,6 +280,12 @@ pnpm api:types:file
 - **Ротация**: каждый `POST /auth/refresh` выдаёт новый токен той же «семьи» и отзывает старый
   (`replaced_by_token_id`). Повторное предъявление отозванного токена = кража → отзывается вся семья
   (`REFRESH_TOKEN_REUSED`).
+- **Сброс пароля**: `POST /auth/forgot-password` отправляет ссылку (`APP_BASE_URL/reset-password#token=…`) активной
+  учётной записи и отвечает `202` независимо от того, зарегистрирован ли адрес. Токен — подписанный JWT со своей
+  audience; в базе ничего не хранится. Он истекает через `PASSWORD_RESET_EXPIRE_MINUTES` (по умолчанию 60) и содержит
+  отпечаток текущего хеша пароля, поэтому перестаёт работать после смены пароля (одно использование).
+  `POST /auth/reset-password` задаёт новый пароль и отзывает все сессии (иначе `INVALID_RESET_TOKEN`).
+  Письмо отправляет сам API сразу (не через очередь notifier); без `SMTP_HOST` оно не отправляется.
 - **Logout** отзывает текущий refresh token и удаляет cookie. **Смена пароля** отзывает все сессии
   и выдаёт новую семью. **Блокировка** пользователя (`is_active=false`) отзывает его refresh-токены,
   а access-токены перестают работать сразу (`ACCOUNT_DISABLED`).
@@ -295,6 +302,8 @@ pnpm api:types:file
   | Регистрации с одного IP | 10 в час |
   | Обновления токена с одного IP | 120 за 5 минут |
   | Неверный текущий пароль при смене пароля, на пользователя | 5 за 15 минут |
+  | Письма для сброса пароля с одного IP / на один email | 10 / 3 в час |
+  | Попытки задать пароль по ссылке сброса с одного IP | 20 за 15 минут |
 
   Счётчики хранятся в памяти, что подходит для одного процесса backend в Docker-стеках; при нескольких
   процессах каждый считал бы отдельно. За Caddy IP клиента берётся из `X-Forwarded-For` (uvicorn `--proxy-headers`).
@@ -370,7 +379,7 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 | Метод | Путь | Доступ |
 | --- | --- | --- |
 | GET | `/health` (liveness), `/api/v1/health` (DB) | все |
-| POST | `/auth/register`, `/auth/login`, `/auth/refresh`, `/auth/logout` | все |
+| POST | `/auth/register`, `/auth/login`, `/auth/refresh`, `/auth/logout`, `/auth/forgot-password`, `/auth/reset-password` | все |
 | GET | `/auth/me`, `/users/me` · PATCH `/users/me` · POST `/auth/change-password` | пользователь |
 | GET | `/books?q&category&age_range&available&sort&page&page_size`, `/books/age-ranges`, `/books/{id}` | все |
 | GET/DELETE | `/cart` · POST `/cart/items` · DELETE `/cart/items/{book_id}` | пользователь |

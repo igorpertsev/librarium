@@ -75,6 +75,8 @@ class Settings(BaseSettings):
     mail_from: str = "Little Dragon Library <no-reply@localhost>"
     # Public URL of the frontend, used for links in emails.
     app_base_url: str = "http://localhost:5173"
+    # Lifetime of the link in password reset emails.
+    password_reset_expire_minutes: int = Field(default=60, ge=5, le=24 * 60)
     due_soon_days: int = Field(default=3, ge=0, le=30)
 
     # Seed command inputs. Never hard-code production credentials.
