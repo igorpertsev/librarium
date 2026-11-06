@@ -38,6 +38,9 @@ x-backend-env: &backend-env
   # One JSON object per log line (default in production); optional error reporting.
   LOG_LEVEL: ${LOG_LEVEL:-INFO}
   SENTRY_DSN: ${SENTRY_DSN:-}
+  # Book translations (optional): without ANTHROPIC_API_KEY only Wikidata and Wikipedia are used.
+  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+  TRANSLATION_MODEL: ${TRANSLATION_MODEL:-claude-opus-5-5}
 
 services:
   db:

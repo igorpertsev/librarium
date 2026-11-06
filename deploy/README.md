@@ -263,6 +263,41 @@ docker compose -f docker-compose.prod.yml logs -f --tail=50 notifier
 Use a sender address on a domain whose SPF/DKIM records your provider has set up, otherwise
 messages tend to end up in spam. Without `SMTP_HOST` nothing is sent.
 
+## Book translations (optional machine translation)
+
+Readers see a book's title and description in their interface language when the book has a
+translation. In the book form, **Find translation** suggests one from Wikidata (the official
+title of the translated edition) and Wikipedia (the article's first paragraph, credited with a
+link). This needs no setup, only outbound HTTPS from the VM to `www.wikidata.org` and
+`ru.wikipedia.org` / `en.wikipedia.org` (Oracle's default rules allow it).
+
+With an Anthropic API key, what Wikidata and Wikipedia lack is machine-translated as well and
+marked "Machine translation" for the librarian to check. To turn it on, put the key into `.env`:
+
+```bash
+nano .env
+```
+
+Set `ANTHROPIC_API_KEY=...` (and, if you want another model, `TRANSLATION_MODEL`), then apply it:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d
+```
+
+To check, open a book without an ISBN in the admin portal and click **Find translation**: the
+fields are filled in with a "Machine translation" badge. Each lookup that needs it is one request
+billed to your Anthropic account; only book data (title, author, description) is sent. To turn it
+off again, empty `ANTHROPIC_API_KEY` and run the same `up -d`.
+
+To translate the books that have no translation yet in one go (results are saved with their
+source; look them over in the admin portal afterwards):
+
+```bash
+docker compose -f docker-compose.prod.yml run --rm backend python -m app.cli translate-books --to ru --no-machine --limit 50
+```
+
+Drop `--no-machine` to fill the gaps with machine translation too (at most one request per book).
+
 ## 9. Updating
 
 ```bash
@@ -319,6 +354,9 @@ trace, without IP addresses, cookies or request bodies.
   images from any HTTPS host, for book covers), `Permissions-Policy` and the usual hardening headers,
   and ignores client-supplied `X-Forwarded-For`, so the IP addresses stored with sessions cannot be
   spoofed. If you add a third-party script or font later, extend the policy in `deploy/web/Caddyfile`.
+- The backend makes outbound HTTPS requests with book data only: Open Library (ISBN lookup),
+  Wikidata and Wikipedia (translations) and, when `ANTHROPIC_API_KEY` is set, the Anthropic API.
+  Keep `.env` at `chmod 600`; it holds that key along with the other secrets.
 - Keep the OS patched (`sudo apt-get update && sudo apt-get upgrade`; Ubuntu installs security
   updates automatically via unattended-upgrades) and use SSH keys only.
 - Login, registration, token refresh and password resets are rate-limited per IP address and per email
