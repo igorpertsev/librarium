@@ -391,3 +391,19 @@ async def test_database_rejects_two_active_reservations_of_one_copy(
             await session.commit()
 
     assert order["status"] == "pending"
+
+
+async def test_orders_get_sequential_readable_numbers(
+    customer: ApiUser, create_book: CreateBook, set_batch: SetBatch
+) -> None:
+    await set_batch(1)
+    first_book, second_book = await create_book(), await create_book()
+    await fill_cart(customer, [first_book])
+    first = (await place_order(customer)).json()
+    await fill_cart(customer, [second_book])
+    second = (await place_order(customer)).json()
+
+    assert first["number"] >= 1001
+    assert second["number"] == first["number"] + 1
+    listed = (await customer.get(ORDERS)).json()["items"]
+    assert [o["number"] for o in listed] == [second["number"], first["number"]]

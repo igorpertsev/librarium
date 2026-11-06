@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { errorMessage } from '../utils/apiErrors';
 import { daysUntil, useFormat } from '../utils/format';
 import { useConfirm } from '../components/ConfirmDialog';
+import { orderLabel } from '../utils/translations';
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -252,6 +253,7 @@ export default function Profile() {
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Clock className="w-4 h-4" />
+                    <span className="font-medium text-foreground">{orderLabel(order)}</span>
                     <span>{t('profile.requestedOn')}: {fmt.date(order.orderedAt)}</span>
                     <Badge variant="outline">{order.books.length} {t('cart.books')}</Badge>
                   </div>

@@ -166,7 +166,9 @@
     "orderCancelled": "Отменён",
     "cancelOrder": "Отменить",
     "orderCancelledMsg": "Заказ отменён",
-    "dueDateUpdated": "Срок возврата обновлён"
+    "dueDateUpdated": "Срок возврата обновлён",
+    "searchOrders": "Поиск по читателю, email, номеру заказа или книге",
+    "showLess": "Свернуть"
   },
   "bookForm": {
     "title": "Название",

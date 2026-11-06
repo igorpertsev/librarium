@@ -181,6 +181,7 @@ export function orderFromDto(dto: OrderDto): Order {
   const preferred = dto.contact_preferred_method;
   return {
     id: dto.id,
+    number: dto.number,
     userId: dto.user_id,
     userName: dto.contact_name,
     userEmail: dto.contact_email,

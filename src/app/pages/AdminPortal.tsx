@@ -19,7 +19,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from '../components/ui/pagination';
 import { useTranslation } from 'react-i18next';
-import { getCategoryTranslation, getStatusTranslation } from '../utils/translations';
+import { getCategoryTranslation, getStatusTranslation, orderLabel } from '../utils/translations';
 import { errorMessage } from '../utils/apiErrors';
 import { useCatalog } from '../contexts/CatalogContext';
 import { adminApi } from '../../api/endpoints';
@@ -749,7 +749,7 @@ function OrderBooksModal({ order, userContacts, open, onOpenChange, t }: {
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {t('admin.orderBooksTitle')} #{order.id.slice(-6).toUpperCase()}
+              {t('admin.orderBooksTitle')} {orderLabel(order)}
             </DialogTitle>
             <DialogDescription>
               {order.userName} · {order.userEmail}
@@ -861,10 +861,35 @@ function OrdersTab({
     ? users.find(u => u.id === selectedOrder.userId)?.contacts ?? selectedOrder.contacts
     : undefined;
 
-  const filtered = statusFilter === 'all' ? orders : orders.filter(o => o.status === statusFilter);
+  const [search, setSearch] = useState('');
+  const [expandedIds, setExpandedIds] = useState<ReadonlySet<string>>(new Set());
+  const toggleExpanded = (orderId: string) =>
+    setExpandedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(orderId)) next.delete(orderId); else next.add(orderId);
+      return next;
+    });
+
+  // Customer name, email, order number or book title (orders are already loaded).
+  const query = search.trim().toLowerCase().replace(/^#/, '');
+  const matchesSearch = (o: Order) =>
+    !query ||
+    o.userName.toLowerCase().includes(query) ||
+    o.userEmail.toLowerCase().includes(query) ||
+    String(o.number ?? '').includes(query) ||
+    o.books.some(b => b.title.toLowerCase().includes(query));
+  const filtered = (statusFilter === 'all' ? orders : orders.filter(o => o.status === statusFilter)).filter(matchesSearch);
 
   return (
     <div className="space-y-4">
+      <Input
+        type="search"
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+        placeholder={t('admin.searchOrders')}
+        aria-label={t('admin.searchOrders')}
+        className="max-w-md"
+      />
       <div className="flex gap-2 flex-wrap">
         {(['all', 'pending', 'confirmed', 'returned', 'cancelled'] as const).map(s => (
           <Button
@@ -905,7 +930,7 @@ function OrdersTab({
                   onClick={() => setSelectedOrder(order)}
                 >
                   <TableCell className="font-mono text-xs text-muted-foreground">
-                    #{order.id.slice(-6).toUpperCase()}
+                    {orderLabel(order)}
                   </TableCell>
                   <TableCell>
                     {(() => {
@@ -931,11 +956,23 @@ function OrdersTab({
                     <div className="flex flex-col gap-1">
                       <Badge variant="outline" className="w-fit">{order.books.length} {t('cart.books')}</Badge>
                       <div className="text-xs text-muted-foreground space-y-0.5 max-w-[200px]">
-                        {order.books.slice(0, 2).map(b => (
+                        {(expandedIds.has(order.id) ? order.books : order.books.slice(0, 2)).map(b => (
                           <p key={b.id} className="truncate">{b.title}</p>
                         ))}
                         {order.books.length > 2 && (
-                          <p className="text-primary underline-offset-2 hover:underline">+{order.books.length - 2} {t('admin.more')}</p>
+                          <button
+                            type="button"
+                            className="text-primary underline-offset-2 hover:underline"
+                            aria-expanded={expandedIds.has(order.id)}
+                            onClick={e => {
+                              e.stopPropagation();
+                              toggleExpanded(order.id);
+                            }}
+                          >
+                            {expandedIds.has(order.id)
+                              ? t('admin.showLess')
+                              : `+${order.books.length - 2} ${t('admin.more')}`}
+                          </button>
                         )}
                       </div>
                     </div>
