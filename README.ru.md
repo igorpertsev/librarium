@@ -421,10 +421,11 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 | `users` | email уникален и в нижнем регистре (CHECK), Argon2-хеш, роль `customer/admin`, контакты (nullable), `preferred_contact_method` |
 | `books` | `cover_url`, `image_urls[]`, `age_range`, `category`, `status` (`available/available-soon/not-available`), `language`, `publication_year`, `is_active` (мягкое удаление), `series_id` + `series_position` (CHECK > 0) |
 | `tags`, `book_tags` | `slug` тега (уникальный, CHECK формата), `name_en`, `name_ru`; связь книга ↔ тег |
-| `series` | `name` (уникальное), `description`, `openlibrary_key` (уникальный, из поиска по ISBN) |
+| `series` | `name` (уникальное), `name_en` / `name_ru` (названия на языках интерфейса, необязательно), `description`, `openlibrary_key` (уникальный, из поиска по ISBN) |
 | `book_translations` | на книгу и язык (`en`/`ru`): `title`, `author`, `description`, `title_source`/`description_source` (`manual/wikidata/wikipedia/machine`), `source_url` (ссылка на Википедию) |
 | `library_settings` | одна строка: `books_per_batch`, `price_per_batch NUMERIC(10,2)`, `currency`, `loan_period_days` |
 | `carts`, `cart_items` | одна корзина на пользователя, `UNIQUE(cart_id, book_id)` |
+| `reading_list_entries` | «хочу прочитать», одна запись на читателя и издание, `UNIQUE(user_id, book_id)` |
 | `orders` | статус, сумма/валюта, снимок цены партии и контактов, `due_date`, `confirmed_at/returned_at/cancelled_at`, CHECK `total = price × batches` |
 | `order_items` | снимок книги и `unit_price`, `reservation_active` + частичный уникальный индекс |
 | `refresh_tokens` | `token_hash`, `family_id`, `expires_at`, `revoked_at`, `replaced_by_token_id`, user-agent/IP |
@@ -448,21 +449,30 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 | GET | `/health` (liveness), `/api/v1/health` (DB) | все |
 | POST | `/auth/register`, `/auth/login`, `/auth/refresh`, `/auth/logout`, `/auth/forgot-password`, `/auth/reset-password` | все |
 | GET | `/auth/me`, `/users/me` · PATCH `/users/me` · POST `/auth/change-password` | пользователь |
-| GET | `/books?q&category&age_range&available&tags&series&sort&page&page_size`, `/books/age-ranges`, `/books/{id}` | все |
+| GET | `/users/me/next-in-series` (следующая книга каждой серии, которую читатель брал) | пользователь |
+| GET | `/users/me/export` (всё, что хранится о читателе, JSON) · DELETE `/users/me` (`{password}`; заказы остаются без имени и контактов; 409 `ACTIVE_ORDERS` / `ADMIN_ACCOUNT`) | пользователь |
+| GET | `/books?q&category&age_range&available&tags&series&language&author&sort&page&page_size`, `/books/age-ranges`, `/books/languages`, `/books/{id}`, `/books/{id}/series-neighbours` | все |
 | GET | `/tags` (с числом изданий), `/series?q`, `/series/{id}` | все |
 | GET/DELETE | `/cart` · POST `/cart/items` · DELETE `/cart/items/{book_id}` | пользователь |
 | POST/GET | `/orders` · GET `/orders/{id}` · POST `/orders/{id}/cancel`, `/orders/{id}/renew` | пользователь (только свои) |
 | GET | `/library/rules` (размер и цена партии, срок выдачи, число продлений) | все |
 | GET `/waitlist` · POST/DELETE `/waitlist/{book_id}` | «сообщите, когда книга вернётся» | пользователь |
+| GET `/reading-list` · POST/DELETE `/reading-list/{book_id}` | «хочу прочитать»: книги на потом, отдельно от корзины | пользователь |
 | GET/POST | `/admin/books`, GET `/admin/books/stats`, GET/PATCH/DELETE `/admin/books/{id}` | admin |
-| POST | `/admin/books/import` (CSV, всё или ничего, `dry_run`), GET `/admin/isbn/{isbn}` (данные из Open Library) | admin |
-| GET | `/admin/reports/summary`, `/admin/reports/orders.csv` (`date_from`, `date_to`; по умолчанию последние 30 дней) | admin |
+| POST | `/admin/books/import` (CSV, всё или ничего, `dry_run`; `warnings` — строки, похожие на уже имеющиеся книги), GET `/admin/isbn/{isbn}` (данные из Open Library) | admin |
+| GET | `/admin/books/duplicates?isbn&title&author` (издания с тем же ISBN или с тем же названием и автором) | admin |
+| GET | `/admin/books/quality` (издания без обложки, описания, тегов, ISBN или перевода; непроверенный машинный перевод) · `/admin/books?quality=<issue>` — их список | admin |
+| GET | `/admin/reports/summary`, `/admin/reports/demand` (самые длинные листы ожидания, чаще всего отложенные книги, популярные теги), `/admin/reports/orders.csv` (`date_from`, `date_to`; по умолчанию последние 30 дней) | admin |
 | POST | `/admin/books/{id}/copies` (`{count}`: ещё экземпляры книги) | admin |
 | POST/PATCH/DELETE | `/admin/tags`, `/admin/tags/{id}` · POST `/admin/tags/{id}/merge`; то же для `/admin/series` | admin |
 | POST | `/admin/translations/suggest` (название, автор и описание на другом языке; ничего не сохраняет) | admin |
 | GET | `/admin/users` · PATCH `/admin/users/{id}` (роль, блокировка) | admin |
 | GET | `/admin/orders`, `/admin/orders/{id}` · PATCH `/admin/orders/{id}/status`, `/admin/orders/{id}/due-date` | admin |
 | GET/PATCH | `/admin/settings` (партия, цена, валюта, срок выдачи) | admin |
+
+Ответы публичного каталога (`/books…`, `/tags`, `/series…`, `/library/rules`) содержат слабый `ETag` и
+`Cache-Control: no-cache`: браузер переспрашивает и получает `304 Not Modified`, пока ничего не изменилось; все
+остальные ответы API — `no-store`. Карточки загружают средний размер обложки Open Library, списки — маленький.
 
 Сортировка книг — только из списка: `title`, `author`, `publication_year`, `created_at` (с `-` для убывания),
 `relevance`, `series` (по порядку томов).

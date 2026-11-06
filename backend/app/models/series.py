@@ -15,6 +15,9 @@ class Series(TimestampMixin, Base):
 
     id: Mapped[uuid.UUID] = uuid_pk()
     name: Mapped[str] = mapped_column(sa.String(300), unique=True)
+    # How readers of each interface language know the series ("Гарри Поттер"); empty: ``name``.
+    name_en: Mapped[str | None] = mapped_column(sa.String(300))
+    name_ru: Mapped[str | None] = mapped_column(sa.String(300))
     description: Mapped[str] = mapped_column(sa.Text, default="", server_default="")
     # Open Library series key (e.g. "OL326110L"): editions in other languages find the
     # same series when they are looked up by ISBN.

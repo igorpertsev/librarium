@@ -89,6 +89,9 @@ class Settings(BaseSettings):
     # `python -m app.cli translate-books`) when Wikidata and Wikipedia have none. Optional:
     # without a key only Wikidata and Wikipedia are used.
     anthropic_api_key: SecretStr | None = None
+    # Uptime monitoring (optional): the email worker calls this URL after every cycle, so a
+    # "dead man's switch" check (e.g. healthchecks.io) alerts you when it stops.
+    notifier_ping_url: str | None = None
     translation_model: str = "claude-opus-5-5"
 
     # Seed command inputs. Never hard-code production credentials.
@@ -116,7 +119,12 @@ class Settings(BaseSettings):
         return value.rstrip("/")
 
     @field_validator(
-        "cookie_domain", "seed_admin_email", "smtp_host", "smtp_username", mode="before"
+        "cookie_domain",
+        "seed_admin_email",
+        "smtp_host",
+        "smtp_username",
+        "notifier_ping_url",
+        mode="before",
     )
     @classmethod
     def _empty_to_none(cls, value: object) -> object:

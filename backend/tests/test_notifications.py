@@ -106,6 +106,12 @@ async def test_reminders_are_queued_once(
     assert kinds.count(NotificationKind.DUE_SOON) == 1
     assert kinds.count(NotificationKind.OVERDUE) == 1
 
+    # The due-soon reminder links to extending this loan.
+    send = FakeSender()
+    await _deliver(app, send)
+    reminder = next(m for m in send.messages if "Please return your books by" in m["Subject"])
+    assert f"/profile?extend={order['id']}" in reminder.get_content()
+
 
 async def test_delivery_sends_a_bilingual_email(
     app: FastAPI, customer: ApiUser, create_book: CreateBook, set_batch: SetBatch
@@ -239,3 +245,33 @@ async def test_emails_use_the_customers_language(
 
     response = await english.patch(f"{API}/users/me", json={"preferred_language": "de"})
     assert response.status_code == 422
+
+
+async def test_emails_use_the_title_in_the_readers_language(
+    app: FastAPI, admin: ApiUser, register_user: RegisterUser, set_batch: SetBatch
+) -> None:
+    await set_batch(1)
+    reader = await register_user()
+    assert (
+        await reader.patch(f"{API}/users/me", json={"preferred_language": "ru"})
+    ).status_code == 200
+    created = await admin.post(
+        f"{API}/admin/books",
+        json={
+            "title": "The Catcher in the Rye",
+            "author": "J. D. Salinger",
+            "category": "fiction",
+            "translations": [
+                {"language": "ru", "title": "Над пропастью во ржи", "author": "Джером Сэлинджер"}
+            ],
+        },
+    )
+    await fill_cart(reader, [created.json()["id"]])
+    assert (await place_order(reader)).status_code == 201
+
+    send = FakeSender()
+    await _deliver(app, send)
+    (message,) = send.messages
+    body = message.get_content()
+    # The translated title, with the title of the copy on the shelf in brackets.
+    assert "Над пропастью во ржи (The Catcher in the Rye) — Джером Сэлинджер" in body

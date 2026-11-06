@@ -37,12 +37,12 @@ describe('bookFromDto', () => {
     const book = bookFromDto(
       bookDto({
         tags: [{ slug: 'fantasy', name_en: 'Fantasy', name_ru: 'Фэнтези' }],
-        series: { id: 'series-1', name: 'Middle-earth' },
+        series: { id: 'series-1', name: 'Middle-earth', name_en: null, name_ru: 'Средиземье' },
         series_position: 1,
       }),
     );
     expect(book.tags).toEqual([{ slug: 'fantasy', nameEn: 'Fantasy', nameRu: 'Фэнтези' }]);
-    expect(book.series).toEqual({ id: 'series-1', name: 'Middle-earth' });
+    expect(book.series).toEqual({ id: 'series-1', name: 'Middle-earth', nameEn: null, nameRu: 'Средиземье' });
     expect(book.seriesPosition).toBe(1);
   });
 });

@@ -19,16 +19,17 @@ from pathlib import Path
 from typing import Any
 
 from pydantic import TypeAdapter
-from sqlalchemy import delete, or_, select
+from sqlalchemy import delete, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
 from app.core.database import Database
-from app.core.http import make_http_client
+from app.core.http import make_http_client, ping_monitor
 from app.core.security import hash_password
 from app.main import create_app
-from app.models import Book, RefreshToken, User
+from app.models import Book, RefreshToken, Series, User
 from app.models.enums import UiLanguage, UserRole
+from app.repositories.books import copy_group_key
 from app.schemas.book import BookCreate
 from app.schemas.types import NormalizedEmail
 from app.services import catalog
@@ -44,6 +45,7 @@ from app.services.translation_lookup import (
 from app.services.translations import translate_catalogue
 
 DEMO_BOOKS_FILE = Path(__file__).parent / "seed_data" / "demo_books.json"
+DEMO_SERIES_RU = {"Harry Potter": "Гарри Поттер", "The Hunger Games": "Голодные игры"}
 MIN_ADMIN_PASSWORD_LENGTH = 12
 
 
@@ -114,27 +116,45 @@ async def _seed_demo_books(session: AsyncSession, *, refresh_covers: bool) -> No
             await session.flush()  # a later book may belong to the same new series
             created += 1
             continue
-        if refresh_covers and existing.cover_url != data.cover_url:
-            existing.cover_url = data.cover_url
-            existing.image_urls = data.image_urls
-            refreshed += 1
-        # Demo books from before tags and series get them, unless edited since.
-        if not existing.tags and existing.series_id is None:
-            existing.tags = await catalog.resolve_tags(session, data.tags)
-            if data.series_name:
-                series = await catalog.find_or_create_series(session, name=data.series_name)
-                existing.series_id = series.id
-                existing.series_position = data.series_position
-            linked += bool(existing.tags or data.series_name)
-        if not existing.translations and data.translations:
-            existing.translations = translation_rows(data.translations)
-            translated += 1
+        # Every copy of the title, also copies added before tags, series and translations.
+        copies = (
+            await session.scalars(
+                select(Book).where(copy_group_key() == existing.group_id, Book.is_active.is_(True))
+            )
+        ).all()
+        series_id = None
+        if data.series_name:
+            series_id = (await catalog.find_or_create_series(session, name=data.series_name)).id
+        tags = await catalog.resolve_tags(session, data.tags)
+        for copy in copies:
+            if refresh_covers and copy.cover_url != data.cover_url:
+                copy.cover_url = data.cover_url
+                copy.image_urls = data.image_urls
+                refreshed += 1
+            # Demo books from before tags and series get them, unless edited since.
+            if not copy.tags and copy.series_id is None and (tags or series_id):
+                copy.tags = list(tags)
+                copy.series_id = series_id
+                copy.series_position = data.series_position if series_id else None
+                linked += 1
+            if not copy.translations and data.translations:
+                copy.translations = translation_rows(data.translations)
+                translated += 1
+
     print(
         f"Demo books: {created} created, {len(raw) - created} already present"
         + (f", {linked} given tags/series" if linked else "")
         + (f", {translated} given translations" if translated else "")
         + (f", {refreshed} covers refreshed." if refresh_covers else ".")
     )
+
+    # Russian names of the demo series, unless a librarian has named them since.
+    for name, name_ru in DEMO_SERIES_RU.items():
+        await session.execute(
+            update(Series)
+            .where(Series.name == name, Series.name_ru.is_(None))
+            .values(name_ru=name_ru)
+        )
 
 
 async def _purge_tokens(settings: Settings, *, older_than_days: int) -> None:
@@ -157,6 +177,7 @@ async def _notifications(settings: Settings, *, loop_seconds: int | None) -> Non
     """Queue due-soon/overdue reminders and deliver pending emails, once or in a loop."""
     db = Database(settings)
     send = make_smtp_sender(settings)
+    http = make_http_client(settings)
     warned = False
     try:
         while True:
@@ -179,10 +200,12 @@ async def _notifications(settings: Settings, *, loop_seconds: int | None) -> Non
                         f"Emails: {report.sent} sent, {report.retried} to retry, "
                         f"{report.failed} failed, {report.expired} expired."
                     )
+            await ping_monitor(http, settings.notifier_ping_url)  # "still running"
             if not loop_seconds:
                 break
             await asyncio.sleep(loop_seconds)
     finally:
+        await http.aclose()
         await db.dispose()
 
 

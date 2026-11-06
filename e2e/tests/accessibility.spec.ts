@@ -5,9 +5,10 @@ import { ADMIN, registerCustomer, signIn, signOut } from '../helpers';
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice'];
 
 async function expectNoViolations(page: Page, name: string) {
-  // Wait for content and images, so the audit sees the finished page.
+  // Wait for content and images, so the audit sees the finished page. Lazily loaded images
+  // below the fold only load when scrolled to, so they are not waited for.
   await page.waitForLoadState('load');
-  await page.waitForFunction(() => [...document.images].every((img) => img.complete));
+  await page.waitForFunction(() => [...document.images].every((img) => img.complete || img.loading === 'lazy'));
   const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
   const summary = results.violations.map((v) => `${v.id} (${v.nodes.length}): ${v.help}`);
   expect(summary, `axe violations on ${name}`).toEqual([]);

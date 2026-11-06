@@ -86,7 +86,9 @@ export function bookFromDto(dto: BookDto | BookBriefDto): Book {
     language: dto.language,
     groupId: dto.group_id,
     tags: dto.tags.map(tagFromDto),
-    series: dto.series,
+    series: dto.series
+      ? { id: dto.series.id, name: dto.series.name, nameEn: dto.series.name_en, nameRu: dto.series.name_ru }
+      : null,
     seriesPosition: dto.series_position,
     translations: dto.translations.map(translationFromDto),
   };

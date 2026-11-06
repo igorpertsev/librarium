@@ -6,6 +6,7 @@ import { adminApi, type ReportPeriod } from '../../api/endpoints';
 import { runAction, type ApiError } from '../../api/errors';
 import type { ReportSummaryDto } from '../../api/types';
 import { toMoney } from '../../api/mappers';
+import { DemandReport } from './DemandReport';
 import { errorMessage } from '../utils/apiErrors';
 import { useFormat } from '../utils/format';
 import { Button } from './ui/button';
@@ -137,6 +138,8 @@ export function ReportsTab() {
               </Table>
             )}
           </section>
+
+          <DemandReport period={period} />
         </>
       )}
     </div>

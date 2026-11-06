@@ -9,6 +9,7 @@ from __future__ import annotations
 import csv
 import io
 import re
+import uuid
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -16,7 +17,7 @@ from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.schemas.book import BookCreate
-from app.services import catalog
+from app.services import catalog, duplicates
 from app.services.books import new_book
 
 MAX_ROWS = 500
@@ -49,10 +50,19 @@ class RowError:
 
 
 @dataclass
+class RowWarning:
+    row: int
+    message: str
+    existing_book_id: uuid.UUID | None = None  # a copy of the title already in the library
+
+
+@dataclass
 class ImportResult:
     rows: int = 0
     created: int = 0
     errors: list[RowError] = field(default_factory=list)
+    # Rows that look like a book already in the library or earlier in the file.
+    warnings: list[RowWarning] = field(default_factory=list)
 
 
 def _column(name: str) -> str:
@@ -90,7 +100,9 @@ def _row_values(raw: dict[str, str | None], tag_lookup: dict[str, str]) -> dict[
     return values
 
 
-def parse(text: str, tag_lookup: dict[str, str]) -> tuple[list[BookCreate], ImportResult]:
+def parse(
+    text: str, tag_lookup: dict[str, str]
+) -> tuple[list[tuple[int, BookCreate]], ImportResult]:
     result = ImportResult()
     reader = csv.DictReader(io.StringIO(text.lstrip("﻿")))
     if reader.fieldnames is None:
@@ -102,7 +114,7 @@ def parse(text: str, tag_lookup: dict[str, str]) -> tuple[list[BookCreate], Impo
         result.errors.append(RowError(1, f"Missing column(s): {', '.join(missing)}"))
         return [], result
 
-    books: list[BookCreate] = []
+    books: list[tuple[int, BookCreate]] = []  # (line, book)
     for raw in reader:
         line = reader.line_num
         if not any((value or "").strip() for value in raw.values() if isinstance(value, str)):
@@ -112,7 +124,7 @@ def parse(text: str, tag_lookup: dict[str, str]) -> tuple[list[BookCreate], Impo
             result.errors.append(RowError(line, f"At most {MAX_ROWS} books per import"))
             break
         try:
-            books.append(BookCreate.model_validate(_row_values(raw, tag_lookup)))
+            books.append((line, BookCreate.model_validate(_row_values(raw, tag_lookup))))
         except UnknownTagsError as exc:
             result.errors.append(RowError(line, str(exc)))
         except ValidationError as exc:
@@ -122,11 +134,45 @@ def parse(text: str, tag_lookup: dict[str, str]) -> tuple[list[BookCreate], Impo
     return books, result
 
 
+async def _warn_about_duplicates(
+    session: AsyncSession, books: list[tuple[int, BookCreate]], result: ImportResult
+) -> None:
+    by_isbn, by_name = await duplicates.existing_keys(
+        session,
+        [key for _, book in books if (key := duplicates.isbn_key(book.isbn))],
+        [names for _, book in books if (names := duplicates.name_key(book.title, book.author))],
+    )
+    seen_isbn: dict[str, int] = {}
+    seen_name: dict[tuple[str, str], int] = {}
+    for line, book in books:
+        key = duplicates.isbn_key(book.isbn)
+        names = duplicates.name_key(book.title, book.author)
+        existing = (by_isbn.get(key) if key else None) or (by_name.get(names) if names else None)
+        if existing:
+            result.warnings.append(
+                RowWarning(
+                    line,
+                    f"“{existing[1]}” is already in the library; importing adds a separate "
+                    "entry (use “Add a copy” for another copy of the same title)",
+                    existing[0],
+                )
+            )
+        earlier = (seen_isbn.get(key) if key else None) or (seen_name.get(names) if names else None)
+        if earlier:
+            result.warnings.append(RowWarning(line, f"Same book as line {earlier}"))
+        if key:
+            seen_isbn.setdefault(key, line)
+        if names:
+            seen_name.setdefault(names, line)
+
+
 async def import_books(session: AsyncSession, text: str, *, dry_run: bool) -> ImportResult:
     books, result = parse(text, await catalog.tag_lookup(session))
+    if not result.errors:
+        await _warn_about_duplicates(session, books, result)
     if result.errors or dry_run:
         return result
-    for book in books:  # one transaction: the series a file names are created once
+    for _, book in books:  # one transaction: the series a file names are created once
         await new_book(session, book)
         await session.flush()
     await session.commit()

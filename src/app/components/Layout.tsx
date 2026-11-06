@@ -1,4 +1,4 @@
-import { Outlet, Navigate } from 'react-router';
+import { Outlet, Navigate, useLocation } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { Header } from './Header';
 import { useTranslation } from 'react-i18next';
@@ -13,7 +13,8 @@ function SessionLoading() {
 }
 
 export function Layout() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, signedOut } = useAuth();
+  const location = useLocation();
   const { t } = useTranslation();
 
   if (isLoading) {
@@ -21,7 +22,11 @@ export function Layout() {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    // Back to this page after signing in (e.g. a link from an email), unless the reader has
+    // just signed out on purpose: the next person to sign in starts on the catalogue.
+    return (
+      <Navigate to="/login" replace state={signedOut ? undefined : { from: location.pathname + location.search }} />
+    );
   }
 
   return (

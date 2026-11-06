@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Textarea } from '../components/ui/textarea';
 import { Badge } from '../components/ui/badge';
-import { Plus, Pencil, Trash2, Users, BookOpen as BookOpenIcon, ClipboardList, CheckCircle2, RotateCcw, Clock, Star, ImageDown, BellRing, BarChart3, CopyPlus, Tags } from 'lucide-react';
+import { Plus, Pencil, Trash2, Users, BookOpen as BookOpenIcon, ClipboardList, CheckCircle2, RotateCcw, Clock, Star, ImageDown, BellRing, BarChart3, CopyPlus, Tags, ListChecks } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -19,6 +19,8 @@ import { LoanRulesSettings } from '../components/LoanRulesSettings';
 import { ReportsTab } from '../components/ReportsTab';
 import { BookCatalogFields } from '../components/BookCatalogFields';
 import { BookTranslationFields } from '../components/BookTranslationFields';
+import { DuplicateWarning } from '../components/DuplicateWarning';
+import { DataQualityTab } from '../components/DataQualityTab';
 import { TagsSeriesTab } from '../components/TagsSeriesTab';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
@@ -179,6 +181,13 @@ export default function AdminPortal() {
     }
   };
 
+  // The add-book form found the same title: add a copy of it instead of a new entry.
+  const handleUseExisting = async (book: Book) => {
+    await handleAddCopy(book);
+    setIsAddDialogOpen(false);
+    resetForm();
+  };
+
   const handleSaveBatchConfig = async () => {
     const result = await updateBatchConfig(batchDraft);
     reportResult(result, 'admin.configUpdated');
@@ -254,7 +263,7 @@ export default function AdminPortal() {
               <DialogTitle>{t('admin.addBookTitle')}</DialogTitle>
               <DialogDescription>{t('admin.addBookDesc')}</DialogDescription>
             </DialogHeader>
-            <BookForm formData={formData} setFormData={setFormData} t={t} />
+            <BookForm formData={formData} setFormData={setFormData} t={t} onAddCopy={handleUseExisting} />
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>{t('admin.cancel')}</Button>
               <Button onClick={handleAddBook}>{t('admin.addBookBtn')}</Button>
@@ -335,7 +344,7 @@ export default function AdminPortal() {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="books" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 h-auto mb-6">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 h-auto mb-6">
               <TabsTrigger value="books" className="flex items-center gap-2">
                 <BookOpenIcon className="w-4 h-4" />
                 {t('admin.booksTab')}
@@ -356,6 +365,10 @@ export default function AdminPortal() {
               <TabsTrigger value="catalog" className="flex items-center gap-2">
                 <Tags className="w-4 h-4" />
                 {t('catalogAdmin.tab')}
+              </TabsTrigger>
+              <TabsTrigger value="quality" className="flex items-center gap-2">
+                <ListChecks className="w-4 h-4" />
+                {t('quality.tab')}
               </TabsTrigger>
               <TabsTrigger value="reports" className="flex items-center gap-2">
                 <BarChart3 className="w-4 h-4" />
@@ -604,6 +617,10 @@ export default function AdminPortal() {
               <TagsSeriesTab onChanged={() => loadBooks(currentPage)} />
             </TabsContent>
 
+            <TabsContent value="quality">
+              <DataQualityTab onEdit={openEditDialog} />
+            </TabsContent>
+
             <TabsContent value="reports">
               <ReportsTab />
             </TabsContent>
@@ -629,10 +646,12 @@ export default function AdminPortal() {
   );
 }
 
-function BookForm({ formData, setFormData, t }: {
+function BookForm({ formData, setFormData, t, onAddCopy }: {
   formData: BookFormValues;
   setFormData: (data: BookFormValues) => void;
   t: TFunction;
+  /** Only when adding: offer "add a copy" of a title that looks the same. */
+  onAddCopy?: (book: Book) => void;
 }) {
   const [findingCover, setFindingCover] = useState(false);
 
@@ -684,6 +703,14 @@ function BookForm({ formData, setFormData, t }: {
   return (
     // grid-cols-1 (minmax(0, 1fr)): a long description must not widen the dialog.
     <div className="grid grid-cols-1 gap-4">
+      {onAddCopy && (
+        <DuplicateWarning
+          isbn={formData.isbn}
+          title={formData.title}
+          author={formData.author}
+          onAddCopy={onAddCopy}
+        />
+      )}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="title">{t('bookForm.title')}</Label>

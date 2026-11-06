@@ -549,6 +549,74 @@
           }
         ]
       },
+      "delete": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Delete Me",
+        "description": "Deletes the account after checking the password: personal data is removed, orders stay for the library's records without the reader's name or contacts. 409 ACTIVE_ORDERS while books are requested or on loan; 409 ADMIN_ACCOUNT for administrators.",
+        "operationId": "delete_me_api_v1_users_me_delete",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteAccountRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
       "patch": {
         "tags": [
           "users"
@@ -598,6 +666,82 @@
           },
           "422": {
             "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/me/next-in-series": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "My Next In Series",
+        "description": "For each series the reader has borrowed from, the first volume after the furthest one they borrowed that they have not borrowed yet.",
+        "operationId": "my_next_in_series_api_v1_users_me_next_in_series_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/BookRead"
+                  },
+                  "type": "array",
+                  "title": "Response My Next In Series Api V1 Users Me Next In Series Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/me/export": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Export My Data",
+        "description": "Everything stored about the signed-in reader, as a JSON file.",
+        "operationId": "export_my_data_api_v1_users_me_export_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "application/json": {
                 "schema": {
@@ -732,6 +876,44 @@
             "description": "Books of this series"
           },
           {
+            "name": "language",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[a-z]{2,3}$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "ISO 639 code of the book's language, e.g. en",
+              "title": "Language"
+            },
+            "description": "ISO 639 code of the book's language, e.g. en"
+          },
+          {
+            "name": "author",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 300
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Books by this author (exact name, any case)",
+              "title": "Author"
+            },
+            "description": "Books by this author (exact name, any case)"
+          },
+          {
             "name": "sort",
             "in": "query",
             "required": false,
@@ -810,6 +992,86 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/v1/books/languages": {
+      "get": {
+        "tags": [
+          "books"
+        ],
+        "summary": "List Languages",
+        "description": "Languages (ISO 639 codes) of the books in the catalogue, for the filter.",
+        "operationId": "list_languages_api_v1_books_languages_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array",
+                  "title": "Response List Languages Api V1 Books Languages Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/books/{book_id}/series-neighbours": {
+      "get": {
+        "tags": [
+          "books"
+        ],
+        "summary": "Get Series Neighbours",
+        "description": "The numbered volumes just before and after this book in its series.",
+        "operationId": "get_series_neighbours_api_v1_books__book_id__series_neighbours_get",
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeriesNeighbours"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
           }
         }
       }
@@ -1776,6 +2038,159 @@
         }
       }
     },
+    "/api/v1/reading-list": {
+      "get": {
+        "tags": [
+          "reading list"
+        ],
+        "summary": "My Reading List",
+        "description": "\"Want to read\": one entry per title, newest first, each with the copy that can be borrowed now if there is one.",
+        "operationId": "my_reading_list_api_v1_reading_list_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ReadingListItemRead"
+                  },
+                  "type": "array",
+                  "title": "Response My Reading List Api V1 Reading List Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/reading-list/{book_id}": {
+      "post": {
+        "tags": [
+          "reading list"
+        ],
+        "summary": "Add To Reading List",
+        "description": "Add the title of this copy. Idempotent.",
+        "operationId": "add_to_reading_list_api_v1_reading_list__book_id__post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "reading list"
+        ],
+        "summary": "Remove From Reading List",
+        "description": "Remove the title of this copy. Idempotent.",
+        "operationId": "remove_from_reading_list_api_v1_reading_list__book_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
     "/api/v1/admin/books": {
       "get": {
         "tags": [
@@ -1902,6 +2317,43 @@
             }
           },
           {
+            "name": "language",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[a-z]{2,3}$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "ISO 639 code of the book's language, e.g. en",
+              "title": "Language"
+            },
+            "description": "ISO 639 code of the book's language, e.g. en"
+          },
+          {
+            "name": "quality",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/QualityIssue"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Titles with this gap (one entry per title, like the catalogue)",
+              "title": "Quality"
+            },
+            "description": "Titles with this gap (one entry per title, like the catalogue)"
+          },
+          {
             "name": "sort",
             "in": "query",
             "required": false,
@@ -2006,6 +2458,167 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/BookRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/books/quality": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Book Quality",
+        "description": "How many titles lack a cover, description, tags, ISBN or translation, and how many have machine translations nobody has checked. List them with GET /admin/books?quality=<issue>.",
+        "operationId": "admin_book_quality_api_v1_admin_books_quality_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QualitySummary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/books/duplicates": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Find Duplicates",
+        "description": "Titles that look like this book: the same ISBN (hyphens ignored) or the same title and author (any case). For a warning before adding a duplicate.",
+        "operationId": "admin_find_duplicates_api_v1_admin_books_duplicates_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "isbn",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 32
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Isbn"
+            }
+          },
+          {
+            "name": "title",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Title"
+            }
+          },
+          {
+            "name": "author",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 300
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Author"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BookRead"
+                  },
+                  "title": "Response Admin Find Duplicates Api V1 Admin Books Duplicates Get"
                 }
               }
             }
@@ -4121,6 +4734,109 @@
         }
       }
     },
+    "/api/v1/admin/reports/demand": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Report Demand",
+        "description": "What readers want: the titles with the most readers waiting and the most \"want to read\" saves (right now, with the number of copies), and the tags of the books lent in the period. Default period: the last 30 days.",
+        "operationId": "admin_report_demand_api_v1_admin_reports_demand_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemandRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
     "/api/v1/admin/reports/orders.csv": {
       "get": {
         "tags": [
@@ -4978,15 +5694,56 @@
             },
             "type": "array",
             "title": "Errors"
+          },
+          "warnings": {
+            "items": {
+              "$ref": "#/components/schemas/BookImportWarning"
+            },
+            "type": "array",
+            "title": "Warnings",
+            "description": "Rows that look like a book already in the library or earlier in the file; they are imported anyway"
           }
         },
         "type": "object",
         "required": [
           "rows",
           "created",
-          "errors"
+          "errors",
+          "warnings"
         ],
         "title": "BookImportResult"
+      },
+      "BookImportWarning": {
+        "properties": {
+          "row": {
+            "type": "integer",
+            "title": "Row"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "existing_book_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Existing Book Id",
+            "description": "A copy of the matching title already in the library"
+          }
+        },
+        "type": "object",
+        "required": [
+          "row",
+          "message",
+          "existing_book_id"
+        ],
+        "title": "BookImportWarning"
       },
       "BookLookup": {
         "properties": {
@@ -5841,6 +6598,55 @@
         ],
         "title": "ContactMethod"
       },
+      "DeleteAccountRequest": {
+        "properties": {
+          "password": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Password",
+            "description": "The current password"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "password"
+        ],
+        "title": "DeleteAccountRequest"
+      },
+      "DemandRead": {
+        "properties": {
+          "waiting": {
+            "items": {
+              "$ref": "#/components/schemas/WantedTitleRead"
+            },
+            "type": "array",
+            "title": "Waiting"
+          },
+          "saved": {
+            "items": {
+              "$ref": "#/components/schemas/WantedTitleRead"
+            },
+            "type": "array",
+            "title": "Saved"
+          },
+          "tags": {
+            "items": {
+              "$ref": "#/components/schemas/TagLoansRead"
+            },
+            "type": "array",
+            "title": "Tags"
+          }
+        },
+        "type": "object",
+        "required": [
+          "waiting",
+          "saved",
+          "tags"
+        ],
+        "title": "DemandRead"
+      },
       "ErrorBody": {
         "properties": {
           "code": {
@@ -6545,6 +7351,63 @@
         ],
         "title": "OrderStatusUpdate"
       },
+      "QualityIssue": {
+        "type": "string",
+        "enum": [
+          "no_cover",
+          "no_description",
+          "no_tags",
+          "no_isbn",
+          "no_translation",
+          "machine_translation"
+        ],
+        "title": "QualityIssue",
+        "description": "Gaps in a title's catalogue data, for the admin data-quality page."
+      },
+      "QualitySummary": {
+        "properties": {
+          "titles": {
+            "type": "integer",
+            "title": "Titles",
+            "description": "Active titles in the catalogue"
+          },
+          "issues": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/QualityIssue"
+            },
+            "type": "object",
+            "title": "Issues",
+            "description": "Titles with each gap"
+          }
+        },
+        "type": "object",
+        "required": [
+          "titles",
+          "issues"
+        ],
+        "title": "QualitySummary"
+      },
+      "ReadingListItemRead": {
+        "properties": {
+          "book": {
+            "$ref": "#/components/schemas/BookRead"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "book",
+          "created_at"
+        ],
+        "title": "ReadingListItemRead"
+      },
       "RegisterRequest": {
         "properties": {
           "email": {
@@ -6769,12 +7632,38 @@
           "name": {
             "type": "string",
             "title": "Name"
+          },
+          "name_en": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name En",
+            "description": "English name, if it differs from name"
+          },
+          "name_ru": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Ru",
+            "description": "Russian name, if it differs from name"
           }
         },
         "type": "object",
         "required": [
           "id",
-          "name"
+          "name",
+          "name_en",
+          "name_ru"
         ],
         "title": "SeriesBrief"
       },
@@ -6785,6 +7674,30 @@
             "maxLength": 300,
             "minLength": 1,
             "title": "Name"
+          },
+          "name_en": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name En"
+          },
+          "name_ru": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Ru"
           },
           "description": {
             "type": "string",
@@ -6800,6 +7713,38 @@
         ],
         "title": "SeriesCreate"
       },
+      "SeriesNeighbours": {
+        "properties": {
+          "previous": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BookRead"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The volume before this one"
+          },
+          "next": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BookRead"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The volume after this one"
+          }
+        },
+        "type": "object",
+        "required": [
+          "previous",
+          "next"
+        ],
+        "title": "SeriesNeighbours"
+      },
       "SeriesRead": {
         "properties": {
           "id": {
@@ -6810,6 +7755,30 @@
           "name": {
             "type": "string",
             "title": "Name"
+          },
+          "name_en": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name En",
+            "description": "English name, if it differs from name"
+          },
+          "name_ru": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Ru",
+            "description": "Russian name, if it differs from name"
           },
           "description": {
             "type": "string",
@@ -6837,6 +7806,8 @@
         "required": [
           "id",
           "name",
+          "name_en",
+          "name_ru",
           "description",
           "openlibrary_key",
           "book_count"
@@ -6857,6 +7828,30 @@
               }
             ],
             "title": "Name"
+          },
+          "name_en": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name En"
+          },
+          "name_ru": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Ru"
           },
           "description": {
             "anyOf": [
@@ -6934,6 +7929,34 @@
           "name_ru"
         ],
         "title": "TagCreate"
+      },
+      "TagLoansRead": {
+        "properties": {
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "name_en": {
+            "type": "string",
+            "title": "Name En"
+          },
+          "name_ru": {
+            "type": "string",
+            "title": "Name Ru"
+          },
+          "loans": {
+            "type": "integer",
+            "title": "Loans"
+          }
+        },
+        "type": "object",
+        "required": [
+          "slug",
+          "name_en",
+          "name_ru",
+          "loans"
+        ],
+        "title": "TagLoansRead"
       },
       "TagRead": {
         "properties": {
@@ -7539,6 +8562,34 @@
           "created_at"
         ],
         "title": "WaitlistEntryRead"
+      },
+      "WantedTitleRead": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "author": {
+            "type": "string",
+            "title": "Author"
+          },
+          "readers": {
+            "type": "integer",
+            "title": "Readers"
+          },
+          "copies": {
+            "type": "integer",
+            "title": "Copies"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "author",
+          "readers",
+          "copies"
+        ],
+        "title": "WantedTitleRead"
       }
     },
     "securitySchemes": {

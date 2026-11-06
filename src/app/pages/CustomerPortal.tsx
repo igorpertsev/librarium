@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useSearchParams } from 'react-router';
+import { useNavigation, useSearchParams } from 'react-router';
 import { BookCard } from '../components/BookCard';
 import { BatchProgress } from '../components/BatchProgress';
-import { SelectedTags, SeriesBanner, SeriesFilter, TagFilter } from '../components/CatalogFilters';
+import { AuthorBanner, SelectedTags, SeriesBanner, SeriesFilter, TagFilter } from '../components/CatalogFilters';
+import { useBookText } from '../utils/bookText';
+import { NewArrivalsShelf } from '../components/NewArrivalsShelf';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Button } from '../components/ui/button';
@@ -79,7 +81,7 @@ function useDebounced<T>(value: T, delayMs: number): T {
 }
 
 export default function CustomerPortal() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { version: catalogVersion } = useCatalog();
   const [params, setParams] = useSearchParams();
   const urlQuery = params.get('q') ?? '';
@@ -90,11 +92,23 @@ export default function CustomerPortal() {
   const tagFilter = useMemo(() => parseTagParam(tagsParam), [tagsParam]);
   const tagKey = tagFilter.join(',');
   const seriesFilter = parseSeriesParam(params.get('series'));
+  const authorFilter = params.get('author')?.trim() || null;
+  const textOf = useBookText();
+  const languageParam = params.get('language');
+  const languageFilter = languageParam && /^[a-z]{2,3}$/.test(languageParam) ? languageParam : 'all';
   const sort = parseSort(params.get('sort'), seriesFilter !== null);
   const defaultSort: SortKey = seriesFilter ? SERIES_SORT.value : DEFAULT_SORT;
   const sortOptions = seriesFilter ? [SERIES_SORT, ...SORT_OPTIONS] : SORT_OPTIONS;
   const [searchQuery, setSearchQuery] = useState(urlQuery);
   const [ageRanges, setAgeRanges] = useState<string[]>([]);
+  const [languages, setLanguages] = useState<string[]>([]);
+  const languageName = (code: string) => {
+    try {
+      return new Intl.DisplayNames([i18n.language], { type: 'language' }).of(code) ?? code;
+    } catch {
+      return code;
+    }
+  };
 
   /** Changes filters in the URL; `null` removes a parameter (its default). */
   const updateParams = useCallback(
@@ -123,12 +137,16 @@ export default function CustomerPortal() {
 
   // The search text that the box and the URL last agreed on.
   const syncedQuery = useRef(urlQuery);
+  // While another page is loading (pages load on demand), the catalogue is still on screen;
+  // writing the search into the URL then would cancel that navigation.
+  const navigation = useNavigation();
+  const leaving = navigation.state !== 'idle' && navigation.location.pathname !== '/';
   // Typing updates the URL (without a history entry per keystroke)...
   useEffect(() => {
-    if (search === syncedQuery.current) return;
+    if (leaving || search === syncedQuery.current) return;
     syncedQuery.current = search;
     updateParams({ q: search || null }, { replace: true });
-  }, [search, updateParams]);
+  }, [search, updateParams, leaving]);
   // ...and Back/Forward put the URL's search text back into the box.
   useEffect(() => {
     if (urlQuery === syncedQuery.current) return;
@@ -154,6 +172,8 @@ export default function CustomerPortal() {
             available: availableOnly ? true : undefined,
             tags: tagKey || undefined,
             series: seriesFilter ?? undefined,
+            language: languageFilter === 'all' ? undefined : languageFilter,
+            author: authorFilter ?? undefined,
             sort,
           },
           controller.signal,
@@ -169,7 +189,7 @@ export default function CustomerPortal() {
         if (requestRef.current === controller) setIsLoading(false);
       }
     },
-    [urlQuery, categoryFilter, ageFilter, availableOnly, tagKey, seriesFilter, sort],
+    [urlQuery, categoryFilter, ageFilter, availableOnly, tagKey, seriesFilter, languageFilter, authorFilter, sort],
   );
 
   // Reload from the first page when filters change or availability may have changed.
@@ -187,9 +207,15 @@ export default function CustomerPortal() {
 
   useEffect(() => {
     booksApi.ageRanges().then(setAgeRanges).catch(() => setAgeRanges([]));
+    booksApi.languages().then(setLanguages).catch(() => setLanguages([]));
   }, [catalogVersion]);
 
   const hasMore = books.length < total;
+  // The new arrivals shelf belongs to the plain catalogue, not to a search or a filter.
+  const hasFilters = Boolean(
+    urlQuery || categoryFilter !== 'all' || ageFilter !== 'all' || availableOnly || tagFilter.length ||
+      seriesFilter || authorFilter || languageFilter !== 'all',
+  );
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const bottom = e.currentTarget.scrollHeight - e.currentTarget.scrollTop <= e.currentTarget.clientHeight + 100;
@@ -281,9 +307,30 @@ export default function CustomerPortal() {
           />
 
           <div className="flex flex-wrap items-center justify-between gap-4 mt-4">
-            <div className="flex items-center gap-2">
-              <Switch id="available-only" checked={availableOnly} onCheckedChange={(checked) => updateParams({ available: checked ? '1' : null })} />
-              <Label htmlFor="available-only">{t('catalog.availableOnly')}</Label>
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+              <div className="flex items-center gap-2">
+                <Switch id="available-only" checked={availableOnly} onCheckedChange={(checked) => updateParams({ available: checked ? '1' : null })} />
+                <Label htmlFor="available-only">{t('catalog.availableOnly')}</Label>
+              </div>
+              {languages.length > 1 && (
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="language-filter" className="whitespace-nowrap">{t('catalog.language')}</Label>
+                  <Select
+                    value={languageFilter}
+                    onValueChange={(value) => updateParams({ language: value === 'all' ? null : value })}
+                  >
+                    <SelectTrigger id="language-filter" className="w-44">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{t('catalog.allLanguages')}</SelectItem>
+                      {languages.map((code) => (
+                        <SelectItem key={code} value={code}>{languageName(code)}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <Label htmlFor="sort" className="whitespace-nowrap">{t('catalog.sortBy')}</Label>
@@ -304,6 +351,15 @@ export default function CustomerPortal() {
 
       <div ref={resultsRef} className="flex-1 overflow-y-auto" onScroll={handleScroll}>
         <div className="container mx-auto px-4 py-6">
+          {!hasFilters && <NewArrivalsShelf />}
+          {authorFilter && (
+            <AuthorBanner
+              // The name as the reader sees it on the cards (translated when possible).
+              name={books[0] ? textOf(books[0]).author : authorFilter}
+              total={total}
+              onClear={() => updateParams({ author: null })}
+            />
+          )}
           {seriesFilter && (
             <SeriesBanner
               seriesId={seriesFilter}

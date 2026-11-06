@@ -200,11 +200,55 @@ export interface paths {
         get: operations["read_me_api_v1_users_me_get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Delete Me
+         * @description Deletes the account after checking the password: personal data is removed, orders stay for the library's records without the reader's name or contacts. 409 ACTIVE_ORDERS while books are requested or on loan; 409 ADMIN_ACCOUNT for administrators.
+         */
+        delete: operations["delete_me_api_v1_users_me_delete"];
         options?: never;
         head?: never;
         /** Update Me */
         patch: operations["update_me_api_v1_users_me_patch"];
+        trace?: never;
+    };
+    "/api/v1/users/me/next-in-series": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My Next In Series
+         * @description For each series the reader has borrowed from, the first volume after the furthest one they borrowed that they have not borrowed yet.
+         */
+        get: operations["my_next_in_series_api_v1_users_me_next_in_series_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/me/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export My Data
+         * @description Everything stored about the signed-in reader, as a JSON file.
+         */
+        get: operations["export_my_data_api_v1_users_me_export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/books": {
@@ -233,6 +277,46 @@ export interface paths {
         };
         /** List Age Ranges */
         get: operations["list_age_ranges_api_v1_books_age_ranges_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/books/languages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Languages
+         * @description Languages (ISO 639 codes) of the books in the catalogue, for the filter.
+         */
+        get: operations["list_languages_api_v1_books_languages_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/books/{book_id}/series-neighbours": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Series Neighbours
+         * @description The numbered volumes just before and after this book in its series.
+         */
+        get: operations["get_series_neighbours_api_v1_books__book_id__series_neighbours_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -503,6 +587,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reading-list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My Reading List
+         * @description "Want to read": one entry per title, newest first, each with the copy that can be borrowed now if there is one.
+         */
+        get: operations["my_reading_list_api_v1_reading_list_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reading-list/{book_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add To Reading List
+         * @description Add the title of this copy. Idempotent.
+         */
+        post: operations["add_to_reading_list_api_v1_reading_list__book_id__post"];
+        /**
+         * Remove From Reading List
+         * @description Remove the title of this copy. Idempotent.
+         */
+        delete: operations["remove_from_reading_list_api_v1_reading_list__book_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/books": {
         parameters: {
             query?: never;
@@ -515,6 +643,46 @@ export interface paths {
         put?: never;
         /** Admin Create Book */
         post: operations["admin_create_book_api_v1_admin_books_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/books/quality": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin Book Quality
+         * @description How many titles lack a cover, description, tags, ISBN or translation, and how many have machine translations nobody has checked. List them with GET /admin/books?quality=<issue>.
+         */
+        get: operations["admin_book_quality_api_v1_admin_books_quality_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/books/duplicates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin Find Duplicates
+         * @description Titles that look like this book: the same ISBN (hyphens ignored) or the same title and author (any case). For a warning before adding a duplicate.
+         */
+        get: operations["admin_find_duplicates_api_v1_admin_books_duplicates_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -901,6 +1069,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/reports/demand": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin Report Demand
+         * @description What readers want: the titles with the most readers waiting and the most "want to read" saves (right now, with the number of copies), and the tags of the books lent in the period. Default period: the last 30 days.
+         */
+        get: operations["admin_report_demand_api_v1_admin_reports_demand_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/reports/orders.csv": {
         parameters: {
             query?: never;
@@ -1159,6 +1347,23 @@ export interface components {
             created: number;
             /** Errors */
             errors: components["schemas"]["BookImportError"][];
+            /**
+             * Warnings
+             * @description Rows that look like a book already in the library or earlier in the file; they are imported anyway
+             */
+            warnings: components["schemas"]["BookImportWarning"][];
+        };
+        /** BookImportWarning */
+        BookImportWarning: {
+            /** Row */
+            row: number;
+            /** Message */
+            message: string;
+            /**
+             * Existing Book Id
+             * @description A copy of the matching title already in the library
+             */
+            existing_book_id: string | null;
         };
         /** BookLookup */
         BookLookup: {
@@ -1447,6 +1652,23 @@ export interface components {
          * @enum {string}
          */
         ContactMethod: "whatsapp" | "telegram" | "instagram" | "phone" | "email";
+        /** DeleteAccountRequest */
+        DeleteAccountRequest: {
+            /**
+             * Password
+             * @description The current password
+             */
+            password: string;
+        };
+        /** DemandRead */
+        DemandRead: {
+            /** Waiting */
+            waiting: components["schemas"]["WantedTitleRead"][];
+            /** Saved */
+            saved: components["schemas"]["WantedTitleRead"][];
+            /** Tags */
+            tags: components["schemas"]["TagLoansRead"][];
+        };
         /** ErrorBody */
         ErrorBody: {
             /**
@@ -1702,6 +1924,36 @@ export interface components {
         OrderStatusUpdate: {
             status: components["schemas"]["OrderStatus"];
         };
+        /**
+         * QualityIssue
+         * @description Gaps in a title's catalogue data, for the admin data-quality page.
+         * @enum {string}
+         */
+        QualityIssue: "no_cover" | "no_description" | "no_tags" | "no_isbn" | "no_translation" | "machine_translation";
+        /** QualitySummary */
+        QualitySummary: {
+            /**
+             * Titles
+             * @description Active titles in the catalogue
+             */
+            titles: number;
+            /**
+             * Issues
+             * @description Titles with each gap
+             */
+            issues: {
+                [key: string]: number;
+            };
+        };
+        /** ReadingListItemRead */
+        ReadingListItemRead: {
+            book: components["schemas"]["BookRead"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /** RegisterRequest */
         RegisterRequest: {
             /**
@@ -1780,16 +2032,37 @@ export interface components {
             id: string;
             /** Name */
             name: string;
+            /**
+             * Name En
+             * @description English name, if it differs from name
+             */
+            name_en: string | null;
+            /**
+             * Name Ru
+             * @description Russian name, if it differs from name
+             */
+            name_ru: string | null;
         };
         /** SeriesCreate */
         SeriesCreate: {
             /** Name */
             name: string;
+            /** Name En */
+            name_en?: string | null;
+            /** Name Ru */
+            name_ru?: string | null;
             /**
              * Description
              * @default
              */
             description: string;
+        };
+        /** SeriesNeighbours */
+        SeriesNeighbours: {
+            /** @description The volume before this one */
+            previous: components["schemas"]["BookRead"] | null;
+            /** @description The volume after this one */
+            next: components["schemas"]["BookRead"] | null;
         };
         /** SeriesRead */
         SeriesRead: {
@@ -1800,6 +2073,16 @@ export interface components {
             id: string;
             /** Name */
             name: string;
+            /**
+             * Name En
+             * @description English name, if it differs from name
+             */
+            name_en: string | null;
+            /**
+             * Name Ru
+             * @description Russian name, if it differs from name
+             */
+            name_ru: string | null;
             /** Description */
             description: string;
             /** Openlibrary Key */
@@ -1815,6 +2098,10 @@ export interface components {
         SeriesUpdate: {
             /** Name */
             name?: string | null;
+            /** Name En */
+            name_en?: string | null;
+            /** Name Ru */
+            name_ru?: string | null;
             /** Description */
             description?: string | null;
         };
@@ -1838,6 +2125,17 @@ export interface components {
             name_en: string;
             /** Name Ru */
             name_ru: string;
+        };
+        /** TagLoansRead */
+        TagLoansRead: {
+            /** Slug */
+            slug: string;
+            /** Name En */
+            name_en: string;
+            /** Name Ru */
+            name_ru: string;
+            /** Loans */
+            loans: number;
         };
         /** TagRead */
         TagRead: {
@@ -2047,6 +2345,17 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+        };
+        /** WantedTitleRead */
+        WantedTitleRead: {
+            /** Title */
+            title: string;
+            /** Author */
+            author: string;
+            /** Readers */
+            readers: number;
+            /** Copies */
+            copies: number;
         };
     };
     responses: never;
@@ -2527,6 +2836,64 @@ export interface operations {
             };
         };
     };
+    delete_me_api_v1_users_me_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteAccountRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     update_me_api_v1_users_me_patch: {
         parameters: {
             query?: never;
@@ -2578,6 +2945,64 @@ export interface operations {
             };
         };
     };
+    my_next_in_series_api_v1_users_me_next_in_series_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookRead"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    export_my_data_api_v1_users_me_export_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     list_books_api_v1_books_get: {
         parameters: {
             query?: {
@@ -2591,6 +3016,10 @@ export interface operations {
                 tags?: string | null;
                 /** @description Books of this series */
                 series?: string | null;
+                /** @description ISO 639 code of the book's language, e.g. en */
+                language?: string | null;
+                /** @description Books by this author (exact name, any case) */
+                author?: string | null;
                 sort?: components["schemas"]["BookSort"];
                 page?: number;
                 page_size?: number;
@@ -2637,6 +3066,66 @@ export interface operations {
                 };
                 content: {
                     "application/json": string[];
+                };
+            };
+        };
+    };
+    list_languages_api_v1_books_languages_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
+                };
+            };
+        };
+    };
+    get_series_neighbours_api_v1_books__book_id__series_neighbours_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeriesNeighbours"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
         };
@@ -3339,6 +3828,120 @@ export interface operations {
             };
         };
     };
+    my_reading_list_api_v1_reading_list_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReadingListItemRead"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    add_to_reading_list_api_v1_reading_list__book_id__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    remove_from_reading_list_api_v1_reading_list__book_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     admin_list_books_api_v1_admin_books_get: {
         parameters: {
             query?: {
@@ -3350,6 +3953,10 @@ export interface operations {
                 /** @description Comma-separated tag slugs; a book must have all of them */
                 tags?: string | null;
                 series?: string | null;
+                /** @description ISO 639 code of the book's language, e.g. en */
+                language?: string | null;
+                /** @description Titles with this gap (one entry per title, like the catalogue) */
+                quality?: components["schemas"]["QualityIssue"] | null;
                 sort?: components["schemas"]["BookSort"];
                 page?: number;
                 page_size?: number;
@@ -3418,6 +4025,95 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BookRead"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_book_quality_api_v1_admin_books_quality_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QualitySummary"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_find_duplicates_api_v1_admin_books_duplicates_get: {
+        parameters: {
+            query?: {
+                isbn?: string | null;
+                title?: string | null;
+                author?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookRead"][];
                 };
             };
             /** @description Unauthorized */
@@ -4886,6 +5582,65 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReportSummaryRead"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_report_demand_api_v1_admin_reports_demand_get: {
+        parameters: {
+            query?: {
+                date_from?: string | null;
+                date_to?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DemandRead"];
                 };
             };
             /** @description Bad Request */

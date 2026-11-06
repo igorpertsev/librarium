@@ -14,9 +14,10 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.router import api_router
+from app.api.router import API_PREFIX, api_router
 from app.core.config import Settings, get_settings
 from app.core.database import Database
+from app.core.etag import ETagMiddleware
 from app.core.exceptions import register_exception_handlers
 from app.core.http import make_http_client
 from app.core.logging import configure_logging, init_sentry, new_request_id, request_id_var
@@ -34,6 +35,24 @@ access_logger = logging.getLogger("app.request")
 
 # Health checks run every few seconds; their access lines are only logged at DEBUG.
 _QUIET_PATHS = frozenset({"/health", "/api/v1/health"})
+
+
+def _add_cors_and_caching(app: FastAPI, settings: Settings) -> None:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_origins,  # explicit list, never "*" with credentials
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type"],
+        max_age=600,
+    )
+    # The public catalogue revalidates with ETags instead of being downloaded again.
+    app.add_middleware(
+        ETagMiddleware,
+        prefixes=tuple(
+            f"{API_PREFIX}{path}" for path in ("/books", "/tags", "/series", "/library/rules")
+        ),
+    )
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -82,14 +101,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.openlibrary, WikimediaClient(http), machine
     )
 
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=settings.cors_origins,  # explicit list, never "*" with credentials
-        allow_credentials=True,
-        allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-        allow_headers=["Authorization", "Content-Type"],
-        max_age=600,
-    )
+    _add_cors_and_caching(app, settings)
 
     @app.middleware("http")
     async def security_headers(

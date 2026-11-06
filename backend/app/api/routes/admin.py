@@ -14,9 +14,10 @@ from app.api.dependencies import (
     TranslationLookupDep,
     require_admin,
 )
-from app.api.routes.books import TagsQuery, tag_slugs
+from app.api.routes.books import LanguageQuery, TagsQuery, tag_slugs
 from app.core.exceptions import BadRequestError
 from app.models.enums import BookCategory, BookStatus, OrderStatus
+from app.repositories import books as books_repo
 from app.repositories import orders as orders_repo
 from app.repositories.books import BookFilters
 from app.schemas.book import (
@@ -27,6 +28,8 @@ from app.schemas.book import (
     BookSort,
     BookStats,
     BookUpdate,
+    QualityIssue,
+    QualitySummary,
 )
 from app.schemas.book_import import BookImportRequest, BookImportResult, BookLookup, LookupSeries
 from app.schemas.catalog import (
@@ -48,10 +51,10 @@ from app.schemas.order import (
     OrderStatusUpdate,
     ReminderQueued,
 )
-from app.schemas.report import ReportSummaryRead
+from app.schemas.report import DemandRead, ReportSummaryRead
 from app.schemas.translation import TranslationSuggestion, TranslationSuggestRequest
 from app.schemas.user import AdminUserPage, AdminUserUpdate, UserRead
-from app.services import book_import, catalog, reports
+from app.services import book_import, catalog, duplicates, reports
 from app.services import books as books_service
 from app.services import library_settings as settings_service
 from app.services import orders as orders_service
@@ -81,6 +84,11 @@ async def admin_list_books(
     include_inactive: bool = False,
     tags: TagsQuery = None,
     series: uuid.UUID | None = None,
+    language: LanguageQuery = None,
+    quality: Annotated[
+        QualityIssue | None,
+        Query(description="Titles with this gap (one entry per title, like the catalogue)"),
+    ] = None,
     sort: BookSort = BookSort.CREATED_AT,
 ) -> BookPage:
     items, total = await books_service.list_books(
@@ -93,12 +101,43 @@ async def admin_list_books(
             include_inactive=include_inactive,
             tags=tag_slugs(tags),
             series_id=series,
+            language=language,
+            quality=quality,
         ),
         sort=sort,
         page=pagination.page,
         page_size=pagination.page_size,
+        group_copies=quality is not None,
     )
     return BookPage(items=items, total=total, page=pagination.page, page_size=pagination.page_size)
+
+
+@router.get(
+    "/books/quality",
+    response_model=QualitySummary,
+    description="How many titles lack a cover, description, tags, ISBN or translation, and how "
+    "many have machine translations nobody has checked. List them with GET "
+    "/admin/books?quality=<issue>.",
+)
+async def admin_book_quality(session: SessionDep) -> QualitySummary:
+    titles, issues = await books_repo.quality_counts(session)
+    return QualitySummary(titles=titles, issues=issues)
+
+
+@router.get(
+    "/books/duplicates",
+    response_model=list[BookRead],
+    responses=error_responses(422),
+    description="Titles that look like this book: the same ISBN (hyphens ignored) or the same "
+    "title and author (any case). For a warning before adding a duplicate.",
+)
+async def admin_find_duplicates(
+    session: SessionDep,
+    isbn: Annotated[str | None, Query(max_length=32)] = None,
+    title: Annotated[str | None, Query(max_length=500)] = None,
+    author: Annotated[str | None, Query(max_length=300)] = None,
+) -> list[BookRead]:
+    return await duplicates.find(session, isbn=isbn, title=title, author=author)
 
 
 @router.get("/books/stats", response_model=BookStats)
@@ -428,6 +467,23 @@ async def admin_report_summary(
     start, end = _period(date_from, date_to)
     report = await reports.summary(session, start, end)
     return ReportSummaryRead.model_validate(report, from_attributes=True)
+
+
+@router.get(
+    "/reports/demand",
+    response_model=DemandRead,
+    responses=error_responses(400, 422),
+    description="What readers want: the titles with the most readers waiting and the most "
+    '"want to read" saves (right now, with the number of copies), and the tags of the books '
+    "lent in the period. Default period: the last 30 days.",
+)
+async def admin_report_demand(
+    session: SessionDep, date_from: date | None = None, date_to: date | None = None
+) -> DemandRead:
+    start, end = _period(date_from, date_to)
+    return DemandRead.model_validate(
+        await reports.demand(session, start, end), from_attributes=True
+    )
 
 
 @router.get(

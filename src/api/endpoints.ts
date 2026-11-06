@@ -14,6 +14,7 @@ import type {
   BookStatsDto,
   BookUpdateDto,
   CartDto,
+  DemandDto,
   ChangePasswordDto,
   ForgotPasswordDto,
   LibraryRulesDto,
@@ -25,6 +26,9 @@ import type {
   OrderPageDto,
   OrderStatusDto,
   Paged,
+  QualitySummaryDto,
+  ReadingListItemDto,
+  SeriesNeighboursDto,
   RegisterDto,
   ReminderQueuedDto,
   ResetPasswordDto,
@@ -67,6 +71,10 @@ export const authApi = {
 
 export const usersApi = {
   updateMe: (body: UserUpdateDto) => apiRequest<UserDto>('/users/me', { method: 'PATCH', body }),
+  nextInSeries: () => apiRequest<BookDto[]>('/users/me/next-in-series'),
+  exportData: () => apiDownload('/users/me/export'),
+  deleteMe: (password: string) =>
+    apiRequest<void>('/users/me', { method: 'DELETE', body: { password } }),
 };
 
 export const booksApi = {
@@ -74,6 +82,9 @@ export const booksApi = {
     apiRequest<BookPageDto>('/books', { query, signal, auth: false }),
   get: (bookId: string) => apiRequest<BookDto>(`/books/${id(bookId)}`, { auth: false }),
   ageRanges: () => apiRequest<string[]>('/books/age-ranges', { auth: false }),
+  languages: () => apiRequest<string[]>('/books/languages', { auth: false }),
+  seriesNeighbours: (bookId: string) =>
+    apiRequest<SeriesNeighboursDto>(`/books/${id(bookId)}/series-neighbours`, { auth: false }),
 };
 
 export const catalogApi = {
@@ -108,6 +119,12 @@ export const waitlistApi = {
   leave: (bookId: string) => apiRequest<void>(`/waitlist/${id(bookId)}`, { method: 'DELETE' }),
 };
 
+export const readingListApi = {
+  list: () => apiRequest<ReadingListItemDto[]>('/reading-list'),
+  add: (bookId: string) => apiRequest<void>(`/reading-list/${id(bookId)}`, { method: 'POST' }),
+  remove: (bookId: string) => apiRequest<void>(`/reading-list/${id(bookId)}`, { method: 'DELETE' }),
+};
+
 export const libraryApi = {
   rules: () => apiRequest<LibraryRulesDto>('/library/rules', { auth: false }),
 };
@@ -115,6 +132,9 @@ export const libraryApi = {
 export const adminApi = {
   listBooks: (query: AdminBookListQuery) => apiRequest<BookPageDto>('/admin/books', { query }),
   bookStats: () => apiRequest<BookStatsDto>('/admin/books/stats'),
+  bookQuality: () => apiRequest<QualitySummaryDto>('/admin/books/quality'),
+  findDuplicates: (query: { isbn?: string; title?: string; author?: string }) =>
+    apiRequest<BookDto[]>('/admin/books/duplicates', { query }),
   lookupIsbn: (isbn: string) => apiRequest<BookLookupDto>(`/admin/isbn/${id(isbn)}`),
   importBooks: (csv: string, dryRun: boolean) =>
     apiRequest<BookImportResultDto>('/admin/books/import', {
@@ -168,6 +188,8 @@ export const adminApi = {
   getSettings: () => apiRequest<LibrarySettingsDto>('/admin/settings'),
   reportSummary: (period: ReportPeriod) =>
     apiRequest<ReportSummaryDto>('/admin/reports/summary', { query: period }),
+  reportDemand: (period: ReportPeriod) =>
+    apiRequest<DemandDto>('/admin/reports/demand', { query: period }),
   ordersCsv: (period: ReportPeriod) => apiDownload('/admin/reports/orders.csv', { query: period }),
   updateSettings: (body: LibrarySettingsUpdateDto) =>
     apiRequest<LibrarySettingsDto>('/admin/settings', { method: 'PATCH', body }),

@@ -299,6 +299,7 @@ async def test_demo_books_come_with_tags_and_series(
 
     listed = (await client.get(f"{API}/series", params={"q": "harry"})).json()
     assert [(s["name"], s["book_count"]) for s in listed] == [("Harry Potter", 3)]
+    assert listed[0]["name_ru"] == "Гарри Поттер"
     in_order = (
         await client.get(f"{API}/books", params={"series": listed[0]["id"], "sort": "series"})
     ).json()["items"]
@@ -306,3 +307,46 @@ async def test_demo_books_come_with_tags_and_series(
     assert await _titles(client, tags="dystopia") == ["1984", "Catching Fire", "The Hunger Games"]
     # Demo books come with Russian titles, which search finds.
     assert await _titles(client, q="пересмешника") == ["To Kill a Mockingbird"]
+
+
+async def test_series_have_names_in_both_languages(client: AsyncClient, admin: ApiUser) -> None:
+    created = await admin.post(
+        f"{API}/admin/series",
+        json={"name": "Harry Potter", "name_ru": "Гарри Поттер", "name_en": " "},
+    )
+    assert created.status_code == 201, created.text
+    series = created.json()
+    assert (series["name_ru"], series["name_en"]) == ("Гарри Поттер", None)  # blank: not set
+    book = await _book(admin, "Stone", series_name="Harry Potter", series_position=1)
+    assert book["series"]["name_ru"] == "Гарри Поттер"
+
+    assert await _titles(client, q="гарри") == ["Stone"]  # search finds the Russian name
+    listed = (await client.get(f"{API}/series", params={"q": "поттер"})).json()
+    assert [s["name"] for s in listed] == ["Harry Potter"]
+    renamed = await admin.patch(f"{API}/admin/series/{series['id']}", json={"name_ru": None})
+    assert renamed.json()["name_ru"] is None
+
+
+async def test_demo_seed_completes_every_copy_of_a_title(
+    database_url: str, client: AsyncClient, admin: ApiUser
+) -> None:
+    from app.cli import _seed  # noqa: PLC0415 - the CLI module builds the app on import
+
+    # A demo book loaded before tags and translations existed, with a copy added since.
+    old = await admin.post(
+        f"{API}/admin/books",
+        json={
+            "title": "Becoming",
+            "author": "Michelle Obama",
+            "category": "biography",
+            "isbn": "978-1524763138",
+        },
+    )
+    copy = (await admin.post(f"{API}/admin/books/{old.json()['id']}/copies", json={})).json()[0]
+
+    settings = make_settings(database_url, seed_admin_email=None, seed_admin_password=None)
+    await _seed(settings, demo_books=True, reset_admin_password=False)
+
+    for book_id in (old.json()["id"], copy["id"]):
+        book = (await client.get(f"{API}/books/{book_id}")).json()
+        assert [t["title"] for t in book["translations"]] == ["Becoming. Моя история"]

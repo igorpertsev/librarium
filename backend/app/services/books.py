@@ -130,6 +130,10 @@ async def get_book(
     )
 
 
+async def languages(session: AsyncSession) -> Sequence[str]:
+    return await books_repo.distinct_languages(session)
+
+
 async def age_ranges(session: AsyncSession) -> Sequence[str]:
     return await books_repo.distinct_age_ranges(session)
 

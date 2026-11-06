@@ -93,7 +93,21 @@ export function BookImportDialog({ onImported }: { onImported: () => void }) {
             {preview && !busy && (
               <div role="status" className="space-y-2 text-sm">
                 {ready ? (
-                  <p>{t('bookImport.ready', { count: preview.rows, file: fileName })}</p>
+                  <>
+                    <p>{t('bookImport.ready', { count: preview.rows, file: fileName })}</p>
+                    {preview.warnings.length > 0 && (
+                      <>
+                        <p className="text-amber-700 dark:text-amber-400">
+                          {t('bookImport.warnings', { count: preview.warnings.length })}
+                        </p>
+                        <ul className="max-h-48 overflow-y-auto rounded-md border border-border p-2 space-y-1 font-mono text-xs">
+                          {preview.warnings.slice(0, MAX_SHOWN_ERRORS).map((warning, index) => (
+                            <li key={index}>{t('bookImport.line', { row: warning.row })}: {warning.message}</li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+                  </>
                 ) : preview.rows === 0 && preview.errors.length === 0 ? (
                   <p>{t('bookImport.empty')}</p>
                 ) : (

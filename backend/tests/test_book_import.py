@@ -24,12 +24,12 @@ async def _import(admin: ApiUser, text: str, *, dry_run: bool = False) -> httpx.
 
 async def test_csv_import_creates_books(admin: ApiUser) -> None:
     preview = await _import(admin, CSV, dry_run=True)
-    assert preview.json() == {"rows": 2, "created": 0, "errors": []}
+    assert preview.json() == {"rows": 2, "created": 0, "errors": [], "warnings": []}
     assert (await admin.get(f"{API}/admin/books")).json()["total"] == 0
 
     response = await _import(admin, CSV)
     assert response.status_code == 200
-    assert response.json() == {"rows": 2, "created": 2, "errors": []}
+    assert response.json() == {"rows": 2, "created": 2, "errors": [], "warnings": []}
     books = {b["title"]: b for b in (await admin.get(f"{API}/admin/books")).json()["items"]}
     assert books["Dune"]["category"] == "fiction"
     assert books["Dune"]["publication_year"] == 1965

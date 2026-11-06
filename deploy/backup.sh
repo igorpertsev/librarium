@@ -10,6 +10,10 @@
 # ~/.config/rclone/rclone.conf; rclone runs in a container, nothing to install. Off-site copies
 # older than REMOTE_KEEP_DAYS (default 90) are deleted there.
 #
+# BACKUP_PING_URL (optional) is a "dead man's switch" check, e.g. a healthchecks.io URL: it is
+# called after every successful backup and <url>/fail when a backup fails, so you hear about
+# backups that fail or stop running. Set it in .env next to docker-compose.prod.yml or here.
+#
 # Cron (daily at 03:00):  0 3 * * * /home/ubuntu/librarium/deploy/backup.sh >> /home/ubuntu/librarium-backups/backup.log 2>&1
 # Check that a dump restores: deploy/verify-backup.sh. Restore: "Backups" in deploy/README.md.
 set -euo pipefail
@@ -22,6 +26,16 @@ REMOTE_KEEP_DAYS="${REMOTE_KEEP_DAYS:-90}"
 RCLONE_IMAGE="${RCLONE_IMAGE:-rclone/rclone:1.69}"
 RCLONE_CONFIG_DIR="${RCLONE_CONFIG_DIR:-$HOME/.config/rclone}"
 COMPOSE=(docker compose -f docker-compose.prod.yml)
+if [[ -z "${BACKUP_PING_URL:-}" && -f .env ]]; then
+  BACKUP_PING_URL="$(sed -n 's/^BACKUP_PING_URL=//p' .env | tail -n 1)"
+fi
+BACKUP_PING_URL="${BACKUP_PING_URL:-}"
+
+ping_monitor() {  # $1: "" on success, "/fail" on failure; never fails the backup itself
+  [[ -n "$BACKUP_PING_URL" ]] || return 0
+  curl -fsS -m 10 --retry 3 -o /dev/null "${BACKUP_PING_URL%/}$1" || echo "could not reach $BACKUP_PING_URL" >&2
+}
+trap 'ping_monitor /fail' ERR
 
 mkdir -p "$BACKUP_DIR"
 chmod 700 "$BACKUP_DIR"
@@ -48,3 +62,5 @@ if [[ -n "$RCLONE_REMOTE" ]]; then
   rclone delete "$RCLONE_REMOTE" --include 'librarium-*.dump' --min-age "${REMOTE_KEEP_DAYS}d"
   echo "$(date -u +%FT%TZ) copied off-site to $RCLONE_REMOTE"
 fi
+
+ping_monitor ""

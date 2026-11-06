@@ -18,10 +18,22 @@ class BookImportError(ApiModel):
     message: str
 
 
+class BookImportWarning(ApiModel):
+    row: int
+    message: str
+    existing_book_id: uuid.UUID | None = Field(
+        description="A copy of the matching title already in the library"
+    )
+
+
 class BookImportResult(ApiModel):
     rows: int
     created: int
     errors: list[BookImportError]
+    warnings: list[BookImportWarning] = Field(
+        description="Rows that look like a book already in the library or earlier in the file; "
+        "they are imported anyway"
+    )
 
 
 class LookupSeries(ApiModel):

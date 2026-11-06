@@ -423,11 +423,12 @@ Concurrency is covered by tests in which both requests are held at a barrier rig
 | `users` | email unique and lower-case (CHECK), Argon2 hash, role `customer/admin`, contacts (nullable), `preferred_contact_method` |
 | `books` | one row per physical copy: `cover_url`, `image_urls[]`, `age_range`, `category`, `status` (`available/available-soon/not-available`), `language`, `publication_year`, `is_active` (soft delete), `copy_group_id` (copies of one title), `series_id` + `series_position` (CHECK > 0) |
 | `tags`, `book_tags` | tag `slug` (unique, CHECK format), `name_en`, `name_ru`; book ↔ tag link table |
-| `series` | `name` (unique), `description`, `openlibrary_key` (unique, from ISBN lookups) |
+| `series` | `name` (unique), `name_en` / `name_ru` (names in each interface language, optional), `description`, `openlibrary_key` (unique, from ISBN lookups) |
 | `book_translations` | per book and language (`en`/`ru`): `title`, `author`, `description`, `title_source`/`description_source` (`manual/wikidata/wikipedia/machine`), `source_url` (Wikipedia attribution) |
 | `library_settings` | single row: `books_per_batch`, `price_per_batch NUMERIC(10,2)`, `currency`, `loan_period_days`, `max_renewals` |
 | `carts`, `cart_items` | one cart per user, `UNIQUE(cart_id, book_id)` |
 | `waitlist_entries` | customer waiting for a book, `UNIQUE(user_id, book_id)` |
+| `reading_list_entries` | “want to read”, one per reader and title, `UNIQUE(user_id, book_id)` |
 | `orders` | status, total/currency, batch price and contact snapshot, `due_date`, `renewal_count`, `confirmed_at/returned_at/cancelled_at`, CHECK `total = price × batches` |
 | `order_items` | book snapshot and `unit_price`, `reservation_active` + partial unique index |
 | `refresh_tokens` | `token_hash`, `family_id`, `expires_at`, `revoked_at`, `replaced_by_token_id`, user agent/IP |
@@ -451,21 +452,30 @@ Differences (adapters in `src/api/mappers.ts`):
 | GET | `/health` (liveness), `/api/v1/health` (DB) | everyone |
 | POST | `/auth/register`, `/auth/login`, `/auth/refresh`, `/auth/logout`, `/auth/forgot-password`, `/auth/reset-password` | everyone |
 | GET | `/auth/me`, `/users/me` · PATCH `/users/me` · POST `/auth/change-password` | signed-in user |
-| GET | `/books?q&category&age_range&available&tags&series&sort&page&page_size`, `/books/age-ranges`, `/books/{id}` | everyone |
+| GET | `/users/me/next-in-series` (the next volume of each series the reader borrowed from) | signed-in user |
+| GET | `/users/me/export` (everything stored about the reader, JSON) · DELETE `/users/me` (`{password}`; orders are kept without name and contacts; 409 `ACTIVE_ORDERS` / `ADMIN_ACCOUNT`) | signed-in user |
+| GET | `/books?q&category&age_range&available&tags&series&language&author&sort&page&page_size`, `/books/age-ranges`, `/books/languages`, `/books/{id}`, `/books/{id}/series-neighbours` | everyone |
 | GET | `/tags` (with title counts), `/series?q`, `/series/{id}` | everyone |
 | GET/DELETE | `/cart` · POST `/cart/items` · DELETE `/cart/items/{book_id}` | signed-in user |
 | POST/GET | `/orders` · GET `/orders/{id}` · POST `/orders/{id}/cancel`, `/orders/{id}/renew` | signed-in user (own orders only) |
 | GET | `/library/rules` (batch size and price, loan period, extensions per loan) | everyone |
 | GET `/waitlist` · POST/DELETE `/waitlist/{book_id}` | “email me when this book is back” | signed-in user |
+| GET `/reading-list` · POST/DELETE `/reading-list/{book_id}` | “want to read”: titles kept for later, separate from the cart | signed-in user |
 | GET/POST | `/admin/books`, GET `/admin/books/stats`, GET/PATCH/DELETE `/admin/books/{id}` | admin |
-| POST | `/admin/books/import` (CSV, all or nothing, `dry_run`), GET `/admin/isbn/{isbn}` (details from Open Library) | admin |
-| GET | `/admin/reports/summary`, `/admin/reports/orders.csv` (`date_from`, `date_to`; default last 30 days) | admin |
+| POST | `/admin/books/import` (CSV, all or nothing, `dry_run`; `warnings` for rows that look like books already there), GET `/admin/isbn/{isbn}` (details from Open Library) | admin |
+| GET | `/admin/books/duplicates?isbn&title&author` (titles with the same ISBN, or the same title and author) | admin |
+| GET | `/admin/books/quality` (titles without cover, description, tags, ISBN or translation; unchecked machine translations) · `/admin/books?quality=<issue>` lists them | admin |
+| GET | `/admin/reports/summary`, `/admin/reports/demand` (longest waiting lists, most saved titles, most borrowed tags), `/admin/reports/orders.csv` (`date_from`, `date_to`; default last 30 days) | admin |
 | POST | `/admin/books/{id}/copies` (`{count}`: more copies of a title) | admin |
 | POST/PATCH/DELETE | `/admin/tags`, `/admin/tags/{id}` · POST `/admin/tags/{id}/merge`; the same for `/admin/series` | admin |
 | POST | `/admin/translations/suggest` (title, author and description in another language; saves nothing) | admin |
 | GET | `/admin/users` · PATCH `/admin/users/{id}` (role, disable) | admin |
 | GET | `/admin/orders`, `/admin/orders/{id}` · PATCH `/admin/orders/{id}/status`, `/admin/orders/{id}/due-date` | admin |
 | GET/PATCH | `/admin/settings` (batch size, price, currency, loan period) | admin |
+
+Public catalogue responses (`/books…`, `/tags`, `/series…`, `/library/rules`) carry a weak `ETag` with
+`Cache-Control: no-cache`: browsers revalidate and get `304 Not Modified` while nothing changed; every other
+API response is `no-store`. Cards load Open Library's medium cover size, lists the small one.
 
 Book sorting is allow-listed: `title`, `author`, `publication_year`, `created_at` (prefix `-` for descending),
 `relevance`, `series` (volume order).

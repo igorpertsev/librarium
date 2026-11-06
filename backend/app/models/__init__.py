@@ -6,6 +6,7 @@ from app.models.cart import Cart, CartItem
 from app.models.library_settings import LibrarySettings
 from app.models.notification import Notification
 from app.models.order import Order, OrderItem
+from app.models.reading_list import ReadingListEntry
 from app.models.refresh_token import RefreshToken
 from app.models.series import Series
 from app.models.tag import Tag, book_tags
@@ -23,6 +24,7 @@ __all__ = [
     "Notification",
     "Order",
     "OrderItem",
+    "ReadingListEntry",
     "RefreshToken",
     "Series",
     "Tag",

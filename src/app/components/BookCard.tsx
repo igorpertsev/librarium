@@ -14,7 +14,9 @@ import { getCartButtonLabel, getCategoryTranslation, getStatusTranslation } from
 import { useFormat } from '../utils/format';
 import { errorMessage } from '../utils/apiErrors';
 import { WaitlistButton } from './WaitlistButton';
-import { SeriesLink, TagChips } from './CatalogFilters';
+import { coverOfSize } from '../utils/covers';
+import { ReadingListButton } from './ReadingListButton';
+import { AuthorLink, SeriesLink, TagChips } from './CatalogFilters';
 import { useBookLanguageName, useBookText } from '../utils/bookText';
 
 interface BookCardProps {
@@ -107,9 +109,11 @@ export function BookCard({ book }: BookCardProps) {
               {images.map((image, index) => (
                 <div key={index} className="flex-[0_0_100%] min-w-0">
                   <img
-                    src={image}
+                    src={coverOfSize(image, 'M')}
                     alt={t('bookDetails.imageAlt', { title: text.title, n: index + 1 })}
                     className="w-full h-full object-cover select-none"
+                    loading="lazy"
+                    decoding="async"
                     draggable={false}
                   />
                 </div>
@@ -172,7 +176,9 @@ export function BookCard({ book }: BookCardProps) {
               {text.originalTitle}
             </p>
           )}
-          <p className="text-sm text-muted-foreground">{text.author}</p>
+          <p className="text-sm text-muted-foreground">
+            <AuthorLink author={book.author} label={text.author} />
+          </p>
           <SeriesLink book={book} className="text-sm max-w-full" />
           <div className="flex gap-2 flex-wrap">
             {getStatusBadge()}
@@ -209,6 +215,7 @@ export function BookCard({ book }: BookCardProps) {
         {(isOrderedByOther || book.status !== 'available') && !isPending && (
           <WaitlistButton bookId={book.id} groupId={book.groupId} title={text.title} />
         )}
+        <ReadingListButton bookId={book.id} groupId={book.groupId} title={text.title} />
       </CardFooter>
     </Card>
 
