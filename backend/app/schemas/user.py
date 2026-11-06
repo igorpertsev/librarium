@@ -6,7 +6,7 @@ from typing import ClassVar
 
 from pydantic import model_validator
 
-from app.models.enums import ContactMethod, UserRole
+from app.models.enums import ContactMethod, UiLanguage, UserRole
 from app.schemas.common import ApiModel, Page, PatchModel
 from app.schemas.types import FullName, Handle, NormalizedEmail, PhoneLike
 
@@ -34,6 +34,7 @@ class UserRead(ApiModel):
     instagram: str | None
     phone: str | None
     preferred_contact_method: ContactMethod | None
+    preferred_language: UiLanguage | None
     created_at: datetime
     updated_at: datetime
 
@@ -50,6 +51,7 @@ class UserUpdate(PatchModel):
     instagram: Handle = None
     phone: PhoneLike = None
     preferred_contact_method: ContactMethod | None = None
+    preferred_language: UiLanguage | None = None
 
 
 class ActiveLoan(ApiModel):

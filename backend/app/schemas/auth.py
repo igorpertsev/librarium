@@ -4,7 +4,7 @@ from typing import Literal
 
 from pydantic import model_validator
 
-from app.models.enums import ContactMethod
+from app.models.enums import ContactMethod, UiLanguage
 from app.schemas.common import ApiModel, RequestModel
 from app.schemas.types import (
     AnyPassword,
@@ -27,6 +27,8 @@ class RegisterRequest(RequestModel):
     instagram: Handle = None
     phone: PhoneLike = None
     preferred_contact_method: ContactMethod | None = None
+    # Interface language at sign-up; used for emails.
+    preferred_language: UiLanguage | None = None
 
     @model_validator(mode="after")
     def _validate_contacts(self) -> RegisterRequest:

@@ -118,6 +118,7 @@ async def register(
         instagram=data.instagram,
         phone=data.phone,
         preferred_contact_method=data.preferred_contact_method,
+        preferred_language=data.preferred_language,
     )
     session.add(user)
     try:

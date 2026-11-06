@@ -160,6 +160,7 @@ export function userFromDto(dto: UserDto | AdminUserDto): User {
     role: dto.role,
     borrowedBooks: 'active_loans' in dto ? dto.active_loans.map(loanToBorrowedBook) : [],
     contacts: contactsFromDto(dto),
+    preferredLanguage: dto.preferred_language ?? null,
   };
 }
 

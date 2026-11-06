@@ -335,7 +335,9 @@ Error format (the same for every status):
 
 Customers receive an email when they place a request, when the library hands the books over
 (with the due date), when the library cancels a request, a few days before the due date and once
-the books are overdue. Messages are plain text, in English followed by Russian.
+the books are overdue. Messages are plain text in the language the customer chose in the interface
+(`users.preferred_language`, saved at sign-up and when the language is changed in Settings), or in English
+followed by Russian when it is not known.
 
 - **Outbox:** a row in `notifications` is written in the same transaction as the order change, so
   an email is never lost or sent for a change that was rolled back. Each event happens at most once

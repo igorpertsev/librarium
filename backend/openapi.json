@@ -2550,6 +2550,16 @@
               }
             ]
           },
+          "preferred_language": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UiLanguage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -2580,6 +2590,7 @@
           "instagram",
           "phone",
           "preferred_contact_method",
+          "preferred_language",
           "created_at",
           "updated_at",
           "active_loans"
@@ -3954,6 +3965,16 @@
                 "type": "null"
               }
             ]
+          },
+          "preferred_language": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UiLanguage"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "additionalProperties": false,
@@ -3994,6 +4015,15 @@
         ],
         "title": "TokenResponse",
         "description": "The refresh token is never part of a JSON body: it travels in an HttpOnly cookie."
+      },
+      "UiLanguage": {
+        "type": "string",
+        "enum": [
+          "en",
+          "ru"
+        ],
+        "title": "UiLanguage",
+        "description": "Languages of the web interface and of customer emails."
       },
       "UserRead": {
         "properties": {
@@ -4071,6 +4101,16 @@
               }
             ]
           },
+          "preferred_language": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UiLanguage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -4094,6 +4134,7 @@
           "instagram",
           "phone",
           "preferred_contact_method",
+          "preferred_language",
           "created_at",
           "updated_at"
         ],
@@ -4187,6 +4228,16 @@
             "anyOf": [
               {
                 "$ref": "#/components/schemas/ContactMethod"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "preferred_language": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UiLanguage"
               },
               {
                 "type": "null"

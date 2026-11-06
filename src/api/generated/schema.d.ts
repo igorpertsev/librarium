@@ -572,6 +572,7 @@ export interface components {
             /** Phone */
             phone: string | null;
             preferred_contact_method: components["schemas"]["ContactMethod"] | null;
+            preferred_language: components["schemas"]["UiLanguage"] | null;
             /**
              * Created At
              * Format: date-time
@@ -1045,6 +1046,7 @@ export interface components {
             /** Phone */
             phone?: string | null;
             preferred_contact_method?: components["schemas"]["ContactMethod"] | null;
+            preferred_language?: components["schemas"]["UiLanguage"] | null;
         };
         /**
          * TokenResponse
@@ -1063,6 +1065,12 @@ export interface components {
             expires_in: number;
             user: components["schemas"]["UserRead"];
         };
+        /**
+         * UiLanguage
+         * @description Languages of the web interface and of customer emails.
+         * @enum {string}
+         */
+        UiLanguage: "en" | "ru";
         /** UserRead */
         UserRead: {
             /**
@@ -1086,6 +1094,7 @@ export interface components {
             /** Phone */
             phone: string | null;
             preferred_contact_method: components["schemas"]["ContactMethod"] | null;
+            preferred_language: components["schemas"]["UiLanguage"] | null;
             /**
              * Created At
              * Format: date-time
@@ -1120,6 +1129,7 @@ export interface components {
             /** Phone */
             phone?: string | null;
             preferred_contact_method?: components["schemas"]["ContactMethod"] | null;
+            preferred_language?: components["schemas"]["UiLanguage"] | null;
         };
     };
     responses: never;

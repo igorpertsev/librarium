@@ -1,4 +1,6 @@
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../contexts/AuthContext';
+import type { UiLanguage } from '../types';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
@@ -10,10 +12,11 @@ interface SettingsDialogProps {
 
 export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const { t, i18n } = useTranslation();
+  const { setLanguage } = useAuth();
 
+  // Also saved on the account when signed in, so emails use the same language.
   const handleLanguageChange = (language: string) => {
-    i18n.changeLanguage(language);
-    localStorage.setItem('language', language);
+    void setLanguage(language as UiLanguage);
   };
 
   return (
