@@ -31,6 +31,10 @@ export function errorMessage(t: TFunction, error: ApiError): string {
       ? t('errors.bookUnavailableList', { titles: titles.join(', ') })
       : t('errors.bookUnavailable');
   }
+  if (error.code === 'TOO_MANY_REQUESTS') {
+    const seconds = Number(error.details?.retry_after ?? 60);
+    return t('errors.tooManyAttempts', { count: Math.max(1, Math.ceil(seconds / 60)) });
+  }
   if (error.code === 'INCOMPLETE_BATCH') {
     const count = Number(error.details?.books_per_batch ?? 0);
     return t('errors.incompleteBatch', { count });

@@ -260,7 +260,8 @@ Container logs are rotated (5 × 10 MB per container), so they do not fill the d
   IP addresses stored with sessions cannot be spoofed.
 - Keep the OS patched (`sudo apt-get update && sudo apt-get upgrade`; Ubuntu installs security
   updates automatically via unattended-upgrades) and use SSH keys only.
-- Not included yet: login rate limiting and a Content-Security-Policy header.
+- Login, registration and token refresh are rate-limited per IP address and per email (see the main README).
+- Not included yet: a Content-Security-Policy header.
 
 ## Troubleshooting
 

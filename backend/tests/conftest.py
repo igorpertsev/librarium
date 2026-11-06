@@ -105,6 +105,7 @@ async def app(database_url: str) -> AsyncIterator[FastAPI]:
 
 @pytest.fixture(autouse=True)
 async def _clean_database(app: FastAPI) -> None:
+    app.state.rate_limiter.reset()
     async with app.state.db.engine.begin() as conn:
         await conn.execute(
             text(

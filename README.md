@@ -109,6 +109,7 @@ Docker Compose and Vite read the root `.env` (template: `.env.example`). Filled-
 | `COOKIE_SECURE` | `false` | must be `true` in production |
 | `COOKIE_SAMESITE` | `lax` | `none` is only allowed with `COOKIE_SECURE=true` |
 | `FRONTEND_ORIGINS` | `http://localhost:5173` | exact origins, comma-separated; `*` is rejected |
+| `RATE_LIMIT_ENABLED` | `true` | limits on login, registration, token refresh and password changes |
 | `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | — | used by `app.cli seed`, password ≥ 12 characters |
 | `TEST_DATABASE_URL` | `…/bookstore_test` | tests only; the database name must end with `_test` |
 | `VITE_API_URL` | `http://localhost:8000/api/v1` | API base URL for the frontend |
@@ -286,6 +287,21 @@ conversion to UI models in `src/api/mappers.ts`. After an API change: export the
 - Login errors are identical for “unknown email” and “wrong password”; Argon2 verification runs even when the user
   does not exist (no timing leak).
 - Cookie endpoints (`/auth/*`) additionally reject requests with a foreign `Origin` (`ORIGIN_NOT_ALLOWED`).
+- **Rate limits** (`app/core/rate_limit.py`) answer `429 TOO_MANY_REQUESTS` with a `Retry-After` header and
+  `details.retry_after` in seconds:
+
+  | What | Limit |
+  | --- | --- |
+  | Failed logins per email address (a successful login clears them) | 10 per 15 minutes |
+  | Login attempts per IP address | 30 per 5 minutes |
+  | Registrations per IP address | 10 per hour |
+  | Token refreshes per IP address | 120 per 5 minutes |
+  | Wrong current passwords when changing the password, per user | 5 per 15 minutes |
+
+  The counters are kept in memory, which suits the single backend process of the Docker stacks; with several
+  processes each would count separately. Behind Caddy the client IP comes from `X-Forwarded-For`
+  (uvicorn `--proxy-headers`). Note that failed logins for an email address also block its owner for up to
+  15 minutes; that is the usual trade-off against password guessing.
 
 **Frontend flow**: on page load `POST /auth/refresh` restores the session from the cookie;
 on a 401 the client performs one shared refresh and retries the request once; the refresh call never triggers

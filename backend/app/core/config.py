@@ -61,6 +61,9 @@ class Settings(BaseSettings):
     # Comma-separated list of exact origins allowed to call the API with credentials.
     frontend_origins: str = "http://localhost:5173"
 
+    # Limits on login, registration, token refresh and password changes (app.core.rate_limit).
+    rate_limit_enabled: bool = True
+
     # Customer email notifications (sent by `python -m app.cli notifications`).
     # Leave SMTP_HOST empty to disable sending; notifications then stay queued.
     smtp_host: str | None = None
