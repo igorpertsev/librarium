@@ -7,7 +7,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
-import { Calendar, Mail, User as UserIcon, BookOpen, Pencil, MessageCircle, Star, CheckCircle2, Clock } from 'lucide-react';
+import { Calendar, Mail, User as UserIcon, BookOpen, Pencil, MessageCircle, Star, Clock } from 'lucide-react';
 import { UserContacts, PreferredContact } from '../types';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
@@ -15,6 +15,7 @@ import { errorMessage } from '../utils/apiErrors';
 import { daysUntil, useFormat } from '../utils/format';
 import { useConfirm } from '../components/ConfirmDialog';
 import { orderLabel } from '../utils/translations';
+import { BorrowingHistory } from '../components/BorrowingHistory';
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -84,13 +85,6 @@ export default function Profile() {
       book,
       borrowedDate: o.confirmedAt || o.orderedAt,
       returnDate: o.dueDate,
-    })));
-  const returnedBooks = userOrders
-    .filter(o => o.status === 'returned')
-    .flatMap(o => o.books.map(book => ({
-      bookId: book.id,
-      book,
-      returnedAt: o.returnedAt!,
     })));
 
   const isOverdue = (returnDate: string) => daysUntil(returnDate) < 0;
@@ -334,33 +328,7 @@ export default function Profile() {
         </CardContent>
       </Card>
 
-      {returnedBooks.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('profile.returnedBooks')}</CardTitle>
-            <CardDescription>{t('profile.returnedBooksDesc')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {returnedBooks.map((entry, idx) => (
-                <div key={`${entry.bookId}-${idx}`} className="flex gap-4 p-4 border border-border rounded-lg bg-muted/30">
-                  <div className="w-16 h-24 flex-shrink-0 overflow-hidden rounded bg-muted">
-                    <img src={entry.book.coverImage} alt={entry.book.title} className="w-full h-full object-cover opacity-70" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="truncate mb-1">{entry.book.title}</h3>
-                    <p className="text-sm text-muted-foreground mb-2">{entry.book.author}</p>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <CheckCircle2 className="w-4 h-4 text-green-600" />
-                      <span>{t('profile.returnedOn')}: {fmt.date(entry.returnedAt)}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <BorrowingHistory orders={userOrders} />
 
       {/* Edit Profile Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>

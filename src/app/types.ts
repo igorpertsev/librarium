@@ -75,6 +75,7 @@ export interface Order {
   dueDate: string;
   confirmedAt?: string;
   returnedAt?: string;
+  cancelledAt?: string;
   currency?: string;
   /** Contact details captured when the order was placed. */
   contacts?: UserContacts;
