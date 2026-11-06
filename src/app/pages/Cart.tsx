@@ -116,7 +116,7 @@ export default function Cart() {
                 <ShoppingCart className="w-12 h-12 text-muted-foreground" />
               </div>
             </div>
-            <h2 className="mb-2">{t('cart.empty')}</h2>
+            <h1 className="mb-2 text-xl">{t('cart.empty')}</h1>
             <p className="text-muted-foreground mb-6">
               {t('cart.startBrowsing')}
             </p>

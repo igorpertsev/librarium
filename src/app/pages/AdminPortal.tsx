@@ -60,7 +60,7 @@ export default function AdminPortal() {
     setBooksError(null);
     try {
       const [pageResult, statsResult] = await Promise.all([
-        adminApi.listBooks({ page, page_size: booksPerPage, sort: 'created_at' }),
+        adminApi.listBooks({ page, page_size: booksPerPage, sort: '-created_at' }),
         adminApi.bookStats(),
       ]);
       setBooks(pageResult.items.map(bookFromDto));
@@ -304,7 +304,7 @@ export default function AdminPortal() {
                 <ClipboardList className="w-4 h-4" />
                 {t('admin.orders')}
                 {orders.filter(o => o.status === 'pending').length > 0 && (
-                  <Badge className="ml-1 bg-amber-600 text-white text-xs px-1.5 py-0">
+                  <Badge className="ml-1 bg-amber-700 text-white text-xs px-1.5 py-0">
                     {orders.filter(o => o.status === 'pending').length}
                   </Badge>
                 )}
@@ -724,7 +724,7 @@ function BookForm({ formData, setFormData, t }: {
 function orderStatusBadge(status: string, t: TFunction) {
   switch (status) {
     case 'pending':
-      return <Badge className="bg-amber-600"><Clock className="w-3 h-3 mr-1" />{t('admin.orderPending')}</Badge>;
+      return <Badge className="bg-amber-700"><Clock className="w-3 h-3 mr-1" />{t('admin.orderPending')}</Badge>;
     case 'confirmed':
       return <Badge className="bg-blue-700"><CheckCircle2 className="w-3 h-3 mr-1" />{t('admin.orderConfirmed')}</Badge>;
     case 'returned':
@@ -741,7 +741,7 @@ function dueDateBadge(dueDate: string, status: string, t: TFunction, formatDate:
     return <Badge variant="destructive" className="text-xs">{t('admin.overdueBy')} {Math.abs(diffDays)} {t('myBooks.days')}</Badge>;
   }
   if (diffDays <= 5) {
-    return <Badge className="bg-amber-600 text-xs">{t('admin.dueIn')} {diffDays} {t('myBooks.days')}</Badge>;
+    return <Badge className="bg-amber-700 text-xs">{t('admin.dueIn')} {diffDays} {t('myBooks.days')}</Badge>;
   }
   return <span className="text-sm">{formatDate(dueDate)}</span>;
 }

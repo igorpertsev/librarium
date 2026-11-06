@@ -1,0 +1,58 @@
+# Throwaway stack for the browser tests (pnpm e2e:stack): its own database in memory (tmpfs),
+# demo books and an e2e administrator, backend on http://localhost:8100. Never touches the
+# development database. The credentials below are test values for this stack only.
+name: librarium-e2e
+
+x-backend: &backend
+  image: librarium-backend:e2e
+  pull_policy: never # built once by the "migrate" service below
+  environment:
+    ENVIRONMENT: development
+    DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/librarium_e2e
+    JWT_SECRET_KEY: e2e-only-jwt-secret-e2e-only-jwt-secret-0123456789
+    FRONTEND_ORIGINS: http://localhost:4173
+    SEED_ADMIN_EMAIL: e2e-admin@example.com
+    SEED_ADMIN_PASSWORD: e2e-admin-password
+    SEED_ADMIN_NAME: E2E Librarian
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: librarium_e2e
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d librarium_e2e"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  migrate:
+    <<: *backend
+    build:
+      context: ../backend
+      target: runtime
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  seed:
+    <<: *backend
+    command: ["python", "-m", "app.cli", "seed", "--demo-books"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: "no"
+
+  backend:
+    <<: *backend
+    ports:
+      - "127.0.0.1:8100:8000"
+    depends_on:
+      seed:
+        condition: service_completed_successfully

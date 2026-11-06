@@ -206,6 +206,31 @@ pnpm build
 Vitest (`src/**/*.test.ts`, jsdom): обновление токена и повтор запроса в API-клиенте, мапперы DTO, форматирование
 дат и сумм, тексты ошибок. `pnpm test:watch` перезапускает их при изменениях.
 
+**Браузерные тесты** (Playwright, `e2e/`) проверяют настоящее приложение: регистрацию и вход, заказ партии через
+корзину, подтверждение и возврат библиотекарем, книги, занятые другим читателем, добавление/изменение/удаление книги,
+переключение на русский и проверку доступности axe на основных страницах. Они работают с отдельным временным стеком
+(`e2e/docker-compose.yml`: БД в памяти, демо-книги, e2e-администратор, backend на порту 8100) и сервером Vite на
+порту 4173, который Playwright запускает сам, поэтому данные разработки не затрагиваются.
+
+```bash
+pnpm e2e:stack
+```
+
+```bash
+pnpm exec playwright install chromium
+```
+
+```bash
+pnpm e2e
+```
+
+```bash
+pnpm e2e:stack:down
+```
+
+Вместо загрузки Chromium можно использовать установленный Google Chrome: `PLAYWRIGHT_CHANNEL=chrome pnpm e2e`.
+Упавшие тесты оставляют скриншоты и трассировки в `test-results/` (`pnpm exec playwright show-trace <файл>`).
+
 Тесты прогоняют миграции `upgrade → downgrade base → upgrade`, перед каждым тестом очищают таблицы и не
 оборачивают тест в транзакцию — поэтому конкурентные запросы реально идут через разные соединения.
 
@@ -215,6 +240,7 @@ Vitest (`src/**/*.test.ts`, jsdom): обновление токена и пов�
   `pytest` на сервисе PostgreSQL 16 и проверка, что `backend/openapi.json` соответствует коду.
 - *Frontend*: `pnpm install --frozen-lockfile`, проверка, что `src/api/generated/schema.d.ts` соответствует
   `backend/openapi.json`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`.
+- *Браузерные тесты*: e2e-стек, Chromium и `pnpm e2e`; при ошибке выгружается отчёт Playwright.
 - *Production-образы*: `docker compose -f docker-compose.prod.yml build`.
 
 Поэтому после изменения API коммитьте экспортированный `backend/openapi.json` и перегенерированные типы вместе.
