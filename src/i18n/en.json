@@ -168,7 +168,12 @@
     "orderCancelledMsg": "Order cancelled",
     "dueDateUpdated": "Due date updated",
     "searchOrders": "Search by customer, email, order number or book",
-    "showLess": "Show less"
+    "showLess": "Show less",
+    "loanPeriodDays": "Loan period (days)",
+    "maxRenewals": "Extensions per loan",
+    "loanRulesHint": "Customers can extend a loan by one loan period this many times, as long as it is not overdue (0 turns extensions off).",
+    "saveLoanRules": "Save loan rules",
+    "loanRulesUpdated": "Loan rules updated"
   },
   "bookForm": {
     "title": "Title",
@@ -296,7 +301,13 @@
     "pendingRequestsDesc": "Orders waiting for confirmation by the library",
     "requestedOn": "Requested",
     "cancelRequest": "Cancel request",
-    "requestCancelled": "Request cancelled"
+    "requestCancelled": "Request cancelled",
+    "extendLoan_one": "Extend by {{count}} day",
+    "extendLoan_other": "Extend by {{count}} days",
+    "renewalsLeft_one": "You can extend this loan {{count}} more time",
+    "renewalsLeft_other": "You can extend this loan {{count}} more times",
+    "loanExtended": "Loan extended. Please return the books by {{date}}.",
+    "loanAlreadyExtended": "Already extended"
   },
   "common": {
     "loading": "Loading…",
@@ -322,7 +333,10 @@
     "incompleteBatch": "Add books to complete a batch of {{count}} before checking out",
     "tooManyAttempts_one": "Too many attempts. Please try again in {{count}} minute.",
     "tooManyAttempts_other": "Too many attempts. Please try again in {{count}} minutes.",
-    "genericWithReference": "Something went wrong. Please try again. If it keeps happening, tell the library this code: {{id}}"
+    "genericWithReference": "Something went wrong. Please try again. If it keeps happening, tell the library this code: {{id}}",
+    "renewalOverdue": "Overdue loans cannot be extended. Please return the books.",
+    "renewalLimit": "This loan has already been extended as often as allowed.",
+    "renewalNotAllowed": "This loan cannot be extended."
   },
   "checkout": {
     "title": "Confirm Order",

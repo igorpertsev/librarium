@@ -168,7 +168,12 @@
     "orderCancelledMsg": "Заказ отменён",
     "dueDateUpdated": "Срок возврата обновлён",
     "searchOrders": "Поиск по читателю, email, номеру заказа или книге",
-    "showLess": "Свернуть"
+    "showLess": "Свернуть",
+    "loanPeriodDays": "Срок выдачи (дней)",
+    "maxRenewals": "Продлений на выдачу",
+    "loanRulesHint": "Читатель может продлить выдачу на один срок указанное число раз, если книги не просрочены (0 — продление отключено).",
+    "saveLoanRules": "Сохранить правила выдачи",
+    "loanRulesUpdated": "Правила выдачи обновлены"
   },
   "bookForm": {
     "title": "Название",
@@ -296,7 +301,17 @@
     "pendingRequestsDesc": "Заказы, ожидающие подтверждения библиотекой",
     "requestedOn": "Оформлено",
     "cancelRequest": "Отменить заявку",
-    "requestCancelled": "Заявка отменена"
+    "requestCancelled": "Заявка отменена",
+    "extendLoan_one": "Продлить на {{count}} день",
+    "extendLoan_few": "Продлить на {{count}} дня",
+    "extendLoan_many": "Продлить на {{count}} дней",
+    "extendLoan_other": "Продлить на {{count}} дня",
+    "renewalsLeft_one": "Можно продлить ещё {{count}} раз",
+    "renewalsLeft_few": "Можно продлить ещё {{count}} раза",
+    "renewalsLeft_many": "Можно продлить ещё {{count}} раз",
+    "renewalsLeft_other": "Можно продлить ещё {{count}} раза",
+    "loanExtended": "Срок продлён. Верните книги до {{date}}.",
+    "loanAlreadyExtended": "Уже продлено"
   },
   "common": {
     "loading": "Загрузка…",
@@ -324,7 +339,10 @@
     "tooManyAttempts_few": "Слишком много попыток. Повторите через {{count}} минуты.",
     "tooManyAttempts_many": "Слишком много попыток. Повторите через {{count}} минут.",
     "tooManyAttempts_other": "Слишком много попыток. Повторите через {{count}} минуты.",
-    "genericWithReference": "Что-то пошло не так. Попробуйте ещё раз. Если ошибка повторяется, сообщите библиотеке этот код: {{id}}"
+    "genericWithReference": "Что-то пошло не так. Попробуйте ещё раз. Если ошибка повторяется, сообщите библиотеке этот код: {{id}}",
+    "renewalOverdue": "Просроченную выдачу продлить нельзя. Пожалуйста, верните книги.",
+    "renewalLimit": "Эта выдача уже продлена максимальное число раз.",
+    "renewalNotAllowed": "Эту выдачу нельзя продлить."
   },
   "checkout": {
     "title": "Подтверждение заказа",

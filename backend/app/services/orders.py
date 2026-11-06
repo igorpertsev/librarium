@@ -23,7 +23,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import BadRequestError, BookUnavailableError, ConflictError, NotFoundError
-from app.models import Book, Cart, CartItem, Order, OrderItem, User
+from app.models import Book, Cart, CartItem, LibrarySettings, Notification, Order, OrderItem, User
 from app.models.enums import (
     ACTIVE_ORDER_STATUSES,
     CUSTOMER_CANCELLABLE_STATUSES,
@@ -249,6 +249,41 @@ async def change_status(
                 session, order_id=order.id, user_id=order.user_id, kind=kind
             )
         await session.commit()
+    return await get_order(session, order_id)
+
+
+def renewal_refusal(order: Order, library: LibrarySettings, today: date) -> str | None:
+    """Why the loan cannot be extended now, or None if it can."""
+    if order.status is not OrderStatus.CONFIRMED:
+        return "not_borrowed"
+    if order.due_date < today:
+        return "overdue"
+    if order.renewal_count >= library.max_renewals:
+        return "limit_reached"
+    return None
+
+
+async def renew_own_order(session: AsyncSession, user: User, order_id: uuid.UUID) -> Order:
+    """Extend a loan by one loan period (customers, limited by ``max_renewals``)."""
+    order = await orders_repo.lock_order(session, order_id, user_id=user.id)
+    if order is None:
+        raise order_not_found()
+    library = await get_library_settings(session, lock="share")
+    reason = renewal_refusal(order, library, _today())
+    if reason is not None:
+        raise ConflictError(
+            "This loan cannot be extended", code="RENEWAL_NOT_ALLOWED", details={"reason": reason}
+        )
+    order.due_date += timedelta(days=library.loan_period_days)
+    order.renewal_count += 1
+    # Reminders for the old due date are dropped, so new ones are sent for the new date.
+    await session.execute(
+        delete(Notification).where(
+            Notification.order_id == order.id,
+            Notification.kind.in_([NotificationKind.DUE_SOON, NotificationKind.OVERDUE]),
+        )
+    )
+    await session.commit()
     return await get_order(session, order_id)
 
 

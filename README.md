@@ -348,6 +348,10 @@ two copies of the same title are two records (ISBN is not unique).
 - Pricing is per **batch**: `price_per_batch` for every complete set of `books_per_batch` books (library
   settings, the admin “Batch Configuration” card). An order contains the complete batches in the order the
   books were added; books of an incomplete trailing batch stay in the cart.
+- **Extending a loan**: `POST /orders/{id}/renew` moves the due date of a borrowed (`confirmed`) order by
+  `loan_period_days`, at most `max_renewals` times per order (library settings, default 1; 0 turns it off) and
+  never once the books are overdue (`409 RENEWAL_NOT_ALLOWED`, `details.reason`). Due-date reminders already sent
+  for the old date are dropped, so the customer is reminded again before the new one.
 
 `POST /api/v1/orders` runs in a single transaction (`app/services/orders.py`):
 
@@ -371,9 +375,9 @@ Concurrency is covered by tests in which both requests are held at a barrier rig
 | --- | --- |
 | `users` | email unique and lower-case (CHECK), Argon2 hash, role `customer/admin`, contacts (nullable), `preferred_contact_method` |
 | `books` | `cover_url`, `image_urls[]`, `age_range`, `category`, `status` (`available/available-soon/not-available`), `language`, `publication_year`, `is_active` (soft delete) |
-| `library_settings` | single row: `books_per_batch`, `price_per_batch NUMERIC(10,2)`, `currency`, `loan_period_days` |
+| `library_settings` | single row: `books_per_batch`, `price_per_batch NUMERIC(10,2)`, `currency`, `loan_period_days`, `max_renewals` |
 | `carts`, `cart_items` | one cart per user, `UNIQUE(cart_id, book_id)` |
-| `orders` | status, total/currency, batch price and contact snapshot, `due_date`, `confirmed_at/returned_at/cancelled_at`, CHECK `total = price × batches` |
+| `orders` | status, total/currency, batch price and contact snapshot, `due_date`, `renewal_count`, `confirmed_at/returned_at/cancelled_at`, CHECK `total = price × batches` |
 | `order_items` | book snapshot and `unit_price`, `reservation_active` + partial unique index |
 | `refresh_tokens` | `token_hash`, `family_id`, `expires_at`, `revoked_at`, `replaced_by_token_id`, user agent/IP |
 
@@ -398,7 +402,8 @@ Differences (adapters in `src/api/mappers.ts`):
 | GET | `/auth/me`, `/users/me` · PATCH `/users/me` · POST `/auth/change-password` | signed-in user |
 | GET | `/books?q&category&age_range&available&sort&page&page_size`, `/books/age-ranges`, `/books/{id}` | everyone |
 | GET/DELETE | `/cart` · POST `/cart/items` · DELETE `/cart/items/{book_id}` | signed-in user |
-| POST/GET | `/orders` · GET `/orders/{id}` · POST `/orders/{id}/cancel` | signed-in user (own orders only) |
+| POST/GET | `/orders` · GET `/orders/{id}` · POST `/orders/{id}/cancel`, `/orders/{id}/renew` | signed-in user (own orders only) |
+| GET | `/library/rules` (batch size and price, loan period, extensions per loan) | everyone |
 | GET/POST | `/admin/books`, GET `/admin/books/stats`, GET/PATCH/DELETE `/admin/books/{id}` | admin |
 | GET | `/admin/users` · PATCH `/admin/users/{id}` (role, disable) | admin |
 | GET | `/admin/orders`, `/admin/orders/{id}` · PATCH `/admin/orders/{id}/status`, `/admin/orders/{id}/due-date` | admin |

@@ -1244,6 +1244,85 @@
         }
       }
     },
+    "/api/v1/orders/{order_id}/renew": {
+      "post": {
+        "tags": [
+          "orders"
+        ],
+        "summary": "Renew My Order",
+        "description": "Extends a borrowed order's due date by one loan period. Allowed up to max_renewals times (GET /library/rules) and not once the books are overdue; otherwise 409 RENEWAL_NOT_ALLOWED with details.reason not_borrowed | overdue | limit_reached.",
+        "operationId": "renew_my_order_api_v1_orders__order_id__renew_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
     "/api/v1/orders/{order_id}/cancel": {
       "post": {
         "tags": [
@@ -1318,6 +1397,28 @@
               }
             },
             "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/library/rules": {
+      "get": {
+        "tags": [
+          "library"
+        ],
+        "summary": "Library Rules",
+        "description": "Batch size and price, loan period and how often a loan can be extended.",
+        "operationId": "library_rules_api_v1_library_rules_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LibraryRules"
+                }
+              }
+            }
           }
         }
       }
@@ -3594,6 +3695,40 @@
         ],
         "title": "HealthResponse"
       },
+      "LibraryRules": {
+        "properties": {
+          "books_per_batch": {
+            "type": "integer",
+            "title": "Books Per Batch"
+          },
+          "price_per_batch": {
+            "type": "string",
+            "title": "Price Per Batch"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "loan_period_days": {
+            "type": "integer",
+            "title": "Loan Period Days"
+          },
+          "max_renewals": {
+            "type": "integer",
+            "title": "Max Renewals"
+          }
+        },
+        "type": "object",
+        "required": [
+          "books_per_batch",
+          "price_per_batch",
+          "currency",
+          "loan_period_days",
+          "max_renewals"
+        ],
+        "title": "LibraryRules",
+        "description": "Lending rules every reader may know (GET /library/rules)."
+      },
       "LibrarySettingsRead": {
         "properties": {
           "books_per_batch": {
@@ -3612,6 +3747,10 @@
             "type": "integer",
             "title": "Loan Period Days"
           },
+          "max_renewals": {
+            "type": "integer",
+            "title": "Max Renewals"
+          },
           "updated_at": {
             "type": "string",
             "format": "date-time",
@@ -3624,6 +3763,7 @@
           "price_per_batch",
           "currency",
           "loan_period_days",
+          "max_renewals",
           "updated_at"
         ],
         "title": "LibrarySettingsRead"
@@ -3682,6 +3822,19 @@
               }
             ],
             "title": "Loan Period Days"
+          },
+          "max_renewals": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Renewals"
           }
         },
         "additionalProperties": false,
@@ -3949,6 +4102,10 @@
             "format": "date",
             "title": "Due Date"
           },
+          "renewal_count": {
+            "type": "integer",
+            "title": "Renewal Count"
+          },
           "confirmed_at": {
             "anyOf": [
               {
@@ -4022,6 +4179,7 @@
           "contact_phone",
           "contact_preferred_method",
           "due_date",
+          "renewal_count",
           "confirmed_at",
           "returned_at",
           "cancelled_at",

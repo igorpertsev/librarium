@@ -45,6 +45,7 @@ class OrderRead(ApiModel):
     contact_phone: str | None
     contact_preferred_method: ContactMethod | None
     due_date: date
+    renewal_count: int
     confirmed_at: datetime | None
     returned_at: datetime | None
     cancelled_at: datetime | None

@@ -19,6 +19,8 @@ interface OrdersContextType {
   confirmOrder: (orderId: string) => Promise<ActionResult>;
   markReturned: (orderId: string) => Promise<ActionResult>;
   cancelOrder: (orderId: string) => Promise<ActionResult>;
+  /** Customers: extend a borrowed order by one loan period. */
+  renewOrder: (orderId: string) => Promise<ActionResult<Order>>;
   updateDueDate: (orderId: string, dueDate: string) => Promise<ActionResult>;
   /**
    * UX hint only: true if the copy is in an active order we know about. The server makes
@@ -109,6 +111,9 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
           invalidateCatalog();
         });
 
+  const renewOrder = (orderId: string) =>
+    runAction(async () => replaceOrder(await ordersApi.renew(orderId)));
+
   const updateDueDate = (orderId: string, dueDate: string) =>
     runAction(async () => {
       replaceOrder(await adminApi.setOrderDueDate(orderId, dueDate));
@@ -131,6 +136,7 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
         confirmOrder,
         markReturned,
         cancelOrder,
+        renewOrder,
         updateDueDate,
         isBookUnavailable,
         markBooksUnavailable,

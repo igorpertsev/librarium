@@ -32,6 +32,7 @@ export type ForgotPasswordDto = Schemas['ForgotPasswordRequest'];
 export type ResetPasswordDto = Schemas['ResetPasswordRequest'];
 export type TokenResponseDto = Schemas['TokenResponse'];
 export type LibrarySettingsDto = Schemas['LibrarySettingsRead'];
+export type LibraryRulesDto = Schemas['LibraryRules'];
 export type LibrarySettingsUpdateDto = Schemas['LibrarySettingsUpdate'];
 export type ErrorResponseDto = Schemas['ErrorResponse'];
 

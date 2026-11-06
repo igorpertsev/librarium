@@ -39,6 +39,12 @@ export function errorMessage(t: TFunction, error: ApiError): string {
   if (error.code === 'INTERNAL_ERROR' && typeof error.details?.request_id === 'string') {
     return t('errors.genericWithReference', { id: error.details.request_id });
   }
+  if (error.code === 'RENEWAL_NOT_ALLOWED') {
+    const reason = String(error.details?.reason ?? '');
+    if (reason === 'overdue') return t('errors.renewalOverdue');
+    if (reason === 'limit_reached') return t('errors.renewalLimit');
+    return t('errors.renewalNotAllowed');
+  }
   if (error.code === 'INCOMPLETE_BATCH') {
     const count = Number(error.details?.books_per_batch ?? 0);
     return t('errors.incompleteBatch', { count });

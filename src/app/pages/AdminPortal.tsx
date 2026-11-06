@@ -15,6 +15,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useOrders } from '../contexts/OrdersContext';
 import { BookDetailsModal } from '../components/BookDetailsModal';
 import { useConfirm } from '../components/ConfirmDialog';
+import { LoanRulesSettings } from '../components/LoanRulesSettings';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from '../components/ui/pagination';
@@ -255,6 +256,7 @@ export default function AdminPortal() {
             <Button onClick={handleSaveBatchConfig}>
               {t('admin.saveConfig')}
             </Button>
+            <LoanRulesSettings />
           </CardContent>
         </Card>
 
