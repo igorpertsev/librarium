@@ -17,3 +17,14 @@ export const getStatusTranslation = (t: TFunction, status: BookStatus): string =
       return t('bookStatus.pending');
   }
 };
+
+/** Label of a book's add-to-cart button; always consistent with the status badge. */
+export const getCartButtonLabel = (
+  t: TFunction,
+  { status, inCart, reserved }: { status: BookStatus; inCart: boolean; reserved: boolean },
+): string => {
+  if (status === 'pending' || inCart) return t('bookStatus.pending');
+  if (reserved) return t('bookStatus.notAvailable');
+  if (status !== 'available') return getStatusTranslation(t, status);
+  return t('bookDetails.addToCart');
+};
