@@ -97,6 +97,35 @@ jobs:
       - name: Build
         run: pnpm build
 
+  e2e:
+    name: Browser tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Start the test stack (e2e/docker-compose.yml)
+        run: pnpm e2e:stack
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Browser tests
+        run: pnpm e2e
+      - name: Backend logs
+        if: failure()
+        run: docker compose -f e2e/docker-compose.yml logs --tail=200 backend
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
   images:
     name: Production images
     runs-on: ubuntu-24.04

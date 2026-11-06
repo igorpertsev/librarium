@@ -7,10 +7,13 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite",
-    "typecheck": "tsc --noEmit -p .",
+    "typecheck": "tsc --noEmit -p . && tsc --noEmit -p e2e",
     "lint": "eslint src --max-warnings 0",
     "test": "vitest run",
     "test:watch": "vitest",
+    "e2e": "playwright test",
+    "e2e:stack": "docker compose -f e2e/docker-compose.yml up -d --build --wait",
+    "e2e:stack:down": "docker compose -f e2e/docker-compose.yml down",
     "api:types": "openapi-typescript http://localhost:8000/openapi.json -o src/api/generated/schema.d.ts",
     "api:types:file": "openapi-typescript backend/openapi.json -o src/api/generated/schema.d.ts"
   },
@@ -74,10 +77,13 @@
     "vaul": "1.1.2"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.65.0",
     "@tailwindcss/vite": "4.1.12",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/react": "^16.3.3",
+    "@types/node": "^22.20.5",
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "4.7.0",

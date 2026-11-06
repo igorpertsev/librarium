@@ -208,6 +208,31 @@ pnpm build
 tests (`src/**/*.test.ts`, jsdom): the API client's refresh-and-retry logic, the DTO mappers, date/money
 formatting and error messages. `pnpm test:watch` reruns them on change.
 
+**Browser tests** (Playwright, `e2e/`) drive the real app: registration and sign-in, borrowing a batch through
+checkout, confirmation and return by the librarian, books taken by another reader, adding/editing/deleting a book,
+switching to Russian, and an axe accessibility audit of the main pages. They run against a separate, throwaway
+stack (`e2e/docker-compose.yml`: database in memory, demo books, an e2e admin, backend on port 8100) and a Vite
+server on port 4173 that Playwright starts itself, so your development data is never touched.
+
+```bash
+pnpm e2e:stack
+```
+
+```bash
+pnpm exec playwright install chromium
+```
+
+```bash
+pnpm e2e
+```
+
+```bash
+pnpm e2e:stack:down
+```
+
+Instead of downloading Chromium you can use an installed Google Chrome: `PLAYWRIGHT_CHANNEL=chrome pnpm e2e`.
+Failed tests leave screenshots and traces in `test-results/` (`pnpm exec playwright show-trace <file>`).
+
 The test session runs migrations `upgrade → downgrade base → upgrade`, truncates tables before each test and does
 not wrap tests in a transaction, so concurrent requests really go through separate database connections.
 
@@ -217,6 +242,7 @@ not wrap tests in a transaction, so concurrent requests really go through separa
   `pytest` against a PostgreSQL 16 service, and a check that `backend/openapi.json` matches the code.
 - *Frontend*: `pnpm install --frozen-lockfile`, a check that `src/api/generated/schema.d.ts` matches
   `backend/openapi.json`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`.
+- *Browser tests*: the e2e stack, Chromium and `pnpm e2e`; the Playwright report is uploaded when they fail.
 - *Production images*: `docker compose -f docker-compose.prod.yml build`.
 
 So after an API change, commit the exported `backend/openapi.json` and the regenerated types together.
