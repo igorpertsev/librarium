@@ -32,6 +32,7 @@ export type TokenResponseDto = Schemas['TokenResponse'];
 export type LibrarySettingsDto = Schemas['LibrarySettingsRead'];
 export type LibrarySettingsUpdateDto = Schemas['LibrarySettingsUpdate'];
 export type ErrorResponseDto = Schemas['ErrorResponse'];
+export type ReportSummaryDto = Schemas['ReportSummaryRead'];
 
 export type BookListQuery = NonNullable<paths['/api/v1/books']['get']['parameters']['query']>;
 export type AdminBookListQuery = NonNullable<
