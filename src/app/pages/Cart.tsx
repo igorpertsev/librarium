@@ -12,6 +12,7 @@ import { ShoppingCart, Trash2, X, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { errorMessage } from '../utils/apiErrors';
+import { useFormat } from '../utils/format';
 import { useCatalog } from '../contexts/CatalogContext';
 import type { ActionResult } from '../../api/errors';
 
@@ -25,12 +26,14 @@ export default function Cart() {
     getTotalPrice,
     refreshCart,
     unavailableBookIds,
+    currency,
     isLoading,
     error,
   } = useCart();
   const { user } = useAuth();
   const { placeOrder } = useOrders();
   const { invalidateCatalog } = useCatalog();
+  const { money } = useFormat();
   const [showCheckoutDialog, setShowCheckoutDialog] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -190,7 +193,7 @@ export default function Cart() {
                         <Badge variant="outline">
                           {batch.books.length} {t('cart.books')}
                         </Badge>
-                        <span className="text-sm">${batchConfig.pricePerBatch.toFixed(2)}</span>
+                        <span className="text-sm">{money(batchConfig.pricePerBatch, currency)}</span>
                       </div>
                       <Button
                         variant="ghost"
@@ -250,12 +253,12 @@ export default function Cart() {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{t('cart.pricePerBatchLabel')}</span>
-                  <span>${batchConfig.pricePerBatch.toFixed(2)}</span>
+                  <span>{money(batchConfig.pricePerBatch, currency)}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between">
                   <span>{t('cart.total')}</span>
-                  <span className="text-xl">${totalPrice.toFixed(2)}</span>
+                  <span className="text-xl">{money(totalPrice, currency)}</span>
                 </div>
               </div>
 
@@ -314,7 +317,7 @@ export default function Cart() {
                   <Separator />
                   <div className="flex justify-between">
                     <span>Total Amount</span>
-                    <span>${totalPrice.toFixed(2)}</span>
+                    <span>{money(totalPrice, currency)}</span>
                   </div>
                 </div>
               </div>

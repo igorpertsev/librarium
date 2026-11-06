@@ -87,7 +87,7 @@
     "batchConfig": "Batch Configuration",
     "batchConfigDesc": "Configure the number of books per batch and price",
     "booksPerBatch": "Books per Batch",
-    "pricePerBatch": "Price per Batch ($)",
+    "pricePerBatch": "Price per Batch ({{currency}})",
     "saveConfig": "Save Configuration",
     "configUpdated": "Batch configuration updated",
     "libraryStats": "Library Statistics",
