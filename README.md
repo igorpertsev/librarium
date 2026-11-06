@@ -7,6 +7,18 @@ Backend: FastAPI + PostgreSQL (`backend/`).
 
 The app UI defaults to English; Russian is available as an optional language in Settings.
 
+## Screenshots
+
+| Catalogue | Book details |
+| --- | --- |
+| ![Catalogue with availability badges](docs/screenshots/catalog.jpg) | ![Book details dialog](docs/screenshots/book-details.jpg) |
+| **Cart: books are lent in batches** | **Profile: pending requests and borrowed books** |
+| ![Cart with a complete and an incomplete batch](docs/screenshots/cart.jpg) | ![Customer profile](docs/screenshots/profile.png) |
+| **Admin portal** | **Order management** |
+| ![Admin portal with batch configuration and statistics](docs/screenshots/admin.png) | ![Orders tab with status workflow](docs/screenshots/admin-orders.png) |
+
+Sign-in page: [docs/screenshots/login.png](docs/screenshots/login.png). Captured from the demo data at 1280 px.
+
 ## Requirements
 
 | Tool | Version | Used for |

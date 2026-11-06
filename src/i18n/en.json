@@ -81,7 +81,7 @@
     "bookReturned": "Book returned successfully"
   },
   "admin": {
-    "title": "Admin Portal",
+    "portalTitle": "Admin Portal",
     "addBook": "Add New Book",
     "editBook": "Edit Book",
     "batchConfig": "Batch Configuration",
@@ -98,7 +98,7 @@
     "notAvailable": "Not Available",
     "management": "Management",
     "managementDesc": "Manage books and users in the library",
-    "books": "Books",
+    "booksTab": "Books",
     "users": "Users",
     "title": "Title",
     "author": "Author",

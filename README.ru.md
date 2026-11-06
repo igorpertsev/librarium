@@ -7,6 +7,18 @@
 Frontend: React + TypeScript + Vite (дизайн из [Figma](https://www.figma.com/design/3D9jREiGTmIKNYLFQXjh7o/Online-library-website)).
 Backend: FastAPI + PostgreSQL (`backend/`).
 
+## Скриншоты
+
+| Каталог | Карточка книги |
+| --- | --- |
+| ![Каталог со статусами доступности](docs/screenshots/catalog.jpg) | ![Окно с описанием книги](docs/screenshots/book-details.jpg) |
+| **Корзина: книги выдаются партиями** | **Профиль: заявки и взятые книги** |
+| ![Корзина с полной и неполной партией](docs/screenshots/cart.jpg) | ![Профиль читателя](docs/screenshots/profile.png) |
+| **Админ-панель** | **Управление заказами** |
+| ![Админ-панель с настройкой партий и статистикой](docs/screenshots/admin.png) | ![Вкладка заказов со статусами](docs/screenshots/admin-orders.png) |
+
+Страница входа: [docs/screenshots/login.png](docs/screenshots/login.png). Сняты на демо-данных при ширине 1280 px.
+
 ## Требования
 
 | Инструмент | Версия | Для чего |

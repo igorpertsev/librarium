@@ -186,7 +186,7 @@ export default function AdminPortal() {
   return (
     <div className="container mx-auto px-4 py-6 space-y-6">
       <div className="flex justify-between items-center">
-        <h1>{t('admin.title')}</h1>
+        <h1>{t('admin.portalTitle')}</h1>
         <Button onClick={() => { resetForm(); setIsAddDialogOpen(true); }}>
           <Plus className="w-4 h-4 mr-2" />
           {t('admin.addBook')}
@@ -276,7 +276,7 @@ export default function AdminPortal() {
             <TabsList className="grid w-full grid-cols-3 mb-6">
               <TabsTrigger value="books" className="flex items-center gap-2">
                 <BookOpenIcon className="w-4 h-4" />
-                {t('admin.books')}
+                {t('admin.booksTab')}
               </TabsTrigger>
               <TabsTrigger value="users" className="flex items-center gap-2">
                 <Users className="w-4 h-4" />
@@ -857,7 +857,7 @@ function OrdersTab({
                           {pref && prefValue && (
                             <div className="flex items-center gap-1 mt-0.5">
                               <Star className="w-3 h-3 fill-amber-400 text-amber-400 shrink-0" />
-                              <span className="text-xs text-muted-foreground capitalize">{t(`auth.${pref}`)}: {prefValue}</span>
+                              <span className="text-xs text-muted-foreground">{t(`auth.${pref}`)}: {prefValue}</span>
                             </div>
                           )}
                         </div>
