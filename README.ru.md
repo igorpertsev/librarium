@@ -430,6 +430,7 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 | `library_settings` | одна строка: `books_per_batch`, `price_per_batch NUMERIC(10,2)`, `currency`, `loan_period_days` |
 | `carts`, `cart_items` | одна корзина на пользователя, `UNIQUE(cart_id, book_id)` |
 | `reading_list_entries` | «хочу прочитать», одна запись на читателя и издание, `UNIQUE(user_id, book_id)` |
+| `reviews` | оценка 1–5 (CHECK), текст, `status` (`pending/published/rejected`), одна на читателя и издание |
 | `orders` | статус, сумма/валюта, снимок цены партии и контактов, `due_date`, `confirmed_at/returned_at/cancelled_at`, CHECK `total = price × batches` |
 | `order_items` | снимок книги и `unit_price`, `reservation_active` + частичный уникальный индекс |
 | `refresh_tokens` | `token_hash`, `family_id`, `expires_at`, `revoked_at`, `replaced_by_token_id`, user-agent/IP |
@@ -463,6 +464,9 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 | GET | `/share/books/{id}` (страница Open Graph для превью ссылок; Caddy отправляет сюда ботов с `/books/<id>`) | все |
 | GET `/waitlist` · POST/DELETE `/waitlist/{book_id}` | «сообщите, когда книга вернётся» | пользователь |
 | GET `/reading-list` · POST/DELETE `/reading-list/{book_id}` | «хочу прочитать»: книги на потом, отдельно от корзины | пользователь |
+| GET `/books/{id}/reviews` (средняя оценка и опубликованные отзывы) · GET/PUT/DELETE `/books/{id}/my-review` (`{rating 1-5, text}`; только после выдачи, 403 `NOT_BORROWED`) | оценки и отзывы; текст проходит модерацию | все / пользователь |
+| GET `/admin/reviews?status` · PATCH/DELETE `/admin/reviews/{id}` | модерация (опубликовать, отклонить) | admin |
+| GET `/users/me/recommendations` (книги по тегам взятых и отложенных) | полка «Вам может понравиться» | пользователь |
 | GET/POST | `/admin/books`, GET `/admin/books/stats`, GET/PATCH/DELETE `/admin/books/{id}` | admin |
 | POST | `/admin/books/import` (CSV, всё или ничего, `dry_run`; `warnings` — строки, похожие на уже имеющиеся книги), GET `/admin/isbn/{isbn}` (данные из Open Library) | admin |
 | GET | `/admin/books/duplicates?isbn&title&author` (издания с тем же ISBN или с тем же названием и автором) | admin |

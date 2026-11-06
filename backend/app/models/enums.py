@@ -94,3 +94,11 @@ class NotificationStatus(StrEnum):
     SENT = "sent"
     FAILED = "failed"  # gave up after the maximum number of attempts
     EXPIRED = "expired"  # too old to be useful, or the recipient can no longer receive it
+
+
+class ReviewStatus(StrEnum):
+    """Ratings without text are published at once; written reviews wait for a librarian."""
+
+    PENDING = "pending"
+    PUBLISHED = "published"
+    REJECTED = "rejected"

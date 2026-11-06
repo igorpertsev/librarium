@@ -22,6 +22,7 @@ import { useBookLanguageName, useBookText } from '../utils/bookText';
 import { booksApi } from '../../api/endpoints';
 import { bookFromDto } from '../../api/mappers';
 import { coverOfSize } from '../utils/covers';
+import { BookReviews } from './BookReviews';
 
 interface BookDetailsModalProps {
   book: Book | null;
@@ -377,6 +378,8 @@ export function BookDetailsModal({ book: initialBook, open, onOpenChange }: Book
                 <p className="mt-1 text-xs text-muted-foreground">{t('translation.machineTitle')}</p>
               )}
             </div>
+
+            <BookReviews bookId={book.id} />
 
             {alsoBorrowed.length > 0 && (
               <section aria-labelledby="also-borrowed-title">

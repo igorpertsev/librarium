@@ -25,6 +25,7 @@ from app.models import (
     Order,
     ReadingListEntry,
     RefreshToken,
+    Review,
     User,
     WaitlistEntry,
 )
@@ -58,6 +59,13 @@ async def export_data(session: AsyncSession, user: User) -> dict[str, Any]:
             select(Book.title, Book.author, ReadingListEntry.created_at)
             .join(Book, Book.id == ReadingListEntry.book_id)
             .where(ReadingListEntry.user_id == user.id)
+        )
+    ).all()
+    reviews = (
+        await session.execute(
+            select(Book.title, Review.rating, Review.text, Review.status, Review.created_at)
+            .join(Book, Book.id == Review.book_id)
+            .where(Review.user_id == user.id)
         )
     ).all()
     emails = (
@@ -109,6 +117,16 @@ async def export_data(session: AsyncSession, user: User) -> dict[str, Any]:
         "want_to_read": [
             {"title": title, "author": author, "since": _iso(since)}
             for title, author, since in saved
+        ],
+        "reviews": [
+            {
+                "title": title,
+                "rating": rating,
+                "text": text,
+                "status": review_status.value,
+                "written_at": _iso(written),
+            }
+            for title, rating, text, review_status, written in reviews
         ],
         "emails": [
             {
@@ -166,7 +184,7 @@ async def delete_account(session: AsyncSession, user: User, password: str) -> No
             contact_preferred_method=None,
         )
     )
-    for table in (RefreshToken, Notification, WaitlistEntry, ReadingListEntry, Cart):
+    for table in (RefreshToken, Notification, WaitlistEntry, ReadingListEntry, Review, Cart):
         await session.execute(delete(table).where(table.user_id == user.id))
     user.email = anonymous_email
     user.full_name = DELETED_NAME

@@ -432,6 +432,7 @@ Concurrency is covered by tests in which both requests are held at a barrier rig
 | `carts`, `cart_items` | one cart per user, `UNIQUE(cart_id, book_id)` |
 | `waitlist_entries` | customer waiting for a book, `UNIQUE(user_id, book_id)` |
 | `reading_list_entries` | “want to read”, one per reader and title, `UNIQUE(user_id, book_id)` |
+| `reviews` | rating 1–5 (CHECK), text, `status` (`pending/published/rejected`), one per reader and title |
 | `orders` | status, total/currency, batch price and contact snapshot, `due_date`, `renewal_count`, `confirmed_at/returned_at/cancelled_at`, CHECK `total = price × batches` |
 | `order_items` | book snapshot and `unit_price`, `reservation_active` + partial unique index |
 | `refresh_tokens` | `token_hash`, `family_id`, `expires_at`, `revoked_at`, `replaced_by_token_id`, user agent/IP |
@@ -465,6 +466,9 @@ Differences (adapters in `src/api/mappers.ts`):
 | GET | `/share/books/{id}` (Open Graph page for link previews; Caddy sends bots on `/books/<id>` here) | everyone |
 | GET `/waitlist` · POST/DELETE `/waitlist/{book_id}` | “email me when this book is back” | signed-in user |
 | GET `/reading-list` · POST/DELETE `/reading-list/{book_id}` | “want to read”: titles kept for later, separate from the cart | signed-in user |
+| GET `/books/{id}/reviews` (average and published reviews) · GET/PUT/DELETE `/books/{id}/my-review` (`{rating 1-5, text}`; only after borrowing, 403 `NOT_BORROWED`) | ratings and reviews; text waits for moderation | everyone / signed-in user |
+| GET `/admin/reviews?status` · PATCH/DELETE `/admin/reviews/{id}` | moderation (publish, reject) | admin |
+| GET `/users/me/recommendations` (titles ranked by the tags of borrowed and saved ones) | “For you” shelf | signed-in user |
 | GET/POST | `/admin/books`, GET `/admin/books/stats`, GET/PATCH/DELETE `/admin/books/{id}` | admin |
 | POST | `/admin/books/import` (CSV, all or nothing, `dry_run`; `warnings` for rows that look like books already there), GET `/admin/isbn/{isbn}` (details from Open Library) | admin |
 | GET | `/admin/books/duplicates?isbn&title&author` (titles with the same ISBN, or the same title and author) | admin |

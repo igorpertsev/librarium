@@ -28,6 +28,8 @@ const MESSAGE_KEYS: Record<string, string> = {
   NOT_FOUND: 'errors.notFound',
   TAG_NOT_FOUND: 'errors.tagNotFound',
   ACTIVE_ORDERS: 'errors.activeOrders',
+  NOT_BORROWED: 'errors.notBorrowed',
+  REVIEW_NOT_FOUND: 'errors.notFound',
   ADMIN_ACCOUNT: 'errors.adminAccount',
   TAG_EXISTS: 'errors.tagExists',
   TAG_SLUG: 'errors.tagSlug',

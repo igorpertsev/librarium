@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Textarea } from '../components/ui/textarea';
 import { Badge } from '../components/ui/badge';
-import { Plus, Pencil, Trash2, Users, BookOpen as BookOpenIcon, ClipboardList, CheckCircle2, RotateCcw, Clock, Star, ImageDown, BellRing, BarChart3, CopyPlus, Tags, ListChecks } from 'lucide-react';
+import { Plus, Pencil, Trash2, Users, BookOpen as BookOpenIcon, ClipboardList, CheckCircle2, RotateCcw, Clock, Star, ImageDown, BellRing, BarChart3, CopyPlus, Tags, ListChecks, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -21,6 +21,7 @@ import { BookCatalogFields } from '../components/BookCatalogFields';
 import { BookTranslationFields } from '../components/BookTranslationFields';
 import { DuplicateWarning } from '../components/DuplicateWarning';
 import { DataQualityTab } from '../components/DataQualityTab';
+import { ReviewsTab } from '../components/ReviewsTab';
 import { TagsSeriesTab } from '../components/TagsSeriesTab';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
@@ -344,7 +345,7 @@ export default function AdminPortal() {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="books" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 h-auto mb-6">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 h-auto mb-6">
               <TabsTrigger value="books" className="flex items-center gap-2">
                 <BookOpenIcon className="w-4 h-4" />
                 {t('admin.booksTab')}
@@ -365,6 +366,10 @@ export default function AdminPortal() {
               <TabsTrigger value="catalog" className="flex items-center gap-2">
                 <Tags className="w-4 h-4" />
                 {t('catalogAdmin.tab')}
+              </TabsTrigger>
+              <TabsTrigger value="reviews" className="flex items-center gap-2">
+                <MessageSquare className="w-4 h-4" />
+                {t('moderation.tab')}
               </TabsTrigger>
               <TabsTrigger value="quality" className="flex items-center gap-2">
                 <ListChecks className="w-4 h-4" />
@@ -615,6 +620,10 @@ export default function AdminPortal() {
 
             <TabsContent value="catalog">
               <TagsSeriesTab onChanged={() => loadBooks(currentPage)} />
+            </TabsContent>
+
+            <TabsContent value="reviews">
+              <ReviewsTab />
             </TabsContent>
 
             <TabsContent value="quality">

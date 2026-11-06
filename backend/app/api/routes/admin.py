@@ -16,7 +16,7 @@ from app.api.dependencies import (
 )
 from app.api.routes.books import LanguageQuery, TagsQuery, tag_slugs
 from app.core.exceptions import BadRequestError
-from app.models.enums import BookCategory, BookStatus, OrderStatus
+from app.models.enums import BookCategory, BookStatus, OrderStatus, ReviewStatus
 from app.repositories import books as books_repo
 from app.repositories import orders as orders_repo
 from app.repositories.books import BookFilters
@@ -52,9 +52,15 @@ from app.schemas.order import (
     ReminderQueued,
 )
 from app.schemas.report import DemandRead, ReportSummaryRead
+from app.schemas.review import (
+    ModerateReview,
+    ModerationReviewPage,
+    ModerationReviewRead,
+    ReviewRead,
+)
 from app.schemas.translation import TranslationSuggestion, TranslationSuggestRequest
 from app.schemas.user import AdminUserPage, AdminUserUpdate, UserRead
-from app.services import book_import, catalog, duplicates, reports
+from app.services import book_import, catalog, duplicates, reports, reviews
 from app.services import books as books_service
 from app.services import library_settings as settings_service
 from app.services import orders as orders_service
@@ -520,3 +526,64 @@ async def admin_update_settings(
 ) -> LibrarySettingsRead:
     row = await settings_service.update_library_settings(session, body)
     return LibrarySettingsRead.model_validate(row)
+
+
+# --- Reviews -----------------------------------------------------------------------------
+
+
+@router.get(
+    "/reviews",
+    response_model=ModerationReviewPage,
+    responses=error_responses(422),
+    description="Reviews by status (default: waiting for moderation), oldest first.",
+)
+async def admin_list_reviews(
+    session: SessionDep,
+    pagination: PaginationDep,
+    review_status: Annotated[ReviewStatus, Query(alias="status")] = ReviewStatus.PENDING,
+) -> ModerationReviewPage:
+    items, total = await reviews.for_moderation(
+        session, review_status, page=pagination.page, page_size=pagination.page_size
+    )
+    return ModerationReviewPage(
+        items=[
+            ModerationReviewRead(
+                id=item.review.id,
+                rating=item.review.rating,
+                text=item.review.text,
+                status=item.review.status,
+                created_at=item.review.created_at,
+                updated_at=item.review.updated_at,
+                book_id=item.review.book_id,
+                book_title=item.book_title,
+                reader_name=item.reader_name,
+                reader_email=item.reader_email,
+            )
+            for item in items
+        ],
+        total=total,
+        page=pagination.page,
+        page_size=pagination.page_size,
+    )
+
+
+@router.patch(
+    "/reviews/{review_id}",
+    response_model=ReviewRead,
+    responses=error_responses(404, 422),
+    description="Publish or reject a review.",
+)
+async def admin_moderate_review(
+    review_id: uuid.UUID, body: ModerateReview, session: SessionDep
+) -> ReviewRead:
+    return ReviewRead.model_validate(await reviews.moderate(session, review_id, body.status))
+
+
+@router.delete(
+    "/reviews/{review_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses=error_responses(404, 422),
+)
+async def admin_delete_review(review_id: uuid.UUID, session: SessionDep) -> Response:
+    await reviews.delete(session, review_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

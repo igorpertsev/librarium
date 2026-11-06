@@ -26,8 +26,13 @@ import type {
   OrderPageDto,
   OrderStatusDto,
   Paged,
+  ModerationReviewPageDto,
+  MyReviewDto,
   QualitySummaryDto,
   ReadingListItemDto,
+  ReviewDto,
+  ReviewStatusDto,
+  ReviewSummaryDto,
   SeriesNeighboursDto,
   RegisterDto,
   ReminderQueuedDto,
@@ -84,6 +89,8 @@ export const booksApi = {
   get: (bookId: string) => apiRequest<BookDto>(`/books/${id(bookId)}`, { auth: false }),
   ageRanges: () => apiRequest<string[]>('/books/age-ranges', { auth: false }),
   languages: () => apiRequest<string[]>('/books/languages', { auth: false }),
+  reviews: (bookId: string) =>
+    apiRequest<ReviewSummaryDto>(`/books/${id(bookId)}/reviews`, { auth: false }),
   alsoBorrowed: (bookId: string) =>
     apiRequest<BookDto[]>(`/books/${id(bookId)}/also-borrowed`, { auth: false }),
   seriesNeighbours: (bookId: string) =>
@@ -122,6 +129,13 @@ export const waitlistApi = {
   leave: (bookId: string) => apiRequest<void>(`/waitlist/${id(bookId)}`, { method: 'DELETE' }),
 };
 
+export const reviewsApi = {
+  mine: (bookId: string) => apiRequest<MyReviewDto>(`/books/${id(bookId)}/my-review`),
+  save: (bookId: string, body: { rating: number; text: string }) =>
+    apiRequest<ReviewDto>(`/books/${id(bookId)}/my-review`, { method: 'PUT', body }),
+  remove: (bookId: string) => apiRequest<void>(`/books/${id(bookId)}/my-review`, { method: 'DELETE' }),
+};
+
 export const readingListApi = {
   list: () => apiRequest<ReadingListItemDto[]>('/reading-list'),
   add: (bookId: string) => apiRequest<void>(`/reading-list/${id(bookId)}`, { method: 'POST' }),
@@ -153,6 +167,12 @@ export const adminApi = {
     apiRequest<BookDto>(`/admin/books/${id(bookId)}`, { method: 'PATCH', body }),
   deleteBook: (bookId: string) =>
     apiRequest<void>(`/admin/books/${id(bookId)}`, { method: 'DELETE' }),
+  listReviews: (status: ReviewStatusDto, page = 1) =>
+    apiRequest<ModerationReviewPageDto>('/admin/reviews', { query: { status, page, page_size: 20 } }),
+  moderateReview: (reviewId: string, status: 'published' | 'rejected') =>
+    apiRequest<ReviewDto>(`/admin/reviews/${id(reviewId)}`, { method: 'PATCH', body: { status } }),
+  deleteReview: (reviewId: string) =>
+    apiRequest<void>(`/admin/reviews/${id(reviewId)}`, { method: 'DELETE' }),
   suggestTranslation: (body: TranslationSuggestRequestDto) =>
     apiRequest<TranslationSuggestionDto>('/admin/translations/suggest', { method: 'POST', body }),
   createTag: (body: TagCreateDto) => apiRequest<TagDto>('/admin/tags', { method: 'POST', body }),

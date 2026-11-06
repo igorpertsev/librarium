@@ -362,7 +362,8 @@
     "seriesExists": "A series with this name already exists.",
     "unknownTags": "Unknown tags: {{tags}}",
     "activeOrders": "Return or cancel your current orders first, then delete the account.",
-    "adminAccount": "Administrators cannot delete their own account. Ask another administrator."
+    "adminAccount": "Administrators cannot delete their own account. Ask another administrator.",
+    "notBorrowed": "You can review a book once you have borrowed it."
   },
   "checkout": {
     "title": "Confirm Order",
@@ -713,5 +714,40 @@
   },
   "forYou": {
     "title": "For you"
+  },
+  "reviews": {
+    "title": "Reviews",
+    "starsLabel": "{{value}} of 5 stars",
+    "average_one": "{{average}} · {{count}} rating",
+    "average_other": "{{average}} · {{count}} ratings",
+    "none": "No ratings yet",
+    "showAll": "Show all {{count}} reviews",
+    "showFewer": "Show fewer",
+    "rateIt": "You borrowed this book. How did you like it?",
+    "yourReview": "Your review",
+    "yourRating": "Your rating",
+    "textLabel": "A few words for other readers (optional)",
+    "moderationNote": "A rating is shown at once; a written review after a librarian has read it.",
+    "pendingNote": "Your review is waiting for a librarian.",
+    "rejectedNote": "A librarian did not publish this review. You can change it and send it again.",
+    "save": "Save",
+    "delete": "Delete my review",
+    "saved": "Thank you for your rating!",
+    "sentForApproval": "Thank you! Your review appears once a librarian has read it.",
+    "deleted": "Your review was deleted"
+  },
+  "moderation": {
+    "tab": "Reviews",
+    "title": "Reviews",
+    "description": "Written reviews appear on the site once you publish them; ratings without text appear at once.",
+    "filter": "Show reviews",
+    "status": {"pending": "Waiting", "published": "Published", "rejected": "Rejected"},
+    "empty": "No reviews here.",
+    "publish": "Publish",
+    "reject": "Reject",
+    "published": "Review published",
+    "rejected": "Review rejected",
+    "deleted": "Review deleted",
+    "deleteNamed": "Delete the review of {{title}}"
   }
 }
