@@ -315,6 +315,13 @@ Error format (the same for every status):
 403 `FORBIDDEN`/`ACCOUNT_DISABLED`, 404 `*_NOT_FOUND`, 409 `BOOK_UNAVAILABLE`/`EMAIL_ALREADY_EXISTS`/`INVALID_STATUS_TRANSITION`,
 422 `VALIDATION_ERROR` (submitted values are not echoed back), 500 `INTERNAL_ERROR` (no stack trace).
 
+## Deployment
+
+Production runs on a single VM with `docker-compose.prod.yml`: Caddy (automatic HTTPS, static
+frontend, `/api` reverse proxy), FastAPI and PostgreSQL, with only ports 80/443 exposed.
+Step-by-step guide for a free Oracle Cloud VM, including backups and updates:
+[deploy/README.md](deploy/README.md).
+
 ## Troubleshooting
 
 - **`port is already allocated` for 5432/5433** — set a different `POSTGRES_PORT` in `.env` and update `DATABASE_URL`.

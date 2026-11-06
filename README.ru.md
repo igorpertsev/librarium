@@ -315,6 +315,13 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 403 `FORBIDDEN`/`ACCOUNT_DISABLED`, 404 `*_NOT_FOUND`, 409 `BOOK_UNAVAILABLE`/`EMAIL_ALREADY_EXISTS`/`INVALID_STATUS_TRANSITION`,
 422 `VALIDATION_ERROR` (без эха введённых значений), 500 `INTERNAL_ERROR` (без stack trace).
 
+## Развёртывание
+
+Production — одна VM с `docker-compose.prod.yml`: Caddy (автоматический HTTPS, статический
+frontend, прокси `/api`), FastAPI и PostgreSQL; наружу открыты только порты 80/443.
+Пошаговая инструкция для бесплатной VM в Oracle Cloud, включая бэкапы и обновления
+(на английском): [deploy/README.md](deploy/README.md).
+
 ## Типичные ошибки
 
 - **`port is already allocated` для 5432/5433** — задайте другой `POSTGRES_PORT` в `.env` и обновите `DATABASE_URL`.
