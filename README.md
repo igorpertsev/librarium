@@ -1,5 +1,7 @@
 # Little Dragon — online library
 
+[![CI](https://github.com/igorpertsev/librarium/actions/workflows/ci.yml/badge.svg)](https://github.com/igorpertsev/librarium/actions/workflows/ci.yml)
+
 **English** | [Русский](README.ru.md)
 
 Frontend: React + TypeScript + Vite (design from [Figma](https://www.figma.com/design/3D9jREiGTmIKNYLFQXjh7o/Online-library-website)).
@@ -196,6 +198,16 @@ pnpm build
 
 The test session runs migrations `upgrade → downgrade base → upgrade`, truncates tables before each test and does
 not wrap tests in a transaction, so concurrent requests really go through separate database connections.
+
+**Continuous integration** (`.github/workflows/ci.yml`) runs on every pull request and on pushes to `main`:
+
+- *Backend*: `ruff format --check`, `ruff check`, `mypy`, `alembic upgrade head` + `alembic check` + `downgrade base`,
+  `pytest` against a PostgreSQL 16 service, and a check that `backend/openapi.json` matches the code.
+- *Frontend*: `pnpm install --frozen-lockfile`, a check that `src/api/generated/schema.d.ts` matches
+  `backend/openapi.json`, `pnpm typecheck`, `pnpm build`.
+- *Production images*: `docker compose -f docker-compose.prod.yml build`.
+
+So after an API change, commit the exported `backend/openapi.json` and the regenerated types together.
 
 ## Generating TypeScript types from OpenAPI
 

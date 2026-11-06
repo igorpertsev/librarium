@@ -1,0 +1,110 @@
+# Runs on every pull request and on pushes to main. The same checks can be run locally,
+# see "Tests, lint, typecheck" in README.md.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: bookstore_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d bookstore_test"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    env:
+      # Throwaway CI database; the tests refuse to run unless its name ends with _test.
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/bookstore_test
+      TEST_DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/bookstore_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - name: Install dependencies
+        run: uv sync --locked
+      - name: Format
+        run: uv run ruff format --check .
+      - name: Lint
+        run: uv run ruff check --output-format=github .
+      - name: Type check
+        run: uv run mypy .
+      - name: Migrations apply, match the models and roll back
+        run: |
+          uv run alembic upgrade head
+          uv run alembic check
+          uv run alembic downgrade base
+      - name: Tests
+        run: uv run pytest -q
+      - name: OpenAPI schema is up to date
+        run: |
+          uv run python -m app.cli export-openapi openapi.json
+          git diff --exit-code -- openapi.json || {
+            echo "::error file=backend/openapi.json::Out of date. Run: python -m app.cli export-openapi openapi.json"
+            exit 1
+          }
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4 # version from "packageManager" in package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Generated API types match backend/openapi.json
+        run: |
+          pnpm api:types:file
+          git diff --exit-code -- src/api/generated || {
+            echo "::error file=src/api/generated/schema.d.ts::Out of date. Run: pnpm api:types:file"
+            exit 1
+          }
+      - name: Type check
+        run: pnpm typecheck
+      - name: Build
+        run: pnpm build
+
+  images:
+    name: Production images
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      # Placeholders: docker-compose.prod.yml requires them, the build does not use them.
+      DOMAIN: ci.example.com
+      ACME_EMAIL: ci@example.com
+      POSTGRES_PASSWORD: ci-only-not-a-secret
+      JWT_SECRET_KEY: ci-only-not-a-secret-ci-only-not-a-secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build backend and web images
+        run: docker compose -f docker-compose.prod.yml build

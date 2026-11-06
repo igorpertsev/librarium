@@ -1,5 +1,7 @@
 # Little Dragon — онлайн-библиотека
 
+[![CI](https://github.com/igorpertsev/librarium/actions/workflows/ci.yml/badge.svg)](https://github.com/igorpertsev/librarium/actions/workflows/ci.yml)
+
 [English](README.md) | **Русский**
 
 > Основная документация — на английском ([README.md](README.md)); этот перевод может отставать.
@@ -194,6 +196,16 @@ pnpm build
 
 Тесты прогоняют миграции `upgrade → downgrade base → upgrade`, перед каждым тестом очищают таблицы и не
 оборачивают тест в транзакцию — поэтому конкурентные запросы реально идут через разные соединения.
+
+**Непрерывная интеграция** (`.github/workflows/ci.yml`) запускается для каждого pull request и при push в `main`:
+
+- *Backend*: `ruff format --check`, `ruff check`, `mypy`, `alembic upgrade head` + `alembic check` + `downgrade base`,
+  `pytest` на сервисе PostgreSQL 16 и проверка, что `backend/openapi.json` соответствует коду.
+- *Frontend*: `pnpm install --frozen-lockfile`, проверка, что `src/api/generated/schema.d.ts` соответствует
+  `backend/openapi.json`, `pnpm typecheck`, `pnpm build`.
+- *Production-образы*: `docker compose -f docker-compose.prod.yml build`.
+
+Поэтому после изменения API коммитьте экспортированный `backend/openapi.json` и перегенерированные типы вместе.
 
 ## Генерация TypeScript-типов из OpenAPI
 
