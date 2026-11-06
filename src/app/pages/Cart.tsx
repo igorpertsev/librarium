@@ -202,7 +202,7 @@ export default function Cart() {
                   <div key={batch.batchId} className="space-y-3">
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
-                        <Badge className="bg-green-700">{t('cart.batch')} {index + 1}</Badge>
+                        <Badge className="bg-green-700 text-white">{t('cart.batch')} {index + 1}</Badge>
                         <Badge variant="outline">
                           {batch.books.length} {t('cart.books')}
                         </Badge>

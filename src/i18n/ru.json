@@ -231,7 +231,11 @@
     "languageDesc": "Выберите предпочитаемый язык",
     "english": "English",
     "russian": "Русский",
-    "close": "Закрыть"
+    "close": "Закрыть",
+    "theme": "Тема",
+    "themeSystem": "Как на устройстве",
+    "themeLight": "Светлая",
+    "themeDark": "Тёмная"
   },
   "profile": {
     "title": "Мой профиль",

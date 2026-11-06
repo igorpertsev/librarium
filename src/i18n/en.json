@@ -231,7 +231,11 @@
     "languageDesc": "Choose your preferred language",
     "english": "English",
     "russian": "Russian",
-    "close": "Close"
+    "close": "Close",
+    "theme": "Theme",
+    "themeSystem": "Same as device",
+    "themeLight": "Light",
+    "themeDark": "Dark"
   },
   "profile": {
     "title": "My Profile",

@@ -93,16 +93,16 @@ export function BookDetailsModal({ book, open, onOpenChange }: BookDetailsModalP
   const getStatusBadge = () => {
     if (!book) return null;
     if (isPending) {
-      return <Badge className="bg-blue-700 hover:bg-blue-800">{t('bookStatus.pending')}</Badge>;
+      return <Badge className="bg-blue-700 text-white hover:bg-blue-800">{t('bookStatus.pending')}</Badge>;
     }
     if (isOrderedByOther) {
       return <Badge variant="destructive">{t('bookStatus.notAvailable')}</Badge>;
     }
     switch (book.status) {
       case 'available':
-        return <Badge className="bg-green-700 hover:bg-green-800">{t('bookStatus.available')}</Badge>;
+        return <Badge className="bg-green-700 text-white hover:bg-green-800">{t('bookStatus.available')}</Badge>;
       case 'available-soon':
-        return <Badge className="bg-amber-700 hover:bg-amber-800">{t('bookStatus.availableSoon')}</Badge>;
+        return <Badge className="bg-amber-700 text-white hover:bg-amber-800">{t('bookStatus.availableSoon')}</Badge>;
       case 'not-available':
         return <Badge variant="destructive">{t('bookStatus.notAvailable')}</Badge>;
     }

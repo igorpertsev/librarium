@@ -319,9 +319,9 @@ export default function Profile() {
                           {overdue ? (
                             <Badge variant="destructive">{t('profile.overdueBy')} {Math.abs(daysLeft)} {t('myBooks.days')}</Badge>
                           ) : daysLeft <= 3 ? (
-                            <Badge className="bg-amber-700">{t('profile.dueIn')} {daysLeft} {t('myBooks.days')}</Badge>
+                            <Badge className="bg-amber-700 text-white">{t('profile.dueIn')} {daysLeft} {t('myBooks.days')}</Badge>
                           ) : (
-                            <Badge className="bg-green-700">{daysLeft} {t('profile.daysLeft')}</Badge>
+                            <Badge className="bg-green-700 text-white">{daysLeft} {t('profile.daysLeft')}</Badge>
                           )}
                         </div>
                       </div>
