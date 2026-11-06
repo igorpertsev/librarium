@@ -79,7 +79,7 @@ function useDebounced<T>(value: T, delayMs: number): T {
 }
 
 export default function CustomerPortal() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { version: catalogVersion } = useCatalog();
   const [params, setParams] = useSearchParams();
   const urlQuery = params.get('q') ?? '';
@@ -90,11 +90,21 @@ export default function CustomerPortal() {
   const tagFilter = useMemo(() => parseTagParam(tagsParam), [tagsParam]);
   const tagKey = tagFilter.join(',');
   const seriesFilter = parseSeriesParam(params.get('series'));
+  const languageParam = params.get('language');
+  const languageFilter = languageParam && /^[a-z]{2,3}$/.test(languageParam) ? languageParam : 'all';
   const sort = parseSort(params.get('sort'), seriesFilter !== null);
   const defaultSort: SortKey = seriesFilter ? SERIES_SORT.value : DEFAULT_SORT;
   const sortOptions = seriesFilter ? [SERIES_SORT, ...SORT_OPTIONS] : SORT_OPTIONS;
   const [searchQuery, setSearchQuery] = useState(urlQuery);
   const [ageRanges, setAgeRanges] = useState<string[]>([]);
+  const [languages, setLanguages] = useState<string[]>([]);
+  const languageName = (code: string) => {
+    try {
+      return new Intl.DisplayNames([i18n.language], { type: 'language' }).of(code) ?? code;
+    } catch {
+      return code;
+    }
+  };
 
   /** Changes filters in the URL; `null` removes a parameter (its default). */
   const updateParams = useCallback(
@@ -154,6 +164,7 @@ export default function CustomerPortal() {
             available: availableOnly ? true : undefined,
             tags: tagKey || undefined,
             series: seriesFilter ?? undefined,
+            language: languageFilter === 'all' ? undefined : languageFilter,
             sort,
           },
           controller.signal,
@@ -169,7 +180,7 @@ export default function CustomerPortal() {
         if (requestRef.current === controller) setIsLoading(false);
       }
     },
-    [urlQuery, categoryFilter, ageFilter, availableOnly, tagKey, seriesFilter, sort],
+    [urlQuery, categoryFilter, ageFilter, availableOnly, tagKey, seriesFilter, languageFilter, sort],
   );
 
   // Reload from the first page when filters change or availability may have changed.
@@ -187,6 +198,7 @@ export default function CustomerPortal() {
 
   useEffect(() => {
     booksApi.ageRanges().then(setAgeRanges).catch(() => setAgeRanges([]));
+    booksApi.languages().then(setLanguages).catch(() => setLanguages([]));
   }, [catalogVersion]);
 
   const hasMore = books.length < total;
@@ -281,9 +293,30 @@ export default function CustomerPortal() {
           />
 
           <div className="flex flex-wrap items-center justify-between gap-4 mt-4">
-            <div className="flex items-center gap-2">
-              <Switch id="available-only" checked={availableOnly} onCheckedChange={(checked) => updateParams({ available: checked ? '1' : null })} />
-              <Label htmlFor="available-only">{t('catalog.availableOnly')}</Label>
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+              <div className="flex items-center gap-2">
+                <Switch id="available-only" checked={availableOnly} onCheckedChange={(checked) => updateParams({ available: checked ? '1' : null })} />
+                <Label htmlFor="available-only">{t('catalog.availableOnly')}</Label>
+              </div>
+              {languages.length > 1 && (
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="language-filter" className="whitespace-nowrap">{t('catalog.language')}</Label>
+                  <Select
+                    value={languageFilter}
+                    onValueChange={(value) => updateParams({ language: value === 'all' ? null : value })}
+                  >
+                    <SelectTrigger id="language-filter" className="w-44">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{t('catalog.allLanguages')}</SelectItem>
+                      {languages.map((code) => (
+                        <SelectItem key={code} value={code}>{languageName(code)}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <Label htmlFor="sort" className="whitespace-nowrap">{t('catalog.sortBy')}</Label>

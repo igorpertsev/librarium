@@ -732,6 +732,25 @@
             "description": "Books of this series"
           },
           {
+            "name": "language",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[a-z]{2,3}$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "ISO 639 code of the book's language, e.g. en",
+              "title": "Language"
+            },
+            "description": "ISO 639 code of the book's language, e.g. en"
+          },
+          {
             "name": "sort",
             "in": "query",
             "required": false,
@@ -807,6 +826,32 @@
                   },
                   "type": "array",
                   "title": "Response List Age Ranges Api V1 Books Age Ranges Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/books/languages": {
+      "get": {
+        "tags": [
+          "books"
+        ],
+        "summary": "List Languages",
+        "description": "Languages (ISO 639 codes) of the books in the catalogue, for the filter.",
+        "operationId": "list_languages_api_v1_books_languages_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array",
+                  "title": "Response List Languages Api V1 Books Languages Get"
                 }
               }
             }
@@ -1900,6 +1945,25 @@
               ],
               "title": "Series"
             }
+          },
+          {
+            "name": "language",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[a-z]{2,3}$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "ISO 639 code of the book's language, e.g. en",
+              "title": "Language"
+            },
+            "description": "ISO 639 code of the book's language, e.g. en"
           },
           {
             "name": "sort",

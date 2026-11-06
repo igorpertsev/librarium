@@ -28,6 +28,12 @@ TagsQuery = Annotated[
 ]
 
 
+LanguageQuery = Annotated[
+    str | None,
+    Query(pattern=r"^[a-z]{2,3}$", description="ISO 639 code of the book's language, e.g. en"),
+]
+
+
 def tag_slugs(tags: str | None) -> tuple[str, ...]:
     return tuple(dict.fromkeys(tags.split(","))) if tags else ()
 
@@ -44,6 +50,7 @@ async def list_books(
     ] = None,
     tags: TagsQuery = None,
     series: Annotated[uuid.UUID | None, Query(description="Books of this series")] = None,
+    language: LanguageQuery = None,
     sort: BookSort = BookSort.TITLE,
 ) -> BookPage:
     items, total = await books_service.list_books(
@@ -55,6 +62,7 @@ async def list_books(
             available=available,
             tags=tag_slugs(tags),
             series_id=series,
+            language=language,
         ),
         sort=sort,
         page=pagination.page,
@@ -67,6 +75,15 @@ async def list_books(
 @router.get("/age-ranges", response_model=list[str])
 async def list_age_ranges(session: SessionDep) -> list[str]:
     return list(await books_service.age_ranges(session))
+
+
+@router.get(
+    "/languages",
+    response_model=list[str],
+    description="Languages (ISO 639 codes) of the books in the catalogue, for the filter.",
+)
+async def list_languages(session: SessionDep) -> list[str]:
+    return list(await books_service.languages(session))
 
 
 @router.get("/{book_id}", response_model=BookRead, responses=error_responses(404, 422))

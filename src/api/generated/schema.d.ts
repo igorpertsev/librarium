@@ -241,6 +241,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/books/languages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Languages
+         * @description Languages (ISO 639 codes) of the books in the catalogue, for the filter.
+         */
+        get: operations["list_languages_api_v1_books_languages_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/books/{book_id}": {
         parameters: {
             query?: never;
@@ -2591,6 +2611,8 @@ export interface operations {
                 tags?: string | null;
                 /** @description Books of this series */
                 series?: string | null;
+                /** @description ISO 639 code of the book's language, e.g. en */
+                language?: string | null;
                 sort?: components["schemas"]["BookSort"];
                 page?: number;
                 page_size?: number;
@@ -2622,6 +2644,26 @@ export interface operations {
         };
     };
     list_age_ranges_api_v1_books_age_ranges_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
+                };
+            };
+        };
+    };
+    list_languages_api_v1_books_languages_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -3350,6 +3392,8 @@ export interface operations {
                 /** @description Comma-separated tag slugs; a book must have all of them */
                 tags?: string | null;
                 series?: string | null;
+                /** @description ISO 639 code of the book's language, e.g. en */
+                language?: string | null;
                 sort?: components["schemas"]["BookSort"];
                 page?: number;
                 page_size?: number;

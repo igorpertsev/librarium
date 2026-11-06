@@ -74,6 +74,7 @@ export const booksApi = {
     apiRequest<BookPageDto>('/books', { query, signal, auth: false }),
   get: (bookId: string) => apiRequest<BookDto>(`/books/${id(bookId)}`, { auth: false }),
   ageRanges: () => apiRequest<string[]>('/books/age-ranges', { auth: false }),
+  languages: () => apiRequest<string[]>('/books/languages', { auth: false }),
 };
 
 export const catalogApi = {

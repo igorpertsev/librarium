@@ -182,6 +182,7 @@ class BookFilters:
     include_inactive: bool = False
     tags: tuple[str, ...] = ()  # slugs; a book must have every one of them
     series_id: uuid.UUID | None = None
+    language: str | None = None  # ISO 639 code
 
 
 def _conditions(
@@ -208,6 +209,8 @@ def _conditions(
         )
     if filters.series_id is not None:
         conditions.append(Book.series_id == filters.series_id)
+    if filters.language:
+        conditions.append(Book.language == filters.language)
     if filters.available is not None and per_copy_availability:
         reserved = active_reservation_exists(Book.id)
         is_available = Book.is_active.is_(True) & (Book.status == BookStatus.AVAILABLE) & ~reserved
@@ -322,6 +325,16 @@ async def get_book_with_reservation(
     if row is None:
         return None
     return row[0], row[1]
+
+
+async def distinct_languages(session: AsyncSession) -> Sequence[str]:
+    stmt = (
+        select(Book.language)
+        .where(Book.is_active.is_(True), Book.language.is_not(None), Book.language != "")
+        .distinct()
+        .order_by(Book.language)
+    )
+    return [language for language in (await session.scalars(stmt)).all() if language]
 
 
 async def distinct_age_ranges(session: AsyncSession) -> Sequence[str]:

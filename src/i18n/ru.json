@@ -413,7 +413,9 @@
     "sortRecentlyAdded": "Недавно добавленные",
     "loadMore": "Загрузить ещё",
     "sortRelevance": "По релевантности",
-    "sortSeries": "По порядку в серии"
+    "sortSeries": "По порядку в серии",
+    "language": "Язык",
+    "allLanguages": "Все языки"
   },
   "batch": {
     "info": "Книги выдаются партиями по {{count}} шт. за {{price}} за партию.",

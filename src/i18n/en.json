@@ -407,7 +407,9 @@
     "sortRecentlyAdded": "Recently added",
     "loadMore": "Load more",
     "sortRelevance": "Best match",
-    "sortSeries": "Series order"
+    "sortSeries": "Series order",
+    "language": "Language",
+    "allLanguages": "All languages"
   },
   "batch": {
     "info": "Books are lent in batches of {{count}} for {{price}} per batch.",

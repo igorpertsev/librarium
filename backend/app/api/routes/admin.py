@@ -14,7 +14,7 @@ from app.api.dependencies import (
     TranslationLookupDep,
     require_admin,
 )
-from app.api.routes.books import TagsQuery, tag_slugs
+from app.api.routes.books import LanguageQuery, TagsQuery, tag_slugs
 from app.core.exceptions import BadRequestError
 from app.models.enums import BookCategory, BookStatus, OrderStatus
 from app.repositories import orders as orders_repo
@@ -81,6 +81,7 @@ async def admin_list_books(
     include_inactive: bool = False,
     tags: TagsQuery = None,
     series: uuid.UUID | None = None,
+    language: LanguageQuery = None,
     sort: BookSort = BookSort.CREATED_AT,
 ) -> BookPage:
     items, total = await books_service.list_books(
@@ -93,6 +94,7 @@ async def admin_list_books(
             include_inactive=include_inactive,
             tags=tag_slugs(tags),
             series_id=series,
+            language=language,
         ),
         sort=sort,
         page=pagination.page,

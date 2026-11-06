@@ -451,7 +451,7 @@ Differences (adapters in `src/api/mappers.ts`):
 | GET | `/health` (liveness), `/api/v1/health` (DB) | everyone |
 | POST | `/auth/register`, `/auth/login`, `/auth/refresh`, `/auth/logout`, `/auth/forgot-password`, `/auth/reset-password` | everyone |
 | GET | `/auth/me`, `/users/me` · PATCH `/users/me` · POST `/auth/change-password` | signed-in user |
-| GET | `/books?q&category&age_range&available&tags&series&sort&page&page_size`, `/books/age-ranges`, `/books/{id}` | everyone |
+| GET | `/books?q&category&age_range&available&tags&series&language&sort&page&page_size`, `/books/age-ranges`, `/books/languages`, `/books/{id}` | everyone |
 | GET | `/tags` (with title counts), `/series?q`, `/series/{id}` | everyone |
 | GET/DELETE | `/cart` · POST `/cart/items` · DELETE `/cart/items/{book_id}` | signed-in user |
 | POST/GET | `/orders` · GET `/orders/{id}` · POST `/orders/{id}/cancel`, `/orders/{id}/renew` | signed-in user (own orders only) |
