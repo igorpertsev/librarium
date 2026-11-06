@@ -1,4 +1,4 @@
-import { Outlet, Navigate } from 'react-router';
+import { Outlet, Navigate, useLocation } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { Header } from './Header';
 import { useTranslation } from 'react-i18next';
@@ -14,6 +14,7 @@ function SessionLoading() {
 
 export function Layout() {
   const { isAuthenticated, isLoading } = useAuth();
+  const location = useLocation();
   const { t } = useTranslation();
 
   if (isLoading) {
@@ -21,7 +22,8 @@ export function Layout() {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    // Back to this page after signing in (e.g. a link from an email).
+    return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
   }
 
   return (

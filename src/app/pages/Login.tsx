@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link, Navigate } from 'react-router';
+import { useNavigate, Link, Navigate, useLocation } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -18,6 +18,11 @@ export default function Login() {
   const [submitting, setSubmitting] = useState(false);
   const { login, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  // Only paths on this site: never an absolute or protocol-relative address.
+  const requested = (location.state as { from?: unknown } | null)?.from;
+  const returnTo =
+    typeof requested === 'string' && requested.startsWith('/') && !requested.startsWith('//') ? requested : '/';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,14 +32,14 @@ export default function Login() {
     setSubmitting(false);
     if (result.ok) {
       toast.success(t('auth.loginSuccess'));
-      navigate('/');
+      navigate(returnTo, { replace: true });
     } else {
       setError(errorMessage(t, result.error));
     }
   };
 
   if (!isLoading && isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={returnTo} replace />;
   }
 
   return (

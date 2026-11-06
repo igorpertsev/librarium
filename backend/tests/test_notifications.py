@@ -106,6 +106,12 @@ async def test_reminders_are_queued_once(
     assert kinds.count(NotificationKind.DUE_SOON) == 1
     assert kinds.count(NotificationKind.OVERDUE) == 1
 
+    # The due-soon reminder links to extending this loan.
+    send = FakeSender()
+    await _deliver(app, send)
+    reminder = next(m for m in send.messages if "Please return your books by" in m["Subject"])
+    assert f"/profile?extend={order['id']}" in reminder.get_content()
+
 
 async def test_delivery_sends_a_bilingual_email(
     app: FastAPI, customer: ApiUser, create_book: CreateBook, set_batch: SetBatch

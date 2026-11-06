@@ -183,6 +183,8 @@ def _render(
     books_ru = _book_lines(order, translations or {}, UiLanguage.RU)
     due_en, due_ru = _date_en(order.due_date), _date_ru(order.due_date)
     profile = f"{app_url}/profile"
+    # Opens the profile (after signing in) and asks to extend this loan.
+    extend = f"{app_url}/profile?extend={order.id}"
     texts: dict[NotificationKind, tuple[str, str, str]] = {
         NotificationKind.ORDER_RECEIVED: (
             "We received your request · Заявка получена",
@@ -208,8 +210,10 @@ def _render(
         ),
         NotificationKind.DUE_SOON: (
             f"Please return your books by {due_en} · Верните книги до {due_ru}",
-            f"a friendly reminder: please return these books by {due_en}:\n{books_en}",
-            f"напоминаем: пожалуйста, верните эти книги до {due_ru}:\n{books_ru}",
+            f"a friendly reminder: please return these books by {due_en}:\n{books_en}\n\n"
+            f"Need more time? Extend the loan, if the library allows it: {extend}",
+            f"напоминаем: пожалуйста, верните эти книги до {due_ru}:\n{books_ru}\n\n"
+            f"Нужно больше времени? Продлите выдачу, если библиотека это разрешает: {extend}",
         ),
         NotificationKind.OVERDUE: (
             "Your books are overdue · Срок возврата истёк",

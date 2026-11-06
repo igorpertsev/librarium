@@ -648,5 +648,11 @@
   },
   "newArrivals": {
     "title": "New arrivals"
+  },
+  "extendLink": {
+    "title": "Extend loan {{order}}?",
+    "description": "The books are due back on {{date}}. Extending moves the date by one loan period.",
+    "confirm": "Extend",
+    "notBorrowed": "Order {{order}} is not on loan any more, so there is nothing to extend."
   }
 }
