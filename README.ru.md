@@ -187,12 +187,24 @@ docker compose --profile dev run --rm backend-dev sh -c "ruff format --check . &
 Frontend:
 
 ```bash
+pnpm lint
+```
+
+```bash
 pnpm typecheck
+```
+
+```bash
+pnpm test
 ```
 
 ```bash
 pnpm build
 ```
+
+`pnpm lint` — ESLint (правила TypeScript и React hooks, `eslint.config.js`); `pnpm test` запускает unit-тесты
+Vitest (`src/**/*.test.ts`, jsdom): обновление токена и повтор запроса в API-клиенте, мапперы DTO, форматирование
+дат и сумм, тексты ошибок. `pnpm test:watch` перезапускает их при изменениях.
 
 Тесты прогоняют миграции `upgrade → downgrade base → upgrade`, перед каждым тестом очищают таблицы и не
 оборачивают тест в транзакцию — поэтому конкурентные запросы реально идут через разные соединения.
@@ -202,7 +214,7 @@ pnpm build
 - *Backend*: `ruff format --check`, `ruff check`, `mypy`, `alembic upgrade head` + `alembic check` + `downgrade base`,
   `pytest` на сервисе PostgreSQL 16 и проверка, что `backend/openapi.json` соответствует коду.
 - *Frontend*: `pnpm install --frozen-lockfile`, проверка, что `src/api/generated/schema.d.ts` соответствует
-  `backend/openapi.json`, `pnpm typecheck`, `pnpm build`.
+  `backend/openapi.json`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`.
 - *Production-образы*: `docker compose -f docker-compose.prod.yml build`.
 
 Поэтому после изменения API коммитьте экспортированный `backend/openapi.json` и перегенерированные типы вместе.

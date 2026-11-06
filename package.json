@@ -8,6 +8,9 @@
     "build": "vite build",
     "dev": "vite",
     "typecheck": "tsc --noEmit -p .",
+    "lint": "eslint src --max-warnings 0",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "api:types": "openapi-typescript http://localhost:8000/openapi.json -o src/api/generated/schema.d.ts",
     "api:types:file": "openapi-typescript backend/openapi.json -o src/api/generated/schema.d.ts"
   },
@@ -71,14 +74,24 @@
     "vaul": "1.1.2"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@tailwindcss/vite": "4.1.12",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "4.7.0",
+    "eslint": "^10.14.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.7",
+    "globals": "^17.14.0",
+    "jsdom": "^31.0.0",
     "openapi-typescript": "^7.13.0",
     "tailwindcss": "4.1.12",
     "typescript": "~5.9.3",
-    "vite": "6.3.5"
+    "typescript-eslint": "^8.72.1",
+    "vite": "6.3.5",
+    "vitest": "^4.1.12"
   },
   "peerDependencies": {
     "react": "18.3.1",

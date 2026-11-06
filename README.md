@@ -189,12 +189,24 @@ docker compose --profile dev run --rm backend-dev sh -c "ruff format --check . &
 Frontend:
 
 ```bash
+pnpm lint
+```
+
+```bash
 pnpm typecheck
+```
+
+```bash
+pnpm test
 ```
 
 ```bash
 pnpm build
 ```
+
+`pnpm lint` is ESLint (TypeScript and React hooks rules, `eslint.config.js`); `pnpm test` runs the Vitest unit
+tests (`src/**/*.test.ts`, jsdom): the API client's refresh-and-retry logic, the DTO mappers, date/money
+formatting and error messages. `pnpm test:watch` reruns them on change.
 
 The test session runs migrations `upgrade → downgrade base → upgrade`, truncates tables before each test and does
 not wrap tests in a transaction, so concurrent requests really go through separate database connections.
@@ -204,7 +216,7 @@ not wrap tests in a transaction, so concurrent requests really go through separa
 - *Backend*: `ruff format --check`, `ruff check`, `mypy`, `alembic upgrade head` + `alembic check` + `downgrade base`,
   `pytest` against a PostgreSQL 16 service, and a check that `backend/openapi.json` matches the code.
 - *Frontend*: `pnpm install --frozen-lockfile`, a check that `src/api/generated/schema.d.ts` matches
-  `backend/openapi.json`, `pnpm typecheck`, `pnpm build`.
+  `backend/openapi.json`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`.
 - *Production images*: `docker compose -f docker-compose.prod.yml build`.
 
 So after an API change, commit the exported `backend/openapi.json` and the regenerated types together.
