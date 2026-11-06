@@ -10,6 +10,7 @@ import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
+import httpx
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -17,6 +18,7 @@ from app.api.router import api_router
 from app.core.config import Settings, get_settings
 from app.core.database import Database
 from app.core.exceptions import register_exception_handlers
+from app.services.openlibrary import OpenLibraryClient
 
 logger = logging.getLogger("app")
 
@@ -30,9 +32,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "All sessions are invalidated on restart. Set JWT_SECRET_KEY to persist them."
         )
 
+    # Outgoing HTTP (Open Library lookups from the admin portal).
+    http = httpx.AsyncClient(
+        timeout=10,
+        follow_redirects=True,  # e.g. Open Library: /isbn/<isbn>.json -> /books/<id>.json
+        headers={"User-Agent": f"LittleDragonLibrary/1.0 (+{settings.app_base_url})"},
+    )
+
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         yield
+        await http.aclose()
         await database.dispose()
 
     app = FastAPI(
@@ -44,6 +54,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app.state.settings = settings
     app.state.db = database
+    app.state.openlibrary = OpenLibraryClient(http)
 
     app.add_middleware(
         CORSMiddleware,

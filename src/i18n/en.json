@@ -188,7 +188,10 @@
     "coverNotFound": "No cover found for this ISBN",
     "coverInvalidIsbn": "Enter a valid 10- or 13-digit ISBN first",
     "coverPreview": "Cover preview",
-    "description": "Description"
+    "description": "Description",
+    "detailsFound": "Details filled in from Open Library",
+    "lookupIsbn": "Fill in from ISBN",
+    "lookupIsbnDesc": "Looks up title, author, description, year and cover on Open Library and fills in the empty fields."
   },
   "auth": {
     "login": "Login",
@@ -381,5 +384,23 @@
     "cancelEdit": "Cancel editing",
     "markPreferred": "Mark {{method}} as preferred contact",
     "skipToContent": "Skip to main content"
+  },
+  "bookImport": {
+    "button": "Import CSV",
+    "title": "Import books from CSV",
+    "description": "One book per line. Required columns: title, author, category. Optional: age_range, isbn, publication_year, language, status, cover_url, image_urls, description. Nothing is imported while any line has an error.",
+    "template": "Download a template",
+    "file": "CSV file",
+    "ready_one": "{{file}}: {{count}} book ready to import.",
+    "ready_other": "{{file}}: {{count}} books ready to import.",
+    "empty": "The file has no books.",
+    "invalid_one": "{{count}} problem found. Fix the file and choose it again:",
+    "invalid_other": "{{count}} problems found. Fix the file and choose it again:",
+    "line": "Line {{row}}",
+    "import_one": "Import {{count}} book",
+    "import_other": "Import {{count}} books",
+    "importNone": "Import",
+    "done_one": "{{count}} book imported",
+    "done_other": "{{count}} books imported"
   }
 }

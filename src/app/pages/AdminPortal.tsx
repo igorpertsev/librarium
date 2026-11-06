@@ -26,7 +26,8 @@ import { adminApi } from '../../api/endpoints';
 import { ActionResult, ApiError, runAction, toApiError } from '../../api/errors';
 import { bookFormToDto, bookFromDto } from '../../api/mappers';
 import type { BookStatsDto } from '../../api/types';
-import { findCoverByIsbn } from '../utils/covers';
+import { lookupBookByIsbn } from '../utils/covers';
+import { BookImportDialog } from '../components/BookImportDialog';
 import { daysUntil, useFormat } from '../utils/format';
 
 export default function AdminPortal() {
@@ -203,10 +204,13 @@ export default function AdminPortal() {
     <div className="container mx-auto px-4 py-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1>{t('admin.portalTitle')}</h1>
-        <Button onClick={() => { resetForm(); setIsAddDialogOpen(true); }}>
-          <Plus className="w-4 h-4 mr-2" />
-          {t('admin.addBook')}
-        </Button>
+        <div className="flex flex-wrap gap-2 justify-end">
+          <BookImportDialog onImported={() => { setCurrentPage(1); loadBooks(1); invalidateCatalog(); }} />
+          <Button onClick={() => { resetForm(); setIsAddDialogOpen(true); }}>
+            <Plus className="w-4 h-4 mr-2" />
+            {t('admin.addBook')}
+          </Button>
+        </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
@@ -554,18 +558,27 @@ function BookForm({ formData, setFormData, t }: {
 
   const handleFindCover = async () => {
     setFindingCover(true);
-    const result = await findCoverByIsbn(formData.isbn ?? '');
+    const result = await lookupBookByIsbn(formData.isbn ?? '');
     setFindingCover(false);
     if (result.status === 'found') {
+      const { details } = result;
       const previousCover = formData.coverImage;
+      const cover = details.cover_url ?? previousCover;
       // Replace the gallery only if it was empty or just the previous cover.
       const keepGallery = formData.images?.some((url: string) => url && url !== previousCover);
+      // Only empty fields are filled in; what the librarian typed is kept.
       setFormData({
         ...formData,
-        coverImage: result.url,
-        images: keepGallery ? formData.images : [result.url],
+        title: formData.title || details.title,
+        author: formData.author || details.author || '',
+        description: formData.description || details.description || '',
+        publishedYear: details.publication_year && (!formData.title || !formData.publishedYear)
+          ? details.publication_year
+          : formData.publishedYear,
+        coverImage: cover,
+        images: keepGallery || !cover ? formData.images : [cover],
       });
-      toast.success(t('bookForm.coverFound'));
+      toast.success(t('bookForm.detailsFound'));
     } else if (result.status === 'invalid-isbn') {
       toast.error(t('bookForm.coverInvalidIsbn'));
     } else if (result.status === 'not-found') {
@@ -677,10 +690,10 @@ function BookForm({ formData, setFormData, t }: {
             disabled={findingCover || !formData.isbn?.trim()}
           >
             <ImageDown className="w-4 h-4 mr-2" />
-            {t('bookForm.findCover')}
+            {t('bookForm.lookupIsbn')}
           </Button>
         </div>
-        <p className="text-xs text-muted-foreground">{t('bookForm.findCoverDesc')}</p>
+        <p className="text-xs text-muted-foreground">{t('bookForm.lookupIsbnDesc')}</p>
         {formData.coverImage && (
           <img
             src={formData.coverImage}

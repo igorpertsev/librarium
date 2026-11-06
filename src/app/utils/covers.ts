@@ -1,13 +1,13 @@
 /**
- * Book cover lookup via the Open Library API (free, CORS-enabled).
- *
- * The edition is looked up by ISBN and its cover is referenced by *cover id*:
- * https://covers.openlibrary.org/b/id/<id>-L.jpg URLs are not rate-limited, unlike the
- * ISBN-based cover URLs, so they are safe to store and show to every visitor.
+ * Book details by ISBN for the admin form. The backend asks Open Library
+ * (GET /admin/isbn/{isbn}), so the browser only ever talks to our own API.
  */
+import { adminApi } from '../../api/endpoints';
+import type { BookLookupDto } from '../../api/types';
+import { ApiError } from '../../api/errors';
 
-export type CoverLookupResult =
-  | { status: 'found'; url: string }
+export type IsbnLookupResult =
+  | { status: 'found'; details: BookLookupDto }
   | { status: 'not-found' }
   | { status: 'invalid-isbn' }
   | { status: 'error' };
@@ -17,24 +17,13 @@ export function normalizeIsbn(isbn: string): string | null {
   return /^(\d{9}[\dX]|\d{13})$/.test(compact) ? compact : null;
 }
 
-export function openLibraryCoverUrl(coverId: number, size: 'S' | 'M' | 'L' = 'L'): string {
-  return `https://covers.openlibrary.org/b/id/${coverId}-${size}.jpg`;
-}
-
-export async function findCoverByIsbn(isbn: string, signal?: AbortSignal): Promise<CoverLookupResult> {
+export async function lookupBookByIsbn(isbn: string): Promise<IsbnLookupResult> {
   const normalized = normalizeIsbn(isbn);
   if (!normalized) return { status: 'invalid-isbn' };
   try {
-    const response = await fetch(`https://openlibrary.org/isbn/${normalized}.json`, { signal });
-    if (response.status === 404) return { status: 'not-found' };
-    if (!response.ok) return { status: 'error' };
-    const edition = (await response.json()) as { covers?: unknown };
-    const coverId = Array.isArray(edition.covers)
-      ? edition.covers.find((id): id is number => typeof id === 'number' && id > 0)
-      : undefined;
-    return coverId ? { status: 'found', url: openLibraryCoverUrl(coverId) } : { status: 'not-found' };
+    return { status: 'found', details: await adminApi.lookupIsbn(normalized) };
   } catch (error) {
-    if (error instanceof DOMException && error.name === 'AbortError') throw error;
+    if (error instanceof ApiError && error.code === 'ISBN_NOT_FOUND') return { status: 'not-found' };
     return { status: 'error' };
   }
 }

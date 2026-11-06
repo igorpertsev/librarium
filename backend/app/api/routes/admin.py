@@ -5,15 +5,23 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, Response, status
 
-from app.api.dependencies import AdminUser, PaginationDep, SessionDep, require_admin
+from app.api.dependencies import (
+    AdminUser,
+    OpenLibraryDep,
+    PaginationDep,
+    SessionDep,
+    require_admin,
+)
 from app.models.enums import BookCategory, BookStatus, OrderStatus
 from app.repositories import orders as orders_repo
 from app.repositories.books import BookFilters
 from app.schemas.book import BookCreate, BookPage, BookRead, BookSort, BookStats, BookUpdate
+from app.schemas.book_import import BookImportRequest, BookImportResult, BookLookup
 from app.schemas.common import error_responses
 from app.schemas.library_settings import LibrarySettingsRead, LibrarySettingsUpdate
 from app.schemas.order import OrderDueDateUpdate, OrderPage, OrderRead, OrderStatusUpdate
 from app.schemas.user import AdminUserPage, AdminUserUpdate, UserRead
+from app.services import book_import
 from app.services import books as books_service
 from app.services import library_settings as settings_service
 from app.services import orders as orders_service
@@ -71,6 +79,33 @@ async def admin_book_stats(session: SessionDep) -> BookStats:
 )
 async def admin_create_book(body: BookCreate, session: SessionDep) -> BookRead:
     return await books_service.create_book(session, body)
+
+
+@router.post(
+    "/books/import",
+    response_model=BookImportResult,
+    responses=error_responses(422),
+    description="Creates books from CSV text (header row; required columns title, author, "
+    "category). All or nothing: with any invalid row nothing is created and `errors` lists "
+    "them by line. `dry_run=true` only validates. At most 500 books per import.",
+)
+async def admin_import_books(
+    body: BookImportRequest, session: SessionDep, dry_run: bool = False
+) -> BookImportResult:
+    result = await book_import.import_books(session, body.csv, dry_run=dry_run)
+    return BookImportResult.model_validate(result, from_attributes=True)
+
+
+@router.get(
+    "/isbn/{isbn}",
+    response_model=BookLookup,
+    responses=error_responses(404, 502),
+    description="Title, author, description, year, language and cover for an ISBN, from Open "
+    "Library. 404 ISBN_NOT_FOUND, 502 LOOKUP_UNAVAILABLE.",
+)
+async def admin_lookup_isbn(isbn: str, openlibrary: OpenLibraryDep) -> BookLookup:
+    details = await openlibrary.lookup(isbn)
+    return BookLookup.model_validate(details, from_attributes=True)
 
 
 @router.get("/books/{book_id}", response_model=BookRead, responses=error_responses(404, 422))

@@ -16,6 +16,7 @@ from app.core.security import InvalidAccessTokenError, decode_access_token
 from app.models import User
 from app.models.enums import UserRole
 from app.services.auth import ClientMeta
+from app.services.openlibrary import OpenLibraryClient
 
 
 def get_settings_dep(request: Request) -> Settings:
@@ -31,7 +32,13 @@ async def get_session(request: Request) -> AsyncIterator[AsyncSession]:
         yield session
 
 
+def get_openlibrary(request: Request) -> OpenLibraryClient:
+    client: OpenLibraryClient = request.app.state.openlibrary
+    return client
+
+
 SettingsDep = Annotated[Settings, Depends(get_settings_dep)]
+OpenLibraryDep = Annotated[OpenLibraryClient, Depends(get_openlibrary)]
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 _bearer = HTTPBearer(auto_error=False, description="Access token from /auth/login or /auth/refresh")

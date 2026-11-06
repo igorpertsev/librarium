@@ -6,6 +6,8 @@ import type {
   AdminUserPageDto,
   AdminUserUpdateDto,
   BookCreateDto,
+  BookImportResultDto,
+  BookLookupDto,
   BookDto,
   BookListQuery,
   BookPageDto,
@@ -70,6 +72,13 @@ export const ordersApi = {
 export const adminApi = {
   listBooks: (query: AdminBookListQuery) => apiRequest<BookPageDto>('/admin/books', { query }),
   bookStats: () => apiRequest<BookStatsDto>('/admin/books/stats'),
+  lookupIsbn: (isbn: string) => apiRequest<BookLookupDto>(`/admin/isbn/${id(isbn)}`),
+  importBooks: (csv: string, dryRun: boolean) =>
+    apiRequest<BookImportResultDto>('/admin/books/import', {
+      method: 'POST',
+      body: { csv },
+      query: { dry_run: dryRun },
+    }),
   createBook: (body: BookCreateDto) =>
     apiRequest<BookDto>('/admin/books', { method: 'POST', body }),
   updateBook: (bookId: string, body: BookUpdateDto) =>
