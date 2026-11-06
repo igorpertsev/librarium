@@ -67,6 +67,7 @@ export function bookFromDto(dto: BookDto | BookBriefDto): Book {
   if ('is_reserved' in dto) {
     book.isReserved = dto.is_reserved;
     book.isAvailable = dto.is_available;
+    book.availableFrom = dto.available_from;
   }
   return book;
 }

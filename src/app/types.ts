@@ -18,6 +18,8 @@ export interface Book {
   isReserved?: boolean;
   /** Server-computed: active, status "available" and not reserved. */
   isAvailable?: boolean;
+  /** While reserved: the due date of the order holding the copy (YYYY-MM-DD). */
+  availableFrom?: string | null;
   language?: string | null;
 }
 

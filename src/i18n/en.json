@@ -289,5 +289,8 @@
     "bookUnavailable": "Some books are no longer available",
     "bookUnavailableList": "No longer available: {{titles}}. Remove them from the cart and try again.",
     "incompleteBatch": "Add books to complete a batch of {{count}} before checking out"
+  },
+  "availability": {
+    "expectedBack": "Expected back by {{date}}"
   }
 }

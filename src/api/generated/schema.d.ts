@@ -710,6 +710,11 @@ export interface components {
              */
             is_available: boolean;
             /**
+             * Available From
+             * @description While reserved: the due date of the order holding the copy, i.e. when it is expected back. null when the copy is not reserved.
+             */
+            available_from: string | null;
+            /**
              * Created At
              * Format: date-time
              */

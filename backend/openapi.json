@@ -2957,6 +2957,19 @@
             "title": "Is Available",
             "description": "True when the copy can be added to a cart: active, status 'available' and not reserved"
           },
+          "available_from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Available From",
+            "description": "While reserved: the due date of the order holding the copy, i.e. when it is expected back. null when the copy is not reserved."
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -2985,6 +2998,7 @@
           "is_active",
           "is_reserved",
           "is_available",
+          "available_from",
           "created_at",
           "updated_at"
         ],

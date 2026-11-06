@@ -103,3 +103,22 @@ async def test_get_book_404s(client: AsyncClient, create_book: CreateBook) -> No
     assert missing.json()["error"]["code"] == "BOOK_NOT_FOUND"
     assert (await client.get(f"{API}/books/{inactive}")).status_code == 404
     assert (await client.get(f"{API}/books/not-a-uuid")).status_code == 422
+
+
+async def test_reserved_books_report_when_they_are_expected_back(
+    client: AsyncClient, customer: ApiUser, create_book: CreateBook, set_batch: SetBatch
+) -> None:
+    await set_batch(1)
+    reserved, free = await create_book("Reserved"), await create_book("Free")
+    await fill_cart(customer, [reserved])
+    order = (await place_order(customer)).json()
+
+    detail = (await client.get(f"{API}/books/{reserved}")).json()
+    assert detail["is_reserved"] is True
+    assert detail["available_from"] == order["due_date"]
+    listed = {b["id"]: b for b in (await client.get(f"{API}/books")).json()["items"]}
+    assert listed[reserved]["available_from"] == order["due_date"]
+    assert listed[free]["available_from"] is None
+
+    await customer.post(f"{API}/orders/{order['id']}/cancel")
+    assert (await client.get(f"{API}/books/{reserved}")).json()["available_from"] is None

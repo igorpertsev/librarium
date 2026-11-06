@@ -289,5 +289,8 @@
     "bookUnavailable": "Некоторые книги больше недоступны",
     "bookUnavailableList": "Больше недоступны: {{titles}}. Удалите их из корзины и попробуйте снова.",
     "incompleteBatch": "Чтобы оформить заказ, соберите партию из {{count}} книг"
+  },
+  "availability": {
+    "expectedBack": "Ожидается к {{date}}"
   }
 }
