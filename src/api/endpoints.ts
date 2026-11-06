@@ -26,6 +26,7 @@ import type {
   TokenResponseDto,
   UserDto,
   UserUpdateDto,
+  WaitlistEntryDto,
 } from './types';
 
 const id = (value: string) => encodeURIComponent(value);
@@ -68,6 +69,13 @@ export const ordersApi = {
     apiRequest<OrderDto>(`/orders/${id(orderId)}/cancel`, { method: 'POST' }),
   renew: (orderId: string) =>
     apiRequest<OrderDto>(`/orders/${id(orderId)}/renew`, { method: 'POST' }),
+};
+
+export const waitlistApi = {
+  list: () => apiRequest<WaitlistEntryDto[]>('/waitlist'),
+  join: (bookId: string) =>
+    apiRequest<WaitlistEntryDto>(`/waitlist/${id(bookId)}`, { method: 'POST' }),
+  leave: (bookId: string) => apiRequest<void>(`/waitlist/${id(bookId)}`, { method: 'DELETE' }),
 };
 
 export const libraryApi = {

@@ -265,6 +265,13 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 отключено) и никогда после просрочки (`409 RENEWAL_NOT_ALLOWED`, `details.reason`). Уже отправленные напоминания
 о старом сроке удаляются, поэтому перед новым сроком читатель получит напоминание снова.
 
+**Лист ожидания**: для книги, которую сейчас нельзя заказать, `POST /waitlist/{book_id}` (идемпотентно;
+`409 BOOK_AVAILABLE`, если её можно заказать) просит прислать письмо, когда она вернётся. Когда заказ возвращён
+или отменён либо библиотекарь ставит книге статус `available`, все ждущие доступную теперь книгу получают одно
+письмо `book_available` (через outbox уведомлений), а их записи удаляются; книга достаётся тому, кто закажет первым.
+Письмо не отправляется, если книгу успели снова заказать. Пока кто-то ждёт книгу, её текущий читатель не может
+продлить выдачу (`details.reason = requested_by_others`).
+
 `POST /api/v1/orders` выполняется в одной транзакции (`app/services/orders.py`):
 
 1. `SELECT … FOR UPDATE` строки корзины (защита от двойного клика/двух вкладок);
@@ -316,6 +323,7 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 | GET/DELETE | `/cart` · POST `/cart/items` · DELETE `/cart/items/{book_id}` | пользователь |
 | POST/GET | `/orders` · GET `/orders/{id}` · POST `/orders/{id}/cancel`, `/orders/{id}/renew` | пользователь (только свои) |
 | GET | `/library/rules` (размер и цена партии, срок выдачи, число продлений) | все |
+| GET `/waitlist` · POST/DELETE `/waitlist/{book_id}` | «сообщите, когда книга вернётся» | пользователь |
 | GET/POST | `/admin/books`, GET `/admin/books/stats`, GET/PATCH/DELETE `/admin/books/{id}` | admin |
 | GET | `/admin/users` · PATCH `/admin/users/{id}` (роль, блокировка) | admin |
 | GET | `/admin/orders`, `/admin/orders/{id}` · PATCH `/admin/orders/{id}/status`, `/admin/orders/{id}/due-date` | admin |

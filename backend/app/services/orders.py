@@ -34,7 +34,7 @@ from app.models.enums import (
 )
 from app.repositories import orders as orders_repo
 from app.repositories.books import reserved_book_ids
-from app.services import notifications
+from app.services import notifications, waitlist
 from app.services.library_settings import get_library_settings
 
 ACTIVE_BOOK_INDEX = "uq_order_items_active_book"
@@ -222,6 +222,14 @@ def _invalid_transition(current: OrderStatus, target: OrderStatus) -> ConflictEr
     )
 
 
+async def _book_ids(session: AsyncSession, order_id: uuid.UUID) -> list[uuid.UUID]:
+    return list(
+        (
+            await session.scalars(select(OrderItem.book_id).where(OrderItem.order_id == order_id))
+        ).all()
+    )
+
+
 async def cancel_own_order(session: AsyncSession, user: User, order_id: uuid.UUID) -> Order:
     order = await orders_repo.lock_order(session, order_id, user_id=user.id)
     if order is None:
@@ -229,6 +237,7 @@ async def cancel_own_order(session: AsyncSession, user: User, order_id: uuid.UUI
     if order.status not in CUSTOMER_CANCELLABLE_STATUSES:
         raise _invalid_transition(order.status, OrderStatus.CANCELLED)
     await _apply_status(session, order, OrderStatus.CANCELLED)
+    await waitlist.notify_waiting_readers(session, await _book_ids(session, order.id))
     await session.commit()
     return await get_order(session, order_id)
 
@@ -248,11 +257,15 @@ async def change_status(
             await notifications.enqueue(
                 session, order_id=order.id, user_id=order.user_id, kind=kind
             )
+        if new_status not in ACTIVE_ORDER_STATUSES:  # the books are back on the shelf
+            await waitlist.notify_waiting_readers(session, await _book_ids(session, order.id))
         await session.commit()
     return await get_order(session, order_id)
 
 
-def renewal_refusal(order: Order, library: LibrarySettings, today: date) -> str | None:
+def renewal_refusal(
+    order: Order, library: LibrarySettings, today: date, *, others_waiting: bool = False
+) -> str | None:
     """Why the loan cannot be extended now, or None if it can."""
     if order.status is not OrderStatus.CONFIRMED:
         return "not_borrowed"
@@ -260,6 +273,8 @@ def renewal_refusal(order: Order, library: LibrarySettings, today: date) -> str 
         return "overdue"
     if order.renewal_count >= library.max_renewals:
         return "limit_reached"
+    if others_waiting:
+        return "requested_by_others"
     return None
 
 
@@ -269,7 +284,10 @@ async def renew_own_order(session: AsyncSession, user: User, order_id: uuid.UUID
     if order is None:
         raise order_not_found()
     library = await get_library_settings(session, lock="share")
-    reason = renewal_refusal(order, library, _today())
+    others_waiting = await waitlist.has_waiting_readers(
+        session, await _book_ids(session, order.id), except_user=user.id
+    )
+    reason = renewal_refusal(order, library, _today(), others_waiting=others_waiting)
     if reason is not None:
         raise ConflictError(
             "This loan cannot be extended", code="RENEWAL_NOT_ALLOWED", details={"reason": reason}

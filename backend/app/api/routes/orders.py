@@ -64,7 +64,8 @@ async def get_my_order(order_id: uuid.UUID, user: CurrentUser, session: SessionD
     responses=error_responses(401, 404, 409, 422),
     description="Extends a borrowed order's due date by one loan period. Allowed up to "
     "max_renewals times (GET /library/rules) and not once the books are overdue; otherwise "
-    "409 RENEWAL_NOT_ALLOWED with details.reason not_borrowed | overdue | limit_reached.",
+    "409 RENEWAL_NOT_ALLOWED with details.reason not_borrowed | overdue | limit_reached | "
+    "requested_by_others (another reader is waiting for one of the books).",
 )
 async def renew_my_order(order_id: uuid.UUID, user: CurrentUser, session: SessionDep) -> OrderRead:
     order = await orders_service.renew_own_order(session, user, order_id)

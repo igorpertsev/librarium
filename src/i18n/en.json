@@ -320,7 +320,8 @@
     "incompleteBatch": "Add books to complete a batch of {{count}} before checking out",
     "renewalOverdue": "Overdue loans cannot be extended. Please return the books.",
     "renewalLimit": "This loan has already been extended as often as allowed.",
-    "renewalNotAllowed": "This loan cannot be extended."
+    "renewalNotAllowed": "This loan cannot be extended.",
+    "renewalRequested": "Another reader is waiting for one of these books, so the loan cannot be extended."
   },
   "checkout": {
     "title": "Confirm Order",
@@ -395,5 +396,18 @@
     "cancelEdit": "Cancel editing",
     "markPreferred": "Mark {{method}} as preferred contact",
     "skipToContent": "Skip to main content"
+  },
+  "waitlist": {
+    "notifyMe": "Email me when “{{title}}” is available",
+    "notifyMeShort": "Notify me when available",
+    "stop": "Stop waiting for “{{title}}”",
+    "waiting": "We'll email you",
+    "joined": "We'll email you when “{{title}}” is available again.",
+    "left": "You are no longer waiting for “{{title}}”.",
+    "explain": "We can email you once this book is back.",
+    "title": "Waiting List",
+    "description": "Books you will be emailed about once they are back",
+    "since": "since {{date}}",
+    "availableNow": "This book is available now: add it to your cart."
   }
 }

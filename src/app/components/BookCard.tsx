@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { getCartButtonLabel, getCategoryTranslation, getStatusTranslation } from '../utils/translations';
 import { useFormat } from '../utils/format';
 import { errorMessage } from '../utils/apiErrors';
+import { WaitlistButton } from './WaitlistButton';
 
 interface BookCardProps {
   book: Book;
@@ -174,15 +175,18 @@ export function BookCard({ book }: BookCardProps) {
           )}
         </div>
       </CardContent>
-      <CardFooter className="p-4 pt-0">
+      <CardFooter className="p-4 pt-0 gap-2">
         <Button
           onClick={handleAddToCart}
           disabled={book.status !== 'available' || isPending || isOrderedByOther || adding}
-          className="w-full"
+          className="flex-1"
         >
           <ShoppingCart className="w-4 h-4 mr-2" />
           {getCartButtonLabel(t, { status: book.status, inCart: isPending, reserved: isOrderedByOther })}
         </Button>
+        {(isOrderedByOther || book.status !== 'available') && !isPending && (
+          <WaitlistButton bookId={book.id} title={book.title} />
+        )}
       </CardFooter>
     </Card>
 

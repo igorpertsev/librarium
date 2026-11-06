@@ -16,6 +16,8 @@ import { daysUntil, useFormat } from '../utils/format';
 import { useConfirm } from '../components/ConfirmDialog';
 import { orderLabel } from '../utils/translations';
 import { useLibraryRules } from '../utils/useLibraryRules';
+import { useWaitlist } from '../contexts/WaitlistContext';
+import { WaitlistButton } from '../components/WaitlistButton';
 import type { Order } from '../types';
 
 const MIN_PASSWORD_LENGTH = 8;
@@ -50,6 +52,7 @@ export default function Profile() {
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [renewingId, setRenewingId] = useState<string | null>(null);
   const rules = useLibraryRules();
+  const { entries: waitlist } = useWaitlist();
   const fmt = useFormat();
   const { confirm, confirmDialog } = useConfirm();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -256,6 +259,31 @@ export default function Profile() {
           </CardContent>
         </Card>
       </div>
+
+      {waitlist.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('waitlist.title')}</CardTitle>
+            <CardDescription>{t('waitlist.description')}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {waitlist.map(({ book, createdAt }) => (
+              <div key={book.id} className="flex items-center gap-4 p-3 border border-border rounded-lg">
+                <div className="w-10 h-14 flex-shrink-0 overflow-hidden rounded bg-muted">
+                  <img src={book.coverImage} alt="" className="w-full h-full object-cover" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="truncate">{book.title}</h3>
+                  <p className="text-sm text-muted-foreground truncate">
+                    {book.author} · {t('waitlist.since', { date: fmt.date(createdAt) })}
+                  </p>
+                </div>
+                <WaitlistButton bookId={book.id} title={book.title} />
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       {pendingOrders.length > 0 && (
         <Card>

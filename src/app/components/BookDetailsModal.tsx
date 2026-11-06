@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { getCartButtonLabel, getCategoryTranslation } from '../utils/translations';
 import { useFormat } from '../utils/format';
 import { errorMessage } from '../utils/apiErrors';
+import { WaitlistButton } from './WaitlistButton';
 
 interface BookDetailsModalProps {
   book: Book | null;
@@ -253,6 +254,12 @@ export function BookDetailsModal({ book, open, onOpenChange }: BookDetailsModalP
               <ShoppingCart className="w-4 h-4 sm:w-6 sm:h-6 mr-2 sm:mr-3" />
               {getCartButtonLabel(t, { status: book.status, inCart: isPending, reserved: isOrderedByOther })}
             </Button>
+            {(isOrderedByOther || book.status !== 'available') && !isPending && (
+              <div className="flex flex-col items-center gap-2 text-center">
+                <p className="text-sm text-muted-foreground">{t('waitlist.explain')}</p>
+                <WaitlistButton bookId={book.id} title={book.title} withLabel />
+              </div>
+            )}
           </div>
         </div>
 

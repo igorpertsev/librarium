@@ -12,6 +12,7 @@ from app.models.enums import BookStatus
 from app.repositories import books as books_repo
 from app.repositories.books import BookFilters
 from app.schemas.book import BookCreate, BookRead, BookSort, BookStats, BookUpdate
+from app.services import waitlist
 
 
 def book_not_found() -> NotFoundError:
@@ -54,6 +55,8 @@ async def update_book(session: AsyncSession, book_id: uuid.UUID, patch: BookUpda
         raise book_not_found()
     for field, value in patch.changes().items():
         setattr(book, field, value)
+    if book.status is BookStatus.AVAILABLE:
+        await waitlist.notify_waiting_readers(session, [book.id])
     await session.commit()
     # Existing orders keep their snapshot; only the catalogue entry changes.
     return await get_book(session, book_id)

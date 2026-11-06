@@ -31,6 +31,7 @@ export type ChangePasswordDto = Schemas['ChangePasswordRequest'];
 export type TokenResponseDto = Schemas['TokenResponse'];
 export type LibrarySettingsDto = Schemas['LibrarySettingsRead'];
 export type LibraryRulesDto = Schemas['LibraryRules'];
+export type WaitlistEntryDto = Schemas['WaitlistEntryRead'];
 export type LibrarySettingsUpdateDto = Schemas['LibrarySettingsUpdate'];
 export type ErrorResponseDto = Schemas['ErrorResponse'];
 
