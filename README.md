@@ -251,6 +251,10 @@ not wrap tests in a transaction, so concurrent requests really go through separa
 
 So after an API change, commit the exported `backend/openapi.json` and the regenerated types together.
 
+**Code splitting.** Pages other than sign-in are loaded when first opened (`lazy` routes in `src/app/routes.tsx`);
+React and i18next get their own long-cached files (`vite.config.ts`). If an open tab asks for page files that a new
+release has replaced, it reloads once to get the new version.
+
 ## Generating TypeScript types from OpenAPI
 
 From a running backend:
