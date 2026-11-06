@@ -249,7 +249,17 @@ docker compose -f docker-compose.prod.yml restart backend
 docker compose -f docker-compose.prod.yml exec db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
 ```
 
-Container logs are rotated (5 × 10 MB per container), so they do not fill the disk.
+Container logs are rotated (5 × 10 MB per container), so they do not fill the disk. Backend logs
+are JSON lines; every line of one request carries the same `request_id`, which users also see as the
+"code" in an unexpected-error message. To find everything about one report:
+
+```bash
+docker compose -f docker-compose.prod.yml logs backend | grep '"request_id": "<code>"'
+```
+
+**Error reporting (optional).** Put a Sentry (or GlitchTip) DSN into `SENTRY_DSN` in `.env` and run
+`docker compose -f docker-compose.prod.yml up -d`; unhandled errors are then reported with their stack
+trace, without IP addresses, cookies or request bodies.
 
 ## Security notes
 

@@ -7,6 +7,7 @@ The schema is managed by Alembic only (``alembic upgrade head``); the app never 
 from __future__ import annotations
 
 import logging
+import time
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
@@ -17,14 +18,22 @@ from app.api.router import api_router
 from app.core.config import Settings, get_settings
 from app.core.database import Database
 from app.core.exceptions import register_exception_handlers
+from app.core.logging import configure_logging, init_sentry, new_request_id, request_id_var
 from app.core.rate_limit import RateLimiter
 from app.services.notifications import make_smtp_sender
 
 logger = logging.getLogger("app")
+access_logger = logging.getLogger("app.request")
+
+# Health checks run every few seconds; their access lines are only logged at DEBUG.
+_QUIET_PATHS = frozenset({"/health", "/api/v1/health"})
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or get_settings()
+    configure_logging(settings)
+    if init_sentry(settings):
+        logger.info("Error reporting to Sentry is enabled")
     database = Database(settings)
     if settings.jwt_secret_is_ephemeral:
         logger.warning(
@@ -75,6 +84,41 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 "Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'"
             )
         return response
+
+    # Added last = outermost: it runs in the same task as the error handler, which therefore
+    # still sees the request id (inner BaseHTTPMiddleware layers run in child tasks).
+    @app.middleware("http")
+    async def request_context(
+        request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
+        request_id = new_request_id(request.headers.get("x-request-id"))
+        request.state.request_id = request_id  # read by the error handler for 500s
+        token = request_id_var.set(request_id)
+        started = time.perf_counter()
+        status = 500
+        try:
+            response = await call_next(request)
+            status = response.status_code
+            response.headers["X-Request-ID"] = request_id
+            return response
+        finally:
+            path = request.url.path  # without the query string
+            access_logger.log(
+                logging.DEBUG if path in _QUIET_PATHS else logging.INFO,
+                "%s %s %s",
+                request.method,
+                path,
+                status,
+                extra={
+                    "method": request.method,
+                    "path": path,
+                    "status": status,
+                    "duration_ms": round((time.perf_counter() - started) * 1000, 1),
+                    "client_ip": request.client.host if request.client else None,
+                },
+            )
+            if status != 500:  # keep the id for the error handler, which runs outside
+                request_id_var.reset(token)
 
     register_exception_handlers(app)
 

@@ -36,6 +36,9 @@ export function errorMessage(t: TFunction, error: ApiError): string {
     const seconds = Number(error.details?.retry_after ?? 60);
     return t('errors.tooManyAttempts', { count: Math.max(1, Math.ceil(seconds / 60)) });
   }
+  if (error.code === 'INTERNAL_ERROR' && typeof error.details?.request_id === 'string') {
+    return t('errors.genericWithReference', { id: error.details.request_id });
+  }
   if (error.code === 'INCOMPLETE_BATCH') {
     const count = Number(error.details?.books_per_batch ?? 0);
     return t('errors.incompleteBatch', { count });

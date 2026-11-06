@@ -41,6 +41,12 @@ class Settings(BaseSettings):
     environment: Environment = Environment.DEVELOPMENT
     app_name: str = "Librarium API"
 
+    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
+    # "json" (one JSON object per line) or "text"; default: json in production, text otherwise.
+    log_format: Literal["json", "text"] | None = None
+    # Optional error reporting to Sentry (or a compatible service such as GlitchTip).
+    sentry_dsn: SecretStr | None = None
+
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5433/bookstore"
     database_echo: bool = False
     database_pool_size: int = Field(default=10, ge=1, le=100)
@@ -112,7 +118,9 @@ class Settings(BaseSettings):
             return None
         return value
 
-    @field_validator("jwt_secret_key", "seed_admin_password", "smtp_password", mode="before")
+    @field_validator(
+        "jwt_secret_key", "seed_admin_password", "smtp_password", "sentry_dsn", mode="before"
+    )
     @classmethod
     def _empty_secret_to_none(cls, value: object) -> object:
         if isinstance(value, str) and not value.strip():
@@ -152,6 +160,9 @@ class Settings(BaseSettings):
         elif secret is None:
             self.jwt_secret_key = SecretStr(secrets.token_urlsafe(64))
             self.jwt_secret_is_ephemeral = True
+
+        if self.log_format is None:
+            self.log_format = "json" if self.environment is Environment.PRODUCTION else "text"
         return self
 
     @property

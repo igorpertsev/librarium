@@ -152,11 +152,18 @@ async def _validation_error_handler(_: Request, exc: Exception) -> JSONResponse:
 
 
 async def _unhandled_error_handler(request: Request, exc: Exception) -> JSONResponse:
-    # Log with traceback server-side; never leak internals to the client.
+    # Log with traceback server-side; never leak internals to the client. The request id
+    # lets a user's report be matched with this log line.
     logger.exception("Unhandled error on %s %s", request.method, request.url.path, exc_info=exc)
+    request_id: str | None = getattr(request.state, "request_id", None)
     return JSONResponse(
         status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-        content=error_payload("INTERNAL_ERROR", "An unexpected error occurred"),
+        content=error_payload(
+            "INTERNAL_ERROR",
+            "An unexpected error occurred",
+            {"request_id": request_id} if request_id else None,
+        ),
+        headers={"X-Request-ID": request_id} if request_id else None,
     )
 
 
