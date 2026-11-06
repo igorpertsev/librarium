@@ -645,5 +645,8 @@
   "author": {
     "label": "Author",
     "showBooks": "All books by {{name}}"
+  },
+  "newArrivals": {
+    "title": "New arrivals"
   }
 }

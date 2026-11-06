@@ -4,6 +4,7 @@ import { BookCard } from '../components/BookCard';
 import { BatchProgress } from '../components/BatchProgress';
 import { AuthorBanner, SelectedTags, SeriesBanner, SeriesFilter, TagFilter } from '../components/CatalogFilters';
 import { useBookText } from '../utils/bookText';
+import { NewArrivalsShelf } from '../components/NewArrivalsShelf';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Button } from '../components/ui/button';
@@ -206,6 +207,11 @@ export default function CustomerPortal() {
   }, [catalogVersion]);
 
   const hasMore = books.length < total;
+  // The new arrivals shelf belongs to the plain catalogue, not to a search or a filter.
+  const hasFilters = Boolean(
+    urlQuery || categoryFilter !== 'all' || ageFilter !== 'all' || availableOnly || tagFilter.length ||
+      seriesFilter || authorFilter || languageFilter !== 'all',
+  );
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const bottom = e.currentTarget.scrollHeight - e.currentTarget.scrollTop <= e.currentTarget.clientHeight + 100;
@@ -341,6 +347,7 @@ export default function CustomerPortal() {
 
       <div ref={resultsRef} className="flex-1 overflow-y-auto" onScroll={handleScroll}>
         <div className="container mx-auto px-4 py-6">
+          {!hasFilters && <NewArrivalsShelf />}
           {authorFilter && (
             <AuthorBanner
               // The name as the reader sees it on the cards (translated when possible).
