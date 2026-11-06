@@ -289,5 +289,15 @@
     "bookUnavailable": "Некоторые книги больше недоступны",
     "bookUnavailableList": "Больше недоступны: {{titles}}. Удалите их из корзины и попробуйте снова.",
     "incompleteBatch": "Чтобы оформить заказ, соберите партию из {{count}} книг"
+  },
+  "catalog": {
+    "availableOnly": "Доступны сейчас",
+    "sortBy": "Сортировка",
+    "sortTitle": "Название (А–Я)",
+    "sortTitleDesc": "Название (Я–А)",
+    "sortAuthor": "Автор (А–Я)",
+    "sortYearNewest": "Сначала новые издания",
+    "sortRecentlyAdded": "Недавно добавленные",
+    "loadMore": "Загрузить ещё"
   }
 }

@@ -4,6 +4,8 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Button } from '../components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Switch } from '../components/ui/switch';
+import { Skeleton } from '../components/ui/skeleton';
 import { Book, BookCategory } from '../types';
 import { Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -12,8 +14,36 @@ import { ApiError, toApiError } from '../../api/errors';
 import { bookFromDto } from '../../api/mappers';
 import { useCatalog } from '../contexts/CatalogContext';
 import { errorMessage } from '../utils/apiErrors';
+import type { BookListQuery } from '../../api/types';
 
 const PAGE_SIZE = 24;
+
+type SortKey = NonNullable<BookListQuery['sort']>;
+// Only keys the API allows (it validates them against an allow-list).
+const SORT_OPTIONS: { value: SortKey; labelKey: string }[] = [
+  { value: 'title', labelKey: 'catalog.sortTitle' },
+  { value: '-title', labelKey: 'catalog.sortTitleDesc' },
+  { value: 'author', labelKey: 'catalog.sortAuthor' },
+  { value: '-publication_year', labelKey: 'catalog.sortYearNewest' },
+  { value: '-created_at', labelKey: 'catalog.sortRecentlyAdded' },
+];
+
+function BookCardSkeleton() {
+  return (
+    <div className="rounded-xl border border-border bg-card overflow-hidden" aria-hidden="true">
+      <Skeleton className="aspect-[3/4] w-full rounded-none" />
+      <div className="p-4 space-y-3">
+        <Skeleton className="h-5 w-3/4" />
+        <Skeleton className="h-4 w-1/2" />
+        <div className="flex gap-2">
+          <Skeleton className="h-5 w-16" />
+          <Skeleton className="h-5 w-12" />
+        </div>
+        <Skeleton className="h-9 w-full" />
+      </div>
+    </div>
+  );
+}
 
 function useDebounced<T>(value: T, delayMs: number): T {
   const [debounced, setDebounced] = useState(value);
@@ -31,6 +61,8 @@ export default function CustomerPortal() {
   const [categoryFilter, setCategoryFilter] = useState<BookCategory | 'all'>('all');
   const [ageFilter, setAgeFilter] = useState<string>('all');
   const [ageRanges, setAgeRanges] = useState<string[]>([]);
+  const [availableOnly, setAvailableOnly] = useState(false);
+  const [sort, setSort] = useState<SortKey>('title');
 
   const [books, setBooks] = useState<Book[]>([]);
   const [total, setTotal] = useState(0);
@@ -56,6 +88,8 @@ export default function CustomerPortal() {
             q: search || undefined,
             category: categoryFilter === 'all' ? undefined : categoryFilter,
             age_range: ageFilter === 'all' ? undefined : ageFilter,
+            available: availableOnly ? true : undefined,
+            sort,
           },
           controller.signal,
         );
@@ -70,7 +104,7 @@ export default function CustomerPortal() {
         if (requestRef.current === controller) setIsLoading(false);
       }
     },
-    [search, categoryFilter, ageFilter],
+    [search, categoryFilter, ageFilter, availableOnly, sort],
   );
 
   // Reload from the first page when filters change or availability may have changed.
@@ -147,6 +181,26 @@ export default function CustomerPortal() {
               </Select>
             </div>
           </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-4 mt-4">
+            <div className="flex items-center gap-2">
+              <Switch id="available-only" checked={availableOnly} onCheckedChange={setAvailableOnly} />
+              <Label htmlFor="available-only">{t('catalog.availableOnly')}</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="sort" className="whitespace-nowrap">{t('catalog.sortBy')}</Label>
+              <Select value={sort} onValueChange={(value) => setSort(value as SortKey)}>
+                <SelectTrigger id="sort" className="w-56">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SORT_OPTIONS.map(({ value, labelKey }) => (
+                    <SelectItem key={value} value={value}>{t(labelKey)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -160,6 +214,8 @@ export default function CustomerPortal() {
             {books.map(book => (
               <BookCard key={book.id} book={book} />
             ))}
+            {isLoading && books.length === 0 &&
+              Array.from({ length: 8 }, (_, i) => <BookCardSkeleton key={i} />)}
           </div>
 
           {error && (
@@ -171,7 +227,7 @@ export default function CustomerPortal() {
             </div>
           )}
 
-          {isLoading && (
+          {isLoading && books.length > 0 && (
             <div className="text-center py-8">
               <p className="text-muted-foreground">{t('common.loading')}</p>
             </div>
@@ -186,6 +242,9 @@ export default function CustomerPortal() {
           {!isLoading && !error && hasMore && (
             <div className="text-center py-8">
               <p className="text-muted-foreground">Scroll down to load more books...</p>
+              <Button variant="outline" className="mt-3" onClick={() => loadPage(page + 1)}>
+                {t('catalog.loadMore')}
+              </Button>
             </div>
           )}
         </div>
