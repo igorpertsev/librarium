@@ -42,40 +42,44 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
+  /* Warm dark palette matching the light theme (text contrast >= 6:1 on every surface). */
+  --background: #1c1611;
+  --foreground: #f1e9dc;
+  --card: #261e17;
+  --card-foreground: #f1e9dc;
+  --popover: #261e17;
+  --popover-foreground: #f1e9dc;
+  --primary: #d4a574;
+  --primary-foreground: #1c1611;
+  --secondary: #4a3828;
+  --secondary-foreground: #f1e9dc;
+  --muted: #3a2d22;
+  --muted-foreground: #c2b19d;
+  --accent: #5a4330;
+  --accent-foreground: #f1e9dc;
+  --destructive: #b3362c;
+  --destructive-foreground: #ffffff;
+  --border: rgba(212, 165, 116, 0.22);
+  /* Borders of form fields, and their tinted background (bg-input/30 in the components). */
+  --input: #6b5440;
+  --input-background: #2f251c;
+  --switch-background: #5a4a36;
+  --ring: #d4a574;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
+  --chart-1: #d4a574;
+  --chart-2: #c19a6b;
+  --chart-3: #a0826d;
+  --chart-4: #deb887;
+  --chart-5: #8b4513;
+  --sidebar: #241c15;
+  --sidebar-foreground: #f1e9dc;
+  --sidebar-primary: #d4a574;
+  --sidebar-primary-foreground: #1c1611;
+  --sidebar-accent: #3a2d22;
+  --sidebar-accent-foreground: #f1e9dc;
+  --sidebar-border: rgba(212, 165, 116, 0.15);
+  --sidebar-ring: #d4a574;
 }
 
 @theme inline {

@@ -256,7 +256,11 @@
     "languageDesc": "Choose your preferred language. When you are signed in, it is saved on your account and emails from the library use it too.",
     "english": "English",
     "russian": "Russian",
-    "close": "Close"
+    "close": "Close",
+    "theme": "Theme",
+    "themeSystem": "Same as device",
+    "themeLight": "Light",
+    "themeDark": "Dark"
   },
   "profile": {
     "title": "My Profile",

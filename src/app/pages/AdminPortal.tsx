@@ -376,8 +376,8 @@ export default function AdminPortal() {
                       <Badge variant="outline">{getCategoryTranslation(t, book.category)}</Badge>
                     </TableCell>
                     <TableCell>
-                      {book.status === 'available' && <Badge className="bg-green-700">{getStatusTranslation(t, book.status)}</Badge>}
-                      {book.status === 'available-soon' && <Badge className="bg-amber-700">{getStatusTranslation(t, book.status)}</Badge>}
+                      {book.status === 'available' && <Badge className="bg-green-700 text-white">{getStatusTranslation(t, book.status)}</Badge>}
+                      {book.status === 'available-soon' && <Badge className="bg-amber-700 text-white">{getStatusTranslation(t, book.status)}</Badge>}
                       {book.status === 'not-available' && <Badge variant="destructive">{getStatusTranslation(t, book.status)}</Badge>}
                     </TableCell>
                     <TableCell>{book.ageRange}</TableCell>
@@ -533,7 +533,7 @@ export default function AdminPortal() {
                                     {t('admin.overdueBy')} {Math.abs(daysLeft)} {t('myBooks.days')}
                                   </Badge>
                                 ) : daysLeft <= 3 ? (
-                                  <Badge className="bg-amber-700 text-xs">
+                                  <Badge className="bg-amber-700 text-white text-xs">
                                     {t('admin.dueIn')} {daysLeft} {t('myBooks.days')}
                                   </Badge>
                                 ) : (
@@ -785,11 +785,11 @@ function isOverdueOrder(order: Order): boolean {
 function orderStatusBadge(status: string, t: TFunction) {
   switch (status) {
     case 'pending':
-      return <Badge className="bg-amber-700"><Clock className="w-3 h-3 mr-1" />{t('admin.orderPending')}</Badge>;
+      return <Badge className="bg-amber-700 text-white"><Clock className="w-3 h-3 mr-1" />{t('admin.orderPending')}</Badge>;
     case 'confirmed':
-      return <Badge className="bg-blue-700"><CheckCircle2 className="w-3 h-3 mr-1" />{t('admin.orderConfirmed')}</Badge>;
+      return <Badge className="bg-blue-700 text-white"><CheckCircle2 className="w-3 h-3 mr-1" />{t('admin.orderConfirmed')}</Badge>;
     case 'returned':
-      return <Badge className="bg-green-700"><RotateCcw className="w-3 h-3 mr-1" />{t('admin.orderReturned')}</Badge>;
+      return <Badge className="bg-green-700 text-white"><RotateCcw className="w-3 h-3 mr-1" />{t('admin.orderReturned')}</Badge>;
     case 'cancelled':
       return <Badge variant="destructive">{t('admin.orderCancelled')}</Badge>;
   }
@@ -802,7 +802,7 @@ function dueDateBadge(dueDate: string, status: string, t: TFunction, formatDate:
     return <Badge variant="destructive" className="text-xs">{t('admin.overdueBy')} {Math.abs(diffDays)} {t('myBooks.days')}</Badge>;
   }
   if (diffDays <= 5) {
-    return <Badge className="bg-amber-700 text-xs">{t('admin.dueIn')} {diffDays} {t('myBooks.days')}</Badge>;
+    return <Badge className="bg-amber-700 text-white text-xs">{t('admin.dueIn')} {diffDays} {t('myBooks.days')}</Badge>;
   }
   return <span className="text-sm">{formatDate(dueDate)}</span>;
 }

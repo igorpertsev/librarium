@@ -75,7 +75,7 @@ export function BookCard({ book }: BookCardProps) {
 
   const getStatusBadge = () => {
     if (isPending) {
-      return <Badge className="bg-blue-700 hover:bg-blue-800">{t('bookStatus.pending')}</Badge>;
+      return <Badge className="bg-blue-700 text-white hover:bg-blue-800">{t('bookStatus.pending')}</Badge>;
     }
     if (isOrderedByOther) {
       return <Badge variant="destructive">{t('bookStatus.notAvailable')}</Badge>;
@@ -83,9 +83,9 @@ export function BookCard({ book }: BookCardProps) {
     const statusText = getStatusTranslation(t, book.status);
     switch (book.status) {
       case 'available':
-        return <Badge className="bg-green-700 hover:bg-green-800">{statusText}</Badge>;
+        return <Badge className="bg-green-700 text-white hover:bg-green-800">{statusText}</Badge>;
       case 'available-soon':
-        return <Badge className="bg-amber-700 hover:bg-amber-800">{statusText}</Badge>;
+        return <Badge className="bg-amber-700 text-white hover:bg-amber-800">{statusText}</Badge>;
       case 'not-available':
         return <Badge variant="destructive">{statusText}</Badge>;
     }
