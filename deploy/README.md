@@ -174,14 +174,63 @@ crontab -e
 0 3 * * * /home/ubuntu/librarium/deploy/backup.sh >> /home/ubuntu/librarium-backups/backup.log 2>&1
 ```
 
-Dumps on the VM do not survive losing the VM. Copy them elsewhere regularly, for example to your
-own machine:
+Dumps on the VM do not survive losing the VM, so also keep copies elsewhere.
+
+**Off-site copies (rclone).** `backup.sh` uploads every new dump when `RCLONE_REMOTE` is set, and deletes
+uploaded dumps older than `REMOTE_KEEP_DAYS` (default 90) there. rclone runs from its Docker image; its
+configuration lives in `~/.config/rclone/rclone.conf`. Oracle's Always Free tier includes 20 GB of Object
+Storage, which is plenty:
+
+1. Console → **Storage → Buckets → Create bucket** `librarium-backups` (private, standard tier). Note
+   your **namespace** on the bucket page.
+2. Profile menu → **User settings → Customer secret keys → Generate secret key**; copy the secret (it is
+   shown once) and the access key.
+3. On the VM:
+
+   ```bash
+   mkdir -p ~/.config/rclone && nano ~/.config/rclone/rclone.conf && chmod 600 ~/.config/rclone/rclone.conf
+   ```
+
+   ```ini
+   [oci]
+   type = s3
+   provider = Other
+   access_key_id = <access key>
+   secret_access_key = <secret>
+   region = <region, e.g. eu-frankfurt-1>
+   endpoint = https://<namespace>.compat.objectstorage.<region>.oraclecloud.com
+   no_check_bucket = true
+   ```
+
+4. Test it, then add the variable to the cron line:
+
+   ```bash
+   RCLONE_REMOTE=oci:librarium-backups deploy/backup.sh
+   ```
+
+   ```
+   0 3 * * * RCLONE_REMOTE=oci:librarium-backups /home/ubuntu/librarium/deploy/backup.sh >> /home/ubuntu/librarium-backups/backup.log 2>&1
+   ```
+
+Any rclone destination works the same way (Backblaze B2, another server over SFTP, ...). A copy in the same
+cloud account survives losing the VM, not losing the account; for that, also pull dumps to your own
+machine from time to time:
 
 ```bash
 scp 'ubuntu@<public-ip>:librarium-backups/*.dump' ./librarium-backups/
 ```
 
-or to object storage with `rclone`.
+**Restore drill.** A backup only counts if it restores. `deploy/verify-backup.sh` loads the newest dump
+(or the one given) into a throwaway PostgreSQL container without network access, prints the schema
+revision and row counts, and exits non-zero if anything fails. Run it once now and then weekly:
+
+```bash
+deploy/verify-backup.sh
+```
+
+```
+0 4 * * 0 /home/ubuntu/librarium/deploy/verify-backup.sh >> /home/ubuntu/librarium-backups/backup.log 2>&1
+```
 
 **Restore** a dump (replaces the current data):
 
