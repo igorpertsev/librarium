@@ -195,6 +195,7 @@ export function orderFromDto(dto: OrderDto): Order {
     renewalCount: dto.renewal_count,
     confirmedAt: dto.confirmed_at ?? undefined,
     returnedAt: dto.returned_at ?? undefined,
+    cancelledAt: dto.cancelled_at ?? undefined,
     contacts: {
       whatsapp: dto.contact_whatsapp ?? undefined,
       telegram: dto.contact_telegram ?? undefined,

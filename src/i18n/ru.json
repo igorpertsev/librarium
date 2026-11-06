@@ -438,5 +438,24 @@
     "description": "Книги, о возвращении которых мы вам напишем",
     "since": "с {{date}}",
     "availableNow": "Книга уже доступна: добавьте её в корзину."
+  },
+  "history": {
+    "title": "История выдач",
+    "description": "Возвращённые и отменённые заказы",
+    "cancelledOn": "Отменён",
+    "borrowAgain": "Взять снова",
+    "added_one": "В корзину добавлена {{count}} книга",
+    "added_few": "В корзину добавлены {{count}} книги",
+    "added_many": "В корзину добавлено {{count}} книг",
+    "added_other": "В корзину добавлено {{count}} книги",
+    "addedSome_one": "В корзину добавлена {{count}} книга; недоступно сейчас: {{unavailable}}",
+    "addedSome_few": "В корзину добавлены {{count}} книги; недоступно сейчас: {{unavailable}}",
+    "addedSome_many": "В корзину добавлено {{count}} книг; недоступно сейчас: {{unavailable}}",
+    "addedSome_other": "В корзину добавлено {{count}} книги; недоступно сейчас: {{unavailable}}",
+    "noneAvailable": "Ни одна из этих книг сейчас недоступна.",
+    "alreadyInCart": "Эти книги уже в корзине.",
+    "goToCart": "В корзину",
+    "showAll": "Показать все ({{count}})",
+    "showLess": "Свернуть"
   }
 }

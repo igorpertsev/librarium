@@ -430,5 +430,20 @@
     "description": "Books you will be emailed about once they are back",
     "since": "since {{date}}",
     "availableNow": "This book is available now: add it to your cart."
+  },
+  "history": {
+    "title": "Borrowing History",
+    "description": "Your returned and cancelled orders",
+    "cancelledOn": "Cancelled on",
+    "borrowAgain": "Borrow again",
+    "added_one": "{{count}} book added to your cart",
+    "added_other": "{{count}} books added to your cart",
+    "addedSome_one": "{{count}} book added to your cart; {{unavailable}} not available right now",
+    "addedSome_other": "{{count}} books added to your cart; {{unavailable}} not available right now",
+    "noneAvailable": "None of these books are available right now.",
+    "alreadyInCart": "These books are already in your cart.",
+    "goToCart": "Go to cart",
+    "showAll": "Show all ({{count}})",
+    "showLess": "Show less"
   }
 }

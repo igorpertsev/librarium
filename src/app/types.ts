@@ -77,6 +77,7 @@ export interface Order {
   renewalCount?: number;
   confirmedAt?: string;
   returnedAt?: string;
+  cancelledAt?: string;
   currency?: string;
   /** Contact details captured when the order was placed. */
   contacts?: UserContacts;
