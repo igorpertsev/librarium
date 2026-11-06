@@ -98,6 +98,8 @@ Docker Compose и Vite — корневой `.env` (шаблон `.env.example`)
 | Переменная | По умолчанию | Описание |
 | --- | --- | --- |
 | `ENVIRONMENT` | `development` | `development` / `test` / `production` |
+| `LOG_LEVEL`, `LOG_FORMAT` | `INFO`, json в production / text иначе | одна строка на запись, с id запроса |
+| `SENTRY_DSN` | — | необязательно: отправка необработанных ошибок в Sentry или совместимый сервис; персональные данные не отправляются |
 | `DATABASE_URL` | `postgresql+asyncpg://postgres:postgres@localhost:5433/bookstore` | `postgres://` и `postgresql://` приводятся к asyncpg |
 | `JWT_SECRET_KEY` | — | **обязателен в production**, ≥ 32 символов, не из списка слабых; в dev без него генерируется временный секрет |
 | `JWT_ALGORITHM` | `HS256` | HS256/384/512 |
@@ -244,6 +246,12 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 
 Только origins из `FRONTEND_ORIGINS`, `allow_credentials=True`, методы `GET/POST/PATCH/DELETE`,
 заголовки `Authorization`, `Content-Type`. Wildcard `*` отклоняется на старте.
+
+**Id запросов и логи.** У каждого ответа есть заголовок `X-Request-ID` (корректный id от прокси сохраняется, иначе
+создаётся новый). Тот же id есть в каждой строке лога этого запроса, включая строку доступа (`app.request`: метод,
+путь без query-строки, статус, длительность, IP клиента), и в `details` ответов `500 INTERNAL_ERROR`; frontend
+показывает его как код ошибки, чтобы обращение пользователя можно было сопоставить с логами. В production логи —
+строки JSON (`docker compose -f docker-compose.prod.yml logs backend`).
 
 ## Правила резервирования книг
 

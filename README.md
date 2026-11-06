@@ -98,6 +98,8 @@ Docker Compose and Vite read the root `.env` (template: `.env.example`). Filled-
 | Variable | Default | Description |
 | --- | --- | --- |
 | `ENVIRONMENT` | `development` | `development` / `test` / `production` |
+| `LOG_LEVEL`, `LOG_FORMAT` | `INFO`, json in production / text otherwise | one line per record with the request id |
+| `SENTRY_DSN` | — | optional: report unhandled errors to Sentry or a compatible service; no personal data is sent |
 | `DATABASE_URL` | `postgresql+asyncpg://postgres:postgres@localhost:5433/bookstore` | `postgres://` and `postgresql://` are normalised to asyncpg |
 | `JWT_SECRET_KEY` | — | **required in production**, ≥ 32 characters, not a known weak value; in development an ephemeral secret is generated if empty |
 | `JWT_ALGORITHM` | `HS256` | HS256/384/512 |
@@ -246,6 +248,12 @@ with the Web Locks API so two tabs never present the same token.
 
 Only the origins in `FRONTEND_ORIGINS`, `allow_credentials=True`, methods `GET/POST/PATCH/DELETE`,
 headers `Authorization`, `Content-Type`. A `*` wildcard is rejected at startup.
+
+**Request ids and logs.** Every response has an `X-Request-ID` header (a valid id from a proxy is kept, otherwise a
+new one is made). The same id appears on every log line written for that request, including one access line per
+request (`app.request`: method, path without the query string, status, duration, client IP), and in the `details`
+of `500 INTERNAL_ERROR` responses; the frontend shows it as a reference code, so a user's report can be matched with
+the logs. In production the logs are JSON lines (`docker compose -f docker-compose.prod.yml logs backend`).
 
 ## Book reservation rules
 

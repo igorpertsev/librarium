@@ -35,6 +35,9 @@ x-backend-env: &backend-env
   SMTP_PASSWORD: ${SMTP_PASSWORD:-}
   MAIL_FROM: ${MAIL_FROM:-Little Dragon Library <no-reply@localhost>}
   APP_BASE_URL: https://${DOMAIN:?set DOMAIN in .env}
+  # One JSON object per log line (default in production); optional error reporting.
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  SENTRY_DSN: ${SENTRY_DSN:-}
 
 services:
   db:

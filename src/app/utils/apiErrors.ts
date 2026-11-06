@@ -31,6 +31,9 @@ export function errorMessage(t: TFunction, error: ApiError): string {
       ? t('errors.bookUnavailableList', { titles: titles.join(', ') })
       : t('errors.bookUnavailable');
   }
+  if (error.code === 'INTERNAL_ERROR' && typeof error.details?.request_id === 'string') {
+    return t('errors.genericWithReference', { id: error.details.request_id });
+  }
   if (error.code === 'INCOMPLETE_BATCH') {
     const count = Number(error.details?.books_per_batch ?? 0);
     return t('errors.incompleteBatch', { count });

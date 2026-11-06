@@ -306,7 +306,8 @@
     "notFound": "Not found",
     "bookUnavailable": "Some books are no longer available",
     "bookUnavailableList": "No longer available: {{titles}}. Remove them from the cart and try again.",
-    "incompleteBatch": "Add books to complete a batch of {{count}} before checking out"
+    "incompleteBatch": "Add books to complete a batch of {{count}} before checking out",
+    "genericWithReference": "Something went wrong. Please try again. If it keeps happening, tell the library this code: {{id}}"
   },
   "checkout": {
     "title": "Confirm Order",
