@@ -352,6 +352,12 @@ two copies of the same title are two records (ISBN is not unique).
   `loan_period_days`, at most `max_renewals` times per order (library settings, default 1; 0 turns it off) and
   never once the books are overdue (`409 RENEWAL_NOT_ALLOWED`, `details.reason`). Due-date reminders already sent
   for the old date are dropped, so the customer is reminded again before the new one.
+- **Waiting list**: for a book that cannot be ordered now, `POST /waitlist/{book_id}` (idempotent; `409
+  BOOK_AVAILABLE` if it can be ordered) asks for an email once it is back. When an order is returned or
+  cancelled, or a librarian sets a book to `available`, everyone waiting for a now-orderable book gets one
+  `book_available` email (through the notification outbox) and their entries are removed; the first to order
+  gets it. The email is dropped if the book is taken again before it is sent. While someone waits for a book,
+  its borrower cannot extend the loan (`details.reason = requested_by_others`).
 
 `POST /api/v1/orders` runs in a single transaction (`app/services/orders.py`):
 
@@ -377,6 +383,7 @@ Concurrency is covered by tests in which both requests are held at a barrier rig
 | `books` | `cover_url`, `image_urls[]`, `age_range`, `category`, `status` (`available/available-soon/not-available`), `language`, `publication_year`, `is_active` (soft delete) |
 | `library_settings` | single row: `books_per_batch`, `price_per_batch NUMERIC(10,2)`, `currency`, `loan_period_days`, `max_renewals` |
 | `carts`, `cart_items` | one cart per user, `UNIQUE(cart_id, book_id)` |
+| `waitlist_entries` | customer waiting for a book, `UNIQUE(user_id, book_id)` |
 | `orders` | status, total/currency, batch price and contact snapshot, `due_date`, `renewal_count`, `confirmed_at/returned_at/cancelled_at`, CHECK `total = price × batches` |
 | `order_items` | book snapshot and `unit_price`, `reservation_active` + partial unique index |
 | `refresh_tokens` | `token_hash`, `family_id`, `expires_at`, `revoked_at`, `replaced_by_token_id`, user agent/IP |
@@ -404,6 +411,7 @@ Differences (adapters in `src/api/mappers.ts`):
 | GET/DELETE | `/cart` · POST `/cart/items` · DELETE `/cart/items/{book_id}` | signed-in user |
 | POST/GET | `/orders` · GET `/orders/{id}` · POST `/orders/{id}/cancel`, `/orders/{id}/renew` | signed-in user (own orders only) |
 | GET | `/library/rules` (batch size and price, loan period, extensions per loan) | everyone |
+| GET `/waitlist` · POST/DELETE `/waitlist/{book_id}` | “email me when this book is back” | signed-in user |
 | GET/POST | `/admin/books`, GET `/admin/books/stats`, GET/PATCH/DELETE `/admin/books/{id}` | admin |
 | GET | `/admin/users` · PATCH `/admin/users/{id}` (role, disable) | admin |
 | GET | `/admin/orders`, `/admin/orders/{id}` · PATCH `/admin/orders/{id}/status`, `/admin/orders/{id}/due-date` | admin |
@@ -426,8 +434,9 @@ Error format (the same for every status):
 ## Email notifications
 
 Customers receive an email when they place a request, when the library hands the books over
-(with the due date), when the library cancels a request, a few days before the due date and once
-the books are overdue. Messages are plain text, in English followed by Russian.
+(with the due date), when the library cancels a request, a few days before the due date, once
+the books are overdue, and when a book on their waiting list is back. Messages are plain text, in
+English followed by Russian.
 
 - **Outbox:** a row in `notifications` is written in the same transaction as the order change, so
   an email is never lost or sent for a change that was rolled back. Each event happens at most once

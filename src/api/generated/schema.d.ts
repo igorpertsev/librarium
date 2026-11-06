@@ -362,7 +362,7 @@ export interface paths {
         put?: never;
         /**
          * Renew My Order
-         * @description Extends a borrowed order's due date by one loan period. Allowed up to max_renewals times (GET /library/rules) and not once the books are overdue; otherwise 409 RENEWAL_NOT_ALLOWED with details.reason not_borrowed | overdue | limit_reached.
+         * @description Extends a borrowed order's due date by one loan period. Allowed up to max_renewals times (GET /library/rules) and not once the books are overdue; otherwise 409 RENEWAL_NOT_ALLOWED with details.reason not_borrowed | overdue | limit_reached | requested_by_others (another reader is waiting for one of the books).
          */
         post: operations["renew_my_order_api_v1_orders__order_id__renew_post"];
         delete?: never;
@@ -403,6 +403,44 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/waitlist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My Waitlist */
+        get: operations["my_waitlist_api_v1_waitlist_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/waitlist/{book_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Join Waitlist
+         * @description Email me when this book is available again. Idempotent: 201 when added, 200 when already waiting. 409 BOOK_AVAILABLE if the book can be ordered right now.
+         */
+        post: operations["join_waitlist_api_v1_waitlist__book_id__post"];
+        /** Leave Waitlist */
+        delete: operations["leave_waitlist_api_v1_waitlist__book_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1240,6 +1278,15 @@ export interface components {
             /** Phone */
             phone?: string | null;
             preferred_contact_method?: components["schemas"]["ContactMethod"] | null;
+        };
+        /** WaitlistEntryRead */
+        WaitlistEntryRead: {
+            book: components["schemas"]["BookBrief"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
     };
     responses: never;
@@ -2298,6 +2345,140 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LibraryRules"];
+                };
+            };
+        };
+    };
+    my_waitlist_api_v1_waitlist_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WaitlistEntryRead"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    join_waitlist_api_v1_waitlist__book_id__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WaitlistEntryRead"];
+                };
+            };
+            /** @description Added to the waiting list */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WaitlistEntryRead"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    leave_waitlist_api_v1_waitlist__book_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
         };

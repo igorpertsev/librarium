@@ -32,6 +32,8 @@ class Notification(Base):
     order_id: Mapped[uuid.UUID | None] = mapped_column(
         sa.ForeignKey("orders.id", ondelete="CASCADE")
     )
+    # For book_available: the book that is back (order_id is NULL then).
+    book_id: Mapped[uuid.UUID | None] = mapped_column(sa.ForeignKey("books.id", ondelete="CASCADE"))
     kind: Mapped[NotificationKind] = mapped_column(str_enum(NotificationKind, "notification_kind"))
     status: Mapped[NotificationStatus] = mapped_column(
         str_enum(NotificationStatus, "notification_status"),

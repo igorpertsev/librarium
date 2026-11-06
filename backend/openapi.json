@@ -1250,7 +1250,7 @@
           "orders"
         ],
         "summary": "Renew My Order",
-        "description": "Extends a borrowed order's due date by one loan period. Allowed up to max_renewals times (GET /library/rules) and not once the books are overdue; otherwise 409 RENEWAL_NOT_ALLOWED with details.reason not_borrowed | overdue | limit_reached.",
+        "description": "Extends a borrowed order's due date by one loan period. Allowed up to max_renewals times (GET /library/rules) and not once the books are overdue; otherwise 409 RENEWAL_NOT_ALLOWED with details.reason not_borrowed | overdue | limit_reached | requested_by_others (another reader is waiting for one of the books).",
         "operationId": "renew_my_order_api_v1_orders__order_id__renew_post",
         "security": [
           {
@@ -1419,6 +1419,184 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/v1/waitlist": {
+      "get": {
+        "tags": [
+          "waitlist"
+        ],
+        "summary": "My Waitlist",
+        "operationId": "my_waitlist_api_v1_waitlist_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/WaitlistEntryRead"
+                  },
+                  "type": "array",
+                  "title": "Response My Waitlist Api V1 Waitlist Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/waitlist/{book_id}": {
+      "post": {
+        "tags": [
+          "waitlist"
+        ],
+        "summary": "Join Waitlist",
+        "description": "Email me when this book is available again. Idempotent: 201 when added, 200 when already waiting. 409 BOOK_AVAILABLE if the book can be ordered right now.",
+        "operationId": "join_waitlist_api_v1_waitlist__book_id__post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WaitlistEntryRead"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Added to the waiting list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WaitlistEntryRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "waitlist"
+        ],
+        "summary": "Leave Waitlist",
+        "operationId": "leave_waitlist_api_v1_waitlist__book_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
           }
         }
       }
@@ -4556,6 +4734,24 @@
         "type": "object",
         "title": "UserUpdate",
         "description": "``PATCH /users/me``. Omitted fields are untouched; ``null`` clears a contact."
+      },
+      "WaitlistEntryRead": {
+        "properties": {
+          "book": {
+            "$ref": "#/components/schemas/BookBrief"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "book",
+          "created_at"
+        ],
+        "title": "WaitlistEntryRead"
       }
     },
     "securitySchemes": {

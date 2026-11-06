@@ -19,6 +19,7 @@ const MESSAGE_KEYS: Record<string, string> = {
   INVALID_DUE_DATE: 'errors.invalidDueDate',
   CANNOT_MODIFY_SELF: 'errors.cannotModifySelf',
   BOOK_NOT_FOUND: 'errors.bookNotFound',
+  BOOK_AVAILABLE: 'waitlist.availableNow',
   ORDER_NOT_FOUND: 'errors.notFound',
   USER_NOT_FOUND: 'errors.notFound',
   NOT_FOUND: 'errors.notFound',
@@ -43,6 +44,7 @@ export function errorMessage(t: TFunction, error: ApiError): string {
     const reason = String(error.details?.reason ?? '');
     if (reason === 'overdue') return t('errors.renewalOverdue');
     if (reason === 'limit_reached') return t('errors.renewalLimit');
+    if (reason === 'requested_by_others') return t('errors.renewalRequested');
     return t('errors.renewalNotAllowed');
   }
   if (error.code === 'INCOMPLETE_BATCH') {

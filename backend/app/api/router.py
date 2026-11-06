@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.routes import admin, auth, books, cart, health, library, orders, users
+from app.api.routes import admin, auth, books, cart, health, library, orders, users, waitlist
 
 API_PREFIX = "/api/v1"
 
@@ -12,4 +12,5 @@ api_router.include_router(books.router)
 api_router.include_router(cart.router)
 api_router.include_router(orders.router)
 api_router.include_router(library.router)
+api_router.include_router(waitlist.router)
 api_router.include_router(admin.router)

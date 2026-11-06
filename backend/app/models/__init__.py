@@ -8,6 +8,7 @@ from app.models.notification import Notification
 from app.models.order import Order, OrderItem
 from app.models.refresh_token import RefreshToken
 from app.models.user import User
+from app.models.waitlist import WaitlistEntry
 
 __all__ = [
     "Base",
@@ -20,4 +21,5 @@ __all__ = [
     "OrderItem",
     "RefreshToken",
     "User",
+    "WaitlistEntry",
 ]

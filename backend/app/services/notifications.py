@@ -25,9 +25,10 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
-from app.models import Notification, Order, User
-from app.models.enums import NotificationKind, NotificationStatus, OrderStatus
+from app.models import Book, Notification, Order, User
+from app.models.enums import BookStatus, NotificationKind, NotificationStatus, OrderStatus
 from app.repositories import orders as orders_repo
+from app.repositories.books import reserved_book_ids
 
 MAX_ATTEMPTS = 5
 MAX_AGE = timedelta(days=7)  # older queued messages are no longer useful
@@ -149,6 +150,30 @@ def _render(kind: NotificationKind, user: User, order: Order, app_url: str) -> t
     return subject, body
 
 
+def _render_book_available(user: User, book: Book, app_url: str) -> tuple[str, str]:
+    subject = f"“{book.title}” is available again · Книга снова доступна"
+    body = (
+        f"Hello {user.full_name},\n\n"
+        f"good news: “{book.title}” by {book.author}, which you were waiting for, is back on "
+        f"the shelf. Add it to your cart before someone else does: {app_url}/\n\n"
+        "This is the only email about this book; ask again on the site if you miss it.\n\n"
+        "— Little Dragon library\n\n"
+        "----------------------------------------\n\n"
+        f"Здравствуйте, {user.full_name}!\n\n"
+        f"хорошая новость: книга «{book.title}» ({book.author}), которую вы ждали, снова "
+        f"доступна. Добавьте её в корзину, пока её не заказал кто-то другой: {app_url}/\n\n"
+        "Это единственное письмо об этой книге; если не успеете, подпишитесь снова на сайте.\n\n"
+        "— Библиотека Little Dragon\n"
+    )
+    return subject, body
+
+
+async def _book_still_available(session: AsyncSession, book: Book) -> bool:
+    if not book.is_active or book.status is not BookStatus.AVAILABLE:
+        return False
+    return book.id not in await reserved_book_ids(session, [book.id])
+
+
 def build_message(settings: Settings, *, user: User, subject: str, body: str) -> EmailMessage:
     message = EmailMessage()
     message["From"] = settings.mail_from
@@ -201,21 +226,30 @@ async def deliver_pending(
 
     for notification in batch:
         user = await session.get(User, notification.user_id)
-        order = (
-            await orders_repo.get_order(session, notification.order_id)
-            if notification.order_id
-            else None
-        )
         if now - notification.created_at > MAX_AGE or user is None or not user.is_active:
             notification.status = NotificationStatus.EXPIRED
             report.expired += 1
             continue
-        if order is None:  # pragma: no cover - every current kind belongs to an order
-            notification.status = NotificationStatus.EXPIRED
-            report.expired += 1
-            continue
 
-        subject, body = _render(notification.kind, user, order, settings.app_base_url)
+        if notification.kind is NotificationKind.BOOK_AVAILABLE:
+            book = await session.get(Book, notification.book_id) if notification.book_id else None
+            # Someone else may have ordered it in the meantime: then the news is stale.
+            if book is None or not await _book_still_available(session, book):
+                notification.status = NotificationStatus.EXPIRED
+                report.expired += 1
+                continue
+            subject, body = _render_book_available(user, book, settings.app_base_url)
+        else:
+            order = (
+                await orders_repo.get_order(session, notification.order_id)
+                if notification.order_id
+                else None
+            )
+            if order is None:  # pragma: no cover - every order kind has an order
+                notification.status = NotificationStatus.EXPIRED
+                report.expired += 1
+                continue
+            subject, body = _render(notification.kind, user, order, settings.app_base_url)
         notification.recipient = user.email
         notification.subject = subject[:300]
         try:
