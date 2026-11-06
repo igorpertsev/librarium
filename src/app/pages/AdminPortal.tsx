@@ -523,7 +523,7 @@ function BookForm({ formData, setFormData, t }: {
 }) {
   return (
     <div className="grid gap-4">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="title">{t('bookForm.title')}</Label>
           <Input
@@ -542,7 +542,7 @@ function BookForm({ formData, setFormData, t }: {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="space-y-2">
           <Label htmlFor="category">{t('bookForm.category')}</Label>
           <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
@@ -586,7 +586,7 @@ function BookForm({ formData, setFormData, t }: {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="isbn">{t('bookForm.isbn')}</Label>
           <Input
