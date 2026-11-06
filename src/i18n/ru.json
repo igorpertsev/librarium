@@ -343,5 +343,15 @@
     "keepRequest": "Оставить заявку",
     "removeBatchTitle": "Убрать эту партию?",
     "removeBatchDesc": "Из корзины будет убрано книг: {{count}}."
+  },
+  "catalog": {
+    "availableOnly": "Доступны сейчас",
+    "sortBy": "Сортировка",
+    "sortTitle": "Название (А–Я)",
+    "sortTitleDesc": "Название (Я–А)",
+    "sortAuthor": "Автор (А–Я)",
+    "sortYearNewest": "Сначала новые издания",
+    "sortRecentlyAdded": "Недавно добавленные",
+    "loadMore": "Загрузить ещё"
   }
 }

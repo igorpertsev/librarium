@@ -343,5 +343,15 @@
     "keepRequest": "Keep request",
     "removeBatchTitle": "Remove this batch?",
     "removeBatchDesc": "{{count}} book(s) will be removed from your cart."
+  },
+  "catalog": {
+    "availableOnly": "Available now",
+    "sortBy": "Sort by",
+    "sortTitle": "Title (A–Z)",
+    "sortTitleDesc": "Title (Z–A)",
+    "sortAuthor": "Author (A–Z)",
+    "sortYearNewest": "Newest publications",
+    "sortRecentlyAdded": "Recently added",
+    "loadMore": "Load more"
   }
 }
