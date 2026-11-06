@@ -256,8 +256,8 @@ Container logs are rotated (5 × 10 MB per container), so they do not fill the d
 - Only ports 22, 80 and 443 are open; PostgreSQL and the backend are reachable only inside Docker.
 - `ENVIRONMENT=production` is enforced: the backend refuses to start with a weak `JWT_SECRET_KEY`,
   and cookies are `Secure` and `HttpOnly`.
-- Caddy sets HSTS, a Content-Security-Policy (scripts, styles and API calls only from your domain;
-  images from any HTTPS host, for book covers), `Permissions-Policy` and the usual hardening headers,
+- Caddy sets HSTS, a Content-Security-Policy (scripts, styles and API calls only from your domain,
+  plus openlibrary.org for the cover lookup; images from any HTTPS host, for book covers), `Permissions-Policy` and the usual hardening headers,
   and ignores client-supplied `X-Forwarded-For`, so the IP addresses stored with sessions cannot be
   spoofed. If you add a third-party script or font later, extend the policy in `deploy/web/Caddyfile`.
 - Keep the OS patched (`sudo apt-get update && sudo apt-get upgrade`; Ubuntu installs security
