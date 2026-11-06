@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '../components/ui/card';
 import dragonLogo from '../../imports/dragon.png';
 import { useTranslation } from 'react-i18next';
 import { PreferredContact } from '../types';
@@ -73,13 +73,13 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <main className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
             <img src={dragonLogo} alt={t('brand.logoAlt')} className="w-40 h-40 object-contain" />
           </div>
-          <CardTitle>{t('auth.createAccount')}</CardTitle>
+          <h1 data-slot="card-title" className="leading-none text-base">{t('auth.createAccount')}</h1>
           <CardDescription>{t('auth.joinLibrary')}</CardDescription>
         </CardHeader>
         <CardContent>
@@ -121,6 +121,8 @@ export default function Register() {
                     <button
                       type="button"
                       title={t('auth.markPreferred')}
+                      aria-label={t('a11y.markPreferred', { method: t(labelKey) })}
+                      aria-pressed={preferred === key}
                       disabled={!contactValues[key].trim()}
                       onClick={() => setPreferred(prev => prev === key ? '' : key)}
                       className={`px-2 rounded-md border transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${
@@ -136,17 +138,17 @@ export default function Register() {
               ))}
             </div>
 
-            {error && <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">{error}</div>}
+            {error && <div role="alert" className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">{error}</div>}
             <Button type="submit" className="w-full" disabled={submitting}>{t('auth.createAccountBtn')}</Button>
           </form>
         </CardContent>
         <CardFooter className="flex justify-center">
           <p className="text-sm text-muted-foreground">
             {t('auth.hasAccount')}{' '}
-            <Link to="/login" className="text-primary hover:underline">{t('auth.signIn')}</Link>
+            <Link to="/login" className="text-primary underline underline-offset-4">{t('auth.signIn')}</Link>
           </p>
         </CardFooter>
       </Card>
-    </div>
+    </main>
   );
 }

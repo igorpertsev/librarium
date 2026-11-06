@@ -231,7 +231,7 @@ export default function CustomerPortal() {
           )}
 
           {isLoading && books.length > 0 && (
-            <div className="text-center py-8">
+            <div role="status" className="text-center py-8">
               <p className="text-muted-foreground">{t('common.loading')}</p>
             </div>
           )}

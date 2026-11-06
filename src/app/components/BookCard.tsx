@@ -113,14 +113,18 @@ export function BookCard({ book }: BookCardProps) {
         {images.length > 1 && (
           <>
             <button
+              type="button"
               onClick={scrollPrev}
-              className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
+              aria-label={t('a11y.previousImage')}
+              className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity z-10"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button
+              type="button"
               onClick={scrollNext}
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
+              aria-label={t('a11y.nextImage')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity z-10"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -128,6 +132,9 @@ export function BookCard({ book }: BookCardProps) {
               {images.map((_, index) => (
                 <button
                   key={index}
+                  type="button"
+                  aria-label={t('a11y.showImage', { n: index + 1 })}
+                  aria-current={index === selectedIndex}
                   onClick={(e) => {
                     e.stopPropagation();
                     emblaApi?.scrollTo(index);
@@ -143,7 +150,16 @@ export function BookCard({ book }: BookCardProps) {
       </div>
       <CardContent className="flex-1 p-4">
         <div className="space-y-2">
-          <h3 className="line-clamp-2 min-h-[3rem]">{book.title}</h3>
+          <h2 className="line-clamp-2 min-h-[3rem] text-lg">
+            {/* Keyboard-accessible way to open the details (the cover is mouse-only). */}
+            <button
+              type="button"
+              onClick={() => setIsModalOpen(true)}
+              className="text-left rounded-sm hover:underline underline-offset-2 focus-visible:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {book.title}
+            </button>
+          </h2>
           <p className="text-sm text-muted-foreground">{book.author}</p>
           <div className="flex gap-2 flex-wrap">
             {getStatusBadge()}

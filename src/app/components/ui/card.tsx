@@ -29,10 +29,11 @@ function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
 }
 
 function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
+  // h2: card titles sit directly under the page h1; text-base keeps the previous look.
   return (
-    <h4
+    <h2
       data-slot="card-title"
-      className={cn("leading-none", className)}
+      className={cn("leading-none text-base", className)}
       {...props}
     />
   );

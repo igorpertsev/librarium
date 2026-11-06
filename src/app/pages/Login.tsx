@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '../components/ui/card';
 import dragonLogo from '../../imports/dragon.png';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -38,7 +38,7 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <main className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
@@ -48,7 +48,7 @@ export default function Login() {
               className="w-40 h-40 object-contain"
             />
           </div>
-          <CardTitle>{t('home.title')}</CardTitle>
+          <h1 data-slot="card-title" className="leading-none text-base">{t('home.title')}</h1>
           <CardDescription>{t('auth.signIn')}</CardDescription>
         </CardHeader>
         <CardContent>
@@ -76,7 +76,7 @@ export default function Login() {
               />
             </div>
             {error && (
-              <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
+              <div role="alert" className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
                 {error}
               </div>
             )}
@@ -88,12 +88,12 @@ export default function Login() {
         <CardFooter className="flex justify-center">
           <p className="text-sm text-muted-foreground">
             {t('auth.noAccount')}{' '}
-            <Link to="/register" className="text-primary hover:underline">
+            <Link to="/register" className="text-primary underline underline-offset-4">
               {t('auth.signUp')}
             </Link>
           </p>
         </CardFooter>
       </Card>
-    </div>
+    </main>
   );
 }

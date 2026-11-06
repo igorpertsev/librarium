@@ -367,5 +367,21 @@
   },
   "availability": {
     "expectedBack": "Ожидается к {{date}}"
+  },
+  "a11y": {
+    "previousImage": "Предыдущее изображение",
+    "nextImage": "Следующее изображение",
+    "showImage": "Показать изображение {{n}}",
+    "zoomIn": "Увеличить",
+    "zoomOut": "Уменьшить",
+    "closeZoom": "Закрыть увеличенное изображение",
+    "removeFromCart": "Убрать «{{title}}» из корзины",
+    "removeBatch": "Убрать эту партию",
+    "editBook": "Изменить «{{title}}»",
+    "deleteBook": "Удалить «{{title}}»",
+    "saveDueDate": "Сохранить срок возврата",
+    "cancelEdit": "Отменить изменение",
+    "markPreferred": "Сделать {{method}} предпочтительным способом связи",
+    "skipToContent": "Перейти к основному содержимому"
   }
 }

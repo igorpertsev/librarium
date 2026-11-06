@@ -19,4 +19,11 @@ i18n
     }
   });
 
+// Screen readers pick the pronunciation from <html lang>.
+const syncDocumentLanguage = (language: string) => {
+  document.documentElement.lang = language;
+};
+syncDocumentLanguage(i18n.language);
+i18n.on('languageChanged', syncDocumentLanguage);
+
 export default i18n;

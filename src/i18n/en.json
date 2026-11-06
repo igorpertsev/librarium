@@ -365,5 +365,21 @@
   },
   "availability": {
     "expectedBack": "Expected back by {{date}}"
+  },
+  "a11y": {
+    "previousImage": "Previous image",
+    "nextImage": "Next image",
+    "showImage": "Show image {{n}}",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "closeZoom": "Close zoomed image",
+    "removeFromCart": "Remove “{{title}}” from cart",
+    "removeBatch": "Remove this batch",
+    "editBook": "Edit “{{title}}”",
+    "deleteBook": "Delete “{{title}}”",
+    "saveDueDate": "Save due date",
+    "cancelEdit": "Cancel editing",
+    "markPreferred": "Mark {{method}} as preferred contact",
+    "skipToContent": "Skip to main content"
   }
 }

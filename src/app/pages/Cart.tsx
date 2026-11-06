@@ -154,6 +154,7 @@ export default function Cart() {
                         variant="ghost"
                         size="sm"
                         onClick={() => removeBatch(batch.batchId)}
+                        aria-label={t('a11y.removeBatch')}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -178,6 +179,7 @@ export default function Cart() {
                           variant="ghost"
                           size="sm"
                           onClick={() => removeBookFromCart(batch.batchId, book.id)}
+                          aria-label={t('a11y.removeFromCart', { title: book.title })}
                         >
                           <X className="w-4 h-4" />
                         </Button>
@@ -210,6 +212,7 @@ export default function Cart() {
                         variant="ghost"
                         size="sm"
                         onClick={() => removeBatch(batch.batchId)}
+                        aria-label={t('a11y.removeBatch')}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -231,8 +234,10 @@ export default function Cart() {
                             </Badge>
                           )}
                           <button
+                            type="button"
                             onClick={() => removeBookFromCart(batch.batchId, book.id)}
-                            className="absolute top-1 right-1 p-1 bg-destructive rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                            aria-label={t('a11y.removeFromCart', { title: book.title })}
+                            className="absolute top-1 right-1 p-1 bg-destructive rounded-full opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
                           >
                             <X className="w-3 h-3 text-destructive-foreground" />
                           </button>
@@ -280,7 +285,7 @@ export default function Cart() {
               )}
 
               {unavailableBookIds.size > 0 && (
-                <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
+                <div role="alert" className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
                   {t('cart.unavailableNote')}
                 </div>
               )}

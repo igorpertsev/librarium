@@ -179,6 +179,17 @@ export default function AdminPortal() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Pagination links need an href to be reachable and operable from the keyboard.
+  const pageLinkProps = (page: number, disabled: boolean) => ({
+    href: '#',
+    'aria-disabled': disabled || undefined,
+    tabIndex: disabled ? -1 : undefined,
+    onClick: (event: React.MouseEvent) => {
+      event.preventDefault();
+      if (!disabled) handlePageChange(page);
+    },
+  });
+
   const handleRoleChange = async (userId: string, newRole: 'customer' | 'admin') => {
     const result = await updateUserRole(userId, newRole);
     if (result.ok) {
@@ -340,6 +351,7 @@ export default function AdminPortal() {
                           variant="ghost"
                           size="sm"
                           onClick={() => openEditDialog(book)}
+                          aria-label={t('a11y.editBook', { title: book.title })}
                         >
                           <Pencil className="w-4 h-4" />
                         </Button>
@@ -355,6 +367,7 @@ export default function AdminPortal() {
                             });
                             if (confirmed) handleDeleteBook(book.id);
                           }}
+                          aria-label={t('a11y.deleteBook', { title: book.title })}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -374,7 +387,7 @@ export default function AdminPortal() {
                     <PaginationPrevious
                       label={t('pagination.previous')}
                       ariaLabel={t('pagination.previousAria')}
-                      onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
+                      {...pageLinkProps(currentPage - 1, currentPage === 1)}
                       className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
                     />
                   </PaginationItem>
@@ -388,7 +401,7 @@ export default function AdminPortal() {
                       return (
                         <PaginationItem key={page}>
                           <PaginationLink
-                            onClick={() => handlePageChange(page)}
+                            {...pageLinkProps(page, false)}
                             isActive={currentPage === page}
                             className="cursor-pointer"
                           >
@@ -410,7 +423,7 @@ export default function AdminPortal() {
                     <PaginationNext
                       label={t('pagination.next')}
                       ariaLabel={t('pagination.nextAria')}
-                      onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
+                      {...pageLinkProps(currentPage + 1, currentPage === totalPages)}
                       className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
                     />
                   </PaginationItem>
@@ -986,6 +999,7 @@ function OrdersTab({
                       <div className="flex gap-1 items-center">
                         <input
                           type="date"
+                          aria-label={t('admin.dueDate')}
                           value={dueDateInput}
                           onChange={e => setDueDateInput(e.target.value)}
                           className="border border-border rounded px-2 py-1 text-sm bg-background"
@@ -993,8 +1007,8 @@ function OrdersTab({
                         <Button size="sm" className="h-7 px-2" onClick={() => {
                           if (dueDateInput) runOrderAction(order.id, () => onUpdateDueDate(order.id, dueDateInput), 'admin.dueDateUpdated');
                           setEditingDueDateId(null);
-                        }}>✓</Button>
-                        <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => setEditingDueDateId(null)}>✕</Button>
+                        }} aria-label={t('a11y.saveDueDate')}>✓</Button>
+                        <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => setEditingDueDateId(null)} aria-label={t('a11y.cancelEdit')}>✕</Button>
                       </div>
                     ) : (
                       <button
