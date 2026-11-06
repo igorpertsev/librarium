@@ -212,6 +212,11 @@ export const adminApi = {
       method: 'PATCH',
       body: { due_date: dueDate },
     }),
+  settleLateFee: (orderId: string, action: 'paid' | 'waived') =>
+    apiRequest<OrderDto>(`/admin/orders/${id(orderId)}/late-fee`, {
+      method: 'PATCH',
+      body: { action },
+    }),
   getSettings: () => apiRequest<LibrarySettingsDto>('/admin/settings'),
   reportSummary: (period: ReportPeriod) =>
     apiRequest<ReportSummaryDto>('/admin/reports/summary', { query: period }),

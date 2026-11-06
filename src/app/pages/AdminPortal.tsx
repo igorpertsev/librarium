@@ -53,7 +53,7 @@ export default function AdminPortal() {
   const fmt = useFormat();
   const [batchDraft, setBatchDraft] = useState<BatchConfig>(batchConfig);
   const { users, updateUserRole, refreshUsers } = useAuth();
-  const { orders, isLoading: ordersLoading, confirmOrder, markReturned, cancelOrder, updateDueDate } = useOrders();
+  const { orders, isLoading: ordersLoading, confirmOrder, markReturned, cancelOrder, updateDueDate, settleLateFee } = useOrders();
   const overdueCount = orders.filter(isOverdueOrder).length;
   const { invalidateCatalog } = useCatalog();
   const { confirm, confirmDialog } = useConfirm();
@@ -610,6 +610,7 @@ export default function AdminPortal() {
                 onMarkReturned={markReturned}
                 onCancel={cancelOrder}
                 onUpdateDueDate={updateDueDate}
+                onSettleLateFee={settleLateFee}
                 onChanged={() => {
                   refreshUsers().catch(() => undefined);
                   loadBooks(currentPage);
@@ -986,6 +987,7 @@ function OrdersTab({
   onMarkReturned,
   onCancel,
   onUpdateDueDate,
+  onSettleLateFee,
   onChanged,
   t,
 }: {
@@ -994,6 +996,7 @@ function OrdersTab({
   onMarkReturned: (id: string) => Promise<ActionResult>;
   onCancel: (id: string) => Promise<ActionResult>;
   onUpdateDueDate: (id: string, date: string) => Promise<ActionResult>;
+  onSettleLateFee: (id: string, action: 'paid' | 'waived') => Promise<ActionResult>;
   onChanged: () => void;
   t: TFunction;
 }) {
@@ -1233,6 +1236,36 @@ function OrdersTab({
                         <span className="text-xs text-muted-foreground">
                           {t('admin.returnedOn')} {fmt.date(order.returnedAt)}
                         </span>
+                      )}
+                      {order.status === 'returned' && order.lateFeeSettledAt && (
+                        <span className="text-xs text-muted-foreground">
+                          {(order.lateFee ?? 0) > 0
+                            ? t('admin.lateFeePaid', { amount: fmt.money(order.lateFee ?? 0, order.currency) })
+                            : t('admin.lateFeeWaived')}
+                        </span>
+                      )}
+                      {order.status === 'returned' && (order.lateFee ?? 0) > 0 && !order.lateFeeSettledAt && (
+                        <div className="flex flex-wrap items-center gap-2 w-full">
+                          <Badge variant="destructive">
+                            {t('admin.lateFeeOwed', { amount: fmt.money(order.lateFee ?? 0, order.currency) })}
+                          </Badge>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={busyOrderId === order.id}
+                            onClick={() => runOrderAction(order.id, () => onSettleLateFee(order.id, 'paid'), 'admin.lateFeePaidMsg')}
+                          >
+                            {t('admin.markFeePaid')}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            disabled={busyOrderId === order.id}
+                            onClick={() => runOrderAction(order.id, () => onSettleLateFee(order.id, 'waived'), 'admin.lateFeeWaivedMsg')}
+                          >
+                            {t('admin.waiveFee')}
+                          </Button>
+                        </div>
                       )}
                       {order.status === 'cancelled' && (
                         <span className="text-xs text-muted-foreground">{t('admin.orderCancelled')}</span>

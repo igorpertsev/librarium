@@ -81,6 +81,22 @@ async def place_order(session: AsyncSession, user: User) -> Order:
         raise BadRequestError("Your cart is empty", code="CART_EMPTY")
 
     library = await get_library_settings(session, lock="share")
+    if library.block_overdue:
+        overdue = (
+            await session.scalars(
+                select(Order.number).where(
+                    Order.user_id == user.id,
+                    Order.status == OrderStatus.CONFIRMED,
+                    Order.due_date < datetime.now(UTC).date(),
+                )
+            )
+        ).all()
+        if overdue:
+            raise ConflictError(
+                "Return your overdue books before ordering new ones",
+                code="OVERDUE_LOANS",
+                details={"orders": sorted(overdue)},
+            )
     per_batch = library.books_per_batch
     batch_count = len(items) // per_batch
     if batch_count == 0:
@@ -198,6 +214,12 @@ async def _apply_status(session: AsyncSession, order: Order, new_status: OrderSt
         order.confirmed_at = now
     elif new_status is OrderStatus.RETURNED:
         order.returned_at = now
+        # Late: the library's fee per day for every day after the due date.
+        days_late = (now.date() - order.due_date).days
+        if days_late > 0:
+            fee_per_day = (await get_library_settings(session)).late_fee_per_day
+            if fee_per_day > 0:
+                order.late_fee = fee_per_day * days_late
     elif new_status is OrderStatus.CANCELLED:
         order.cancelled_at = now
     # Keep the indexed reservation flag in sync with ACTIVE_ORDER_STATUSES.
@@ -334,5 +356,17 @@ async def change_due_date(session: AsyncSession, order_id: uuid.UUID, due_date: 
             "The due date cannot be before the order date", code="INVALID_DUE_DATE"
         )
     order.due_date = due_date
+    await session.commit()
+    return await get_order(session, order_id)
+
+
+async def settle_late_fee(session: AsyncSession, order_id: uuid.UUID, *, waive: bool) -> Order:
+    """The reader paid the late fee, or the library waived it."""
+    order = await get_order(session, order_id)
+    if not order.late_fee or order.late_fee_settled_at is not None:
+        raise ConflictError("This order has no unpaid late fee", code="NO_LATE_FEE")
+    if waive:
+        order.late_fee = Decimal("0.00")
+    order.late_fee_settled_at = datetime.now(UTC)
     await session.commit()
     return await get_order(session, order_id)

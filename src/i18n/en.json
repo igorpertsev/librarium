@@ -181,7 +181,17 @@
     "remind": "Remind",
     "reminderQueued": "Reminder queued: the customer will get an email within a few minutes",
     "holdHours": "Hold for the next reader (hours)",
-    "holdHoursHint": "A returned book is kept for the reader who has waited longest, who is emailed. 0: everybody waiting is emailed and the first to order gets it."
+    "holdHoursHint": "A returned book is kept for the reader who has waited longest, who is emailed. 0: everybody waiting is emailed and the first to order gets it.",
+    "blockOverdue": "Pause new orders while a loan is overdue",
+    "lateFeePerDay": "Late fee per day ({{currency}})",
+    "lateRulesHint": "The fee is worked out when overdue books are marked returned. 0: no fees.",
+    "lateFeeOwed": "Late fee {{amount}}",
+    "lateFeePaid": "Late fee {{amount}} paid",
+    "lateFeeWaived": "Late fee waived",
+    "markFeePaid": "Paid",
+    "waiveFee": "Waive",
+    "lateFeePaidMsg": "Late fee marked as paid",
+    "lateFeeWaivedMsg": "Late fee waived"
   },
   "bookForm": {
     "title": "Title",
@@ -365,7 +375,9 @@
     "unknownTags": "Unknown tags: {{tags}}",
     "activeOrders": "Return or cancel your current orders first, then delete the account.",
     "adminAccount": "Administrators cannot delete their own account. Ask another administrator.",
-    "notBorrowed": "You can review a book once you have borrowed it."
+    "notBorrowed": "You can review a book once you have borrowed it.",
+    "overdueLoans": "Please return your overdue books ({{orders}}) before ordering new ones.",
+    "noLateFee": "This order has no unpaid late fee."
   },
   "checkout": {
     "title": "Confirm Order",
@@ -761,5 +773,14 @@
     "cardNote": "Held for you until {{date}}",
     "giveUp": "Give it up",
     "released": "“{{title}}” goes to the next reader."
+  },
+  "late": {
+    "overdueTitle_one": "A loan is overdue",
+    "overdueTitle_other": "{{count}} loans are overdue",
+    "overdueText": "Please bring back the books from order {{orders}}.",
+    "ordersPaused": "New orders are paused until they are returned.",
+    "accrued": "Late fee so far: {{amount}} ({{perDay}} a day).",
+    "owedTitle": "Late fee to pay",
+    "owed": "You owe {{amount}} for late returns (order {{orders}}). Please pay at the library."
   }
 }

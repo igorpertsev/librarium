@@ -45,6 +45,7 @@ from app.schemas.catalog import (
 from app.schemas.common import error_responses
 from app.schemas.library_settings import LibrarySettingsRead, LibrarySettingsUpdate
 from app.schemas.order import (
+    LateFeeSettlement,
     OrderDueDateUpdate,
     OrderPage,
     OrderRead,
@@ -342,6 +343,19 @@ async def admin_change_order_due_date(
     order_id: uuid.UUID, body: OrderDueDateUpdate, session: SessionDep
 ) -> OrderRead:
     order = await orders_service.change_due_date(session, order_id, body.due_date)
+    return OrderRead.model_validate(order)
+
+
+@router.patch(
+    "/orders/{order_id}/late-fee",
+    response_model=OrderRead,
+    responses=error_responses(404, 409, 422),
+    description="Record that the late fee was paid, or waive it (409 NO_LATE_FEE without one).",
+)
+async def admin_settle_late_fee(
+    order_id: uuid.UUID, body: LateFeeSettlement, session: SessionDep
+) -> OrderRead:
+    order = await orders_service.settle_late_fee(session, order_id, waive=body.action == "waived")
     return OrderRead.model_validate(order)
 
 

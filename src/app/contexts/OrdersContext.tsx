@@ -22,6 +22,8 @@ interface OrdersContextType {
   /** Customers: extend a borrowed order by one loan period. */
   renewOrder: (orderId: string) => Promise<ActionResult<Order>>;
   updateDueDate: (orderId: string, dueDate: string) => Promise<ActionResult>;
+  /** Admins: the reader paid a late fee, or the library waived it. */
+  settleLateFee: (orderId: string, action: 'paid' | 'waived') => Promise<ActionResult>;
   /**
    * UX hint only: true if the copy is in an active order we know about. The server makes
    * the final decision when adding to the cart and when the order is placed.
@@ -119,6 +121,11 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
       replaceOrder(await adminApi.setOrderDueDate(orderId, dueDate));
     });
 
+  const settleLateFee = (orderId: string, action: 'paid' | 'waived') =>
+    runAction(async () => {
+      replaceOrder(await adminApi.settleLateFee(orderId, action));
+    });
+
   const isBookUnavailable = (bookId: string): boolean =>
     knownReserved.has(bookId) ||
     orders.some((o) => ACTIVE_STATUSES.has(o.status) && o.books.some((b) => b.id === bookId));
@@ -138,6 +145,7 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
         cancelOrder,
         renewOrder,
         updateDueDate,
+        settleLateFee,
         isBookUnavailable,
         markBooksUnavailable,
         getOrdersForUser,

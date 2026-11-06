@@ -16,6 +16,7 @@ import { daysUntil, useFormat } from '../utils/format';
 import { useConfirm } from '../components/ConfirmDialog';
 import { orderLabel } from '../utils/translations';
 import { useLibraryRules } from '../utils/useLibraryRules';
+import { LateReturnsCard } from '../components/LateReturnsCard';
 import { useWaitlist } from '../contexts/WaitlistContext';
 import { WaitlistButton } from '../components/WaitlistButton';
 import { ReadingListCard } from '../components/ReadingListCard';
@@ -262,6 +263,7 @@ export default function Profile() {
         </Card>
       </div>
 
+      <LateReturnsCard orders={userOrders} />
       <ExtendFromLink orders={userOrders} confirm={confirm} renew={handleRenew} />
       <HeldForYouCard />
       <NextInSeriesCard />

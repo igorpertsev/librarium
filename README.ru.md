@@ -408,6 +408,14 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 его завершает. Истёкшее удержание (notifier проверяет каждый цикл) или отказ (`DELETE /users/me/holds/{book_id}`)
 передаёт книгу следующему в очереди. `hold_hours = 0` — прежнее поведение: письмо получают все ждущие.
 
+**Просрочка**: при `block_overdue` (настройка библиотеки, по умолчанию включена) читатель с просроченной выдачей
+не может оформить новый заказ (`409 OVERDUE_LOANS`, в `details.orders` — номера заказов); профиль об этом
+сообщает. При `late_fee_per_day` > 0 (по умолчанию 0 — без штрафов) отметка «возвращён» для просроченного заказа
+записывает в заказ `late_fee` = штраф × дни просрочки. Библиотекарь отмечает штраф оплаченным или отменяет его
+(`PATCH /admin/orders/{id}/late-fee` с `{"action": "paid" | "waived"}`; отмена обнуляет штраф; `409 NO_LATE_FEE`,
+если платить нечего) — это заполняет `late_fee_settled_at`. Приложение не принимает платежи: штраф платят в
+библиотеке.
+
 `POST /api/v1/orders` выполняется в одной транзакции (`app/services/orders.py`):
 
 1. `SELECT … FOR UPDATE` строки корзины (защита от двойного клика/двух вкладок);
@@ -433,11 +441,11 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 | `tags`, `book_tags` | `slug` тега (уникальный, CHECK формата), `name_en`, `name_ru`; связь книга ↔ тег |
 | `series` | `name` (уникальное), `name_en` / `name_ru` (названия на языках интерфейса, необязательно), `description`, `openlibrary_key` (уникальный, из поиска по ISBN) |
 | `book_translations` | на книгу и язык (`en`/`ru`): `title`, `author`, `description`, `title_source`/`description_source` (`manual/wikidata/wikipedia/machine`), `source_url` (ссылка на Википедию) |
-| `library_settings` | одна строка: `books_per_batch`, `price_per_batch NUMERIC(10,2)`, `currency`, `loan_period_days` |
+| `library_settings` | одна строка: `books_per_batch`, `price_per_batch NUMERIC(10,2)`, `currency`, `loan_period_days`, `max_renewals`, `hold_hours`, `block_overdue`, `late_fee_per_day NUMERIC(10,2)` |
 | `carts`, `cart_items` | одна корзина на пользователя, `UNIQUE(cart_id, book_id)` |
 | `reading_list_entries` | «хочу прочитать», одна запись на читателя и издание, `UNIQUE(user_id, book_id)` |
 | `reviews` | оценка 1–5 (CHECK), текст, `status` (`pending/published/rejected`), одна на читателя и издание |
-| `orders` | статус, сумма/валюта, снимок цены партии и контактов, `due_date`, `confirmed_at/returned_at/cancelled_at`, CHECK `total = price × batches` |
+| `orders` | статус, сумма/валюта, снимок цены партии и контактов, `due_date`, `renewal_count`, `confirmed_at/returned_at/cancelled_at`, `late_fee`/`late_fee_settled_at`, CHECK `total = price × batches` |
 | `order_items` | снимок книги и `unit_price`, `reservation_active` + частичный уникальный индекс |
 | `refresh_tokens` | `token_hash`, `family_id`, `expires_at`, `revoked_at`, `replaced_by_token_id`, user-agent/IP |
 
@@ -483,7 +491,7 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 | POST/PATCH/DELETE | `/admin/tags`, `/admin/tags/{id}` · POST `/admin/tags/{id}/merge`; то же для `/admin/series` | admin |
 | POST | `/admin/translations/suggest` (название, автор и описание на другом языке; ничего не сохраняет) | admin |
 | GET | `/admin/users` · PATCH `/admin/users/{id}` (роль, блокировка) | admin |
-| GET | `/admin/orders`, `/admin/orders/{id}` · PATCH `/admin/orders/{id}/status`, `/admin/orders/{id}/due-date` | admin |
+| GET | `/admin/orders`, `/admin/orders/{id}` · PATCH `/admin/orders/{id}/status`, `/admin/orders/{id}/due-date`, `/admin/orders/{id}/late-fee` | admin |
 | GET/PATCH | `/admin/settings` (партия, цена, валюта, срок выдачи) | admin |
 
 Ответы публичного каталога (`/books…`, `/tags`, `/series…`, `/library/rules`) содержат слабый `ETag` и

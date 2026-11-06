@@ -1055,6 +1055,26 @@ export interface paths {
         patch: operations["admin_change_order_due_date_api_v1_admin_orders__order_id__due_date_patch"];
         trace?: never;
     };
+    "/api/v1/admin/orders/{order_id}/late-fee": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Admin Settle Late Fee
+         * @description Record that the late fee was paid, or waive it (409 NO_LATE_FEE without one).
+         */
+        patch: operations["admin_settle_late_fee_api_v1_admin_orders__order_id__late_fee_patch"];
+        trace?: never;
+    };
     "/api/v1/admin/orders/{order_id}/remind": {
         parameters: {
             query?: never;
@@ -1909,6 +1929,14 @@ export interface components {
              */
             held_until: string;
         };
+        /** LateFeeSettlement */
+        LateFeeSettlement: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "paid" | "waived";
+        };
         /**
          * LibraryRules
          * @description Lending rules every reader may know (GET /library/rules).
@@ -1929,6 +1957,16 @@ export interface components {
              * @description How long a returned book is held for the next reader
              */
             hold_hours: number;
+            /**
+             * Block Overdue
+             * @description No new orders while one of the reader's loans is overdue
+             */
+            block_overdue: boolean;
+            /**
+             * Late Fee Per Day
+             * @description Charged per day late when books come back (0: none)
+             */
+            late_fee_per_day: string;
         };
         /** LibrarySettingsRead */
         LibrarySettingsRead: {
@@ -1947,6 +1985,16 @@ export interface components {
              * @description How long a returned book is held for the next reader
              */
             hold_hours: number;
+            /**
+             * Block Overdue
+             * @description No new orders while one of the reader's loans is overdue
+             */
+            block_overdue: boolean;
+            /**
+             * Late Fee Per Day
+             * @description Charged per day late when books come back (0: none)
+             */
+            late_fee_per_day: string;
             /**
              * Updated At
              * Format: date-time
@@ -1967,6 +2015,10 @@ export interface components {
             max_renewals?: number | null;
             /** Hold Hours */
             hold_hours?: number | null;
+            /** Block Overdue */
+            block_overdue?: boolean | null;
+            /** Late Fee Per Day */
+            late_fee_per_day?: number | string | null;
         };
         /** LoginRequest */
         LoginRequest: {
@@ -2162,6 +2214,16 @@ export interface components {
             due_date: string;
             /** Renewal Count */
             renewal_count: number;
+            /**
+             * Late Fee
+             * @description Charged for returning the books late
+             */
+            late_fee: string | null;
+            /**
+             * Late Fee Settled At
+             * @description When it was paid or waived
+             */
+            late_fee_settled_at: string | null;
             /** Confirmed At */
             confirmed_at: string | null;
             /** Returned At */
@@ -5643,6 +5705,77 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_settle_late_fee_api_v1_admin_orders__order_id__late_fee_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LateFeeSettlement"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderRead"];
                 };
             };
             /** @description Unauthorized */

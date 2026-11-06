@@ -37,6 +37,7 @@ const MESSAGE_KEYS: Record<string, string> = {
   SERIES_NOT_FOUND: 'errors.seriesNotFound',
   SERIES_EXISTS: 'errors.seriesExists',
   SAME_SERIES: 'errors.sameMergeTarget',
+  NO_LATE_FEE: 'errors.noLateFee',
 };
 
 /** Translated, user-facing message for an API error. */
@@ -64,6 +65,10 @@ export function errorMessage(t: TFunction, error: ApiError): string {
   if (error.code === 'INCOMPLETE_BATCH') {
     const count = Number(error.details?.books_per_batch ?? 0);
     return t('errors.incompleteBatch', { count });
+  }
+  if (error.code === 'OVERDUE_LOANS') {
+    const orders = Array.isArray(error.details?.orders) ? error.details.orders.map((n) => `#${n}`).join(', ') : '';
+    return t('errors.overdueLoans', { orders });
   }
   if (error.code === 'UNKNOWN_TAGS') {
     const tags = Array.isArray(error.details?.tags) ? error.details.tags.join(', ') : '';

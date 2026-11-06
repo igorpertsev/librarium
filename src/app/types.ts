@@ -121,6 +121,10 @@ export interface Order {
   confirmedAt?: string;
   returnedAt?: string;
   cancelledAt?: string;
+  /** Fee charged for a late return (set when the order was returned late). */
+  lateFee?: number;
+  /** When the fee was paid or waived; unset while it is still owed. */
+  lateFeeSettledAt?: string;
   currency?: string;
   /** Contact details captured when the order was placed. */
   contacts?: UserContacts;

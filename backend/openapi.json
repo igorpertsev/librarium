@@ -4367,6 +4367,105 @@
         }
       }
     },
+    "/api/v1/admin/orders/{order_id}/late-fee": {
+      "patch": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Settle Late Fee",
+        "description": "Record that the late fee was paid, or waive it (409 NO_LATE_FEE without one).",
+        "operationId": "admin_settle_late_fee_api_v1_admin_orders__order_id__late_fee_patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LateFeeSettlement"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
     "/api/v1/admin/orders/{order_id}/remind": {
       "post": {
         "tags": [
@@ -7530,6 +7629,24 @@
         ],
         "title": "HeldBookRead"
       },
+      "LateFeeSettlement": {
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "paid",
+              "waived"
+            ],
+            "title": "Action"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "action"
+        ],
+        "title": "LateFeeSettlement"
+      },
       "LibraryRules": {
         "properties": {
           "books_per_batch": {
@@ -7556,6 +7673,16 @@
             "type": "integer",
             "title": "Hold Hours",
             "description": "How long a returned book is held for the next reader"
+          },
+          "block_overdue": {
+            "type": "boolean",
+            "title": "Block Overdue",
+            "description": "No new orders while one of the reader's loans is overdue"
+          },
+          "late_fee_per_day": {
+            "type": "string",
+            "title": "Late Fee Per Day",
+            "description": "Charged per day late when books come back (0: none)"
           }
         },
         "type": "object",
@@ -7565,7 +7692,9 @@
           "currency",
           "loan_period_days",
           "max_renewals",
-          "hold_hours"
+          "hold_hours",
+          "block_overdue",
+          "late_fee_per_day"
         ],
         "title": "LibraryRules",
         "description": "Lending rules every reader may know (GET /library/rules)."
@@ -7597,6 +7726,16 @@
             "title": "Hold Hours",
             "description": "How long a returned book is held for the next reader"
           },
+          "block_overdue": {
+            "type": "boolean",
+            "title": "Block Overdue",
+            "description": "No new orders while one of the reader's loans is overdue"
+          },
+          "late_fee_per_day": {
+            "type": "string",
+            "title": "Late Fee Per Day",
+            "description": "Charged per day late when books come back (0: none)"
+          },
           "updated_at": {
             "type": "string",
             "format": "date-time",
@@ -7611,6 +7750,8 @@
           "loan_period_days",
           "max_renewals",
           "hold_hours",
+          "block_overdue",
+          "late_fee_per_day",
           "updated_at"
         ],
         "title": "LibrarySettingsRead"
@@ -7695,6 +7836,32 @@
               }
             ],
             "title": "Hold Hours"
+          },
+          "block_overdue": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Block Overdue"
+          },
+          "late_fee_per_day": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Late Fee Per Day"
           }
         },
         "additionalProperties": false,
@@ -8181,6 +8348,31 @@
             "type": "integer",
             "title": "Renewal Count"
           },
+          "late_fee": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Late Fee",
+            "description": "Charged for returning the books late"
+          },
+          "late_fee_settled_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Late Fee Settled At",
+            "description": "When it was paid or waived"
+          },
           "confirmed_at": {
             "anyOf": [
               {
@@ -8255,6 +8447,8 @@
           "contact_preferred_method",
           "due_date",
           "renewal_count",
+          "late_fee",
+          "late_fee_settled_at",
           "confirmed_at",
           "returned_at",
           "cancelled_at",

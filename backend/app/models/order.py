@@ -60,6 +60,10 @@ class Order(TimestampMixin, Base):
     due_date: Mapped[date] = mapped_column(sa.Date)
     # How often the customer has extended the loan (limited by library_settings.max_renewals).
     renewal_count: Mapped[int] = mapped_column(sa.SmallInteger, default=0, server_default="0")
+    # Charged when the books came back late (days late x the library's fee per day); NULL when
+    # returned on time or no fee applied. Settled when paid or waived by the library.
+    late_fee: Mapped[Decimal | None] = mapped_column(MONEY)
+    late_fee_settled_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True))
     confirmed_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True))
     returned_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True))
     cancelled_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True))

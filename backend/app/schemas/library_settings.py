@@ -27,6 +27,12 @@ class LibraryRules(ApiModel):
     loan_period_days: int
     max_renewals: int
     hold_hours: int = Field(description="How long a returned book is held for the next reader")
+    block_overdue: bool = Field(
+        description="No new orders while one of the reader's loans is overdue"
+    )
+    late_fee_per_day: Decimal = Field(
+        description="Charged per day late when books come back (0: none)"
+    )
 
 
 class LibrarySettingsRead(LibraryRules):
@@ -42,6 +48,8 @@ class LibrarySettingsUpdate(PatchModel):
             "loan_period_days",
             "max_renewals",
             "hold_hours",
+            "block_overdue",
+            "late_fee_per_day",
         }
     )
 
@@ -51,3 +59,5 @@ class LibrarySettingsUpdate(PatchModel):
     loan_period_days: Annotated[int, Field(ge=1, le=365)] | None = None
     max_renewals: Annotated[int, Field(ge=0, le=10)] | None = None
     hold_hours: Annotated[int, Field(ge=0, le=336)] | None = None
+    block_overdue: bool | None = None
+    late_fee_per_day: Money | None = None

@@ -407,6 +407,12 @@ two copies of the same title are two records (ISBN is not unique).
   profile. Only they can add that copy to the cart until the hold ends; ordering it ends the hold. A hold that runs
   out (the notifier checks every cycle) or that the reader gives up (`DELETE /users/me/holds/{book_id}`) passes to
   the next reader in line. `hold_hours = 0` keeps the old behaviour: everybody waiting is emailed.
+- **Late returns**: with `block_overdue` (library setting, default on) a reader with an overdue loan cannot place a
+  new order (`409 OVERDUE_LOANS`, `details.orders` lists the order numbers); the profile says so. With
+  `late_fee_per_day` > 0 (default 0: no fees), marking an overdue order returned stores `late_fee` = fee × days
+  late on the order. The librarian records it as paid or waives it (`PATCH /admin/orders/{id}/late-fee` with
+  `{"action": "paid" | "waived"}`; waiving sets the fee to 0; `409 NO_LATE_FEE` if nothing is owed), which sets
+  `late_fee_settled_at`. The app does not take payments: the fee is paid at the library.
 
 `POST /api/v1/orders` runs in a single transaction (`app/services/orders.py`):
 
@@ -433,12 +439,12 @@ Concurrency is covered by tests in which both requests are held at a barrier rig
 | `tags`, `book_tags` | tag `slug` (unique, CHECK format), `name_en`, `name_ru`; book ↔ tag link table |
 | `series` | `name` (unique), `name_en` / `name_ru` (names in each interface language, optional), `description`, `openlibrary_key` (unique, from ISBN lookups) |
 | `book_translations` | per book and language (`en`/`ru`): `title`, `author`, `description`, `title_source`/`description_source` (`manual/wikidata/wikipedia/machine`), `source_url` (Wikipedia attribution) |
-| `library_settings` | single row: `books_per_batch`, `price_per_batch NUMERIC(10,2)`, `currency`, `loan_period_days`, `max_renewals` |
+| `library_settings` | single row: `books_per_batch`, `price_per_batch NUMERIC(10,2)`, `currency`, `loan_period_days`, `max_renewals`, `hold_hours`, `block_overdue`, `late_fee_per_day NUMERIC(10,2)` |
 | `carts`, `cart_items` | one cart per user, `UNIQUE(cart_id, book_id)` |
 | `waitlist_entries` | customer waiting for a book, `UNIQUE(user_id, book_id)` |
 | `reading_list_entries` | “want to read”, one per reader and title, `UNIQUE(user_id, book_id)` |
 | `reviews` | rating 1–5 (CHECK), text, `status` (`pending/published/rejected`), one per reader and title |
-| `orders` | status, total/currency, batch price and contact snapshot, `due_date`, `renewal_count`, `confirmed_at/returned_at/cancelled_at`, CHECK `total = price × batches` |
+| `orders` | status, total/currency, batch price and contact snapshot, `due_date`, `renewal_count`, `confirmed_at/returned_at/cancelled_at`, `late_fee`/`late_fee_settled_at`, CHECK `total = price × batches` |
 | `order_items` | book snapshot and `unit_price`, `reservation_active` + partial unique index |
 | `refresh_tokens` | `token_hash`, `family_id`, `expires_at`, `revoked_at`, `replaced_by_token_id`, user agent/IP |
 
@@ -484,7 +490,7 @@ Differences (adapters in `src/api/mappers.ts`):
 | POST/PATCH/DELETE | `/admin/tags`, `/admin/tags/{id}` · POST `/admin/tags/{id}/merge`; the same for `/admin/series` | admin |
 | POST | `/admin/translations/suggest` (title, author and description in another language; saves nothing) | admin |
 | GET | `/admin/users` · PATCH `/admin/users/{id}` (role, disable) | admin |
-| GET | `/admin/orders`, `/admin/orders/{id}` · PATCH `/admin/orders/{id}/status`, `/admin/orders/{id}/due-date` | admin |
+| GET | `/admin/orders`, `/admin/orders/{id}` · PATCH `/admin/orders/{id}/status`, `/admin/orders/{id}/due-date`, `/admin/orders/{id}/late-fee` | admin |
 | GET/PATCH | `/admin/settings` (batch size, price, currency, loan period) | admin |
 
 Public catalogue responses (`/books…`, `/tags`, `/series…`, `/library/rules`) carry a weak `ETag` with
