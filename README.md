@@ -1,45 +1,49 @@
-# Little Dragon — онлайн-библиотека
+# Little Dragon — online library
 
-Frontend: React + TypeScript + Vite (дизайн из [Figma](https://www.figma.com/design/3D9jREiGTmIKNYLFQXjh7o/Online-library-website)).
+**English** | [Русский](README.ru.md)
+
+Frontend: React + TypeScript + Vite (design from [Figma](https://www.figma.com/design/3D9jREiGTmIKNYLFQXjh7o/Online-library-website)).
 Backend: FastAPI + PostgreSQL (`backend/`).
 
-## Требования
+The app UI defaults to English; Russian is available as an optional language in Settings.
 
-| Инструмент | Версия | Для чего |
+## Requirements
+
+| Tool | Version | Used for |
 | --- | --- | --- |
-| Docker + Docker Compose | 24+ / v2 | PostgreSQL, backend, тесты |
+| Docker + Docker Compose | 24+ / v2 | PostgreSQL, backend, tests |
 | Node.js | 20+ | frontend |
-| pnpm | 9+ (`corepack enable`) | frontend-зависимости (`pnpm-lock.yaml`) |
-| Python 3.12 + [uv](https://docs.astral.sh/uv/) | опционально | запуск backend без Docker |
+| pnpm | 9+ (`corepack enable`) | frontend dependencies (`pnpm-lock.yaml`) |
+| Python 3.12 + [uv](https://docs.astral.sh/uv/) | optional | running the backend without Docker |
 
-## Архитектура
+## Architecture
 
 ```
 browser ──► Vite dev server (:5173)  React SPA, i18next (en/ru)
-   │            src/api/client.ts   fetch + access token в памяти + 1 refresh на 401
-   │            src/api/mappers.ts  DTO (OpenAPI) ⇄ UI-модели (src/app/types.ts)
+   │            src/api/client.ts   fetch + in-memory access token + one refresh on 401
+   │            src/api/mappers.ts  DTO (OpenAPI) ⇄ UI models (src/app/types.ts)
    ▼
 FastAPI (:8000)  /api/v1/...        routes → services → repositories → SQLAlchemy 2 (async)
    ▼
-PostgreSQL 16 (:5433 на хосте)      схема только через Alembic
+PostgreSQL 16 (:5433 on the host)   schema managed by Alembic only
 ```
 
 ```
 backend/
   app/
-    api/            dependencies.py (сессия, auth, роли), router.py, routes/*.py
+    api/            dependencies.py (session, auth, roles), router.py, routes/*.py
     core/           config.py (pydantic-settings), database.py, security.py, exceptions.py
-    models/         SQLAlchemy-модели + enums.py (ACTIVE_ORDER_STATUSES)
-    schemas/        Pydantic 2: create/update/read отдельно
-    repositories/   запросы (фильтры, вычисление резервирования)
-    services/       бизнес-логика и транзакции (orders.py — оформление заказа)
+    models/         SQLAlchemy models + enums.py (ACTIVE_ORDER_STATUSES)
+    schemas/        Pydantic 2: separate create/update/read schemas
+    repositories/   queries (filters, reservation state)
+    services/       business logic and transactions (orders.py — checkout)
     cli.py          seed / export-openapi / purge-tokens
-  alembic/          миграции (async env.py)
-  tests/            pytest + httpx, реальная PostgreSQL (`bookstore_test`)
-src/api/            клиент API, сгенерированные типы, мапперы
+  alembic/          migrations (async env.py)
+  tests/            pytest + httpx against a real PostgreSQL (`bookstore_test`)
+src/api/            API client, generated types, mappers
 ```
 
-## Быстрый старт (Docker Compose)
+## Quick start (Docker Compose)
 
 ```bash
 cp .env.example .env
@@ -49,16 +53,16 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-Поднимутся `db` (PostgreSQL с healthcheck), `migrate` (одноразово `alembic upgrade head`) и `backend`.
+This starts `db` (PostgreSQL with a healthcheck), `migrate` (one-off `alembic upgrade head`) and `backend`.
 
 ```bash
 curl http://localhost:8000/api/v1/health
 ```
 
-Создать администратора и демо-книги (повторный запуск безопасен):
+Create an administrator and demo books (safe to run repeatedly):
 
 ```bash
-docker compose run --rm -e SEED_ADMIN_PASSWORD='придумайте-длинный-пароль' backend python -m app.cli seed --demo-books
+docker compose run --rm -e SEED_ADMIN_PASSWORD='choose-a-long-password' backend python -m app.cli seed --demo-books
 ```
 
 Frontend:
@@ -71,34 +75,34 @@ pnpm install
 pnpm dev
 ```
 
-Откройте http://localhost:5173 (именно `localhost`, не `127.0.0.1` — см. «Типичные ошибки»).
+Open http://localhost:5173 (use `localhost`, not `127.0.0.1` — see “Troubleshooting”).
 Swagger UI: http://localhost:8000/docs.
 
-## Переменные окружения
+## Environment variables
 
-Backend читает переменные окружения или `backend/.env` (шаблон `backend/.env.example`);
-Docker Compose и Vite — корневой `.env` (шаблон `.env.example`). Заполненные `.env` не коммитятся.
+The backend reads environment variables or `backend/.env` (template: `backend/.env.example`);
+Docker Compose and Vite read the root `.env` (template: `.env.example`). Filled-in `.env` files are never committed.
 
-| Переменная | По умолчанию | Описание |
+| Variable | Default | Description |
 | --- | --- | --- |
 | `ENVIRONMENT` | `development` | `development` / `test` / `production` |
-| `DATABASE_URL` | `postgresql+asyncpg://postgres:postgres@localhost:5433/bookstore` | `postgres://` и `postgresql://` приводятся к asyncpg |
-| `JWT_SECRET_KEY` | — | **обязателен в production**, ≥ 32 символов, не из списка слабых; в dev без него генерируется временный секрет |
+| `DATABASE_URL` | `postgresql+asyncpg://postgres:postgres@localhost:5433/bookstore` | `postgres://` and `postgresql://` are normalised to asyncpg |
+| `JWT_SECRET_KEY` | — | **required in production**, ≥ 32 characters, not a known weak value; in development an ephemeral secret is generated if empty |
 | `JWT_ALGORITHM` | `HS256` | HS256/384/512 |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `15` | 1–60 |
 | `REFRESH_TOKEN_EXPIRE_DAYS` | `30` | 1–180 |
 | `REFRESH_COOKIE_NAME` | `refresh_token` | |
-| `COOKIE_SECURE` | `false` | в production обязан быть `true` |
-| `COOKIE_SAMESITE` | `lax` | `none` допустим только с `COOKIE_SECURE=true` |
-| `FRONTEND_ORIGINS` | `http://localhost:5173` | точные origins через запятую; `*` запрещён |
-| `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | — | для `app.cli seed`, пароль ≥ 12 символов |
-| `TEST_DATABASE_URL` | `…/bookstore_test` | только для тестов; имя БД обязано оканчиваться на `_test` |
-| `VITE_API_URL` | `http://localhost:8000/api/v1` | адрес API для frontend |
+| `COOKIE_SECURE` | `false` | must be `true` in production |
+| `COOKIE_SAMESITE` | `lax` | `none` is only allowed with `COOKIE_SECURE=true` |
+| `FRONTEND_ORIGINS` | `http://localhost:5173` | exact origins, comma-separated; `*` is rejected |
+| `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | — | used by `app.cli seed`, password ≥ 12 characters |
+| `TEST_DATABASE_URL` | `…/bookstore_test` | tests only; the database name must end with `_test` |
+| `VITE_API_URL` | `http://localhost:8000/api/v1` | API base URL for the frontend |
 
-В production приложение не стартует при отсутствующем/слабом `JWT_SECRET_KEY`, `COOKIE_SECURE=false`
-или `http://` в `FRONTEND_ORIGINS`.
+In production the app refuses to start with a missing/weak `JWT_SECRET_KEY`, `COOKIE_SECURE=false`
+or an `http://` origin in `FRONTEND_ORIGINS`.
 
-## Backend без Docker
+## Backend without Docker
 
 ```bash
 cd backend && uv sync
@@ -120,9 +124,9 @@ cd backend && uv run alembic upgrade head
 cd backend && uv run uvicorn app.main:app --reload
 ```
 
-## Миграции
+## Migrations
 
-Все команды можно выполнять через контейнер `backend-dev` (профиль `dev`, исходники смонтированы):
+All commands can run in the `backend-dev` container (`dev` profile, sources are bind-mounted):
 
 ```bash
 docker compose --profile dev run --rm backend-dev alembic upgrade head
@@ -133,28 +137,28 @@ docker compose --profile dev run --rm backend-dev alembic downgrade -1
 ```
 
 ```bash
-docker compose --profile dev run --rm backend-dev alembic revision --autogenerate -m "описание"
+docker compose --profile dev run --rm backend-dev alembic revision --autogenerate -m "description"
 ```
 
 ```bash
 docker compose --profile dev run --rm backend-dev alembic check
 ```
 
-`alembic check` должен печатать `No new upgrade operations detected.` — модели и миграции совпадают.
-Приложение никогда не вызывает `metadata.create_all()`.
+`alembic check` must print `No new upgrade operations detected.` — models and migrations match.
+The application never calls `metadata.create_all()`.
 
 ## Seed
 
 `python -m app.cli seed [--demo-books] [--reset-admin-password]`:
 
-- создаёт/активирует администратора из `SEED_ADMIN_EMAIL` + `SEED_ADMIN_PASSWORD` (пароль в коде не хранится);
-  пароль существующего админа меняется только с `--reset-admin-password`;
-- `--demo-books` добавляет 16 книг из `backend/app/seed_data/demo_books.json`; в production отказывается работать;
-- гарантирует строку настроек библиотеки. Повторный запуск ничего не дублирует.
+- creates/activates the administrator from `SEED_ADMIN_EMAIL` + `SEED_ADMIN_PASSWORD` (no password is stored in code);
+  an existing admin's password is only changed with `--reset-admin-password`;
+- `--demo-books` adds 16 books from `backend/app/seed_data/demo_books.json`; refuses to run in production;
+- ensures the library settings row exists. Running it again never duplicates anything.
 
-## Тесты, lint, typecheck
+## Tests, lint, typecheck
 
-Backend (PostgreSQL из compose, отдельная БД `bookstore_test`, создаётся init-скриптом/фикстурой):
+Backend (PostgreSQL from compose, separate `bookstore_test` database created by an init script/fixture):
 
 ```bash
 docker compose --profile dev run --rm backend-dev pytest
@@ -174,18 +178,18 @@ pnpm typecheck
 pnpm build
 ```
 
-Тесты прогоняют миграции `upgrade → downgrade base → upgrade`, перед каждым тестом очищают таблицы и не
-оборачивают тест в транзакцию — поэтому конкурентные запросы реально идут через разные соединения.
+The test session runs migrations `upgrade → downgrade base → upgrade`, truncates tables before each test and does
+not wrap tests in a transaction, so concurrent requests really go through separate database connections.
 
-## Генерация TypeScript-типов из OpenAPI
+## Generating TypeScript types from OpenAPI
 
-Из запущенного backend:
+From a running backend:
 
 ```bash
 pnpm api:types
 ```
 
-Или из сохранённой схемы (без сервера):
+Or from the saved schema (no server needed):
 
 ```bash
 docker compose --profile dev run --rm --no-deps backend-dev python -m app.cli export-openapi openapi.json
@@ -195,112 +199,112 @@ docker compose --profile dev run --rm --no-deps backend-dev python -m app.cli ex
 pnpm api:types:file
 ```
 
-Результат — `src/api/generated/schema.d.ts`; **не редактируйте его вручную**. Алиасы DTO — `src/api/types.ts`,
-преобразование в UI-модели — `src/api/mappers.ts`. После изменения API: экспорт схемы → генерация → `pnpm typecheck`.
+The output is `src/api/generated/schema.d.ts`; **never edit it by hand**. DTO aliases live in `src/api/types.ts`,
+conversion to UI models in `src/api/mappers.ts`. After an API change: export the schema → generate → `pnpm typecheck`.
 
-## Аутентификация
+## Authentication
 
-- **Пароли** — Argon2id (`argon2-cffi`), хеширование в thread pool, прозрачный rehash при входе.
-- **Access token** — JWT (HS256), 15 минут, claims `sub`, `role`, `type`, `jti`, `iat`, `nbf`, `exp`, `iss`, `aud`.
-  Передаётся в `Authorization: Bearer`. Frontend держит его только в памяти.
-  Роль для авторизации всегда читается из БД, claim `role` — справочный.
-- **Refresh token** — случайная строка (`secrets.token_urlsafe(48)`), в БД хранится только SHA-256.
-  Лежит в cookie `refresh_token`: `HttpOnly`, `Secure` (из env), `SameSite=Lax`, `Path=/api/v1/auth`.
-  В JSON никогда не возвращается.
-- **Ротация**: каждый `POST /auth/refresh` выдаёт новый токен той же «семьи» и отзывает старый
-  (`replaced_by_token_id`). Повторное предъявление отозванного токена = кража → отзывается вся семья
+- **Passwords** — Argon2id (`argon2-cffi`), hashed in a thread pool, transparently rehashed on login.
+- **Access token** — JWT (HS256), 15 minutes, claims `sub`, `role`, `type`, `jti`, `iat`, `nbf`, `exp`, `iss`, `aud`.
+  Sent as `Authorization: Bearer`. The frontend keeps it in memory only.
+  Authorisation always uses the role stored in the database; the `role` claim is informational.
+- **Refresh token** — random string (`secrets.token_urlsafe(48)`); only its SHA-256 hash is stored.
+  It lives in the `refresh_token` cookie: `HttpOnly`, `Secure` (from env), `SameSite=Lax`, `Path=/api/v1/auth`.
+  It is never returned in JSON.
+- **Rotation**: every `POST /auth/refresh` issues a new token in the same “family” and revokes the old one
+  (`replaced_by_token_id`). Presenting a revoked token again is treated as theft → the whole family is revoked
   (`REFRESH_TOKEN_REUSED`).
-- **Logout** отзывает текущий refresh token и удаляет cookie. **Смена пароля** отзывает все сессии
-  и выдаёт новую семью. **Блокировка** пользователя (`is_active=false`) отзывает его refresh-токены,
-  а access-токены перестают работать сразу (`ACCOUNT_DISABLED`).
-- Ошибки входа одинаковы для «нет такого email» и «неверный пароль»; при отсутствующем пользователе
-  всё равно выполняется проверка Argon2 (нет утечки по времени).
-- Cookie-эндпоинты (`/auth/*`) дополнительно отклоняют запросы с чужим `Origin` (`ORIGIN_NOT_ALLOWED`).
+- **Logout** revokes the current refresh token and deletes the cookie. **Changing the password** revokes all sessions
+  and issues a new family. **Disabling** a user (`is_active=false`) revokes their refresh tokens, and their
+  access tokens stop working immediately (`ACCOUNT_DISABLED`).
+- Login errors are identical for “unknown email” and “wrong password”; Argon2 verification runs even when the user
+  does not exist (no timing leak).
+- Cookie endpoints (`/auth/*`) additionally reject requests with a foreign `Origin` (`ORIGIN_NOT_ALLOWED`).
 
-**Frontend-поток**: при загрузке страницы `POST /auth/refresh` восстанавливает сессию по cookie;
-на 401 клиент делает один общий refresh и повторяет запрос один раз; refresh сам по себе не вызывает
-refresh (нет цикла); при неудаче auth-состояние очищается. Между вкладками refresh сериализуется
-через Web Locks API, чтобы две вкладки не предъявили один и тот же токен.
+**Frontend flow**: on page load `POST /auth/refresh` restores the session from the cookie;
+on a 401 the client performs one shared refresh and retries the request once; the refresh call never triggers
+another refresh (no loop); if refresh fails, the auth state is cleared. Across tabs refreshes are serialised
+with the Web Locks API so two tabs never present the same token.
 
 ## CORS
 
-Только origins из `FRONTEND_ORIGINS`, `allow_credentials=True`, методы `GET/POST/PATCH/DELETE`,
-заголовки `Authorization`, `Content-Type`. Wildcard `*` отклоняется на старте.
+Only the origins in `FRONTEND_ORIGINS`, `allow_credentials=True`, methods `GET/POST/PATCH/DELETE`,
+headers `Authorization`, `Content-Type`. A `*` wildcard is rejected at startup.
 
-## Правила резервирования книг
+## Book reservation rules
 
-Каждая запись `Book` — **один физический экземпляр** (так работает существующий UI:
-`isBookUnavailable(bookId)`, нет количества). Поэтому резервирование — на уровне `book_id`;
-две копии одного издания — две записи (ISBN не уникален).
+Each `Book` record is **one physical copy** (that is how the existing UI works:
+`isBookUnavailable(bookId)`, no quantities). Reservations are therefore tracked per `book_id`;
+two copies of the same title are two records (ISBN is not unique).
 
-- Активные статусы заказа: `ACTIVE_ORDER_STATUSES = {pending, confirmed}` (`app/models/enums.py`).
-  `returned` и `cancelled` книгу освобождают.
-- Книга блокируется **любым** активным заказом, включая заказ того же пользователя (как в UI).
-- Корзина — не резерв: одна книга может лежать в корзинах нескольких пользователей; добавление
-  проверяет доступность, но решающая проверка — при оформлении заказа.
-- Цена — за **партию**: `price_per_batch` за каждые полные `books_per_batch` книг (настройки
-  библиотеки, админ-карточка «Batch Configuration»). В заказ попадают полные партии в порядке
-  добавления; книги неполной последней партии остаются в корзине.
+- Active order statuses: `ACTIVE_ORDER_STATUSES = {pending, confirmed}` (`app/models/enums.py`).
+  `returned` and `cancelled` release the book.
+- A book is blocked by **any** active order, including one placed by the same user (as in the UI).
+- The cart is not a reservation: the same book can sit in several users' carts; adding it checks
+  availability, but the decisive check happens at checkout.
+- Pricing is per **batch**: `price_per_batch` for every complete set of `books_per_batch` books (library
+  settings, the admin “Batch Configuration” card). An order contains the complete batches in the order the
+  books were added; books of an incomplete trailing batch stay in the cart.
 
-`POST /api/v1/orders` выполняется в одной транзакции (`app/services/orders.py`):
+`POST /api/v1/orders` runs in a single transaction (`app/services/orders.py`):
 
-1. `SELECT … FOR UPDATE` строки корзины (защита от двойного клика/двух вкладок);
-2. пустая корзина → `400 CART_EMPTY`, нет полной партии → `400 INCOMPLETE_BATCH`;
-3. `SELECT … FOR SHARE` настроек, `SELECT … FOR UPDATE` книг **в порядке id** (без дедлоков);
-4. проверка активности книги, статуса `available` и активных заказов (только `ACTIVE_ORDER_STATUSES`);
-5. при конфликте — исключение, откат всей транзакции, `409 BOOK_UNAVAILABLE` со списком книг;
-6. сумма считается только на сервере; позиции получают снимок названия/автора/ISBN/обложки и цену
-   (цена партии делится на копейки без потерь);
-7. заказанные позиции удаляются из корзины, commit.
+1. `SELECT … FOR UPDATE` on the cart row (protects against double clicks / two tabs);
+2. empty cart → `400 CART_EMPTY`, no complete batch → `400 INCOMPLETE_BATCH`;
+3. `SELECT … FOR SHARE` on the settings, `SELECT … FOR UPDATE` on the books **ordered by id** (no deadlocks);
+4. checks that each book is active, has status `available` and is not in an active order (`ACTIVE_ORDER_STATUSES` only);
+5. on conflict — an exception, the whole transaction rolls back, `409 BOOK_UNAVAILABLE` with the list of books;
+6. the total is computed on the server only; items keep a snapshot of title/author/ISBN/cover and a unit price
+   (the batch price is split into cents without rounding loss);
+7. the ordered items are removed from the cart, commit.
 
-Второй уровень защиты — частичный уникальный индекс
-`uq_order_items_active_book ON order_items(book_id) WHERE reservation_active`: даже код без блокировки
-не сможет создать вторую активную резервацию (тест `test_partial_unique_index_stops_the_race_even_without_row_locks`).
-Конкурентность проверяется тестами, где оба запроса синхронизированы барьером прямо перед `FOR UPDATE`.
+The second line of defence is the partial unique index
+`uq_order_items_active_book ON order_items(book_id) WHERE reservation_active`: even code that skips the lock
+cannot create a second active reservation (test `test_partial_unique_index_stops_the_race_even_without_row_locks`).
+Concurrency is covered by tests in which both requests are held at a barrier right before `FOR UPDATE`.
 
-## Модель данных и расхождения с frontend
+## Data model and differences from the frontend
 
-| Таблица | Ключевое |
+| Table | Key points |
 | --- | --- |
-| `users` | email уникален и в нижнем регистре (CHECK), Argon2-хеш, роль `customer/admin`, контакты (nullable), `preferred_contact_method` |
-| `books` | `cover_url`, `image_urls[]`, `age_range`, `category`, `status` (`available/available-soon/not-available`), `language`, `publication_year`, `is_active` (мягкое удаление) |
-| `library_settings` | одна строка: `books_per_batch`, `price_per_batch NUMERIC(10,2)`, `currency`, `loan_period_days` |
-| `carts`, `cart_items` | одна корзина на пользователя, `UNIQUE(cart_id, book_id)` |
-| `orders` | статус, сумма/валюта, снимок цены партии и контактов, `due_date`, `confirmed_at/returned_at/cancelled_at`, CHECK `total = price × batches` |
-| `order_items` | снимок книги и `unit_price`, `reservation_active` + частичный уникальный индекс |
-| `refresh_tokens` | `token_hash`, `family_id`, `expires_at`, `revoked_at`, `replaced_by_token_id`, user-agent/IP |
+| `users` | email unique and lower-case (CHECK), Argon2 hash, role `customer/admin`, contacts (nullable), `preferred_contact_method` |
+| `books` | `cover_url`, `image_urls[]`, `age_range`, `category`, `status` (`available/available-soon/not-available`), `language`, `publication_year`, `is_active` (soft delete) |
+| `library_settings` | single row: `books_per_batch`, `price_per_batch NUMERIC(10,2)`, `currency`, `loan_period_days` |
+| `carts`, `cart_items` | one cart per user, `UNIQUE(cart_id, book_id)` |
+| `orders` | status, total/currency, batch price and contact snapshot, `due_date`, `confirmed_at/returned_at/cancelled_at`, CHECK `total = price × batches` |
+| `order_items` | book snapshot and `unit_price`, `reservation_active` + partial unique index |
+| `refresh_tokens` | `token_hash`, `family_id`, `expires_at`, `revoked_at`, `replaced_by_token_id`, user agent/IP |
 
-Перечисления хранятся как `VARCHAR + CHECK` (меняются без `ALTER TYPE`). Деньги — `NUMERIC`, в JSON — строки (`"15.99"`).
+Enumerations are stored as `VARCHAR + CHECK` (changeable without `ALTER TYPE`). Money is `NUMERIC`; in JSON it is a string (`"15.99"`).
 
-Расхождения (адаптеры в `src/api/mappers.ts`):
+Differences (adapters in `src/api/mappers.ts`):
 
-- В UI нет цены книги — есть цена партии; поэтому у `Book` нет `price`, цена живёт в `library_settings` и в снимке заказа.
-- Статусы заказа взяты из UI (`pending/confirmed/returned/cancelled`) вместо `processing/completed`.
+- The UI has no per-book price, only a batch price; therefore `Book` has no `price` — pricing lives in `library_settings` and in the order snapshot.
+- Order statuses follow the UI (`pending/confirmed/returned/cancelled`) instead of `processing/completed`.
 - `coverImage/images/publishedYear/ageRange` ⇄ `cover_url/image_urls/publication_year/age_range`;
-  статус книги `pending` в UI означает «в моей корзине» и на сервере не хранится.
-- `preferred_contact_method` на сервере допускает `email`; в UI такого варианта нет — отображается как «не выбран».
-- `User.borrowedBooks` собирается из подтверждённых заказов (`active_loans` в `/admin/users`).
-- Добавлены необязательные поля UI-моделей: `Book.isReserved/isAvailable/language`, `Order.currency/contacts`.
+  the UI book status `pending` means “in my cart” and is not stored on the server.
+- The server also accepts `email` as `preferred_contact_method`; the UI has no such option, so it shows as “not selected”.
+- `User.borrowedBooks` is built from confirmed orders (`active_loans` in `/admin/users`).
+- Optional fields were added to the UI models: `Book.isReserved/isAvailable/language`, `Order.currency/contacts`.
 
 ## API (`/api/v1`)
 
-| Метод | Путь | Доступ |
+| Method | Path | Access |
 | --- | --- | --- |
-| GET | `/health` (liveness), `/api/v1/health` (DB) | все |
-| POST | `/auth/register`, `/auth/login`, `/auth/refresh`, `/auth/logout` | все |
-| GET | `/auth/me`, `/users/me` · PATCH `/users/me` · POST `/auth/change-password` | пользователь |
-| GET | `/books?q&category&age_range&available&sort&page&page_size`, `/books/age-ranges`, `/books/{id}` | все |
-| GET/DELETE | `/cart` · POST `/cart/items` · DELETE `/cart/items/{book_id}` | пользователь |
-| POST/GET | `/orders` · GET `/orders/{id}` · POST `/orders/{id}/cancel` | пользователь (только свои) |
+| GET | `/health` (liveness), `/api/v1/health` (DB) | everyone |
+| POST | `/auth/register`, `/auth/login`, `/auth/refresh`, `/auth/logout` | everyone |
+| GET | `/auth/me`, `/users/me` · PATCH `/users/me` · POST `/auth/change-password` | signed-in user |
+| GET | `/books?q&category&age_range&available&sort&page&page_size`, `/books/age-ranges`, `/books/{id}` | everyone |
+| GET/DELETE | `/cart` · POST `/cart/items` · DELETE `/cart/items/{book_id}` | signed-in user |
+| POST/GET | `/orders` · GET `/orders/{id}` · POST `/orders/{id}/cancel` | signed-in user (own orders only) |
 | GET/POST | `/admin/books`, GET `/admin/books/stats`, GET/PATCH/DELETE `/admin/books/{id}` | admin |
-| GET | `/admin/users` · PATCH `/admin/users/{id}` (роль, блокировка) | admin |
+| GET | `/admin/users` · PATCH `/admin/users/{id}` (role, disable) | admin |
 | GET | `/admin/orders`, `/admin/orders/{id}` · PATCH `/admin/orders/{id}/status`, `/admin/orders/{id}/due-date` | admin |
-| GET/PATCH | `/admin/settings` (партия, цена, валюта, срок выдачи) | admin |
+| GET/PATCH | `/admin/settings` (batch size, price, currency, loan period) | admin |
 
-Сортировка книг — только из списка: `title`, `author`, `publication_year`, `created_at` (с `-` для убывания).
-Переходы статусов: `pending → confirmed | cancelled`, `confirmed → returned`; клиент может отменить только `pending`.
+Book sorting is allow-listed: `title`, `author`, `publication_year`, `created_at` (prefix `-` for descending).
+Status transitions: `pending → confirmed | cancelled`, `confirmed → returned`; customers can only cancel `pending` orders.
 
-Формат ошибок (единый для всех статусов):
+Error format (the same for every status):
 
 ```json
 {"error": {"code": "BOOK_UNAVAILABLE", "message": "One or more books are unavailable",
@@ -309,15 +313,15 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 
 400 `CART_EMPTY`/`INCOMPLETE_BATCH`/`INVALID_CURRENT_PASSWORD`, 401 `NOT_AUTHENTICATED`/`INVALID_CREDENTIALS`/`TOKEN_EXPIRED`/`REFRESH_TOKEN_*`,
 403 `FORBIDDEN`/`ACCOUNT_DISABLED`, 404 `*_NOT_FOUND`, 409 `BOOK_UNAVAILABLE`/`EMAIL_ALREADY_EXISTS`/`INVALID_STATUS_TRANSITION`,
-422 `VALIDATION_ERROR` (без эха введённых значений), 500 `INTERNAL_ERROR` (без stack trace).
+422 `VALIDATION_ERROR` (submitted values are not echoed back), 500 `INTERNAL_ERROR` (no stack trace).
 
-## Типичные ошибки
+## Troubleshooting
 
-- **`port is already allocated` для 5432/5433** — задайте другой `POSTGRES_PORT` в `.env` и обновите `DATABASE_URL`.
-- **После перезагрузки страницы выкидывает на /login** — frontend открыт на `127.0.0.1`, а API на `localhost`
-  (разные сайты, cookie `SameSite=Lax` не отправляется) или не задан `JWT_SECRET_KEY` и backend перезапускался.
-- **CORS-ошибка в консоли** — origin фронтенда не указан в `FRONTEND_ORIGINS` (точное совпадение, без `/` в конце).
-- **`409 BOOK_UNAVAILABLE` при оформлении** — книгу уже зарезервировали; UI показывает список и обновляет корзину/каталог.
-- **Тесты отказываются запускаться** — `TEST_DATABASE_URL` должен указывать на БД с суффиксом `_test`.
-- **`JWT_SECRET_KEY is too weak` в production** — сгенерируйте: `python -c "import secrets; print(secrets.token_urlsafe(64))"`.
-- **Новый `.sql` init-скрипт не применился** — init-скрипты PostgreSQL выполняются только на пустом volume (`docker compose down -v` удалит данные).
+- **`port is already allocated` for 5432/5433** — set a different `POSTGRES_PORT` in `.env` and update `DATABASE_URL`.
+- **Reloading the page sends you back to /login** — the frontend is open on `127.0.0.1` while the API is on `localhost`
+  (different sites, so the `SameSite=Lax` cookie is not sent), or `JWT_SECRET_KEY` is not set and the backend restarted.
+- **CORS error in the console** — the frontend origin is missing from `FRONTEND_ORIGINS` (exact match, no trailing `/`).
+- **`409 BOOK_UNAVAILABLE` at checkout** — the book has just been reserved by someone else; the UI lists it and refreshes the cart/catalogue.
+- **Tests refuse to run** — `TEST_DATABASE_URL` must point to a database whose name ends with `_test`.
+- **`JWT_SECRET_KEY is too weak` in production** — generate one: `python -c "import secrets; print(secrets.token_urlsafe(64))"`.
+- **A new `.sql` init script did not run** — PostgreSQL init scripts only run on an empty volume (`docker compose down -v` deletes the data).
