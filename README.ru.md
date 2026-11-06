@@ -245,6 +245,10 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 Только origins из `FRONTEND_ORIGINS`, `allow_credentials=True`, методы `GET/POST/PATCH/DELETE`,
 заголовки `Authorization`, `Content-Type`. Wildcard `*` отклоняется на старте.
 
+**Заголовки безопасности.** Ответы API содержат `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
+`Referrer-Policy: no-referrer`, `Cache-Control: no-store` и `Content-Security-Policy: default-src 'none'`.
+В production Caddy добавляет HSTS и Content-Security-Policy для самого приложения (см. `deploy/README.md`).
+
 ## Правила резервирования книг
 
 Каждая запись `Book` — **один физический экземпляр** (так работает существующий UI:

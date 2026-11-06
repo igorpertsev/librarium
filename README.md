@@ -247,6 +247,10 @@ with the Web Locks API so two tabs never present the same token.
 Only the origins in `FRONTEND_ORIGINS`, `allow_credentials=True`, methods `GET/POST/PATCH/DELETE`,
 headers `Authorization`, `Content-Type`. A `*` wildcard is rejected at startup.
 
+**Security headers.** API responses carry `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
+`Referrer-Policy: no-referrer`, `Cache-Control: no-store` and `Content-Security-Policy: default-src 'none'`.
+In production Caddy adds HSTS and a Content-Security-Policy for the app itself (see `deploy/README.md`).
+
 ## Book reservation rules
 
 Each `Book` record is **one physical copy** (that is how the existing UI works:
