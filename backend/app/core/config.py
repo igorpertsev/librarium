@@ -61,6 +61,19 @@ class Settings(BaseSettings):
     # Comma-separated list of exact origins allowed to call the API with credentials.
     frontend_origins: str = "http://localhost:5173"
 
+    # Customer email notifications (sent by `python -m app.cli notifications`).
+    # Leave SMTP_HOST empty to disable sending; notifications then stay queued.
+    smtp_host: str | None = None
+    smtp_port: int = Field(default=587, ge=1, le=65535)
+    smtp_username: str | None = None
+    smtp_password: SecretStr | None = None
+    smtp_starttls: bool = True
+    smtp_ssl: bool = False
+    mail_from: str = "Little Dragon Library <no-reply@localhost>"
+    # Public URL of the frontend, used for links in emails.
+    app_base_url: str = "http://localhost:5173"
+    due_soon_days: int = Field(default=3, ge=0, le=30)
+
     # Seed command inputs. Never hard-code production credentials.
     seed_admin_email: str | None = None
     seed_admin_password: SecretStr | None = None
@@ -80,14 +93,21 @@ class Settings(BaseSettings):
             raise ValueError("DATABASE_URL must be a PostgreSQL URL (postgresql+asyncpg://...)")
         return value
 
-    @field_validator("cookie_domain", "seed_admin_email", mode="before")
+    @field_validator("app_base_url")
+    @classmethod
+    def _strip_trailing_slash(cls, value: str) -> str:
+        return value.rstrip("/")
+
+    @field_validator(
+        "cookie_domain", "seed_admin_email", "smtp_host", "smtp_username", mode="before"
+    )
     @classmethod
     def _empty_to_none(cls, value: object) -> object:
         if isinstance(value, str) and not value.strip():
             return None
         return value
 
-    @field_validator("jwt_secret_key", "seed_admin_password", mode="before")
+    @field_validator("jwt_secret_key", "seed_admin_password", "smtp_password", mode="before")
     @classmethod
     def _empty_secret_to_none(cls, value: object) -> object:
         if isinstance(value, str) and not value.strip():
@@ -104,6 +124,9 @@ class Settings(BaseSettings):
                 raise ValueError(
                     f"Invalid origin {origin!r}: expected scheme://host[:port] without a path"
                 )
+
+        if self.smtp_ssl and self.smtp_starttls:
+            raise ValueError("Use either SMTP_SSL (implicit TLS) or SMTP_STARTTLS, not both")
 
         if self.cookie_samesite == "none" and not self.cookie_secure:
             raise ValueError("COOKIE_SAMESITE=none requires COOKIE_SECURE=true")

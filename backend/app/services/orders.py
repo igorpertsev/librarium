@@ -29,10 +29,12 @@ from app.models.enums import (
     CUSTOMER_CANCELLABLE_STATUSES,
     ORDER_STATUS_TRANSITIONS,
     BookStatus,
+    NotificationKind,
     OrderStatus,
 )
 from app.repositories import orders as orders_repo
 from app.repositories.books import reserved_book_ids
+from app.services import notifications
 from app.services.library_settings import get_library_settings
 
 ACTIVE_BOOK_INDEX = "uq_order_items_active_book"
@@ -168,6 +170,11 @@ async def place_order(session: AsyncSession, user: User) -> Order:
             raise BookUnavailableError(requested) from exc
         raise
 
+    # Outbox: the "request received" email is queued in the same transaction.
+    await notifications.enqueue(
+        session, order_id=order.id, user_id=user.id, kind=NotificationKind.ORDER_RECEIVED
+    )
+
     # 13. Commit: the order, its reservations and the cart change become visible atomically.
     await session.commit()
     return await get_order(session, order.id)
@@ -199,6 +206,14 @@ async def _apply_status(session: AsyncSession, order: Order, new_status: OrderSt
     )
 
 
+# Emails sent when the library changes an order (customers cancelling their own request
+# are not emailed about it).
+_STATUS_NOTIFICATIONS: dict[OrderStatus, NotificationKind] = {
+    OrderStatus.CONFIRMED: NotificationKind.ORDER_CONFIRMED,
+    OrderStatus.CANCELLED: NotificationKind.ORDER_CANCELLED,
+}
+
+
 def _invalid_transition(current: OrderStatus, target: OrderStatus) -> ConflictError:
     return ConflictError(
         f"Cannot change order status from '{current.value}' to '{target.value}'",
@@ -228,6 +243,11 @@ async def change_status(
         if new_status not in ORDER_STATUS_TRANSITIONS[order.status]:
             raise _invalid_transition(order.status, new_status)
         await _apply_status(session, order, new_status)
+        kind = _STATUS_NOTIFICATIONS.get(new_status)
+        if kind is not None:
+            await notifications.enqueue(
+                session, order_id=order.id, user_id=order.user_id, kind=kind
+            )
         await session.commit()
     return await get_order(session, order_id)
 

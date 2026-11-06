@@ -110,6 +110,8 @@ Docker Compose and Vite read the root `.env` (template: `.env.example`). Filled-
 | `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | — | used by `app.cli seed`, password ≥ 12 characters |
 | `TEST_DATABASE_URL` | `…/bookstore_test` | tests only; the database name must end with `_test` |
 | `VITE_API_URL` | `http://localhost:8000/api/v1` | API base URL for the frontend |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_STARTTLS`, `SMTP_SSL`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `MAIL_FROM` | empty / `587` / `true` / `false` | outgoing email; empty `SMTP_HOST` disables sending |
+| `APP_BASE_URL`, `DUE_SOON_DAYS` | `http://localhost:5173`, `3` | links in emails; reminder lead time in days |
 
 In production the app refuses to start with a missing/weak `JWT_SECRET_KEY`, `COOKIE_SECURE=false`
 or an `http://` origin in `FRONTEND_ORIGINS`.
@@ -326,6 +328,22 @@ Error format (the same for every status):
 400 `CART_EMPTY`/`INCOMPLETE_BATCH`/`INVALID_CURRENT_PASSWORD`, 401 `NOT_AUTHENTICATED`/`INVALID_CREDENTIALS`/`TOKEN_EXPIRED`/`REFRESH_TOKEN_*`,
 403 `FORBIDDEN`/`ACCOUNT_DISABLED`, 404 `*_NOT_FOUND`, 409 `BOOK_UNAVAILABLE`/`EMAIL_ALREADY_EXISTS`/`INVALID_STATUS_TRANSITION`,
 422 `VALIDATION_ERROR` (submitted values are not echoed back), 500 `INTERNAL_ERROR` (no stack trace).
+
+## Email notifications
+
+Customers receive an email when they place a request, when the library hands the books over
+(with the due date), when the library cancels a request, a few days before the due date and once
+the books are overdue. Messages are plain text, in English followed by Russian.
+
+- **Outbox:** a row in `notifications` is written in the same transaction as the order change, so
+  an email is never lost or sent for a change that was rolled back. Each event happens at most once
+  per order.
+- **Delivery:** `python -m app.cli notifications` queues due-date reminders and sends pending emails
+  over SMTP (5 attempts with exponential backoff; messages older than 7 days expire).
+  `--loop SECONDS` keeps it running; Docker Compose runs it as the `notifier` service.
+- **Development:** all mail goes to Mailpit, nothing leaves your machine: http://localhost:8025.
+- **Production:** set the `SMTP_*` variables and `MAIL_FROM` (see the table above). Without
+  `SMTP_HOST` notifications stay queued and nothing is sent.
 
 ## Deployment
 

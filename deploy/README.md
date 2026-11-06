@@ -197,6 +197,23 @@ docker compose -f docker-compose.prod.yml exec -T db sh -c 'pg_restore -U "$POST
 docker compose -f docker-compose.prod.yml start backend web
 ```
 
+## Email notifications (optional)
+
+The `notifier` service emails customers about their orders and due dates. To enable it, put your
+mail provider's SMTP settings into `.env` (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`,
+`SMTP_PASSWORD`, `MAIL_FROM`; port 587 with STARTTLS is the usual choice), then apply them:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d
+```
+
+```bash
+docker compose -f docker-compose.prod.yml logs -f --tail=50 notifier
+```
+
+Use a sender address on a domain whose SPF/DKIM records your provider has set up, otherwise
+messages tend to end up in spam. Without `SMTP_HOST` nothing is sent.
+
 ## 9. Updating
 
 ```bash

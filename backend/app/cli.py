@@ -3,6 +3,7 @@
 python -m app.cli seed [--demo-books]   # idempotent: admin from env, optional demo books
 python -m app.cli export-openapi PATH   # write the OpenAPI document without a server
 python -m app.cli purge-tokens          # delete expired/revoked refresh tokens
+python -m app.cli notifications [--loop SECONDS]  # queue reminders, send customer emails
 """
 
 from __future__ import annotations
@@ -28,6 +29,7 @@ from app.models.enums import UserRole
 from app.schemas.book import BookCreate
 from app.schemas.types import NormalizedEmail
 from app.services.library_settings import ensure_library_settings
+from app.services.notifications import deliver_pending, make_smtp_sender, queue_reminders
 
 DEMO_BOOKS_FILE = Path(__file__).parent / "seed_data" / "demo_books.json"
 MIN_ADMIN_PASSWORD_LENGTH = 12
@@ -104,6 +106,39 @@ async def _purge_tokens(settings: Settings, *, older_than_days: int) -> None:
         await db.dispose()
 
 
+async def _notifications(settings: Settings, *, loop_seconds: int | None) -> None:
+    """Queue due-soon/overdue reminders and deliver pending emails, once or in a loop."""
+    db = Database(settings)
+    send = make_smtp_sender(settings)
+    warned = False
+    try:
+        while True:
+            async with db.sessionmaker() as session:
+                queued = await queue_reminders(
+                    session, today=datetime.now(UTC).date(), due_soon_days=settings.due_soon_days
+                )
+                await session.commit()
+            if queued:
+                print(f"Queued {queued} reminder(s).")
+            if send is None:
+                if not warned:
+                    print("SMTP_HOST is not set: notifications stay queued and are not sent.")
+                    warned = True
+            else:
+                async with db.sessionmaker() as session:
+                    report = await deliver_pending(session, settings, send)
+                if report.total:
+                    print(
+                        f"Emails: {report.sent} sent, {report.retried} to retry, "
+                        f"{report.failed} failed, {report.expired} expired."
+                    )
+            if not loop_seconds:
+                break
+            await asyncio.sleep(loop_seconds)
+    finally:
+        await db.dispose()
+
+
 def _export_openapi(path: str) -> None:
     document = create_app(get_settings()).openapi()
     target = Path(path)
@@ -130,6 +165,11 @@ def main(argv: list[str] | None = None) -> None:
     purge = commands.add_parser("purge-tokens", help="Delete old expired/revoked refresh tokens")
     purge.add_argument("--older-than-days", type=int, default=7)
 
+    notify = commands.add_parser("notifications", help="Queue reminders and send customer emails")
+    notify.add_argument(
+        "--loop", type=int, metavar="SECONDS", help="Repeat every SECONDS instead of running once"
+    )
+
     args = parser.parse_args(argv)
     if args.command == "seed":
         asyncio.run(
@@ -143,6 +183,8 @@ def main(argv: list[str] | None = None) -> None:
         _export_openapi(args.path)
     elif args.command == "purge-tokens":
         asyncio.run(_purge_tokens(get_settings(), older_than_days=args.older_than_days))
+    elif args.command == "notifications":
+        asyncio.run(_notifications(get_settings(), loop_seconds=args.loop))
 
 
 if __name__ == "__main__":

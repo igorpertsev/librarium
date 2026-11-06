@@ -3,6 +3,7 @@
 #
 #   docker compose up -d --build                         # db, migrate, backend
 #   docker compose --profile dev run --rm backend-dev pytest
+#   Emails sent by the app (notifier) are caught by Mailpit: http://localhost:8025
 #
 # Variables are read from ./.env (see ./.env.example).
 
@@ -20,6 +21,14 @@ x-backend-env: &backend-env
   FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:-http://localhost:5173}
   SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-}
   SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
+  # Development mail goes to Mailpit (nothing leaves your machine).
+  SMTP_HOST: ${SMTP_HOST:-mailpit}
+  SMTP_PORT: ${SMTP_PORT:-1025}
+  SMTP_STARTTLS: ${SMTP_STARTTLS:-false}
+  SMTP_USERNAME: ${SMTP_USERNAME:-}
+  SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+  MAIL_FROM: ${MAIL_FROM:-Little Dragon Library <no-reply@little-dragon.test>}
+  APP_BASE_URL: ${APP_BASE_URL:-http://localhost:5173}
 
 services:
   db:
@@ -63,6 +72,28 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+    restart: unless-stopped
+
+  # Delivers customer emails and queues due-date reminders.
+  notifier:
+    image: librarium-backend:local
+    build:
+      context: ./backend
+      target: runtime
+    command: ["python", "-m", "app.cli", "notifications", "--loop", "60"]
+    environment: *backend-env
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      mailpit:
+        condition: service_started
+    restart: unless-stopped
+
+  # Catches all development email; web UI on http://localhost:8025
+  mailpit:
+    image: axllent/mailpit:v1.33.0
+    ports:
+      - "127.0.0.1:${MAILPIT_UI_PORT:-8025}:8025"
     restart: unless-stopped
 
   # Tooling container: tests, ruff, mypy, alembic revisions, OpenAPI export.
