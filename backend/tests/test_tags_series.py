@@ -325,3 +325,28 @@ async def test_series_have_names_in_both_languages(client: AsyncClient, admin: A
     assert [s["name"] for s in listed] == ["Harry Potter"]
     renamed = await admin.patch(f"{API}/admin/series/{series['id']}", json={"name_ru": None})
     assert renamed.json()["name_ru"] is None
+
+
+async def test_demo_seed_completes_every_copy_of_a_title(
+    database_url: str, client: AsyncClient, admin: ApiUser
+) -> None:
+    from app.cli import _seed  # noqa: PLC0415 - the CLI module builds the app on import
+
+    # A demo book loaded before tags and translations existed, with a copy added since.
+    old = await admin.post(
+        f"{API}/admin/books",
+        json={
+            "title": "Becoming",
+            "author": "Michelle Obama",
+            "category": "biography",
+            "isbn": "978-1524763138",
+        },
+    )
+    copy = (await admin.post(f"{API}/admin/books/{old.json()['id']}/copies", json={})).json()[0]
+
+    settings = make_settings(database_url, seed_admin_email=None, seed_admin_password=None)
+    await _seed(settings, demo_books=True, reset_admin_password=False)
+
+    for book_id in (old.json()["id"], copy["id"]):
+        book = (await client.get(f"{API}/books/{book_id}")).json()
+        assert [t["title"] for t in book["translations"]] == ["Becoming. Моя история"]

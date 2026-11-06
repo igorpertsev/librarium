@@ -29,6 +29,7 @@ from app.core.security import hash_password
 from app.main import create_app
 from app.models import Book, RefreshToken, Series, User
 from app.models.enums import UiLanguage, UserRole
+from app.repositories.books import copy_group_key
 from app.schemas.book import BookCreate
 from app.schemas.types import NormalizedEmail
 from app.services import catalog
@@ -115,21 +116,31 @@ async def _seed_demo_books(session: AsyncSession, *, refresh_covers: bool) -> No
             await session.flush()  # a later book may belong to the same new series
             created += 1
             continue
-        if refresh_covers and existing.cover_url != data.cover_url:
-            existing.cover_url = data.cover_url
-            existing.image_urls = data.image_urls
-            refreshed += 1
-        # Demo books from before tags and series get them, unless edited since.
-        if not existing.tags and existing.series_id is None:
-            existing.tags = await catalog.resolve_tags(session, data.tags)
-            if data.series_name:
-                series = await catalog.find_or_create_series(session, name=data.series_name)
-                existing.series_id = series.id
-                existing.series_position = data.series_position
-            linked += bool(existing.tags or data.series_name)
-        if not existing.translations and data.translations:
-            existing.translations = translation_rows(data.translations)
-            translated += 1
+        # Every copy of the title, also copies added before tags, series and translations.
+        copies = (
+            await session.scalars(
+                select(Book).where(copy_group_key() == existing.group_id, Book.is_active.is_(True))
+            )
+        ).all()
+        series_id = None
+        if data.series_name:
+            series_id = (await catalog.find_or_create_series(session, name=data.series_name)).id
+        tags = await catalog.resolve_tags(session, data.tags)
+        for copy in copies:
+            if refresh_covers and copy.cover_url != data.cover_url:
+                copy.cover_url = data.cover_url
+                copy.image_urls = data.image_urls
+                refreshed += 1
+            # Demo books from before tags and series get them, unless edited since.
+            if not copy.tags and copy.series_id is None and (tags or series_id):
+                copy.tags = list(tags)
+                copy.series_id = series_id
+                copy.series_position = data.series_position if series_id else None
+                linked += 1
+            if not copy.translations and data.translations:
+                copy.translations = translation_rows(data.translations)
+                translated += 1
+
     print(
         f"Demo books: {created} created, {len(raw) - created} already present"
         + (f", {linked} given tags/series" if linked else "")
