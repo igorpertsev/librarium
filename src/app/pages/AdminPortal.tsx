@@ -26,6 +26,7 @@ import { ActionResult, ApiError, runAction, toApiError } from '../../api/errors'
 import { bookFormToDto, bookFromDto } from '../../api/mappers';
 import type { BookStatsDto } from '../../api/types';
 import { findCoverByIsbn } from '../utils/covers';
+import { daysUntil, useFormat } from '../utils/format';
 
 export default function AdminPortal() {
   const { t } = useTranslation();
@@ -37,7 +38,8 @@ export default function AdminPortal() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingBook, setEditingBook] = useState<Book | null>(null);
-  const { batchConfig, updateBatchConfig } = useCart();
+  const { batchConfig, updateBatchConfig, currency } = useCart();
+  const fmt = useFormat();
   const [batchDraft, setBatchDraft] = useState<BatchConfig>(batchConfig);
   const { users, updateUserRole, refreshUsers } = useAuth();
   const { orders, confirmOrder, markReturned, cancelOrder, updateDueDate } = useOrders();
@@ -225,7 +227,7 @@ export default function AdminPortal() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="pricePerBatch">{t('admin.pricePerBatch')}</Label>
+              <Label htmlFor="pricePerBatch">{t('admin.pricePerBatch', { currency: fmt.currencySymbol(currency) })}</Label>
               <Input
                 id="pricePerBatch"
                 type="number"
@@ -452,10 +454,8 @@ export default function AdminPortal() {
                       {user.borrowedBooks.length > 0 ? (
                         <div className="space-y-1">
                           {user.borrowedBooks.map((borrowed) => {
-                            const returnDate = new Date(borrowed.returnDate);
-                            const today = new Date();
-                            const isOverdue = returnDate < today;
-                            const daysLeft = Math.ceil((returnDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                            const daysLeft = daysUntil(borrowed.returnDate);
+                            const isOverdue = daysLeft < 0;
 
                             return (
                               <div key={borrowed.bookId} className="text-sm">
@@ -469,7 +469,7 @@ export default function AdminPortal() {
                                     {t('admin.dueIn')} {daysLeft} {t('myBooks.days')}
                                   </Badge>
                                 ) : (
-                                  <span className="text-xs">{new Date(borrowed.returnDate).toLocaleDateString()}</span>
+                                  <span className="text-xs">{fmt.date(borrowed.returnDate)}</span>
                                 )}
                               </div>
                             );
@@ -708,18 +708,16 @@ function orderStatusBadge(status: string, t: any) {
   }
 }
 
-function dueDateBadge(dueDate: string, status: string, t: any) {
+function dueDateBadge(dueDate: string, status: string, t: any, formatDate: (value: string) => string) {
   if (status === 'returned' || status === 'cancelled') return <span className="text-sm text-muted-foreground">—</span>;
-  const due = new Date(dueDate);
-  const today = new Date();
-  const diffDays = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  const diffDays = daysUntil(dueDate);
   if (diffDays < 0) {
     return <Badge variant="destructive" className="text-xs">{t('admin.overdueBy')} {Math.abs(diffDays)} {t('myBooks.days')}</Badge>;
   }
   if (diffDays <= 5) {
     return <Badge className="bg-amber-600 text-xs">{t('admin.dueIn')} {diffDays} {t('myBooks.days')}</Badge>;
   }
-  return <span className="text-sm">{due.toLocaleDateString()}</span>;
+  return <span className="text-sm">{formatDate(dueDate)}</span>;
 }
 
 function OrderBooksModal({ order, userContacts, open, onOpenChange, t }: {
@@ -730,6 +728,8 @@ function OrderBooksModal({ order, userContacts, open, onOpenChange, t }: {
   t: any;
 }) {
   const [detailBook, setDetailBook] = useState<Book | null>(null);
+
+  const fmt = useFormat();
 
   if (!order) return null;
   return (
@@ -756,12 +756,12 @@ function OrderBooksModal({ order, userContacts, open, onOpenChange, t }: {
           <div className="flex gap-3 flex-wrap py-1">
             {orderStatusBadge(order.status, t)}
             <Badge variant="outline">{order.books.length} {t('cart.books')}</Badge>
-            <span className="text-sm text-muted-foreground">{t('admin.orderedAt')}: {new Date(order.orderedAt).toLocaleDateString()}</span>
+            <span className="text-sm text-muted-foreground">{t('admin.orderedAt')}: {fmt.date(order.orderedAt)}</span>
             {order.status !== 'returned' && (
-              <span className="text-sm text-muted-foreground">{t('admin.dueDate')}: {new Date(order.dueDate).toLocaleDateString()}</span>
+              <span className="text-sm text-muted-foreground">{t('admin.dueDate')}: {fmt.date(order.dueDate)}</span>
             )}
             {order.returnedAt && (
-              <span className="text-sm text-muted-foreground">{t('admin.returnedOn')} {new Date(order.returnedAt).toLocaleDateString()}</span>
+              <span className="text-sm text-muted-foreground">{t('admin.returnedOn')} {fmt.date(order.returnedAt)}</span>
             )}
           </div>
 
@@ -822,6 +822,7 @@ function OrdersTab({
   t: any;
 }) {
   const { users } = useAuth();
+  const fmt = useFormat();
   const [busyOrderId, setBusyOrderId] = useState<string | null>(null);
 
   const runOrderAction = async (
@@ -928,7 +929,7 @@ function OrdersTab({
                     </div>
                   </TableCell>
                   <TableCell>{orderStatusBadge(order.status, t)}</TableCell>
-                  <TableCell className="text-sm">{new Date(order.orderedAt).toLocaleDateString()}</TableCell>
+                  <TableCell className="text-sm">{fmt.date(order.orderedAt)}</TableCell>
                   <TableCell onClick={e => e.stopPropagation()}>
                     {order.status === 'returned' || order.status === 'cancelled' ? (
                       <span className="text-sm text-muted-foreground">—</span>
@@ -951,7 +952,7 @@ function OrdersTab({
                         className="flex items-center gap-1 text-sm hover:text-primary hover:underline underline-offset-2 transition-colors group"
                         onClick={() => { setEditingDueDateId(order.id); setDueDateInput(order.dueDate); }}
                       >
-                        {dueDateBadge(order.dueDate, order.status, t)}
+                        {dueDateBadge(order.dueDate, order.status, t, fmt.date)}
                         <Pencil className="w-3 h-3 opacity-0 group-hover:opacity-60 transition-opacity" />
                       </button>
                     )}
@@ -991,7 +992,7 @@ function OrdersTab({
                       )}
                       {order.status === 'returned' && (
                         <span className="text-xs text-muted-foreground">
-                          {t('admin.returnedOn')} {order.returnedAt ? new Date(order.returnedAt).toLocaleDateString() : '—'}
+                          {t('admin.returnedOn')} {fmt.date(order.returnedAt)}
                         </span>
                       )}
                       {order.status === 'cancelled' && (

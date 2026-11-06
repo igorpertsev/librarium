@@ -94,7 +94,7 @@
     "batchConfig": "Настройка партий",
     "batchConfigDesc": "Настройте количество книг в партии и цену",
     "booksPerBatch": "Книг в партии",
-    "pricePerBatch": "Цена за партию ($)",
+    "pricePerBatch": "Цена за партию ({{currency}})",
     "saveConfig": "Сохранить настройки",
     "configUpdated": "Настройки партий обновлены",
     "libraryStats": "Статистика библиотеки",

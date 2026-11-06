@@ -12,6 +12,7 @@ import { UserContacts, PreferredContact } from '../types';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { errorMessage } from '../utils/apiErrors';
+import { daysUntil, useFormat } from '../utils/format';
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -43,6 +44,7 @@ export default function Profile() {
   const { user, updateUser, changePassword } = useAuth();
   const { getOrdersForUser, cancelOrder } = useOrders();
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const fmt = useFormat();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
 
@@ -88,10 +90,9 @@ export default function Profile() {
       returnedAt: o.returnedAt!,
     })));
 
-  const isOverdue = (returnDate: string) => new Date(returnDate) < new Date();
+  const isOverdue = (returnDate: string) => daysUntil(returnDate) < 0;
 
-  const getDaysUntilReturn = (returnDate: string) =>
-    Math.ceil((new Date(returnDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+  const getDaysUntilReturn = (returnDate: string) => daysUntil(returnDate);
 
   const handleEditClick = () => {
     setEditName(user.name);
@@ -249,7 +250,7 @@ export default function Profile() {
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Clock className="w-4 h-4" />
-                    <span>{t('profile.requestedOn')}: {new Date(order.orderedAt).toLocaleDateString()}</span>
+                    <span>{t('profile.requestedOn')}: {fmt.date(order.orderedAt)}</span>
                     <Badge variant="outline">{order.books.length} {t('cart.books')}</Badge>
                   </div>
                   <Button
@@ -298,10 +299,10 @@ export default function Profile() {
                       <div className="flex flex-wrap gap-2">
                         <div className="flex items-center gap-1 text-sm text-muted-foreground">
                           <Calendar className="w-4 h-4" />
-                          <span>{t('profile.borrowed')}: {new Date(borrowed.borrowedDate).toLocaleDateString()}</span>
+                          <span>{t('profile.borrowed')}: {fmt.date(borrowed.borrowedDate)}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm text-muted-foreground">{t('profile.returnBy')}: {new Date(borrowed.returnDate).toLocaleDateString()}</span>
+                          <span className="text-sm text-muted-foreground">{t('profile.returnBy')}: {fmt.date(borrowed.returnDate)}</span>
                           {overdue ? (
                             <Badge variant="destructive">{t('profile.overdueBy')} {Math.abs(daysLeft)} {t('myBooks.days')}</Badge>
                           ) : daysLeft <= 3 ? (
@@ -338,7 +339,7 @@ export default function Profile() {
                     <p className="text-sm text-muted-foreground mb-2">{entry.book.author}</p>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <CheckCircle2 className="w-4 h-4 text-green-600" />
-                      <span>{t('profile.returnedOn')}: {new Date(entry.returnedAt).toLocaleDateString()}</span>
+                      <span>{t('profile.returnedOn')}: {fmt.date(entry.returnedAt)}</span>
                     </div>
                   </div>
                 </div>
