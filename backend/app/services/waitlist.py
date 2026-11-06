@@ -1,8 +1,9 @@
 """Waiting list: customers ask to be emailed when a book that is out comes back.
 
-Everyone waiting is emailed at the same moment and their entries are removed; the first to
-order gets the book. While anybody waits for a book, its current borrower cannot extend the
-loan (see ``app.services.orders.renewal_refusal``).
+Waiting is per title: an entry names one copy, but any copy of the title (copy group) that
+becomes available counts. Everyone waiting is emailed at the same moment and their entries
+are removed; the first to order gets the book. While anybody waits for a title, its current
+borrowers cannot extend their loans (see ``app.services.orders.renewal_refusal``).
 """
 
 from __future__ import annotations
@@ -10,7 +11,7 @@ from __future__ import annotations
 import uuid
 from collections.abc import Iterable
 
-from sqlalchemy import delete, exists, select
+from sqlalchemy import Select, delete, exists, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -18,24 +19,38 @@ from sqlalchemy.orm import selectinload
 from app.core.exceptions import ConflictError, NotFoundError
 from app.models import Book, Notification, User, WaitlistEntry
 from app.models.enums import BookStatus, NotificationKind
-from app.repositories.books import reserved_book_ids
+from app.repositories.books import copy_group_key, reserved_book_ids
 
 
-async def _available_ids(session: AsyncSession, book_ids: Iterable[uuid.UUID]) -> set[uuid.UUID]:
-    """Books that can be ordered right now: active, status available and not reserved."""
+async def _groups(session: AsyncSession, book_ids: Iterable[uuid.UUID]) -> set[uuid.UUID]:
+    """Copy groups (titles) of the given copies."""
     ids = list(book_ids)
     if not ids:
         return set()
-    candidates = set(
-        (
-            await session.scalars(
-                select(Book.id).where(
-                    Book.id.in_(ids), Book.is_active, Book.status == BookStatus.AVAILABLE
-                )
+    return set((await session.scalars(select(copy_group_key()).where(Book.id.in_(ids)))).all())
+
+
+async def available_groups(session: AsyncSession, groups: set[uuid.UUID]) -> set[uuid.UUID]:
+    """Titles with at least one copy that can be ordered right now."""
+    if not groups:
+        return set()
+    rows = (
+        await session.execute(
+            select(copy_group_key(), Book.id).where(
+                copy_group_key().in_(groups), Book.is_active, Book.status == BookStatus.AVAILABLE
             )
-        ).all()
+        )
+    ).all()
+    reserved = await reserved_book_ids(session, [book_id for _, book_id in rows])
+    return {group for group, book_id in rows if book_id not in reserved}
+
+
+def _entries_for_groups(groups: set[uuid.UUID]) -> Select[uuid.UUID]:
+    return (
+        select(WaitlistEntry.id)
+        .join(Book, Book.id == WaitlistEntry.book_id)
+        .where(copy_group_key().in_(groups))
     )
-    return candidates - await reserved_book_ids(session, candidates)
 
 
 async def list_entries(session: AsyncSession, user: User) -> list[WaitlistEntry]:
@@ -54,10 +69,19 @@ async def join(session: AsyncSession, user: User, book_id: uuid.UUID) -> tuple[W
     book = await session.get(Book, book_id)
     if book is None or not book.is_active:
         raise NotFoundError("Book not found", code="BOOK_NOT_FOUND")
-    if book_id in await _available_ids(session, [book_id]):
+    group = book.copy_group_id or book.id
+    if await available_groups(session, {group}):
         raise ConflictError(
             "This book is available now: add it to your cart instead", code="BOOK_AVAILABLE"
         )
+    # One entry per title: waiting for any copy is waiting for all of them.
+    existing = await session.scalar(
+        select(WaitlistEntry)
+        .where(WaitlistEntry.user_id == user.id, WaitlistEntry.id.in_(_entries_for_groups({group})))
+        .options(selectinload(WaitlistEntry.book))
+    )
+    if existing is not None:
+        return existing, False
     inserted = await session.scalar(
         pg_insert(WaitlistEntry)
         .values(id=uuid.uuid4(), user_id=user.id, book_id=book_id)
@@ -75,25 +99,28 @@ async def join(session: AsyncSession, user: User, book_id: uuid.UUID) -> tuple[W
 
 
 async def leave(session: AsyncSession, user: User, book_id: uuid.UUID) -> None:
-    await session.execute(
-        delete(WaitlistEntry).where(
-            WaitlistEntry.user_id == user.id, WaitlistEntry.book_id == book_id
+    """Stop waiting for the title of this copy."""
+    groups = await _groups(session, [book_id])
+    if groups:
+        await session.execute(
+            delete(WaitlistEntry).where(
+                WaitlistEntry.user_id == user.id, WaitlistEntry.id.in_(_entries_for_groups(groups))
+            )
         )
-    )
-    await session.commit()
+        await session.commit()
 
 
 async def notify_waiting_readers(session: AsyncSession, book_ids: Iterable[uuid.UUID]) -> int:
     """Queue a "book is back" email for everyone waiting for any of these books that is now
     available, and clear their entries. Runs inside the caller's transaction."""
     await session.flush()  # the caller's status change must be visible to the queries below
-    available = await _available_ids(session, book_ids)
+    available = await available_groups(session, await _groups(session, book_ids))
     if not available:
         return 0
     entries = (
         await session.execute(
             delete(WaitlistEntry)
-            .where(WaitlistEntry.book_id.in_(available))
+            .where(WaitlistEntry.id.in_(_entries_for_groups(available)))
             .returning(WaitlistEntry.user_id, WaitlistEntry.book_id)
         )
     ).all()
@@ -116,13 +143,16 @@ async def notify_waiting_readers(session: AsyncSession, book_ids: Iterable[uuid.
 async def has_waiting_readers(
     session: AsyncSession, book_ids: Iterable[uuid.UUID], *, except_user: uuid.UUID
 ) -> bool:
-    ids = list(book_ids)
-    if not ids:
+    groups = await _groups(session, book_ids)
+    if not groups:
         return False
     return bool(
         await session.scalar(
             select(
-                exists().where(WaitlistEntry.book_id.in_(ids), WaitlistEntry.user_id != except_user)
+                exists().where(
+                    WaitlistEntry.id.in_(_entries_for_groups(groups)),
+                    WaitlistEntry.user_id != except_user,
+                )
             )
         )
     )

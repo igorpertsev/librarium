@@ -14,6 +14,8 @@ x-backend: &backend
     SEED_ADMIN_EMAIL: e2e-admin@example.com
     SEED_ADMIN_PASSWORD: e2e-admin-password
     SEED_ADMIN_NAME: E2E Librarian
+    # The tests sign up and sign in many times from one address.
+    RATE_LIMIT_ENABLED: "false"
 
 services:
   db:

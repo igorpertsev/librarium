@@ -12,7 +12,8 @@ export interface WaitlistEntry {
 
 interface WaitlistContextType {
   entries: WaitlistEntry[];
-  isWaiting: (bookId: string) => boolean;
+  /** Waiting is per title: any copy of it counts. */
+  isWaiting: (book: { id: string; groupId?: string }) => boolean;
   /** Email me when this book is available again. */
   join: (bookId: string) => Promise<ActionResult>;
   leave: (bookId: string) => Promise<ActionResult>;
@@ -34,7 +35,10 @@ export function WaitlistProvider({ children }: { children: ReactNode }) {
     else setEntries([]);
   }, [user, load]);
 
-  const waitingIds = useMemo(() => new Set(entries.map((entry) => entry.book.id)), [entries]);
+  const waiting = useMemo(
+    () => new Set(entries.flatMap((entry) => [entry.book.id, entry.book.groupId ?? entry.book.id])),
+    [entries],
+  );
 
   const join = (bookId: string) =>
     runAction(async () => {
@@ -44,12 +48,17 @@ export function WaitlistProvider({ children }: { children: ReactNode }) {
 
   const leave = (bookId: string) =>
     runAction(async () => {
-      await waitlistApi.leave(bookId);
-      setEntries((prev) => prev.filter((entry) => entry.book.id !== bookId));
+      await waitlistApi.leave(bookId); // the server clears the whole title
+      await load();
     });
 
   return (
-    <WaitlistContext.Provider value={{ entries, isWaiting: (id) => waitingIds.has(id), join, leave }}>
+    <WaitlistContext.Provider value={{
+        entries,
+        isWaiting: (book) => waiting.has(book.id) || (!!book.groupId && waiting.has(book.groupId)),
+        join,
+        leave,
+      }}>
       {children}
     </WaitlistContext.Provider>
   );

@@ -73,6 +73,12 @@ class Book(TimestampMixin, Base):
     publication_year: Mapped[int | None] = mapped_column(sa.SmallInteger)
     is_active: Mapped[bool] = mapped_column(default=True, server_default=sa.true())
     copy_group_id: Mapped[uuid.UUID | None] = mapped_column(sa.Uuid, index=True)
+
+    @property
+    def group_id(self) -> uuid.UUID:
+        """The same for every copy of a title."""
+        return self.copy_group_id or self.id
+
     search_vector: Mapped[str] = mapped_column(
         postgresql.TSVECTOR,
         sa.Computed(SEARCH_VECTOR_SQL, persisted=True),

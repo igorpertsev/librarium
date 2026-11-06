@@ -23,7 +23,7 @@ from app.core.security import (
 from app.models import User
 from app.repositories.users import get_user_by_email
 from app.services.auth import revoke_user_tokens
-from app.services.notifications import build_message
+from app.services.notifications import build_message, localized
 
 
 def invalid_link_error() -> BadRequestError:
@@ -33,16 +33,16 @@ def invalid_link_error() -> BadRequestError:
 
 
 def _render(user: User, link: str, minutes: int) -> tuple[str, str]:
-    subject = "Reset your password · Сброс пароля"
-    body = (
+    english = (
         f"Hello {user.full_name},\n\n"
         "someone (hopefully you) asked to reset the password of your Little Dragon library "
         "account. Open this link to choose a new password:\n\n"
         f"{link}\n\n"
         f"The link works for {minutes} minutes and only once. If you did not ask for this, "
         "ignore this email: your password stays the same.\n\n"
-        "— Little Dragon library\n\n"
-        "----------------------------------------\n\n"
+        "— Little Dragon library\n"
+    )
+    russian = (
         f"Здравствуйте, {user.full_name}!\n\n"
         "кто-то (надеемся, вы) запросил сброс пароля вашей учётной записи в библиотеке "
         "Little Dragon. Чтобы задать новый пароль, откройте ссылку:\n\n"
@@ -51,7 +51,7 @@ def _render(user: User, link: str, minutes: int) -> tuple[str, str]:
         "просто проигнорируйте это письмо — пароль останется прежним.\n\n"
         "— Библиотека Little Dragon\n"
     )
-    return subject, body
+    return localized(user, "Reset your password", "Сброс пароля", english, russian)
 
 
 async def build_reset_email(

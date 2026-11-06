@@ -364,8 +364,9 @@ two copies of the same title are two records (ISBN is not unique).
   never once the books are overdue (`409 RENEWAL_NOT_ALLOWED`, `details.reason`). Due-date reminders already sent
   for the old date are dropped, so the customer is reminded again before the new one.
 - **Waiting list**: for a book that cannot be ordered now, `POST /waitlist/{book_id}` (idempotent; `409
-  BOOK_AVAILABLE` if it can be ordered) asks for an email once it is back. When an order is returned or
-  cancelled, or a librarian sets a book to `available`, everyone waiting for a now-orderable book gets one
+  BOOK_AVAILABLE` if it can be ordered) asks for an email once it is back. Waiting is per title: any copy of it
+  counts. When an order is returned or cancelled, or a librarian sets a book to `available`, everyone waiting for
+  a now-orderable title gets one
   `book_available` email (through the notification outbox) and their entries are removed; the first to order
   gets it. The email is dropped if the book is taken again before it is sent. While someone waits for a book,
   its borrower cannot extend the loan (`details.reason = requested_by_others`).

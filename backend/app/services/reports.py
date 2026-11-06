@@ -111,7 +111,7 @@ async def summary(session: AsyncSession, date_from: date, date_to: date) -> Repo
 
 CSV_COLUMNS = (
     "number", "status", "customer", "email", "books", "titles", "total", "currency",
-    "ordered_at", "confirmed_at", "due_date", "returned_at", "cancelled_at",
+    "ordered_at", "confirmed_at", "due_date", "returned_at", "cancelled_at", "renewals",
 )  # fmt: skip
 
 
@@ -150,6 +150,7 @@ async def orders_csv(session: AsyncSession, date_from: date, date_to: date) -> s
                 order.due_date.isoformat(),
                 order.returned_at.isoformat(timespec="seconds") if order.returned_at else None,
                 order.cancelled_at.isoformat(timespec="seconds") if order.cancelled_at else None,
+                order.renewal_count,
             )
         )
     return buffer.getvalue()

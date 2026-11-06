@@ -10,7 +10,15 @@ from sqlalchemy import select
 from app.models import Notification
 from app.models.enums import BookStatus, NotificationKind, NotificationStatus
 from app.services.notifications import deliver_pending
-from tests.conftest import API, ApiUser, CreateBook, SetBatch, fill_cart, place_order
+from tests.conftest import (
+    API,
+    ApiUser,
+    CreateBook,
+    RegisterUser,
+    SetBatch,
+    fill_cart,
+    place_order,
+)
 
 
 class FakeSender:
@@ -185,3 +193,62 @@ async def test_a_loan_cannot_be_extended_while_others_wait(
 
     await other_customer.delete(f"{API}/waitlist/{book_id}")
     assert (await customer.post(f"{API}/orders/{order['id']}/renew")).status_code == 200
+
+
+async def test_waiting_is_per_title_across_copies(
+    app: FastAPI,
+    customer: ApiUser,
+    other_customer: ApiUser,
+    admin: ApiUser,
+    create_book: CreateBook,
+    set_batch: SetBatch,
+) -> None:
+    await set_batch(1)
+    first = await create_book("Dune")
+    second = (await admin.post(f"{API}/admin/books/{first}/copies", json={"count": 1})).json()[0][
+        "id"
+    ]
+    # Both copies are out.
+    order_one = await _order(customer, first)
+    await _order(customer, second)
+
+    joined = await other_customer.client.post(
+        f"{API}/waitlist/{first}", headers=other_customer.headers
+    )
+    assert joined.status_code == 201
+    group = joined.json()["book"]["group_id"]
+    again = await other_customer.client.post(
+        f"{API}/waitlist/{second}", headers=other_customer.headers
+    )
+    assert again.status_code == 200  # already waiting for this title
+    assert again.json()["book"]["group_id"] == group
+    assert len((await other_customer.get(f"{API}/waitlist")).json()) == 1
+
+    # The first copy comes back: the reader waiting for the title is told once.
+    await customer.post(f"{API}/orders/{order_one['id']}/cancel")
+    (notification,) = await _book_available_notifications(app)
+    assert str(notification.user_id) == other_customer.id
+    assert (await other_customer.get(f"{API}/waitlist")).json() == []
+
+    # Leaving through either copy clears the title.
+    await other_customer.client.post(f"{API}/waitlist/{second}", headers=other_customer.headers)
+    assert (await other_customer.delete(f"{API}/waitlist/{first}")).status_code == 204
+
+
+async def test_book_available_email_in_the_readers_language(
+    app: FastAPI,
+    customer: ApiUser,
+    register_user: RegisterUser,
+    create_book: CreateBook,
+    set_batch: SetBatch,
+) -> None:
+    await set_batch(1)
+    reader = await register_user(full_name="Ivan", preferred_language="ru", telegram="@ivan")
+    book_id = await create_book("Мастер и Маргарита")
+    order = await _order(customer, book_id)
+    await reader.client.post(f"{API}/waitlist/{book_id}", headers=reader.headers)
+    await customer.post(f"{API}/orders/{order['id']}/cancel")
+    send = await _deliver(app)
+    mail = next(m for m in send.messages if reader.email in m["To"])
+    assert mail["Subject"] == "«Мастер и Маргарита» снова доступна"
+    assert "Hello" not in mail.get_content()

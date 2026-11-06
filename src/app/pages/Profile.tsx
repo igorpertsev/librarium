@@ -272,7 +272,7 @@ export default function Profile() {
                     {book.author} · {t('waitlist.since', { date: fmt.date(createdAt) })}
                   </p>
                 </div>
-                <WaitlistButton bookId={book.id} title={book.title} />
+                <WaitlistButton bookId={book.id} groupId={book.groupId} title={book.title} />
               </div>
             ))}
           </CardContent>

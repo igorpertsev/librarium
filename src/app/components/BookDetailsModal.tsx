@@ -264,7 +264,7 @@ export function BookDetailsModal({ book, open, onOpenChange }: BookDetailsModalP
             {(isOrderedByOther || book.status !== 'available') && !isPending && (
               <div className="flex flex-col items-center gap-2 text-center">
                 <p className="text-sm text-muted-foreground">{t('waitlist.explain')}</p>
-                <WaitlistButton bookId={book.id} title={book.title} withLabel />
+                <WaitlistButton bookId={book.id} groupId={book.groupId} title={book.title} withLabel />
               </div>
             )}
           </div>

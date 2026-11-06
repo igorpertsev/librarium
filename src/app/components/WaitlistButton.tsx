@@ -7,11 +7,21 @@ import { errorMessage } from '../utils/apiErrors';
 import { Button } from './ui/button';
 
 /** "Email me when it is back" toggle for a book that cannot be ordered now. */
-export function WaitlistButton({ bookId, title, withLabel = false }: { bookId: string; title: string; withLabel?: boolean }) {
+export function WaitlistButton({
+  bookId,
+  groupId,
+  title,
+  withLabel = false,
+}: {
+  bookId: string;
+  groupId?: string;
+  title: string;
+  withLabel?: boolean;
+}) {
   const { t } = useTranslation();
   const { isWaiting, join, leave } = useWaitlist();
   const [busy, setBusy] = useState(false);
-  const waiting = isWaiting(bookId);
+  const waiting = isWaiting({ id: bookId, groupId });
 
   const toggle = async () => {
     setBusy(true);

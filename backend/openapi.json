@@ -3710,6 +3710,12 @@
             ],
             "title": "Publication Year"
           },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id",
+            "description": "The same for every copy of a title"
+          },
           "is_active": {
             "type": "boolean",
             "title": "Is Active"
@@ -3729,6 +3735,7 @@
           "isbn",
           "language",
           "publication_year",
+          "group_id",
           "is_active"
         ],
         "title": "BookBrief",
@@ -4097,6 +4104,12 @@
             ],
             "title": "Publication Year"
           },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id",
+            "description": "The same for every copy of a title"
+          },
           "is_active": {
             "type": "boolean",
             "title": "Is Active"
@@ -4160,6 +4173,7 @@
           "isbn",
           "language",
           "publication_year",
+          "group_id",
           "is_active",
           "is_reserved",
           "is_available",

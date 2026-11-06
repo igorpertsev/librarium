@@ -21,7 +21,7 @@ from datetime import UTC, date, datetime, timedelta
 from email.message import EmailMessage
 from email.utils import formataddr, make_msgid
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -199,28 +199,57 @@ def _render(kind: NotificationKind, user: User, order: Order, app_url: str) -> t
     )
 
 
+def localized(
+    user: User, subject_en: str, subject_ru: str, english: str, russian: str
+) -> tuple[str, str]:
+    """Subject and body in the customer's language, or English followed by Russian."""
+    if user.preferred_language is UiLanguage.EN:
+        return subject_en, english
+    if user.preferred_language is UiLanguage.RU:
+        return subject_ru, russian
+    return (
+        f"{subject_en} · {subject_ru}",
+        f"{english}\n----------------------------------------\n\n{russian}",
+    )
+
+
 def _render_book_available(user: User, book: Book, app_url: str) -> tuple[str, str]:
-    subject = f"“{book.title}” is available again · Книга снова доступна"
-    body = (
+    english = (
         f"Hello {user.full_name},\n\n"
         f"good news: “{book.title}” by {book.author}, which you were waiting for, is back on "
         f"the shelf. Add it to your cart before someone else does: {app_url}/\n\n"
         "This is the only email about this book; ask again on the site if you miss it.\n\n"
-        "— Little Dragon library\n\n"
-        "----------------------------------------\n\n"
+        "— Little Dragon library\n"
+    )
+    russian = (
         f"Здравствуйте, {user.full_name}!\n\n"
         f"хорошая новость: книга «{book.title}» ({book.author}), которую вы ждали, снова "
         f"доступна. Добавьте её в корзину, пока её не заказал кто-то другой: {app_url}/\n\n"
         "Это единственное письмо об этой книге; если не успеете, подпишитесь снова на сайте.\n\n"
         "— Библиотека Little Dragon\n"
     )
-    return subject, body
+    return localized(
+        user,
+        f"“{book.title}” is available again",
+        f"«{book.title}» снова доступна",
+        english,
+        russian,
+    )
 
 
 async def _book_still_available(session: AsyncSession, book: Book) -> bool:
-    if not book.is_active or book.status is not BookStatus.AVAILABLE:
-        return False
-    return book.id not in await reserved_book_ids(session, [book.id])
+    """Some copy of the title can still be ordered."""
+    group = book.copy_group_id or book.id
+    copies = (
+        await session.scalars(
+            select(Book.id).where(
+                func.coalesce(Book.copy_group_id, Book.id) == group,
+                Book.is_active,
+                Book.status == BookStatus.AVAILABLE,
+            )
+        )
+    ).all()
+    return bool(set(copies) - await reserved_book_ids(session, copies))
 
 
 def build_message(settings: Settings, *, user: User, subject: str, body: str) -> EmailMessage:

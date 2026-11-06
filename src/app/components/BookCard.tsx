@@ -192,7 +192,7 @@ export function BookCard({ book }: BookCardProps) {
           {getCartButtonLabel(t, { status: book.status, inCart: isPending, reserved: isOrderedByOther })}
         </Button>
         {(isOrderedByOther || book.status !== 'available') && !isPending && (
-          <WaitlistButton bookId={book.id} title={book.title} />
+          <WaitlistButton bookId={book.id} groupId={book.groupId} title={book.title} />
         )}
       </CardFooter>
     </Card>

@@ -871,6 +871,12 @@ export interface components {
             language: string | null;
             /** Publication Year */
             publication_year: number | null;
+            /**
+             * Group Id
+             * Format: uuid
+             * @description The same for every copy of a title
+             */
+            group_id: string;
             /** Is Active */
             is_active: boolean;
         };
@@ -985,6 +991,12 @@ export interface components {
             language: string | null;
             /** Publication Year */
             publication_year: number | null;
+            /**
+             * Group Id
+             * Format: uuid
+             * @description The same for every copy of a title
+             */
+            group_id: string;
             /** Is Active */
             is_active: boolean;
             /**

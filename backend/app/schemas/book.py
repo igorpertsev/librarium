@@ -61,6 +61,7 @@ class BookBrief(ApiModel):
     isbn: str | None
     language: str | None
     publication_year: int | None
+    group_id: uuid.UUID = Field(description="The same for every copy of a title")
     is_active: bool
 
 

@@ -20,6 +20,8 @@ export interface Book {
   isAvailable?: boolean;
   /** While reserved: the due date of the order holding the copy (YYYY-MM-DD). */
   availableFrom?: string | null;
+  /** The same for every copy of a title. */
+  groupId?: string;
   /** Copies of this title in the library, and how many can be borrowed now. */
   copies?: number;
   copiesAvailable?: number;

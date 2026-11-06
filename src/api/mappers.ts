@@ -63,6 +63,7 @@ export function bookFromDto(dto: BookDto | BookBriefDto): Book {
     isbn: dto.isbn ?? '',
     publishedYear: dto.publication_year ?? 0,
     language: dto.language,
+    groupId: dto.group_id,
   };
   if ('is_reserved' in dto) {
     book.isReserved = dto.is_reserved;
