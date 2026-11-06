@@ -323,5 +323,23 @@
     "previousAria": "Go to previous page",
     "nextAria": "Go to next page",
     "morePages": "More pages"
+  },
+  "confirm": {
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "remove": "Remove",
+    "deleteBookTitle": "Delete “{{title}}”?",
+    "deleteBookDesc": "The book disappears from the catalogue and from customers' carts. Existing orders keep it in their history.",
+    "cancelOrderTitle": "Cancel this order?",
+    "cancelOrderDesc": "{{name}} will no longer receive these books, and they become available to other readers. This cannot be undone.",
+    "cancelOrder": "Cancel order",
+    "keepOrder": "Keep order",
+    "cancelRequestTitle": "Cancel this request?",
+    "cancelRequestDesc": "The books will be released for other readers. You can order them again later if they are still available.",
+    "cancelRequest": "Cancel request",
+    "keepRequest": "Keep request",
+    "removeBatchTitle": "Remove this batch?",
+    "removeBatchDesc": "{{count}} book(s) will be removed from your cart."
   }
 }

@@ -14,6 +14,7 @@ import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useOrders } from '../contexts/OrdersContext';
 import { BookDetailsModal } from '../components/BookDetailsModal';
+import { useConfirm } from '../components/ConfirmDialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from '../components/ui/pagination';
@@ -44,6 +45,7 @@ export default function AdminPortal() {
   const { users, updateUserRole, refreshUsers } = useAuth();
   const { orders, confirmOrder, markReturned, cancelOrder, updateDueDate } = useOrders();
   const { invalidateCatalog } = useCatalog();
+  const { confirm, confirmDialog } = useConfirm();
   const [currentPage, setCurrentPage] = useState(1);
   const booksPerPage = 10;
 
@@ -344,7 +346,15 @@ export default function AdminPortal() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDeleteBook(book.id)}
+                          onClick={async () => {
+                            const confirmed = await confirm({
+                              title: t('confirm.deleteBookTitle', { title: book.title }),
+                              description: t('confirm.deleteBookDesc'),
+                              confirmLabel: t('confirm.delete'),
+                              destructive: true,
+                            });
+                            if (confirmed) handleDeleteBook(book.id);
+                          }}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -517,6 +527,7 @@ export default function AdminPortal() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {confirmDialog}
     </div>
   );
 }
@@ -824,6 +835,7 @@ function OrdersTab({
   const { users } = useAuth();
   const fmt = useFormat();
   const [busyOrderId, setBusyOrderId] = useState<string | null>(null);
+  const { confirm, confirmDialog } = useConfirm();
 
   const runOrderAction = async (
     orderId: string,
@@ -973,7 +985,16 @@ function OrdersTab({
                             size="sm"
                             variant="destructive"
                             disabled={busyOrderId === order.id}
-                            onClick={() => runOrderAction(order.id, () => onCancel(order.id), 'admin.orderCancelledMsg')}
+                            onClick={async () => {
+                              const confirmed = await confirm({
+                                title: t('confirm.cancelOrderTitle'),
+                                description: t('confirm.cancelOrderDesc', { name: order.userName }),
+                                confirmLabel: t('confirm.cancelOrder'),
+                                cancelLabel: t('confirm.keepOrder'),
+                                destructive: true,
+                              });
+                              if (confirmed) runOrderAction(order.id, () => onCancel(order.id), 'admin.orderCancelledMsg');
+                            }}
                           >
                             {t('admin.cancelOrder')}
                           </Button>
@@ -1014,6 +1035,7 @@ function OrdersTab({
         onOpenChange={open => { if (!open) setSelectedOrder(null); }}
         t={t}
       />
+      {confirmDialog}
     </div>
   );
 }
