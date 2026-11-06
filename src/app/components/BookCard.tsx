@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import useEmblaCarousel from 'embla-carousel-react';
 import { BookDetailsModal } from './BookDetailsModal';
 import { useTranslation } from 'react-i18next';
-import { getCategoryTranslation, getStatusTranslation } from '../utils/translations';
+import { getCartButtonLabel, getCategoryTranslation, getStatusTranslation } from '../utils/translations';
 import { errorMessage } from '../utils/apiErrors';
 
 interface BookCardProps {
@@ -158,7 +158,7 @@ export function BookCard({ book }: BookCardProps) {
           className="w-full"
         >
           <ShoppingCart className="w-4 h-4 mr-2" />
-          {isPending ? t('bookStatus.pending') : isOrderedByOther ? t('bookStatus.notAvailable') : t('bookDetails.addToCart')}
+          {getCartButtonLabel(t, { status: book.status, inCart: isPending, reserved: isOrderedByOther })}
         </Button>
       </CardFooter>
     </Card>

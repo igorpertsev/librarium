@@ -10,7 +10,7 @@ import { useCart } from '../contexts/CartContext';
 import { useOrders } from '../contexts/OrdersContext';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
-import { getCategoryTranslation } from '../utils/translations';
+import { getCartButtonLabel, getCategoryTranslation } from '../utils/translations';
 import { errorMessage } from '../utils/apiErrors';
 
 interface BookDetailsModalProps {
@@ -237,7 +237,7 @@ export function BookDetailsModal({ book, open, onOpenChange }: BookDetailsModalP
               size="lg"
             >
               <ShoppingCart className="w-4 h-4 sm:w-6 sm:h-6 mr-2 sm:mr-3" />
-              {isPending ? t('bookStatus.pending') : isOrderedByOther ? t('bookStatus.notAvailable') : t('bookDetails.addToCart')}
+              {getCartButtonLabel(t, { status: book.status, inCart: isPending, reserved: isOrderedByOther })}
             </Button>
           </div>
         </div>
