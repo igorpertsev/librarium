@@ -400,7 +400,8 @@
     "sortAuthor": "Автор (А–Я)",
     "sortYearNewest": "Сначала новые издания",
     "sortRecentlyAdded": "Недавно добавленные",
-    "loadMore": "Загрузить ещё"
+    "loadMore": "Загрузить ещё",
+    "sortRelevance": "По релевантности"
   },
   "batch": {
     "info": "Книги выдаются партиями по {{count}} шт. за {{price}} за партию.",

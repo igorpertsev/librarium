@@ -4170,7 +4170,8 @@
           "publication_year",
           "-publication_year",
           "created_at",
-          "-created_at"
+          "-created_at",
+          "relevance"
         ],
         "title": "BookSort",
         "description": "Allow-list of sort keys; ``-`` prefix means descending. Never interpolated into SQL."

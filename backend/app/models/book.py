@@ -9,6 +9,13 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.models.base import Base, TimestampMixin, str_enum, uuid_pk
 from app.models.enums import BookCategory, BookStatus
 
+# "simple" configuration: no stemming, so it treats English and Russian text alike.
+SEARCH_VECTOR_SQL = (
+    "setweight(to_tsvector('simple', coalesce(title, '')), 'A') || "
+    "setweight(to_tsvector('simple', coalesce(author, '')), 'B') || "
+    "setweight(to_tsvector('simple', coalesce(description, '')), 'C')"
+)
+
 
 class Book(TimestampMixin, Base):
     """One physical copy of a book.
@@ -26,6 +33,20 @@ class Book(TimestampMixin, Base):
             name="publication_year_range",
         ),
         sa.Index("ix_books_active_status", "is_active", "status"),
+        # Full-text search (title, author, description) and typo-tolerant matching (pg_trgm).
+        sa.Index("ix_books_search_vector", "search_vector", postgresql_using="gin"),
+        sa.Index(
+            "ix_books_title_trgm",
+            "title",
+            postgresql_using="gin",
+            postgresql_ops={"title": "gin_trgm_ops"},
+        ),
+        sa.Index(
+            "ix_books_author_trgm",
+            "author",
+            postgresql_using="gin",
+            postgresql_ops={"author": "gin_trgm_ops"},
+        ),
     )
 
     id: Mapped[uuid.UUID] = uuid_pk()
@@ -52,3 +73,8 @@ class Book(TimestampMixin, Base):
     publication_year: Mapped[int | None] = mapped_column(sa.SmallInteger)
     is_active: Mapped[bool] = mapped_column(default=True, server_default=sa.true())
     copy_group_id: Mapped[uuid.UUID | None] = mapped_column(sa.Uuid, index=True)
+    search_vector: Mapped[str] = mapped_column(
+        postgresql.TSVECTOR,
+        sa.Computed(SEARCH_VECTOR_SQL, persisted=True),
+        deferred=True,  # only used in WHERE / ORDER BY
+    )

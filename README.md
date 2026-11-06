@@ -346,6 +346,10 @@ two copies of the same title are two records (ISBN is not unique).
 - **Copies**: a book row is one physical copy. Copies of a title share `copy_group_id` (admin “Add a copy”); the
   catalogue (`GET /books`) lists each title once, represented by a copy that can be borrowed if there is one, with
   `copies` and `copies_available`. Catalogue edits apply to all copies of the title; status stays per copy.
+- **Search** (`GET /books?q=`): PostgreSQL full-text search over title, author and description (generated
+  `search_vector`, `simple` configuration, so English and Russian are treated alike; web-search syntax: `"phrase"`,
+  `-word`), substring matches on title, author and ISBN (hyphens ignored), and typo tolerance via `pg_trgm`
+  (`word_similarity` ≥ 0.5: “hobit” finds *The Hobbit*). `sort=relevance` ranks the best match first.
 - The cart is not a reservation: the same book can sit in several users' carts; adding it checks
   availability, but the decisive check happens at checkout.
 - Pricing is per **batch**: `price_per_batch` for every complete set of `books_per_batch` books (library
