@@ -353,5 +353,12 @@
     "sortYearNewest": "Newest publications",
     "sortRecentlyAdded": "Recently added",
     "loadMore": "Load more"
+  },
+  "batch": {
+    "info": "Books are lent in batches of {{count}} for {{price}} per batch.",
+    "progress": "{{current}} of {{total}} books in your next batch",
+    "ready_one": "{{count}} batch ready",
+    "ready_other": "{{count}} batches ready",
+    "goToCart": "Go to cart"
   }
 }

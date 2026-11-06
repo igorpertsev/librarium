@@ -353,5 +353,14 @@
     "sortYearNewest": "Сначала новые издания",
     "sortRecentlyAdded": "Недавно добавленные",
     "loadMore": "Загрузить ещё"
+  },
+  "batch": {
+    "info": "Книги выдаются партиями по {{count}} шт. за {{price}} за партию.",
+    "progress": "{{current}} из {{total}} книг в следующей партии",
+    "ready_one": "{{count}} партия готова",
+    "ready_few": "{{count}} партии готовы",
+    "ready_many": "{{count}} партий готово",
+    "ready_other": "{{count}} партии готовы",
+    "goToCart": "В корзину"
   }
 }
