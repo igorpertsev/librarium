@@ -126,6 +126,22 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
+  visual:
+    name: Visual tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      # A fresh e2e stack, then Playwright in its Docker image (see e2e/visual.sh).
+      - name: Screenshots match e2e/visual/__screenshots__
+        run: bash e2e/visual.sh
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: visual-differences
+          path: test-results-visual/
+          retention-days: 7
+
   images:
     name: Production images
     runs-on: ubuntu-24.04

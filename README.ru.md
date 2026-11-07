@@ -236,6 +236,26 @@ pnpm e2e
 pnpm e2e:stack:down
 ```
 
+**Визуальные тесты** (`e2e/visual/`, `playwright.visual.config.ts`) делают скриншоты страницы входа, каталога,
+страницы книги, профиля и корзины читателя и портала библиотекаря — на компьютере и телефоне, в светлой и тёмной
+теме — и сравнивают их с эталонами в `e2e/visual/__screenshots__` (допускается не более 100 отличающихся пикселей;
+отрисовка в образе детерминирована, поэтому падает даже чуть более широкий заголовок).
+`e2e/visual.sh` перезапускает e2e-стек со свежими данными и запускает Playwright в его Docker-образе
+(`mcr.microsoft.com/playwright`), поэтому шрифты и отрисовка одинаковы на любой машине и в CI; обложки с других
+сайтов заменяются серой картинкой. Если страница меняется намеренно, создайте новые эталоны, просмотрите их и
+закоммитьте вместе с изменением:
+
+```bash
+pnpm e2e:visual
+```
+
+```bash
+pnpm e2e:visual --update-snapshots
+```
+
+При расхождении в `test-results-visual/` лежат ожидаемое, фактическое и разностное изображение для каждого скриншота
+(CI выгружает их как артефакт).
+
 Вместо загрузки Chromium можно использовать установленный Google Chrome: `PLAYWRIGHT_CHANNEL=chrome pnpm e2e`.
 Упавшие тесты оставляют скриншоты и трассировки в `test-results/` (`pnpm exec playwright show-trace <файл>`).
 
@@ -249,6 +269,7 @@ pnpm e2e:stack:down
 - *Frontend*: `pnpm install --frozen-lockfile`, проверка, что `src/api/generated/schema.d.ts` соответствует
   `backend/openapi.json`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`.
 - *Браузерные тесты*: e2e-стек, Chromium и `pnpm e2e`; при ошибке выгружается отчёт Playwright.
+- *Визуальные тесты*: `e2e/visual.sh` (сравнение скриншотов с эталонами); при расхождении выгружаются различия.
 - *Production-образы*: `docker compose -f docker-compose.prod.yml build`.
 
 Поэтому после изменения API коммитьте экспортированный `backend/openapi.json` и перегенерированные типы вместе.

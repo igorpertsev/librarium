@@ -16,7 +16,12 @@ function figmaAssetResolver() {
   }
 }
 
+// Same-origin API for the visual tests in Docker (e2e/visual.sh): /api and /media are passed to
+// this backend, as Caddy does in production. Unset in normal development.
+const apiProxy = process.env.VITE_PROXY_API
+
 export default defineConfig({
+  server: apiProxy ? { proxy: { '/api': apiProxy, '/media': apiProxy } } : undefined,
   plugins: [
     figmaAssetResolver(),
     // The React and Tailwind plugins are both required for Make, even if

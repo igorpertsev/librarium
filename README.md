@@ -241,6 +241,26 @@ pnpm e2e
 pnpm e2e:stack:down
 ```
 
+**Visual tests** (`e2e/visual/`, `playwright.visual.config.ts`) take screenshots of the sign-in page, the
+catalogue, a book page, a reader's profile and cart and the librarian portal — desktop and phone, light and dark —
+and compare them with the reference images in `e2e/visual/__screenshots__` (at most 100 pixels may differ; rendering in the
+image is deterministic, so even a slightly wider heading fails).
+`e2e/visual.sh` restarts the e2e stack with fresh data and runs Playwright inside its Docker image
+(`mcr.microsoft.com/playwright`), so fonts and rendering are the same on every machine and in CI; covers from other
+sites are replaced by a grey image. When a page changes on purpose, write new reference images, look at them and
+commit them with the change:
+
+```bash
+pnpm e2e:visual
+```
+
+```bash
+pnpm e2e:visual --update-snapshots
+```
+
+On a difference, `test-results-visual/` has the expected, actual and diff image for each screenshot (CI uploads it
+as an artifact).
+
 Instead of downloading Chromium you can use an installed Google Chrome: `PLAYWRIGHT_CHANNEL=chrome pnpm e2e`.
 Failed tests leave screenshots and traces in `test-results/` (`pnpm exec playwright show-trace <file>`).
 
@@ -254,6 +274,7 @@ not wrap tests in a transaction, so concurrent requests really go through separa
 - *Frontend*: `pnpm install --frozen-lockfile`, a check that `src/api/generated/schema.d.ts` matches
   `backend/openapi.json`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`.
 - *Browser tests*: the e2e stack, Chromium and `pnpm e2e`; the Playwright report is uploaded when they fail.
+- *Visual tests*: `e2e/visual.sh` (screenshots compared with the reference images); differences are uploaded.
 - *Production images*: `docker compose -f docker-compose.prod.yml build`.
 
 So after an API change, commit the exported `backend/openapi.json` and the regenerated types together.
