@@ -54,7 +54,7 @@ jobs:
         run: >-
           docker run -d --name s3 -p 9000:9000
           -e RUSTFS_ACCESS_KEY="$TEST_S3_ACCESS_KEY" -e RUSTFS_SECRET_KEY="$TEST_S3_SECRET_KEY"
-          rustfs/rustfs:1.0.1
+          rustfs/rustfs:1.0.4
       - uses: astral-sh/setup-uv@v7
         with:
           python-version: "3.12"
