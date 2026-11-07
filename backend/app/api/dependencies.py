@@ -18,6 +18,7 @@ from app.models import User
 from app.models.enums import STAFF_ROLES, UserRole
 from app.services import audit
 from app.services.auth import ClientMeta
+from app.services.library_settings import get_library_settings
 from app.services.notifications import Sender
 from app.services.openlibrary import OpenLibraryClient
 from app.services.translation_lookup import TranslationLookup
@@ -101,10 +102,16 @@ async def require_admin(user: CurrentUser) -> User:
 AdminUser = Annotated[User, Depends(require_admin)]
 
 
-async def require_staff(user: CurrentUser) -> User:
-    """Librarians and administrators (the admin portal)."""
+async def require_staff(user: CurrentUser, session: SessionDep) -> User:
+    """Librarians and administrators (the admin portal); with two-step sign-in when the
+    library requires it for staff."""
     if user.role not in STAFF_ROLES:
         raise PermissionDeniedError("Library staff privileges are required")
+    if not user.mfa_enabled and (await get_library_settings(session)).require_staff_mfa:
+        raise PermissionDeniedError(
+            "Turn on two-step sign-in on your profile to use the admin portal",
+            code="MFA_SETUP_REQUIRED",
+        )
     return user
 
 

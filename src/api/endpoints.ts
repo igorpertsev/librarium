@@ -82,6 +82,8 @@ export const authApi = {
     apiRequest<TokenResponseDto>('/auth/register', { method: 'POST', body, auth: false }),
   login: (body: LoginDto) =>
     apiRequest<TokenResponseDto>('/auth/login', { method: 'POST', body, auth: false }),
+  loginMfa: (body: { mfa_token: string; code: string }) =>
+    apiRequest<TokenResponseDto>('/auth/login/mfa', { method: 'POST', body, auth: false }),
   logout: () => apiRequest<void>('/auth/logout', { method: 'POST', auth: false }),
   me: () => apiRequest<UserDto>('/auth/me'),
   changePassword: (body: ChangePasswordDto) =>
@@ -100,6 +102,12 @@ export const usersApi = {
   releaseHold: (bookId: string) =>
     apiRequest<void>(`/users/me/holds/${id(bookId)}`, { method: 'DELETE' }),
   reservations: () => apiRequest<ReservationDto[]>('/users/me/reservations'),
+  mfaSetup: (password: string) =>
+    apiRequest<{ secret: string; otpauth_uri: string }>('/users/me/mfa/setup', { method: 'POST', body: { password } }),
+  mfaEnable: (code: string) =>
+    apiRequest<{ recovery_codes: string[] }>('/users/me/mfa/enable', { method: 'POST', body: { code } }),
+  mfaDisable: (password: string) =>
+    apiRequest<void>('/users/me/mfa/disable', { method: 'POST', body: { password } }),
   notifications: () => apiRequest<InboxDto>('/users/me/notifications'),
   readingLog: () => apiRequest<ReadingLogDto>('/users/me/reading-log'),
   markFinished: (bookId: string, finishedOn?: string) =>

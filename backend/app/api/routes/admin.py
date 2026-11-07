@@ -18,7 +18,7 @@ from app.api.dependencies import (
     require_admin,
 )
 from app.api.routes.books import LanguageQuery, TagsQuery, tag_slugs
-from app.core.exceptions import BadRequestError
+from app.core.exceptions import BadRequestError, ConflictError
 from app.models.enums import (
     BookCategory,
     BookStatus,
@@ -615,12 +615,17 @@ async def admin_get_settings(session: SessionDep) -> LibrarySettingsRead:
 @router.patch(
     "/settings",
     response_model=LibrarySettingsRead,
-    responses=error_responses(422),
+    responses=error_responses(409, 422),
     dependencies=ADMIN_ONLY,
 )
 async def admin_update_settings(
-    body: LibrarySettingsUpdate, session: SessionDep
+    body: LibrarySettingsUpdate, user: StaffUser, session: SessionDep
 ) -> LibrarySettingsRead:
+    # Requiring two-step sign-in for staff would otherwise lock this administrator out.
+    if body.require_staff_mfa and not user.mfa_enabled:
+        raise ConflictError(
+            "Turn on two-step sign-in for yourself first", code="MFA_SETUP_REQUIRED_FIRST"
+        )
     row = await settings_service.update_library_settings(session, body)
     return LibrarySettingsRead.model_validate(row)
 

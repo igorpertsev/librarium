@@ -34,6 +34,7 @@ from app.core.rate_limit import (
 from app.schemas.auth import (
     ChangePasswordRequest,
     ForgotPasswordRequest,
+    LoginMfaRequest,
     LoginRequest,
     RegisterRequest,
     ResetPasswordRequest,
@@ -42,7 +43,7 @@ from app.schemas.auth import (
 from app.schemas.common import error_responses
 from app.schemas.user import UserRead
 from app.services import auth as auth_service
-from app.services import password_reset
+from app.services import mfa, password_reset
 from app.services.auth import AuthResult, ClientMeta
 from app.services.notifications import Sender
 
@@ -147,6 +148,39 @@ async def login(
         limiter.hit(email_key, LOGIN_FAILURES_PER_EMAIL)
         raise
     limiter.reset(email_key)
+    _set_refresh_cookie(response, settings, result.refresh_token)
+    return _token_response(result)
+
+
+@router.post(
+    "/login/mfa",
+    response_model=TokenResponse,
+    responses=error_responses(401, 403, 422, 429),
+    description="Second step of signing in with two-step sign-in on: the mfa_token from the "
+    "403 MFA_REQUIRED answer of /auth/login and a code from the authenticator app (or a "
+    "recovery code).",
+)
+async def login_mfa(
+    body: LoginMfaRequest,
+    request: Request,
+    response: Response,
+    session: SessionDep,
+    settings: SettingsDep,
+    meta: ClientMetaDep,
+    limiter: RateLimiterDep,
+) -> TokenResponse:
+    _check_origin(request, settings)
+    limiter.consume(f"login:ip:{_client_ip(meta)}", LOGIN_PER_IP)
+    user_key = f"mfa:{mfa.challenged_user_id(settings, body.mfa_token)}"
+    limiter.check(user_key, LOGIN_FAILURES_PER_EMAIL)
+    try:
+        result = await auth_service.login_second_step(
+            session, settings, body.mfa_token, body.code, meta
+        )
+    except AuthenticationError:
+        limiter.hit(user_key, LOGIN_FAILURES_PER_EMAIL)
+        raise
+    limiter.reset(user_key)
     _set_refresh_cookie(response, settings, result.refresh_token)
     return _token_response(result)
 

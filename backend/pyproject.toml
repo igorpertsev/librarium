@@ -19,6 +19,7 @@ dependencies = [
     "anthropic>=1",
     "pillow>=12",
     "python-multipart>=0.0.20",
+    "cryptography>=46",
 ]
 
 [dependency-groups]

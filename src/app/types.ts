@@ -81,6 +81,8 @@ export interface User {
   name: string;
   email: string;
   role: 'customer' | 'librarian' | 'admin';
+  /** Two-step sign-in is on. */
+  mfaEnabled?: boolean;
   borrowedBooks: BorrowedBook[];
   contacts?: UserContacts;
   /** Interface language saved on the account (emails use it too). */

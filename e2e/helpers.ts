@@ -1,4 +1,5 @@
 import { expect, type APIRequestContext, type Page } from '@playwright/test';
+import { createHmac } from 'node:crypto';
 
 export const API_URL = 'http://localhost:8100/api/v1';
 /** Seeded by e2e/docker-compose.yml (test-only values). */
@@ -123,4 +124,19 @@ export async function confirmOrder(request: APIRequestContext, orderId: string) 
     data: { status: 'confirmed' },
   });
   expect(response.ok()).toBeTruthy();
+}
+
+/** RFC 6238 code (SHA-1, 6 digits, 30 s) for a base32 secret, `stepOffset` steps from now. */
+export function totpCode(secret: string, stepOffset = 0): string {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  let bits = '';
+  for (const char of secret.replace(/=+$/, '')) bits += alphabet.indexOf(char).toString(2).padStart(5, '0');
+  const key = Buffer.from(bits.match(/.{8}/g)!.map((byte) => parseInt(byte, 2)));
+  const step = Math.floor(Date.now() / 1000 / 30) + stepOffset;
+  const counter = Buffer.alloc(8);
+  counter.writeBigUInt64BE(BigInt(step));
+  const digest = createHmac('sha1', key).update(counter).digest();
+  const offset = digest[digest.length - 1] & 0x0f;
+  const number = (digest.readUInt32BE(offset) & 0x7fffffff) % 1_000_000;
+  return String(number).padStart(6, '0');
 }

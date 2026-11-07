@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Annotated, Literal
 
-from pydantic import StringConstraints, model_validator
+from pydantic import Field, StringConstraints, model_validator
 
 from app.models.enums import ContactMethod, UiLanguage
 from app.schemas.common import ApiModel, RequestModel
@@ -68,3 +68,25 @@ class TokenResponse(ApiModel):
     token_type: Literal["bearer"] = "bearer"  # noqa: S105 - OAuth2 token type, not a secret
     expires_in: int
     user: UserRead
+
+
+class LoginMfaRequest(RequestModel):
+    mfa_token: Annotated[str, StringConstraints(min_length=20, max_length=2000)]
+    code: Annotated[str, StringConstraints(strip_whitespace=True, min_length=6, max_length=20)]
+
+
+class MfaSetupRequest(RequestModel):
+    password: AnyPassword
+
+
+class MfaSetup(ApiModel):
+    secret: str = Field(description="For typing into the app when the QR code cannot be scanned")
+    otpauth_uri: str = Field(description="otpauth:// link to show as a QR code")
+
+
+class MfaEnableRequest(RequestModel):
+    code: Annotated[str, StringConstraints(strip_whitespace=True, min_length=6, max_length=8)]
+
+
+class MfaRecoveryCodes(ApiModel):
+    recovery_codes: list[str] = Field(description="Each works once; shown only now")

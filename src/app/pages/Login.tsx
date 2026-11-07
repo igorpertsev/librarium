@@ -16,7 +16,10 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const { login, isAuthenticated, isLoading } = useAuth();
+  // Two-step sign-in: the password was right; now a code from the app.
+  const [mfaToken, setMfaToken] = useState<string | null>(null);
+  const [code, setCode] = useState('');
+  const { login, loginWithCode, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   // Only paths on this site: never an absolute or protocol-relative address.
@@ -28,11 +31,17 @@ export default function Login() {
     e.preventDefault();
     setError('');
     setSubmitting(true);
-    const result = await login(email, password);
+    const result = mfaToken ? await loginWithCode(mfaToken, code) : await login(email, password);
     setSubmitting(false);
     if (result.ok) {
       toast.success(t('auth.loginSuccess'));
       navigate(returnTo, { replace: true });
+    } else if (result.error.code === 'MFA_REQUIRED' && typeof result.error.details?.mfa_token === 'string') {
+      setMfaToken(result.error.details.mfa_token);
+      setCode('');
+    } else if (result.error.code === 'MFA_TOKEN_INVALID') {
+      setMfaToken(null); // took too long: start again with the password
+      setError(errorMessage(t, result.error));
     } else {
       setError(errorMessage(t, result.error));
     }
@@ -58,6 +67,22 @@ export default function Login() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {mfaToken ? (
+              <div className="space-y-2">
+                <Label htmlFor="mfa-code">{t('mfa.codeLabel')}</Label>
+                <Input
+                  id="mfa-code"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  autoComplete="one-time-code"
+                  inputMode="text"
+                  autoFocus
+                  required
+                />
+                <p className="text-xs text-muted-foreground">{t('mfa.codeHint')}</p>
+              </div>
+            ) : (
+            <>
             <div className="space-y-2">
               <Label htmlFor="email">{t('auth.email')}</Label>
               <Input
@@ -85,14 +110,21 @@ export default function Login() {
                 required
               />
             </div>
+            </>
+            )}
             {error && (
               <div role="alert" className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
                 {error}
               </div>
             )}
             <Button type="submit" className="w-full" disabled={submitting}>
-              {t('auth.signIn')}
+              {mfaToken ? t('mfa.verify') : t('auth.signIn')}
             </Button>
+            {mfaToken && (
+              <Button type="button" variant="ghost" className="w-full" onClick={() => setMfaToken(null)}>
+                {t('mfa.back')}
+              </Button>
+            )}
           </form>
         </CardContent>
         <CardFooter className="flex flex-col items-center gap-2">

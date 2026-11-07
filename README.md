@@ -287,6 +287,17 @@ conversion to UI models in `src/api/mappers.ts`. After an API change: export the
 - **Access token** — JWT (HS256), 15 minutes, claims `sub`, `role`, `type`, `jti`, `iat`, `nbf`, `exp`, `iss`, `aud`.
   Sent as `Authorization: Bearer`. The frontend keeps it in memory only.
   Authorisation always uses the role stored in the database; the `role` claim is informational.
+- **Two-step sign-in** — optional for every account (profile → *Two-step sign-in*): confirm the password
+  (`POST /users/me/mfa/setup`), scan the `otpauth://` QR code with an authenticator app, confirm with a code
+  (`/users/me/mfa/enable`) and keep the ten recovery codes it returns (shown once, stored as SHA-256 hashes, each
+  works once). TOTP per RFC 6238 (SHA-1, 6 digits, 30 s, ±1 step); a code is never accepted twice. Secrets are
+  encrypted (Fernet, key derived from `JWT_SECRET_KEY` with HKDF), so changing `JWT_SECRET_KEY` turns every
+  user's two-step sign-in unusable — reset it for them or let them set it up again. With it on, `/auth/login`
+  answers `403 MFA_REQUIRED` with `details.mfa_token` (5 minutes) and `/auth/login/mfa` takes that token and a
+  code or recovery code (rate-limited like the password). Administrators can require it for staff (setting
+  `require_staff_mfa`; only after turning it on for themselves): staff without it get `403 MFA_SETUP_REQUIRED`
+  from the admin API until they set it up. Administrators reset it for a user who lost their phone and codes
+  (`PATCH /admin/users/{id}` `{"reset_mfa": true}`).
 - **Roles** — `customer`, `librarian`, `admin`. Librarians use the admin portal for books, copies, imports, orders,
   reviews, tags and series, data quality and reports. Changing users and roles, library settings and pickup points,
   and reading the activity log need an administrator (`ADMIN_ONLY` in `app/api/routes/admin.py`). Administrators

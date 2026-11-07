@@ -50,7 +50,7 @@ export function AccountDataCard() {
     }
     setOpen(false);
     toast.success(t('accountData.deleted'));
-    logout();
+    await logout();
     navigate('/login', { replace: true });
   };
 
