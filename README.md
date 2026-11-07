@@ -262,6 +262,12 @@ So after an API change, commit the exported `backend/openapi.json` and the regen
 React and i18next get their own long-cached files (`vite.config.ts`). If an open tab asks for page files that a new
 release has replaced, it reloads once to get the new version.
 
+### Dependency updates
+
+Dependabot (`.github/dependabot.yml`) opens pull requests every Monday for Python (uv), the frontend (pnpm),
+Docker base images, the compose images and GitHub Actions; minor and patch updates come grouped per ecosystem.
+New Python minor versions, PostgreSQL major versions and Node.js major versions are left to you.
+
 ## Generating TypeScript types from OpenAPI
 
 From a running backend:
