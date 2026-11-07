@@ -173,6 +173,12 @@ def _configure_observability(settings: Settings) -> None:
             "JWT_SECRET_KEY is not set; using an ephemeral random secret. "
             "All sessions are invalidated on restart. Set JWT_SECRET_KEY to persist them."
         )
+    if settings.is_production and not settings.mfa_keys:
+        logger.warning(
+            "MFA_ENCRYPTION_KEYS is not set; two-step sign-in secrets are encrypted with a key "
+            "derived from JWT_SECRET_KEY, so changing that key turns two-step sign-in off for "
+            "everybody. Set MFA_ENCRYPTION_KEYS and run `python -m app.cli rotate-mfa-keys`."
+        )
 
 
 def _mount_media(app: FastAPI, settings: Settings) -> None:

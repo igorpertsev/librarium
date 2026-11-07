@@ -15,6 +15,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import jwt
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import totp
@@ -36,7 +37,9 @@ class MfaRequiredError(AppError):
 
 
 def _box(settings: Settings) -> totp.SecretBox:
-    return totp.SecretBox(settings.jwt_secret)
+    # The key derived from JWT_SECRET_KEY stays last, so secrets sealed before
+    # MFA_ENCRYPTION_KEYS was set still open until `rotate_keys` re-encrypts them.
+    return totp.SecretBox([*settings.mfa_keys, settings.jwt_secret])
 
 
 async def _check_password(user: User, password: str) -> None:
@@ -145,3 +148,35 @@ def challenged_user_id(settings: Settings, token: str) -> uuid.UUID:
         raise AuthenticationError(
             "Sign in again: the sign-in step expired", code="MFA_TOKEN_INVALID"
         ) from exc
+
+
+@dataclass(frozen=True, slots=True)
+class Rotation:
+    rotated: int
+    unreadable: int
+
+
+async def rotate_keys(session: AsyncSession, settings: Settings) -> Rotation:
+    """Re-encrypt every stored secret with the first MFA_ENCRYPTION_KEYS key.
+
+    Secrets that no configured key opens are left as they are (those users set two-step sign-in
+    up again, or an administrator resets it).
+    """
+    box = _box(settings)
+    rotated = unreadable = 0
+    users = await session.scalars(
+        select(User).where(or_(User.mfa_secret.is_not(None), User.mfa_pending_secret.is_not(None)))
+    )
+    for user in users:
+        for field in ("mfa_secret", "mfa_pending_secret"):
+            sealed: str | None = getattr(user, field)
+            if sealed is None:
+                continue
+            fresh = box.rotate(sealed)
+            if fresh is None:
+                unreadable += 1
+            else:
+                setattr(user, field, fresh)
+                rotated += 1
+    await session.commit()
+    return Rotation(rotated=rotated, unreadable=unreadable)

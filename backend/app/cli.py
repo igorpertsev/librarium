@@ -32,7 +32,7 @@ from app.models.enums import UiLanguage, UserRole
 from app.repositories.books import copy_group_key
 from app.schemas.book import BookCreate
 from app.schemas.types import NormalizedEmail
-from app.services import catalog, holds, reservations, telegram
+from app.services import catalog, holds, mfa, reservations, telegram
 from app.services.books import new_book, translation_rows
 from app.services.library_settings import ensure_library_settings
 from app.services.notifications import deliver_pending, make_smtp_sender, queue_reminders
@@ -173,6 +173,24 @@ async def _purge_tokens(settings: Settings, *, older_than_days: int) -> None:
         await db.dispose()
 
 
+async def _rotate_mfa_keys(settings: Settings) -> None:
+    if not settings.mfa_keys:
+        print("Set MFA_ENCRYPTION_KEYS first (the new key first); nothing was changed.")
+        sys.exit(1)
+    db = Database(settings)
+    try:
+        async with db.sessionmaker() as session:
+            result = await mfa.rotate_keys(session, settings)
+    finally:
+        await db.dispose()
+    print(f"Re-encrypted {result.rotated} two-step sign-in secrets with the first key.")
+    if result.unreadable:
+        print(
+            f"{result.unreadable} could not be opened with any configured key; those users have "
+            "to set two-step sign-in up again (or an administrator resets it)."
+        )
+
+
 async def _notifications(settings: Settings, *, loop_seconds: int | None) -> None:
     """Queue due-soon/overdue reminders and deliver pending emails, once or in a loop."""
     db = Database(settings)
@@ -284,6 +302,11 @@ def main(argv: list[str] | None = None) -> None:
         "--loop", type=int, metavar="SECONDS", help="Repeat every SECONDS instead of running once"
     )
 
+    commands.add_parser(
+        "rotate-mfa-keys",
+        help="Re-encrypt two-step sign-in secrets with the first MFA_ENCRYPTION_KEYS key",
+    )
+
     translate = commands.add_parser(
         "translate-books", help="Find translations for titles that have none (review them later)"
     )
@@ -307,6 +330,8 @@ def main(argv: list[str] | None = None) -> None:
         asyncio.run(_purge_tokens(get_settings(), older_than_days=args.older_than_days))
     elif args.command == "notifications":
         asyncio.run(_notifications(get_settings(), loop_seconds=args.loop))
+    elif args.command == "rotate-mfa-keys":
+        asyncio.run(_rotate_mfa_keys(get_settings()))
     elif args.command == "translate-books":
         asyncio.run(
             _translate_books(

@@ -11,6 +11,7 @@ from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 MIN_JWT_SECRET_LENGTH = 32
+MIN_MFA_KEY_LENGTH = 32
 KNOWN_WEAK_SECRETS = frozenset(
     {
         "replace-with-a-long-random-secret",
@@ -52,6 +53,11 @@ class Settings(BaseSettings):
     database_pool_size: int = Field(default=10, ge=1, le=100)
 
     jwt_secret_key: SecretStr | None = None
+    # Keys that encrypt the two-step sign-in secrets, comma-separated. The first one encrypts, all
+    # of them decrypt: to rotate, put a new key first, run `python -m app.cli rotate-mfa-keys`,
+    # then remove the old key. Unset, a key derived from JWT_SECRET_KEY is used (as before), so
+    # changing JWT_SECRET_KEY would turn two-step sign-in off for everybody.
+    mfa_encryption_keys: SecretStr | None = None
     jwt_algorithm: Literal["HS256", "HS384", "HS512"] = "HS256"
     jwt_issuer: str = "librarium-api"
     jwt_audience: str = "librarium-web"
@@ -158,6 +164,7 @@ class Settings(BaseSettings):
 
     @field_validator(
         "jwt_secret_key",
+        "mfa_encryption_keys",
         "seed_admin_password",
         "smtp_password",
         "sentry_dsn",
@@ -208,6 +215,15 @@ class Settings(BaseSettings):
             self.log_format = "json" if self.environment is Environment.PRODUCTION else "text"
         return self
 
+    @model_validator(mode="after")
+    def _validate_mfa_keys(self) -> Settings:
+        if any(len(key) < MIN_MFA_KEY_LENGTH for key in self.mfa_keys):
+            raise ValueError(
+                f"Every MFA_ENCRYPTION_KEYS key needs at least {MIN_MFA_KEY_LENGTH} random "
+                "characters, e.g. secrets.token_urlsafe(32)"
+            )
+        return self
+
     @property
     def cors_origins(self) -> list[str]:
         return [o.strip() for o in self.frontend_origins.split(",") if o.strip()]
@@ -221,6 +237,12 @@ class Settings(BaseSettings):
         if self.jwt_secret_key is None:  # pragma: no cover - guarded by the validator
             raise RuntimeError("JWT secret is not configured")
         return self.jwt_secret_key.get_secret_value()
+
+    @property
+    def mfa_keys(self) -> list[str]:
+        """MFA_ENCRYPTION_KEYS as a list, the encrypting key first."""
+        raw = self.mfa_encryption_keys.get_secret_value() if self.mfa_encryption_keys else ""
+        return [key.strip() for key in raw.split(",") if key.strip()]
 
     @property
     def is_production(self) -> bool:
