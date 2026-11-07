@@ -15,7 +15,7 @@ test('a wrong password is rejected with a message', async ({ page }) => {
   await page.goto('/login');
   await page.getByLabel('Email').fill('nobody@example.com');
   await page.getByLabel('Password', { exact: true }).fill('not-the-password');
-  await page.getByRole('button', { name: 'Sign in' }).click();
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page.getByRole('alert')).toHaveText('Invalid email or password');
   await expect(page).toHaveURL('/login');
 });
