@@ -273,7 +273,7 @@
           "auth"
         ],
         "summary": "Refresh",
-        "description": "Rotates the refresh cookie and returns a new access token. Re-using an already rotated refresh token revokes the whole token family.",
+        "description": "Rotates the refresh cookie and returns a new access token. Re-using an already rotated refresh token revokes the whole token family. Without a refresh cookie the answer is 204, so a visitor's page load is not an error.",
         "operationId": "refresh_api_v1_auth_refresh_post",
         "responses": {
           "200": {
@@ -285,6 +285,9 @@
                 }
               }
             }
+          },
+          "204": {
+            "description": "No refresh cookie: nobody is signed in on this browser"
           },
           "401": {
             "description": "Unauthorized",
@@ -1325,6 +1328,118 @@
         ]
       }
     },
+    "/api/v1/users/me/push-subscriptions": {
+      "post": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Add Push Subscription",
+        "description": "Notifications on this device (Web Push): the browser's subscription. 409 PUSH_NOT_CONFIGURED when the library has no push keys.",
+        "operationId": "add_push_subscription_api_v1_users_me_push_subscriptions_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushSubscriptionCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Remove Push Subscription",
+        "description": "No more notifications on that device.",
+        "operationId": "remove_push_subscription_api_v1_users_me_push_subscriptions_delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "endpoint",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 2048,
+              "description": "The subscription's endpoint",
+              "title": "Endpoint"
+            },
+            "description": "The subscription's endpoint"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
     "/api/v1/users/me/children": {
       "get": {
         "tags": [
@@ -2125,6 +2240,89 @@
             "HTTPBearer": []
           }
         ]
+      }
+    },
+    "/api/v1/telegram/webhook": {
+      "post": {
+        "tags": [
+          "telegram"
+        ],
+        "summary": "Telegram Webhook",
+        "description": "Called by Telegram (setWebhook with secret_token). An update seen already is acknowledged without being handled again.",
+        "operationId": "telegram_webhook_api_v1_telegram_webhook_post",
+        "parameters": [
+          {
+            "name": "X-Telegram-Bot-Api-Secret-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Telegram-Bot-Api-Secret-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true,
+                "description": "A Telegram Update object",
+                "title": "Update"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookAck"
+                }
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/books": {
@@ -11221,6 +11419,18 @@
             ],
             "title": "Telegram Bot",
             "description": "Username of the library's Telegram bot, when notifications can go there"
+          },
+          "web_push_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Web Push Key",
+            "description": "VAPID public key for Web Push subscriptions (null: push is not set up)"
           }
         },
         "type": "object",
@@ -11234,7 +11444,8 @@
           "block_overdue",
           "late_fee_per_day",
           "timezone",
-          "telegram_bot"
+          "telegram_bot",
+          "web_push_key"
         ],
         "title": "LibraryRules",
         "description": "Lending rules every reader may know (GET /library/rules)."
@@ -11293,6 +11504,18 @@
             "title": "Telegram Bot",
             "description": "Username of the library's Telegram bot, when notifications can go there"
           },
+          "web_push_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Web Push Key",
+            "description": "VAPID public key for Web Push subscriptions (null: push is not set up)"
+          },
           "updated_at": {
             "type": "string",
             "format": "date-time",
@@ -11316,6 +11539,7 @@
           "late_fee_per_day",
           "timezone",
           "telegram_bot",
+          "web_push_key",
           "updated_at",
           "require_staff_mfa"
         ],
@@ -12890,6 +13114,47 @@
         ],
         "title": "PurchaseStatus",
         "description": "A reader's suggestion for the library to buy a book."
+      },
+      "PushKeys": {
+        "properties": {
+          "p256dh": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "P256Dh"
+          },
+          "auth": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Auth"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "p256dh",
+          "auth"
+        ],
+        "title": "PushKeys"
+      },
+      "PushSubscriptionCreate": {
+        "properties": {
+          "endpoint": {
+            "type": "string",
+            "maxLength": 2048,
+            "title": "Endpoint"
+          },
+          "keys": {
+            "$ref": "#/components/schemas/PushKeys"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "endpoint",
+          "keys"
+        ],
+        "title": "PushSubscriptionCreate",
+        "description": "``PushSubscription.toJSON()`` of the browser, without ``expirationTime``."
       },
       "QualityIssue": {
         "type": "string",
@@ -14656,6 +14921,19 @@
           "copies"
         ],
         "title": "WantedTitleRead"
+      },
+      "WebhookAck": {
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "title": "Ok"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ok"
+        ],
+        "title": "WebhookAck"
       }
     },
     "securitySchemes": {

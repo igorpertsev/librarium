@@ -55,5 +55,6 @@ class Notification(Base):
     sent_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True))
     # Also sent to the reader's Telegram chat (once, even when the email is retried).
     telegram_sent_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True))
+    push_sent_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True))
     # When the reader saw it in the app's notification list (NULL: unread).
     read_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True))

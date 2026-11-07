@@ -14,6 +14,8 @@
     "e2e": "playwright test",
     "e2e:stack": "docker compose -f e2e/docker-compose.yml up -d --build --wait",
     "e2e:stack:down": "docker compose -f e2e/docker-compose.yml down",
+    "load:test": "bash load/run.sh",
+    "perf:lighthouse": "bash scripts/lighthouse.sh",
     "api:fuzz": "bash e2e/api-fuzz.sh",
     "e2e:visual": "bash e2e/visual.sh",
     "api:types": "openapi-typescript http://localhost:8000/openapi.json -o src/api/generated/schema.d.ts",

@@ -120,7 +120,11 @@ Docker Compose and Vite read the root `.env` (template: `.env.example`). Filled-
 | `APP_BASE_URL`, `DUE_SOON_DAYS` | `http://localhost:5173`, `3` | links in emails; reminder lead time in days |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `APPLE_CLIENT_ID`, `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY`, `API_PUBLIC_URL` | empty | optional Google / Apple sign-in; callback base URL (default `APP_BASE_URL/api/v1`) |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME` | empty | optional Telegram bot for notifications |
+| `TELEGRAM_WEBHOOK_SECRET` | empty | optional webhook mode (32–256 letters, digits, `_`, `-`): Telegram posts updates to `/api/v1/telegram/webhook` instead of the notifier polling |
+| `WEB_PUSH_PUBLIC_KEY`, `WEB_PUSH_PRIVATE_KEY`, `WEB_PUSH_CONTACT` | empty | optional notifications on readers' devices (Web Push); keys from `python -m app.cli generate-vapid-keys` |
 | `MEDIA_DIR`, `MAX_COVER_BYTES` | `media`, `5242880` | where uploaded covers are kept (the `media` volume, `/app/media`, in Docker); upload limit |
+| `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_PREFIX` | — | with `S3_BUCKET` set, covers go to that S3-compatible bucket instead of `MEDIA_DIR` |
+| `MEDIA_PUBLIC_URL` | — | public address of the bucket or a CDN: `/media/...` redirects there (301); empty: the backend streams covers from a private bucket |
 | `PASSWORD_RESET_EXPIRE_MINUTES` | `60` | lifetime of password reset links (5–1440) |
 | `ANTHROPIC_API_KEY`, `TRANSLATION_MODEL` | —, `claude-opus-5-5` | optional machine translation of book titles and descriptions when Wikidata and Wikipedia have none; without a key only those two are used |
 
@@ -294,6 +298,23 @@ pnpm e2e:visual --update-snapshots
 On a difference, `test-results-visual/` has the expected, actual and diff image for each screenshot (CI uploads it
 as an artifact).
 
+**Performance.** `pnpm perf:lighthouse` (`scripts/lighthouse.sh`, `lighthouserc.json`) builds the frontend for the
+e2e stack, serves it with `vite preview` and runs Lighthouse on the catalogue and the sign-in page: it fails on
+accessibility or best practices under 0.95, a layout shift over 0.1, errors in the browser console or more than
+300 KB of JavaScript, and warns on a low performance score or a slow largest paint (the demo covers come from Open
+Library). Reports land in `.lighthouseci/`. `pnpm load:test` (`load/library.js`, k6 in Docker) puts 20 visitors
+browsing the catalogue and 5 signed-in readers using their account and cart on the e2e stack for a minute and fails
+when more than 1 % of requests fail or the 95th percentile is over 500 ms (visitors) or 800 ms (readers);
+`VISITORS=50 READERS=10 DURATION=3m pnpm load:test` pushes harder.
+
+```bash
+pnpm perf:lighthouse
+```
+
+```bash
+pnpm load:test
+```
+
 Instead of downloading Chromium you can use an installed Google Chrome: `PLAYWRIGHT_CHANNEL=chrome pnpm e2e`.
 Failed tests leave screenshots and traces in `test-results/` (`pnpm exec playwright show-trace <file>`).
 
@@ -307,8 +328,9 @@ Monday (so newly published vulnerabilities show up; that run never deploys):
   `pytest` against a PostgreSQL 16 service, and a check that `backend/openapi.json` matches the code.
 - *Frontend*: `pnpm install --frozen-lockfile`, a check that `src/api/generated/schema.d.ts` matches
   `backend/openapi.json`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`.
-- *Browser tests*: the e2e stack, Chromium and `pnpm e2e`, then `pnpm api:fuzz` on the same stack; the Playwright
-  report is uploaded when they fail.
+- *Browser tests*: the e2e stack, Chromium and `pnpm e2e`, then `pnpm api:fuzz` and `pnpm perf:lighthouse` on the
+  same stack; the Playwright report is uploaded when they fail.
+- *Load test* (weekly and when started by hand): `pnpm load:test` for two minutes.
 - *Secrets and dependencies*: gitleaks over the whole git history (reviewed false positives are in
   `.gitleaksignore`) and Trivy over `backend/uv.lock` and `pnpm-lock.yaml`; a secret or a HIGH/CRITICAL
   vulnerability that has a fix fails the build.
@@ -547,7 +569,11 @@ two copies of the same title are two records (ISBN is not unique).
   and stores WebP renditions L/M/S (800/400/160 px high) as `media/covers/<random>-<size>.webp`; every copy of the
   title gets `cover_url = /media/covers/<random>-L.webp`, and the previous upload is deleted. The backend serves
   `/media` with long-lived cache headers (Caddy passes `/media/*` to it); the frontend loads the size it needs (S
-  in lists, M on cards, L in the dialog). Share previews use the full address (`APP_BASE_URL` + path).
+  in lists, M on cards, L in the dialog). Share previews use the full address (`APP_BASE_URL` + path). With
+  `S3_BUCKET` set the files go to that bucket (`<S3_PREFIX>/covers/...`) and the stored URLs stay the same:
+  `/media/covers/...` redirects to `MEDIA_PUBLIC_URL` or is streamed from the bucket. `python -m app.cli
+  media-to-s3` copies existing covers when switching. The storage tests run against RustFS (the `s3` service of
+  the dev compose file, started by `docker compose --profile dev`).
 - **Stocktaking** (admin tab, staff): start a count, scan every book on the shelves (the ISBN scanner keeps
   scanning; typed ISBNs work too) or count books without an ISBN by hand (+1/−1). Copies are counted per title. A
   title is expected on the shelf with every active copy that is not out on loan and not marked *not available*.
@@ -580,6 +606,19 @@ two copies of the same title are two records (ISBN is not unique).
   messages each cycle (`getUpdates`, confirmed by offset) and sends every notification to linked chats as well as by
   email — once (`telegram_sent_at`), even when the email is retried; without SMTP it still serves readers with
   Telegram. `GET /library/rules` returns `telegram_bot` so the profile only offers it when it is set up.
+  **Webhook mode** (`TELEGRAM_WEBHOOK_SECRET`): Telegram posts each update to `POST /telegram/webhook` with the secret
+  in `X-Telegram-Bot-Api-Secret-Token` (wrong or missing: 403; not set up: 404), the reply is immediate and the
+  notifier stops polling; an update delivered twice is answered once. `python -m app.cli telegram-webhook
+  set|delete|info` registers the webhook at `API_PUBLIC_URL/telegram/webhook`, removes it or shows its state.
+- **Notifications on this device** (optional, `WEB_PUSH_*`): the profile offers *Turn on* where the app runs with
+  its service worker (installed app or production site). The browser subscribes with the library's VAPID public key
+  (`GET /library/rules` → `web_push_key`) and `POST /users/me/push-subscriptions` stores its endpoint and keys
+  (`DELETE ...?endpoint=` removes it). Only the browsers' own push services are accepted as endpoints (FCM, Mozilla,
+  Apple, Windows), so a subscription cannot make the server call other addresses. The notifier sends every
+  notification to the reader's devices too, once (`push_sent_at`): encrypted for each browser (RFC 8291,
+  `aes128gcm`) and signed with the VAPID key (RFC 8292); a device the push service reports gone (404/410) is
+  forgotten, and the news counts as delivered when one device has it. `public/sw.js` shows it and opens the page
+  it is about.
 - **Notification bell**: the header shows the reader's news — the same events as the emails (`notifications`), even
   when an email could not be sent, except news that went stale before delivery. Opening the list marks it read
   (`read_at`); it refreshes every minute while the tab is visible. Notifications from before the bell existed

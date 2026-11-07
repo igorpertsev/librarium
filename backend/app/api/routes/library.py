@@ -19,7 +19,8 @@ async def library_rules(session: SessionDep, settings: SettingsDep) -> LibraryRu
     """Batch size and price, loan period and how often a loan can be extended."""
     rules = LibraryRules.model_validate(await settings_service.get_library_settings(session))
     bot = settings.telegram_bot_username if settings.telegram_bot_token else None
-    return rules.model_copy(update={"telegram_bot": bot})
+    push = settings.web_push_public_key if settings.web_push_enabled else None
+    return rules.model_copy(update={"telegram_bot": bot, "web_push_key": push})
 
 
 @router.get("/pickup-points", response_model=list[PickupPointRead])

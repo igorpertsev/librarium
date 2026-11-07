@@ -318,6 +318,78 @@ notification there as well as by email; it works even without SMTP. Messages go 
 servers. To turn it off, empty both values and run the same `up -d`; linked chats stop getting
 messages.
 
+**Webhook mode (optional).** Instead of the notifier asking every few minutes, Telegram can post
+each message to the backend right away (replies to Start come instantly). Put a random secret into
+`.env`, restart, and register the webhook (it uses `API_PUBLIC_URL`, i.e. your HTTPS address):
+
+```bash
+python3 -c "import secrets; print('TELEGRAM_WEBHOOK_SECRET=' + secrets.token_urlsafe(32))"
+```
+
+```bash
+docker compose -f docker-compose.prod.yml up -d
+```
+
+```bash
+docker compose -f docker-compose.prod.yml exec backend python -m app.cli telegram-webhook set
+```
+
+`telegram-webhook info` shows Telegram's view (address, waiting updates, last error). To go back to
+polling: `telegram-webhook delete`, then remove the secret and run `up -d`.
+
+## Covers in S3-compatible storage (optional)
+
+Uploaded covers live in the `media` volume by default. To keep them in a bucket instead (AWS S3,
+Cloudflare R2, Backblaze B2, a MinIO or RustFS server…), create the bucket and a key that may read,
+write and delete in it, then set in `.env`:
+
+```text
+S3_ENDPOINT=https://s3.eu-central-1.amazonaws.com
+S3_REGION=eu-central-1
+S3_BUCKET=little-dragon-covers
+S3_ACCESS_KEY_ID=…
+S3_SECRET_ACCESS_KEY=…
+```
+
+If the bucket (or a CDN in front of it) is public, put its address in `MEDIA_PUBLIC_URL`: browsers
+are then redirected there and load covers straight from it. Otherwise the backend streams them from
+the private bucket. Restart and copy the covers you already have:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d
+```
+
+```bash
+docker compose -f docker-compose.prod.yml exec backend python -m app.cli media-to-s3
+```
+
+Cover URLs do not change (`/media/covers/…`), so nothing else needs updating. `deploy/backup.sh` no
+longer archives covers then; keep the bucket safe with the provider's versioning or replication.
+
+## Notifications on readers' devices (optional)
+
+Readers who installed the app (or use the site over HTTPS) can get the library's news as phone or
+computer notifications. Generate a key pair once and put it into `.env` with a contact address the
+browsers' push services can reach you at:
+
+```bash
+docker compose -f docker-compose.prod.yml run --rm backend python -m app.cli generate-vapid-keys
+```
+
+```text
+WEB_PUSH_PUBLIC_KEY=…
+WEB_PUSH_PRIVATE_KEY=…
+WEB_PUSH_CONTACT=mailto:library@example.com
+```
+
+```bash
+docker compose -f docker-compose.prod.yml up -d
+```
+
+The profile then shows **Notifications on this device**. Messages go through the browsers' push
+services (Google, Mozilla, Apple, Microsoft), encrypted so that only the reader's device can read
+them. Keep the private key: a new key pair means every reader has to turn notifications on again.
+
 ## Sign in with Google or Apple (optional)
 
 **Google.** In Google Cloud Console → APIs & Services → Credentials, create an *OAuth client ID*

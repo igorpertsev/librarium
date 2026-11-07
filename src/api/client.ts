@@ -100,7 +100,8 @@ async function parse<T>(response: Response): Promise<T> {
 
 async function doRefresh(): Promise<TokenResponseDto | null> {
   const response = await send('/auth/refresh', { method: 'POST', auth: false });
-  if (response.status === 401 || response.status === 403) {
+  // 204: no refresh cookie (a visitor); 401/403: the cookie no longer works.
+  if (response.status === 204 || response.status === 401 || response.status === 403) {
     accessToken = null;
     return null;
   }

@@ -9,6 +9,8 @@ on:
   # Weekly as well, so newly published vulnerabilities show up without a commit (never deploys).
   schedule:
     - cron: "17 5 * * 1"
+  # By hand (Actions → CI → Run workflow) also runs the load test; never deploys.
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -41,8 +43,18 @@ jobs:
       # Throwaway CI database; the tests refuse to run unless its name ends with _test.
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/bookstore_test
       TEST_DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/bookstore_test
+      # S3-compatible test server (RustFS, started below) for the S3 storage tests.
+      TEST_S3_ENDPOINT: http://localhost:9000
+      TEST_S3_ACCESS_KEY: ci-s3-access-key
+      TEST_S3_SECRET_KEY: ci-s3-secret-key-not-a-secret
     steps:
       - uses: actions/checkout@v4
+      # Service containers cannot take arguments or wait for this one, so it is started here.
+      - name: Start an S3 test server
+        run: >-
+          docker run -d --name s3 -p 9000:9000
+          -e RUSTFS_ACCESS_KEY="$TEST_S3_ACCESS_KEY" -e RUSTFS_SECRET_KEY="$TEST_S3_SECRET_KEY"
+          rustfs/rustfs:1.0.1
       - uses: astral-sh/setup-uv@v6
         with:
           python-version: "3.12"
@@ -135,6 +147,8 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
       - name: Browser tests
         run: pnpm e2e
+      - name: Lighthouse budgets
+        run: pnpm perf:lighthouse
       - name: API fuzzing (Schemathesis)
         run: pnpm api:fuzz
       - name: Backend logs
@@ -162,6 +176,21 @@ jobs:
           name: visual-differences
           path: test-results-visual/
           retention-days: 7
+
+  load:
+    name: Load test
+    # Weekly and by hand only: it takes a few minutes and measures the runner as much as the app.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start the e2e stack
+        run: docker compose -f e2e/docker-compose.yml up -d --build --wait
+      - name: k6 (20 visitors, 5 readers, 2 minutes)
+        env:
+          DURATION: 2m
+        run: bash load/run.sh
 
   images:
     name: Production images

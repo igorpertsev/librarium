@@ -21,6 +21,7 @@ from app.models.enums import STAFF_ROLES, UserRole
 from app.services import audit
 from app.services.auth import ClientMeta
 from app.services.library_settings import get_library_settings
+from app.services.media_storage import MediaStorage
 from app.services.notifications import Sender
 from app.services.openlibrary import OpenLibraryClient
 from app.services.translation_lookup import TranslationLookup
@@ -60,6 +61,14 @@ def get_translation_lookup(request: Request) -> TranslationLookup:
 
 
 SettingsDep = Annotated[Settings, Depends(get_settings_dep)]
+
+
+def get_media_storage(request: Request) -> MediaStorage:
+    storage: MediaStorage = request.app.state.media
+    return storage
+
+
+MediaStorageDep = Annotated[MediaStorage, Depends(get_media_storage)]
 MailSenderDep = Annotated[Sender | None, Depends(get_mail_sender)]
 OpenLibraryDep = Annotated[OpenLibraryClient, Depends(get_openlibrary)]
 TranslationLookupDep = Annotated[TranslationLookup, Depends(get_translation_lookup)]

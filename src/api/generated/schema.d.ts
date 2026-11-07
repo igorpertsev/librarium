@@ -106,7 +106,7 @@ export interface paths {
         put?: never;
         /**
          * Refresh
-         * @description Rotates the refresh cookie and returns a new access token. Re-using an already rotated refresh token revokes the whole token family.
+         * @description Rotates the refresh cookie and returns a new access token. Re-using an already rotated refresh token revokes the whole token family. Without a refresh cookie the answer is 204, so a visitor's page load is not an error.
          */
         post: operations["refresh_api_v1_auth_refresh_post"];
         delete?: never;
@@ -451,6 +451,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/users/me/push-subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Push Subscription
+         * @description Notifications on this device (Web Push): the browser's subscription. 409 PUSH_NOT_CONFIGURED when the library has no push keys.
+         */
+        post: operations["add_push_subscription_api_v1_users_me_push_subscriptions_post"];
+        /**
+         * Remove Push Subscription
+         * @description No more notifications on that device.
+         */
+        delete: operations["remove_push_subscription_api_v1_users_me_push_subscriptions_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users/me/children": {
         parameters: {
             query?: never;
@@ -626,6 +650,26 @@ export interface paths {
         get: operations["export_my_data_api_v1_users_me_export_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/telegram/webhook": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Telegram Webhook
+         * @description Called by Telegram (setWebhook with secret_token). An update seen already is acknowledged without being handled again.
+         */
+        post: operations["telegram_webhook_api_v1_telegram_webhook_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2863,6 +2907,11 @@ export interface components {
              * @description Username of the library's Telegram bot, when notifications can go there
              */
             telegram_bot: string | null;
+            /**
+             * Web Push Key
+             * @description VAPID public key for Web Push subscriptions (null: push is not set up)
+             */
+            web_push_key: string | null;
         };
         /** LibrarySettingsRead */
         LibrarySettingsRead: {
@@ -2901,6 +2950,11 @@ export interface components {
              * @description Username of the library's Telegram bot, when notifications can go there
              */
             telegram_bot: string | null;
+            /**
+             * Web Push Key
+             * @description VAPID public key for Web Push subscriptions (null: push is not set up)
+             */
+            web_push_key: string | null;
             /**
              * Updated At
              * Format: date-time
@@ -3469,6 +3523,22 @@ export interface components {
          * @enum {string}
          */
         PurchaseStatus: "open" | "ordered" | "added" | "declined";
+        /** PushKeys */
+        PushKeys: {
+            /** P256Dh */
+            p256dh: string;
+            /** Auth */
+            auth: string;
+        };
+        /**
+         * PushSubscriptionCreate
+         * @description ``PushSubscription.toJSON()`` of the browser, without ``expirationTime``.
+         */
+        PushSubscriptionCreate: {
+            /** Endpoint */
+            endpoint: string;
+            keys: components["schemas"]["PushKeys"];
+        };
         /**
          * QualityIssue
          * @description Gaps in a title's catalogue data, for the admin data-quality page.
@@ -4149,6 +4219,11 @@ export interface components {
             /** Copies */
             copies: number;
         };
+        /** WebhookAck */
+        WebhookAck: {
+            /** Ok */
+            ok: boolean;
+        };
     };
     responses: never;
     parameters: never;
@@ -4397,6 +4472,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["TokenResponse"];
                 };
+            };
+            /** @description No refresh cookie: nobody is signed in on this browser */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Unauthorized */
             401: {
@@ -5234,6 +5316,94 @@ export interface operations {
             };
         };
     };
+    add_push_subscription_api_v1_users_me_push_subscriptions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PushSubscriptionCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    remove_push_subscription_api_v1_users_me_push_subscriptions_delete: {
+        parameters: {
+            query: {
+                /** @description The subscription's endpoint */
+                endpoint: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     my_children_api_v1_users_me_children_get: {
         parameters: {
             query?: never;
@@ -5798,6 +5968,61 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    telegram_webhook_api_v1_telegram_webhook_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Telegram-Bot-Api-Secret-Token"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookAck"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

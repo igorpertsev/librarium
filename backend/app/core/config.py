@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import secrets
 from enum import StrEnum
 from functools import lru_cache
@@ -89,6 +90,16 @@ class Settings(BaseSettings):
     app_base_url: str = "http://localhost:5173"
     # Uploaded book covers (served at /media); a volume in Docker.
     media_dir: str = "media"
+    # Uploaded covers go to S3-compatible storage instead of MEDIA_DIR when S3_BUCKET is set.
+    s3_endpoint: str | None = None  # e.g. https://s3.eu-central-1.amazonaws.com
+    s3_region: str | None = None
+    s3_bucket: str | None = None
+    s3_access_key_id: str | None = None
+    s3_secret_access_key: SecretStr | None = None
+    s3_prefix: str = ""  # optional folder inside the bucket
+    # Public address of the bucket (or a CDN in front of it): /media redirects there. Unset, the
+    # backend streams covers from the (private) bucket.
+    media_public_url: str | None = None
     # Sign in with Google / Apple (optional, see app.services.oauth). The backend's public URL
     # (for the callback address the providers send people back to) defaults to
     # APP_BASE_URL + /api/v1, which fits a single domain behind Caddy.
@@ -102,6 +113,15 @@ class Settings(BaseSettings):
     # Optional Telegram bot for notifications (see app.services.telegram).
     telegram_bot_token: SecretStr | None = None
     telegram_bot_username: str | None = None
+    # Webhook mode (optional): Telegram posts updates to /api/v1/telegram/webhook with this secret
+    # in X-Telegram-Bot-Api-Secret-Token, instead of the notifier polling getUpdates. Register it
+    # with `python -m app.cli telegram-webhook set`.
+    telegram_webhook_secret: SecretStr | None = None
+    # Web Push (optional): a VAPID key pair (`python -m app.cli generate-vapid-keys`) and a contact
+    # address push services can reach the library at (mailto:… or https://…).
+    web_push_public_key: str | None = None
+    web_push_private_key: SecretStr | None = None
+    web_push_contact: str | None = None
     max_cover_bytes: int = 5 * 1024 * 1024
     # Lifetime of the link in password reset emails.
     password_reset_expire_minutes: int = Field(default=60, ge=5, le=24 * 60)
@@ -154,6 +174,13 @@ class Settings(BaseSettings):
         "smtp_host",
         "smtp_username",
         "notifier_ping_url",
+        "s3_endpoint",
+        "s3_region",
+        "s3_bucket",
+        "s3_access_key_id",
+        "media_public_url",
+        "web_push_public_key",
+        "web_push_contact",
         mode="before",
     )
     @classmethod
@@ -165,6 +192,9 @@ class Settings(BaseSettings):
     @field_validator(
         "jwt_secret_key",
         "mfa_encryption_keys",
+        "s3_secret_access_key",
+        "telegram_webhook_secret",
+        "web_push_private_key",
         "seed_admin_password",
         "smtp_password",
         "sentry_dsn",
@@ -214,6 +244,51 @@ class Settings(BaseSettings):
         if self.log_format is None:
             self.log_format = "json" if self.environment is Environment.PRODUCTION else "text"
         return self
+
+    @model_validator(mode="after")
+    def _validate_s3(self) -> Settings:
+        if self.s3_bucket and not (
+            self.s3_endpoint and self.s3_access_key_id and self.s3_secret_access_key
+        ):
+            raise ValueError(
+                "S3_BUCKET needs S3_ENDPOINT, S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY"
+            )
+        for name in ("s3_endpoint", "media_public_url"):
+            value = getattr(self, name)
+            if value is not None:
+                if not value.startswith(("http://", "https://")):
+                    raise ValueError(f"{name.upper()} must start with http:// or https://")
+                setattr(self, name, value.rstrip("/"))
+        return self
+
+    @model_validator(mode="after")
+    def _validate_telegram_webhook(self) -> Settings:
+        secret = self.telegram_webhook_secret
+        if secret is not None and not re.fullmatch(
+            r"[A-Za-z0-9_-]{32,256}", secret.get_secret_value()
+        ):
+            raise ValueError(
+                "TELEGRAM_WEBHOOK_SECRET must be 32 to 256 letters, digits, '_' or '-', "
+                "e.g. secrets.token_urlsafe(32)"
+            )
+        if secret is not None and not self.telegram_bot_token:
+            raise ValueError("TELEGRAM_WEBHOOK_SECRET needs TELEGRAM_BOT_TOKEN")
+        return self
+
+    @model_validator(mode="after")
+    def _validate_web_push(self) -> Settings:
+        values = (self.web_push_public_key, self.web_push_private_key, self.web_push_contact)
+        if any(v is not None for v in values) and not all(v is not None for v in values):
+            raise ValueError(
+                "Web Push needs WEB_PUSH_PUBLIC_KEY, WEB_PUSH_PRIVATE_KEY and WEB_PUSH_CONTACT"
+            )
+        if self.web_push_contact and not self.web_push_contact.startswith(("mailto:", "https://")):
+            raise ValueError("WEB_PUSH_CONTACT must be a mailto: or https:// address")
+        return self
+
+    @property
+    def web_push_enabled(self) -> bool:
+        return self.web_push_private_key is not None
 
     @model_validator(mode="after")
     def _validate_mfa_keys(self) -> Settings:

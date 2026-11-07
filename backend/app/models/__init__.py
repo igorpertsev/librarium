@@ -12,6 +12,7 @@ from app.models.notification import Notification
 from app.models.order import Order, OrderItem
 from app.models.pickup import PickupPoint
 from app.models.purchase import PurchaseRequest, PurchaseVote
+from app.models.push import PushSubscription
 from app.models.reading_list import ReadingListEntry
 from app.models.reading_log import ReadingLogEntry
 from app.models.refresh_token import RefreshToken
@@ -41,6 +42,7 @@ __all__ = [
     "PickupPoint",
     "PurchaseRequest",
     "PurchaseVote",
+    "PushSubscription",
     "ReadingListEntry",
     "ReadingLogEntry",
     "RefreshToken",

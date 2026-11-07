@@ -407,8 +407,9 @@ export default function CustomerPortal() {
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {books.map(book => (
-              <BookCard key={book.id} book={book} />
+            {books.map((book, index) => (
+              // The first row's covers are the largest paint: load them right away.
+              <BookCard key={book.id} book={book} eager={index < 4} />
             ))}
             {isLoading && books.length === 0 &&
               Array.from({ length: 8 }, (_, i) => <BookCardSkeleton key={i} />)}

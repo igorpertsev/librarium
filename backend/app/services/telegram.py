@@ -2,15 +2,17 @@
 
 Linking: the profile asks for a one-time link (``t.me/<bot>?start=<code>``, 15 minutes); when
 the reader presses Start, the bot receives ``/start <code>`` and the reader's chat is linked.
-``/stop`` unlinks it. The notifier reads the bot's updates every cycle (long polling is not
-needed: ``getUpdates`` with an offset confirms what was read) and sends each notification
-there too, once (``notifications.telegram_sent_at``).
+``/stop`` unlinks it. Updates arrive one of two ways: the notifier reads them every cycle
+(``getUpdates`` with an offset confirms what was read), or, with ``TELEGRAM_WEBHOOK_SECRET``,
+Telegram posts each one to ``/api/v1/telegram/webhook`` and polling stops. Every notification is
+sent there too, once (``notifications.telegram_sent_at``).
 """
 
 from __future__ import annotations
 
 import logging
 import secrets
+from collections import deque
 from datetime import UTC, datetime, timedelta
 from typing import Any, Protocol
 
@@ -20,6 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
 from app.core.exceptions import ConflictError
+from app.core.text import unstorable
 from app.models import User
 from app.models.enums import UiLanguage
 
@@ -69,6 +72,18 @@ class TelegramBot:
         result = await self._call("getUpdates", payload)
         return list(result or [])
 
+    async def set_webhook(self, url: str, secret: str) -> None:
+        await self._call(
+            "setWebhook", {"url": url, "secret_token": secret, "allowed_updates": ["message"]}
+        )
+
+    async def delete_webhook(self) -> None:
+        await self._call("deleteWebhook", {})
+
+    async def webhook_info(self) -> dict[str, Any]:
+        result = await self._call("getWebhookInfo", {})
+        return dict(result or {})
+
 
 def make_bot(settings: Settings, http: httpx.AsyncClient) -> TelegramBot | None:
     token = settings.telegram_bot_token
@@ -107,10 +122,12 @@ def _say(user: User | None, english: str, russian: str) -> str:
 
 
 async def _handle(session: AsyncSession, bot: Bot, message: dict[str, Any]) -> None:
-    chat = message.get("chat") or {}
+    chat = message.get("chat")
+    if not isinstance(chat, dict):
+        return  # not a message from a chat: nothing to do
     chat_id = chat.get("id")
     text = str(message.get("text") or "").strip()
-    if not isinstance(chat_id, int) or chat.get("type") != "private":
+    if not isinstance(chat_id, int) or chat.get("type") != "private" or unstorable(text):
         return
     linked = await session.scalar(select(User).where(User.telegram_chat_id == chat_id))
     if text.startswith("/start"):
@@ -161,6 +178,28 @@ async def _handle(session: AsyncSession, bot: Bot, message: dict[str, Any]) -> N
         logger.warning("Telegram reply failed: %s", exc)
 
 
+# Telegram may deliver a webhook update again (no answer in time); the ids seen lately are kept
+# so a /start code is not answered twice. One backend process: memory is enough.
+_recent_updates: deque[int] = deque(maxlen=1000)
+
+
+async def handle_update(session: AsyncSession, bot: Bot, update: dict[str, Any]) -> bool:
+    """One update (from the webhook or polling); False if it was seen already."""
+    update_id = update.get("update_id")
+    if isinstance(update_id, int):
+        if update_id in _recent_updates:
+            return False
+        _recent_updates.append(update_id)
+    if isinstance(update.get("message"), dict):
+        await _handle(session, bot, update["message"])
+    return True
+
+
+def polls_updates(settings: Settings) -> bool:
+    """The notifier reads updates itself unless Telegram posts them to the webhook."""
+    return settings.telegram_webhook_secret is None
+
+
 async def process_updates(session: AsyncSession, bot: Bot) -> int:
     """Read the bot's new messages (link and unlink requests); returns how many."""
     try:
@@ -171,8 +210,7 @@ async def process_updates(session: AsyncSession, bot: Bot) -> int:
     if not updates:
         return 0
     for update in updates:
-        if isinstance(update.get("message"), dict):
-            await _handle(session, bot, update["message"])
+        await handle_update(session, bot, update)
     # Asking from the next id confirms these updates, so they are not read again.
     last = max(int(u.get("update_id", 0)) for u in updates)
     try:
