@@ -914,5 +914,24 @@
     "noteOf": "Condition note for “{{title}}”",
     "returnTitle": "Books are back",
     "returnHint": "Note how each copy came back. The order is then marked returned."
+  },
+  "bulk": {
+    "region": "Change selected books",
+    "selected_one": "{{count}} title selected",
+    "selected_other": "{{count}} titles selected",
+    "selectPage": "Select all books on this page",
+    "select": "Select “{{title}}”",
+    "action": "Change",
+    "value": "New value",
+    "choose": "Choose…",
+    "apply": "Apply to all copies",
+    "clear": "Clear selection",
+    "actions": {"status": "Set status", "category": "Set category", "condition": "Set condition", "add_tags": "Add tag", "remove_tags": "Remove tag", "deactivate": "Remove from catalogue"},
+    "done_one": "{{count}} title updated",
+    "done_other": "{{count}} titles updated",
+    "removeTitle_one": "Remove {{count}} title from the catalogue?",
+    "removeTitle_other": "Remove {{count}} titles from the catalogue?",
+    "removeDesc": "Every copy is taken out of the catalogue and out of readers' carts. Order history keeps them.",
+    "remove": "Remove"
   }
 }

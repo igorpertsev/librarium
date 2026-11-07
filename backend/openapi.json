@@ -4102,6 +4102,93 @@
         }
       }
     },
+    "/api/v1/admin/books/bulk": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Bulk Update Books",
+        "description": "One change (status, category, condition, tags to add or remove, or removal from the catalogue) for every copy of up to 200 titles, all or nothing.",
+        "operationId": "admin_bulk_update_books_api_v1_admin_books_bulk_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkBookUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/admin/books/{book_id}": {
       "get": {
         "tags": [
@@ -8536,6 +8623,103 @@
         "additionalProperties": false,
         "type": "object",
         "title": "BookUpdate"
+      },
+      "BulkBookUpdate": {
+        "properties": {
+          "book_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Book Ids"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BookStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "category": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BookCategory"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "condition": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CopyCondition"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "add_tags": {
+            "items": {
+              "type": "string",
+              "maxLength": 64,
+              "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Add Tags",
+            "description": "Tag slugs to add"
+          },
+          "remove_tags": {
+            "items": {
+              "type": "string",
+              "maxLength": 64,
+              "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Remove Tags",
+            "description": "Tag slugs to remove"
+          },
+          "deactivate": {
+            "type": "boolean",
+            "title": "Deactivate",
+            "description": "Remove the titles from the catalogue",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "book_ids"
+        ],
+        "title": "BulkBookUpdate",
+        "description": "The same change to several titles at once (every copy of each title)."
+      },
+      "BulkResult": {
+        "properties": {
+          "titles": {
+            "type": "integer",
+            "title": "Titles"
+          },
+          "copies": {
+            "type": "integer",
+            "title": "Copies"
+          }
+        },
+        "type": "object",
+        "required": [
+          "titles",
+          "copies"
+        ],
+        "title": "BulkResult"
       },
       "CartItemCreate": {
         "properties": {

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { ADMIN, registerCustomer, signIn, signOut, unique } from '../helpers';
+import { ADMIN, createBooks, registerCustomer, signIn, signOut, unique } from '../helpers';
 
 test('the librarian adds, edits and deletes a book', async ({ page }) => {
   const title = `Admin ${unique()}`;
@@ -63,4 +63,24 @@ test('an administrator makes a reader a librarian; the change is in the activity
   await expect(page.getByRole('tab', { name: 'Activity' })).toHaveCount(0);
   await expect(page.getByRole('tab', { name: 'Pickup' })).toHaveCount(0);
   await expect(page.getByText('Batch Configuration')).toHaveCount(0);
+});
+
+test('the librarian changes several books at once', async ({ page, request }) => {
+  const titles = await createBooks(request, `Bulk ${unique()}`, 2);
+  await signIn(page, ADMIN);
+  await page.goto('/admin');
+  // Newest first: the two new books are at the top of the list.
+  for (const title of titles) {
+    await page.getByRole('checkbox', { name: `Select “${title}”` }).click();
+  }
+  const bar = page.getByRole('region', { name: 'Change selected books' });
+  await expect(bar).toContainText('2 titles selected');
+  await bar.getByRole('combobox', { name: 'Change' }).selectOption('status');
+  await bar.getByRole('combobox', { name: 'New value' }).selectOption('not-available');
+  await bar.getByRole('button', { name: 'Apply to all copies' }).click();
+  await expect(page.getByText('2 titles updated')).toBeVisible();
+  for (const title of titles) {
+    await expect(page.getByRole('row').filter({ hasText: title })).toContainText('Not Available');
+  }
+  await expect(bar).toHaveCount(0);
 });

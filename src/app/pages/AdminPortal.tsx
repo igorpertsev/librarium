@@ -23,6 +23,8 @@ import { PickupPointsTab } from '../components/PickupPointsTab';
 import { UpcomingReservations } from '../components/UpcomingReservations';
 import { ActivityTab } from '../components/ActivityTab';
 import { ReturnDialog } from '../components/ReturnDialog';
+import { BulkBookActions } from '../components/BulkBookActions';
+import { Checkbox } from '../components/ui/checkbox';
 import { isAdmin, type Role } from '../utils/roles';
 import { ReportsTab } from '../components/ReportsTab';
 import { BookCatalogFields } from '../components/BookCatalogFields';
@@ -68,6 +70,7 @@ export default function AdminPortal() {
   const { invalidateCatalog } = useCatalog();
   const { confirm, confirmDialog } = useConfirm();
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedBooks, setSelectedBooks] = useState<Set<string>>(new Set());
   const booksPerPage = 10;
 
   const { booksPerBatch, pricePerBatch } = batchConfig;
@@ -240,6 +243,7 @@ export default function AdminPortal() {
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+    setSelectedBooks(new Set()); // a selection is for one page
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -421,10 +425,30 @@ export default function AdminPortal() {
           {booksLoading && books.length === 0 && (
             <p className="text-muted-foreground text-sm py-8 text-center">{t('common.loading')}</p>
           )}
+          {selectedBooks.size > 0 && (
+            <BulkBookActions
+              selected={[...selectedBooks]}
+              onClear={() => setSelectedBooks(new Set())}
+              onDone={() => {
+                setSelectedBooks(new Set());
+                invalidateCatalog();
+                loadBooks(currentPage);
+              }}
+            />
+          )}
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      aria-label={t('bulk.selectPage')}
+                      checked={paginatedBooks.length > 0 && paginatedBooks.every((b) => selectedBooks.has(b.id))}
+                      onCheckedChange={(checked) =>
+                        setSelectedBooks(checked ? new Set(paginatedBooks.map((b) => b.id)) : new Set())
+                      }
+                    />
+                  </TableHead>
                   <TableHead>{t('admin.title')}</TableHead>
                   <TableHead>{t('admin.author')}</TableHead>
                   <TableHead>{t('admin.category')}</TableHead>
@@ -435,7 +459,21 @@ export default function AdminPortal() {
               </TableHeader>
               <TableBody>
                 {paginatedBooks.map(book => (
-                  <TableRow key={book.id}>
+                  <TableRow key={book.id} data-state={selectedBooks.has(book.id) ? 'selected' : undefined}>
+                    <TableCell>
+                      <Checkbox
+                        aria-label={t('bulk.select', { title: book.title })}
+                        checked={selectedBooks.has(book.id)}
+                        onCheckedChange={(checked) =>
+                          setSelectedBooks((current) => {
+                            const next = new Set(current);
+                            if (checked) next.add(book.id);
+                            else next.delete(book.id);
+                            return next;
+                          })
+                        }
+                      />
+                    </TableCell>
                     <TableCell>
                       {book.title}
                       {(book.copies ?? 1) > 1 && (

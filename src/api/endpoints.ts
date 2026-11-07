@@ -14,6 +14,8 @@ import type {
   BookPageDto,
   BookStatsDto,
   BookUpdateDto,
+  BulkBookUpdateDto,
+  BulkResultDto,
   CartDto,
   DemandDto,
   ChangePasswordDto,
@@ -200,6 +202,8 @@ export const adminApi = {
     apiRequest<BookDto[]>(`/admin/books/${id(bookId)}/copies`, { method: 'POST', body: { count } }),
   createBook: (body: BookCreateDto) =>
     apiRequest<BookDto>('/admin/books', { method: 'POST', body }),
+  bulkUpdateBooks: (body: BulkBookUpdateDto) =>
+    apiRequest<BulkResultDto>('/admin/books/bulk', { method: 'POST', body }),
   updateBook: (bookId: string, body: BookUpdateDto) =>
     apiRequest<BookDto>(`/admin/books/${id(bookId)}`, { method: 'PATCH', body }),
   deleteBook: (bookId: string) =>

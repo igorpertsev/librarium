@@ -239,3 +239,33 @@ class BookStats(ApiModel):
     available_soon: int
     not_available: int
     reserved: int
+
+
+class BulkBookUpdate(RequestModel):
+    """The same change to several titles at once (every copy of each title)."""
+
+    book_ids: Annotated[list[uuid.UUID], Field(min_length=1, max_length=200)]
+    status: BookStatus | None = None
+    category: BookCategory | None = None
+    condition: CopyCondition | None = None
+    add_tags: Tags = Field(default_factory=list, description="Tag slugs to add")
+    remove_tags: Tags = Field(default_factory=list, description="Tag slugs to remove")
+    deactivate: bool = Field(False, description="Remove the titles from the catalogue")
+
+    @model_validator(mode="after")
+    def _something_to_do(self) -> BulkBookUpdate:
+        if not (
+            self.status
+            or self.category
+            or self.condition
+            or self.add_tags
+            or self.remove_tags
+            or self.deactivate
+        ):
+            raise ValueError("Choose a change to make")
+        return self
+
+
+class BulkResult(ApiModel):
+    titles: int
+    copies: int

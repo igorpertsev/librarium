@@ -1088,6 +1088,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/books/bulk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Admin Bulk Update Books
+         * @description One change (status, category, condition, tags to add or remove, or removal from the catalogue) for every copy of up to 200 titles, all or nothing.
+         */
+        post: operations["admin_bulk_update_books_api_v1_admin_books_bulk_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/books/{book_id}": {
         parameters: {
             query?: never;
@@ -2113,6 +2133,40 @@ export interface components {
              * @description Replaces the translations
              */
             translations?: components["schemas"]["BookTranslationIn"][] | null;
+        };
+        /**
+         * BulkBookUpdate
+         * @description The same change to several titles at once (every copy of each title).
+         */
+        BulkBookUpdate: {
+            /** Book Ids */
+            book_ids: string[];
+            status?: components["schemas"]["BookStatus"] | null;
+            category?: components["schemas"]["BookCategory"] | null;
+            condition?: components["schemas"]["CopyCondition"] | null;
+            /**
+             * Add Tags
+             * @description Tag slugs to add
+             */
+            add_tags?: string[];
+            /**
+             * Remove Tags
+             * @description Tag slugs to remove
+             */
+            remove_tags?: string[];
+            /**
+             * Deactivate
+             * @description Remove the titles from the catalogue
+             * @default false
+             */
+            deactivate: boolean;
+        };
+        /** BulkResult */
+        BulkResult: {
+            /** Titles */
+            titles: number;
+            /** Copies */
+            copies: number;
         };
         /** CartItemCreate */
         CartItemCreate: {
@@ -6159,6 +6213,75 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BookRead"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_bulk_update_books_api_v1_admin_books_bulk_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkBookUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkResult"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
             /** @description Unauthorized */

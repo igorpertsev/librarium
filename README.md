@@ -441,6 +441,9 @@ two copies of the same title are two records (ISBN is not unique).
   hold. Cancelling (`DELETE /users/me/reservations/{id}`) gives a set-aside copy to the readers waiting for it.
   Librarians see upcoming reservations above the order list (`GET /admin/reservations`). Deleting an account
   drops its holds and reservations and passes those copies on.
+- **Bulk edit**: in the admin book list, tick titles (or the whole page) and apply one change to every copy of
+  them: status, category, condition, add or remove a tag, or remove them from the catalogue (asks first; drops them
+  from carts). Unknown tags change nothing (`UNKNOWN_TAGS`).
 - **Copy condition**: each copy has a condition (`new/good/worn/damaged`) and an optional note, set in the book
   form and when an order comes back (*Mark Returned* asks how each copy came back; only changed copies are saved).
   It is not shared between copies of a title. Worn and damaged copies are marked in the admin book list, and
@@ -535,6 +538,7 @@ Differences (adapters in `src/api/mappers.ts`):
 | GET | `/admin/books/quality` (titles without cover, description, tags, ISBN or translation; unchecked machine translations) · `/admin/books?quality=<issue>` lists them | admin |
 | GET | `/admin/reports/summary`, `/admin/reports/demand` (longest waiting lists, most saved titles, most borrowed tags), `/admin/reports/orders.csv` (`date_from`, `date_to`; default last 30 days) | admin |
 | POST | `/admin/books/{id}/copies` (`{count}`: more copies of a title) | admin |
+| POST | `/admin/books/bulk` (`book_ids` ≤ 200 and one or more of `status`, `category`, `condition`, `add_tags`, `remove_tags`, `deactivate`: every copy of each title, all or nothing) | staff |
 | POST/PATCH/DELETE | `/admin/tags`, `/admin/tags/{id}` · POST `/admin/tags/{id}/merge`; the same for `/admin/series` | admin |
 | POST | `/admin/translations/suggest` (title, author and description in another language; saves nothing) | admin |
 | GET | `/admin/users` (staff) · PATCH `/admin/users/{id}` (role, disable) | admin |

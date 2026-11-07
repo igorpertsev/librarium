@@ -30,6 +30,8 @@ from app.schemas.book import (
     BookSort,
     BookStats,
     BookUpdate,
+    BulkBookUpdate,
+    BulkResult,
     QualityIssue,
     QualitySummary,
 )
@@ -258,6 +260,17 @@ async def admin_add_copies(
     book_id: uuid.UUID, body: AddCopies, session: SessionDep
 ) -> list[BookRead]:
     return await books_service.add_copies(session, book_id, body.count)
+
+
+@router.post(
+    "/books/bulk",
+    response_model=BulkResult,
+    responses=error_responses(400, 404, 422),
+    description="One change (status, category, condition, tags to add or remove, or removal "
+    "from the catalogue) for every copy of up to 200 titles, all or nothing.",
+)
+async def admin_bulk_update_books(body: BulkBookUpdate, session: SessionDep) -> BulkResult:
+    return await books_service.bulk_update(session, body)
 
 
 @router.get("/books/{book_id}", response_model=BookRead, responses=error_responses(404, 422))
