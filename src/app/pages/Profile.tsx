@@ -32,6 +32,7 @@ import { FamilyCard } from '../components/FamilyCard';
 import { PushCard } from '../components/PushCard';
 import { CalendarCard } from '../components/CalendarCard';
 import { ChallengesCard } from '../components/ChallengesCard';
+import { PasskeysCard } from '../components/PasskeysCard';
 import { TelegramCard } from '../components/TelegramCard';
 import { useBookText } from '../utils/bookText';
 import { coverOfSize } from '../utils/covers';
@@ -537,6 +538,7 @@ export default function Profile() {
       <CalendarCard />
       <PushCard />
       <TwoStepCard />
+      <PasskeysCard />
       <AccountDataCard />
       {confirmDialog}
     </div>

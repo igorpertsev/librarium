@@ -45,9 +45,10 @@ from app.schemas.auth import (
     TokenResponse,
 )
 from app.schemas.common import error_responses
+from app.schemas.passkey import PasskeyOptions, PasskeySignIn
 from app.schemas.user import UserRead
 from app.services import auth as auth_service
-from app.services import mfa, oauth, password_reset
+from app.services import mfa, oauth, passkeys, password_reset
 from app.services.auth import AuthResult, ClientMeta
 from app.services.notifications import Sender
 
@@ -185,6 +186,46 @@ async def login_mfa(
         limiter.hit(user_key, LOGIN_FAILURES_PER_EMAIL)
         raise
     limiter.reset(user_key)
+    _set_refresh_cookie(response, settings, result.refresh_token)
+    return _token_response(result)
+
+
+@router.post(
+    "/passkey/options",
+    response_model=PasskeyOptions,
+    responses=error_responses(403, 429),
+    description="Start signing in with a passkey: options for navigator.credentials.get() "
+    "(any passkey of this site) and a state to send back.",
+)
+async def passkey_options(
+    request: Request, settings: SettingsDep, meta: ClientMetaDep, limiter: RateLimiterDep
+) -> PasskeyOptions:
+    _check_origin(request, settings)
+    limiter.consume(f"login:ip:{_client_ip(meta)}", LOGIN_PER_IP)
+    options, state = passkeys.login_options(settings)
+    return PasskeyOptions(options=options, state=state)
+
+
+@router.post(
+    "/passkey",
+    response_model=TokenResponse,
+    responses=error_responses(401, 403, 422, 429),
+    description="Finish signing in with a passkey (no two-step code needed: the passkey is "
+    "already two factors).",
+)
+async def passkey_sign_in(
+    body: PasskeySignIn,
+    request: Request,
+    response: Response,
+    session: SessionDep,
+    settings: SettingsDep,
+    meta: ClientMetaDep,
+    limiter: RateLimiterDep,
+) -> TokenResponse:
+    _check_origin(request, settings)
+    limiter.consume(f"login:ip:{_client_ip(meta)}", LOGIN_PER_IP)
+    user = await passkeys.login(session, settings, state=body.state, credential=body.credential)
+    result = await auth_service.signed_in(session, settings, user, meta)
     _set_refresh_cookie(response, settings, result.refresh_token)
     return _token_response(result)
 

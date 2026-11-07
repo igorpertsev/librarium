@@ -1235,5 +1235,28 @@
     "addBooks": "Add books",
     "saveBooks": "Save books",
     "booksSaved": "Books saved"
+  },
+  "passkeys": {
+    "title": "Passkeys",
+    "description": "Sign in with your face, fingerprint or device PIN instead of a password (no code needed).",
+    "signIn": "Sign in with a passkey",
+    "add": "Add a passkey",
+    "create": "Create passkey",
+    "name": "Name",
+    "namePlaceholder": "e.g. My phone",
+    "defaultName": "Passkey",
+    "password": "Your password (to confirm it is you)",
+    "added": "Passkey added",
+    "removed": "Passkey removed",
+    "removeNamed": "Remove the passkey {{name}}",
+    "lastUsed": "last used {{date}}",
+    "neverUsed": "not used yet",
+    "errors": {
+      "invalid": "The passkey could not be checked. Try again.",
+      "unknown": "This passkey is not known here: sign in with your password and add it on your profile.",
+      "state": "That took too long: try again.",
+      "exists": "This passkey is already added.",
+      "tooMany": "You already have the most passkeys allowed."
+    }
   }
 }

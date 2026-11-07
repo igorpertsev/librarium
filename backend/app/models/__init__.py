@@ -12,6 +12,7 @@ from app.models.identity import UserIdentity
 from app.models.library_settings import LibrarySettings
 from app.models.notification import Notification
 from app.models.order import Order, OrderItem
+from app.models.passkey import Passkey
 from app.models.pickup import PickupPoint
 from app.models.purchase import PurchaseRequest, PurchaseVote
 from app.models.push import PushSubscription
@@ -45,6 +46,7 @@ __all__ = [
     "Notification",
     "Order",
     "OrderItem",
+    "Passkey",
     "PickupPoint",
     "PurchaseRequest",
     "PurchaseVote",
