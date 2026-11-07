@@ -821,7 +821,7 @@ language is changed in Settings), or in English followed by Russian when it is n
 
 Production runs on a single VM with `docker-compose.prod.yml`: Caddy (automatic HTTPS, static
 frontend, `/api` reverse proxy), FastAPI and PostgreSQL, with only ports 80/443 exposed.
-Step-by-step guide for a free Oracle Cloud VM, including backups and updates:
+Step-by-step guide for a free Oracle Cloud VM or any other VPS, including backups and updates:
 [deploy/README.md](deploy/README.md). Backups: `deploy/backup.sh` (daily dump, optional off-site copy with
 rclone) and `deploy/verify-backup.sh` (restore drill in a throwaway container).
 

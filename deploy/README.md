@@ -1,4 +1,4 @@
-# Deploying to an Oracle Cloud "Always Free" VM
+# Deploying to a VM (Oracle Cloud "Always Free" or any VPS)
 
 One small VM runs the whole stack with Docker Compose (`docker-compose.prod.yml`):
 
@@ -14,8 +14,10 @@ Internet ──► Caddy  :80/:443   HTTPS (Let's Encrypt), serves the built fro
 Frontend and API share one HTTPS origin, so the `SameSite=Lax` refresh cookie works without any
 cross-site setup. The API docs (`/docs`, `/openapi.json`) are not exposed publicly.
 
-You need: an Oracle Cloud account (a card is required for verification), an SSH key pair, and a
-domain name — or use a free `sslip.io` hostname (step 3).
+You need: an SSH key pair, a domain name (or a free `sslip.io` hostname, step 3) and a server.
+Sections 1 and 2 create one on Oracle Cloud's Always Free tier (a card is required for
+verification). On any other provider, follow [Another provider](#another-provider-any-vps) instead
+and continue with section 3.
 
 > Free-tier terms change. In June 2026 Oracle reduced the Always Free Ampere (ARM) allowance to
 > **2 OCPUs and 12 GB RAM** in total. Check the "Always Free-eligible" label in the console before
@@ -62,6 +64,114 @@ sudo iptables -I INPUT -p udp --dport 443 -m conntrack --ctstate NEW -j ACCEPT
 ```bash
 sudo netfilter-persistent save
 ```
+
+## Another provider (any VPS)
+
+Any VPS with root access and Ubuntu runs the same stack, for example Netcup VPS 500, Hetzner Cloud
+CX23/CAX11 or OVHcloud VPS-1. Follow this section instead of sections 1 and 2, then continue with
+section 3.
+
+**Size:** 2 vCPUs, 4 GB RAM and 40 GB of disk are enough for a small library. x86 and Arm both
+work. If your readers are in the EU, an EU data centre keeps their personal data there.
+
+### Create the server
+
+Order it with **Ubuntu 24.04** and your SSH public key, and note its public IPv4 address. Most
+providers then log you in as `root`. If yours sent a root password instead of installing your key,
+copy the key first, from your computer:
+
+```bash
+ssh-copy-id root@<public-ip>
+```
+
+### Add the `ubuntu` user
+
+The rest of this guide (the cron lines, the deploy key, `/home/ubuntu/librarium`) assumes a user
+`ubuntu` with your SSH key and `sudo` without a password, as on Oracle's images. If you already log
+in as `ubuntu` with sudo (some providers set that user up), skip to turning off root and password
+logins below. Otherwise create it as root (the first command only adds the user if the image does
+not have one yet):
+
+```bash
+ssh root@<public-ip>
+```
+
+```bash
+id -u ubuntu >/dev/null 2>&1 || adduser --disabled-password --gecos "" ubuntu; usermod -aG sudo ubuntu
+```
+
+```bash
+echo 'ubuntu ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/90-ubuntu && chmod 440 /etc/sudoers.d/90-ubuntu
+```
+
+```bash
+install -d -m 700 -o ubuntu -g ubuntu /home/ubuntu/.ssh && install -m 600 -o ubuntu -g ubuntu /root/.ssh/authorized_keys /home/ubuntu/.ssh/
+```
+
+Keep this session open and check from a second terminal that `ssh ubuntu@<public-ip>` works and
+`sudo true` asks for nothing. Then turn off root and password logins. sshd takes the **first**
+value it reads, and some images already set `PasswordAuthentication yes` in
+`/etc/ssh/sshd_config.d/50-cloud-init.conf`, so the file name below starts with `00`:
+
+```bash
+printf 'PermitRootLogin no\nPasswordAuthentication no\nKbdInteractiveAuthentication no\n' | sudo tee /etc/ssh/sshd_config.d/00-hardening.conf
+```
+
+```bash
+sudo sshd -t && sudo systemctl restart ssh
+```
+
+```bash
+sudo sshd -T | grep -Ei '^(permitrootlogin|passwordauthentication|kbdinteractiveauthentication) '
+```
+
+All three should print `no`. Log in again as `ubuntu` from now on.
+
+### Open only SSH, 80 and 443
+
+Unlike Oracle's images, most VPS images ship without firewall rules. Allow SSH, HTTP and HTTPS
+with ufw and refuse the rest:
+
+```bash
+sudo apt-get update && sudo apt-get install -y ufw
+```
+
+```bash
+sudo ufw allow OpenSSH && sudo ufw allow 80/tcp && sudo ufw allow 443/tcp && sudo ufw allow 443/udp
+```
+
+```bash
+sudo ufw enable && sudo ufw status
+```
+
+**Docker and ufw:** ports that Docker publishes bypass ufw; any `ports:` entry in a compose file is
+reachable from the internet whatever ufw says. In `docker-compose.prod.yml` only `web` (Caddy)
+publishes ports, 80 and 443, so ufw and Docker agree. Keep it that way: never add `ports:` to
+`db` or `backend`; use `docker compose exec` to reach them. If your provider has a firewall in its
+control panel (Hetzner Cloud Firewalls, for example), allowing the same ports there adds a second
+layer that Docker cannot bypass.
+
+### Swap on a 4 GB server
+
+The images are built on the server while the stack is running. With 4 GB of RAM or less, a swap
+file keeps a build from failing for lack of memory. Check whether the server has swap already:
+
+```bash
+swapon --show
+```
+
+If that prints nothing:
+
+```bash
+sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile
+```
+
+```bash
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+```
+
+Then continue with section 3. Everything from there on is the same as on Oracle, except the
+off-site backups in section 8: use your provider's S3-compatible storage (see the end of that part).
 
 ## 3. Point a hostname at the VM
 
@@ -215,7 +325,11 @@ Storage, which is plenty:
    0 3 * * * RCLONE_REMOTE=oci:librarium-backups /home/ubuntu/librarium/deploy/backup.sh >> /home/ubuntu/librarium-backups/backup.log 2>&1
    ```
 
-Any rclone destination works the same way (Backblaze B2, another server over SFTP, ...). A copy in the same
+Any rclone destination works the same way. On another provider, create a private bucket and an
+access key in its S3-compatible storage (Hetzner Object Storage, Cloudflare R2, Backblaze B2, ...),
+write a section like `[oci]` above with that storage's `endpoint` (rclone's S3 documentation lists
+the settings per provider), and put that section's name into `RCLONE_REMOTE`. Another server over
+SFTP works too. A copy in the same
 cloud account survives losing the VM, not losing the account; for that, also pull dumps to your own
 machine from time to time:
 
@@ -272,7 +386,7 @@ Readers see a book's title and description in their interface language when the 
 translation. In the book form, **Find translation** suggests one from Wikidata (the official
 title of the translated edition) and Wikipedia (the article's first paragraph, credited with a
 link). This needs no setup, only outbound HTTPS from the VM to `www.wikidata.org` and
-`ru.wikipedia.org` / `en.wikipedia.org` (Oracle's default rules allow it).
+`ru.wikipedia.org` / `en.wikipedia.org` (both firewall setups above allow it).
 
 With an Anthropic API key, what Wikidata and Wikipedia lack is machine-translated as well and
 marked "Machine translation" for the librarian to check. To turn it on, put the key into `.env`:
@@ -586,7 +700,7 @@ trace, without IP addresses, cookies or request bodies.
 | Symptom | Likely cause / fix |
 | --- | --- |
 | `required variable ... is missing a value` | `.env` is missing or incomplete next to `docker-compose.prod.yml`. |
-| Site unreachable, or no certificate | DNS not pointing to the VM yet, or port 80/443 closed in the security list or iptables (step 2). Check `logs web`. |
+| Site unreachable, or no certificate | DNS not pointing to the VM yet, or port 80/443 closed: in the security list or iptables on Oracle (step 2), in ufw or the provider's firewall elsewhere ([Another provider](#another-provider-any-vps)). Check `logs web`. |
 | `502 Bad Gateway` | Backend not running; check `logs backend`. In production it refuses to start with an invalid configuration and prints why. |
 | Logged out after every reload | The site was opened by IP or another hostname instead of `DOMAIN`. |
 | *Out of capacity* when creating the VM | Retry later or choose another availability domain. |

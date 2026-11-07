@@ -849,7 +849,7 @@ staging-сервера.
 
 Production — одна VM с `docker-compose.prod.yml`: Caddy (автоматический HTTPS, статический
 frontend, прокси `/api`), FastAPI и PostgreSQL; наружу открыты только порты 80/443.
-Пошаговая инструкция для бесплатной VM в Oracle Cloud, включая бэкапы и обновления
+Пошаговая инструкция для бесплатной VM в Oracle Cloud или любой другой VPS, включая бэкапы и обновления
 (на английском): [deploy/README.md](deploy/README.md). Бэкапы: `deploy/backup.sh` (ежедневный дамп,
 необязательная копия вне VM через rclone) и `deploy/verify-backup.sh` (проверка восстановления во временном контейнере).
 
