@@ -138,5 +138,16 @@ async def test_hours_and_time_zone_are_validated(admin: ApiUser) -> None:
         },
     )
     assert backwards.status_code == 422
+    # Found by the API fuzzer: a number or a time with an offset used to end in a 500.
+    for closes in (0, "18:00+02:00"):
+        odd = await admin.post(
+            f"{API}/admin/pickup-points",
+            json={
+                "name": "Main",
+                "address": "1 Road",
+                "hours": [{"weekday": 0, "opens": "09:30", "closes": closes}],
+            },
+        )
+        assert odd.status_code == 422, (closes, odd.text)
     zone = await admin.patch(f"{API}/admin/settings", json={"timezone": "Mars/Olympus"})
     assert zone.status_code == 422
