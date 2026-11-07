@@ -18,7 +18,15 @@ TagSlug = Annotated[
 TagName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=64)]
 SeriesName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=300)]
 SeriesDescription = Annotated[str, StringConstraints(strip_whitespace=True, max_length=5000)]
-SeriesPosition = Annotated[float, Field(gt=0, lt=10000)]
+
+
+def _two_decimals(value: float) -> float:
+    return round(value, 2)
+
+
+# Stored as NUMERIC(6, 2): what fits, rounded to hundredths (a tiny or huge number would otherwise
+# round to 0 or overflow in the database).
+SeriesPosition = Annotated[float, Field(ge=0.01, le=9999.99), AfterValidator(_two_decimals)]
 
 
 class TagBrief(ApiModel):

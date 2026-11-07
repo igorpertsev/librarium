@@ -9618,8 +9618,8 @@
             "anyOf": [
               {
                 "type": "number",
-                "exclusiveMaximum": 10000.0,
-                "exclusiveMinimum": 0.0
+                "maximum": 9999.99,
+                "minimum": 0.01
               },
               {
                 "type": "null"
@@ -10474,8 +10474,8 @@
             "anyOf": [
               {
                 "type": "number",
-                "exclusiveMaximum": 10000.0,
-                "exclusiveMinimum": 0.0
+                "maximum": 9999.99,
+                "minimum": 0.01
               },
               {
                 "type": "null"
