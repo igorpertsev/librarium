@@ -49,6 +49,19 @@ async def test_any_invalid_row_rejects_the_whole_file(admin: ApiUser) -> None:
     assert (await admin.get(f"{API}/admin/books")).json()["total"] == 0
 
 
+async def test_unusual_files_are_reported_not_crashed_on(admin: ApiUser) -> None:
+    # Found by the API fuzzer: these used to answer 500.
+    lone_cr = (await _import(admin, "title,author,category\rA,B,fiction\r", dry_run=True)).json()
+    assert (lone_cr["rows"], lone_cr["errors"]) == (1, [])  # old Mac line ends are fine
+    garbage = await _import(admin, "\U000ed877\r\x7f\xa9<", dry_run=True)
+    assert garbage.status_code == 200
+    assert garbage.json()["errors"][0]["message"].startswith("Missing column(s)")
+    huge = "title,author,category\n" + "A" * 140_000 + ",B,fiction\n"  # over the csv field limit
+    body = (await _import(admin, huge, dry_run=True)).json()
+    assert body["created"] == 0
+    assert body["errors"][0]["message"].startswith("Not a readable CSV file")
+
+
 async def test_missing_columns_and_template(admin: ApiUser) -> None:
     body = (await _import(admin, "title,author\nA,B\n")).json()
     assert body["errors"] == [{"row": 1, "message": "Missing column(s): category"}]
