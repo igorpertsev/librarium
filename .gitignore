@@ -68,3 +68,6 @@ htmlcov/
 
 # Uploaded covers from local runs (MEDIA_DIR)
 backend/media/
+/test-results-visual/
+/playwright-report-visual/
+/.pnpm-store/
