@@ -187,6 +187,26 @@ The application never calls `metadata.create_all()`.
 
 ## Tests, lint, typecheck
 
+**Everything CI checks, in one command** (`scripts/check.sh`): backend format, lint, types, migrations (on a
+throwaway database), tests, the API schema and generated types, then frontend lint, types, unit tests and build.
+It prints which checks failed and exits non-zero if any did.
+
+```bash
+pnpm check
+```
+
+`pnpm check --fast` skips the slow parts (pytest, migrations, build); `--e2e` adds the browser tests; `--backend`
+or `--frontend` runs one half.
+
+**Git hooks** (`.githooks/`, opt-in): before a commit, ruff on the staged Python files and ESLint on the staged
+frontend files; before a push, `pnpm check`. `git commit --no-verify` / `git push --no-verify` skips them once.
+
+```bash
+pnpm hooks:install
+```
+
+The single steps:
+
 Backend (PostgreSQL from compose, separate `bookstore_test` database created by an init script/fixture):
 
 ```bash
