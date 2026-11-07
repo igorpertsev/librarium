@@ -1,19 +1,30 @@
 from __future__ import annotations
 
+import json
 import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+import httpx
+import pytest
 from fastapi import FastAPI
-from pydantic import SecretStr
+from httpx import AsyncClient
+from pydantic import SecretStr, ValidationError
 from sqlalchemy import select, update
 
+from app.api.routes.telegram import get_telegram_bot
+from app.core.config import Settings
 from app.models import Notification, User
 from app.models.enums import NotificationKind, NotificationStatus
 from app.services import telegram
 from app.services.notifications import deliver_pending
-from tests.conftest import API, ApiUser, SetBatch, fill_cart, place_order
+from tests.conftest import API, ApiUser, SetBatch, SwapSettings, fill_cart, place_order
 from tests.test_holds import FakeSender
+
+
+@pytest.fixture(autouse=True)
+def _forget_seen_updates() -> None:
+    telegram._recent_updates.clear()  # update ids are reused across tests
 
 
 class FakeBot:
@@ -141,3 +152,90 @@ async def test_notifications_go_to_telegram_once_even_without_email(
     assert any("handed over" in m.get_content() for m in send.messages)
     kinds = [n for n in bot.sent if NotificationKind.ORDER_CONFIRMED.value in n[1]]
     assert kinds == []  # messages are human text, not kind names
+
+
+WEBHOOK = f"{API}/telegram/webhook"
+SECRET = "webhook-secret-" + "w" * 30
+
+
+async def test_the_webhook_needs_its_secret_and_links_a_chat(
+    app: FastAPI, client: AsyncClient, customer: ApiUser, swap_settings: SwapSettings
+) -> None:
+    assert (await client.post(WEBHOOK, json={"update_id": 1})).status_code == 404  # not set up
+
+    settings = _with_bot(app).model_copy(update={"telegram_webhook_secret": SecretStr(SECRET)})
+    assert telegram.polls_updates(_with_bot(app))
+    assert not telegram.polls_updates(settings)  # the notifier stops polling
+    swap_settings(settings)
+    bot = FakeBot()
+    app.dependency_overrides[get_telegram_bot] = lambda: bot
+    try:
+        for headers in ({}, {"X-Telegram-Bot-Api-Secret-Token": "w" * 40}):
+            refused = await client.post(WEBHOOK, json={"update_id": 1}, headers=headers)
+            assert refused.status_code == 403
+            assert refused.json()["error"]["code"] == "TELEGRAM_WEBHOOK_SECRET"
+
+        async with app.state.db.sessionmaker() as session:
+            user = await session.get(User, uuid.UUID(customer.id))
+            assert user is not None
+            url, _ = await telegram.start_link(session, settings, user)
+        start = {
+            "update_id": 9001,
+            "message": {
+                "chat": {"id": 888, "type": "private"},
+                "text": url.split("?")[1].replace("start=", "/start "),
+            },
+        }
+        signed = {"X-Telegram-Bot-Api-Secret-Token": SECRET}
+        accepted = await client.post(WEBHOOK, json=start, headers=signed)
+        assert (accepted.status_code, accepted.json()) == (200, {"ok": True})
+        assert (await customer.get(f"{API}/users/me")).json()["telegram_connected"] is True
+        assert [chat for chat, _ in bot.sent] == [888]
+
+        # Telegram sends it again (no answer in time): acknowledged, not answered twice.
+        again = await client.post(WEBHOOK, json=start, headers=signed)
+        assert again.status_code == 200
+        assert len(bot.sent) == 1
+        # Updates that are not chat messages are acknowledged and ignored.
+        for odd in ({"update_id": 9002, "message": {"chat": "nope"}}, {"update_id": 9003}):
+            assert (await client.post(WEBHOOK, json=odd, headers=signed)).status_code == 200
+        assert len(bot.sent) == 1
+    finally:
+        app.dependency_overrides.pop(get_telegram_bot, None)
+
+
+async def test_the_webhook_is_registered_with_its_secret() -> None:
+    seen: list[httpx.Request] = []
+
+    def answer(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        result: Any = {"url": "https://lib.example/api/v1/telegram/webhook"}
+        return httpx.Response(200, json={"ok": True, "result": result})
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(answer)) as http:
+        bot = telegram.TelegramBot(http, "123:abc")
+        await bot.set_webhook("https://lib.example/api/v1/telegram/webhook", SECRET)
+        info = await bot.webhook_info()
+        await bot.delete_webhook()
+    assert [r.url.path for r in seen] == [
+        "/bot123:abc/setWebhook",
+        "/bot123:abc/getWebhookInfo",
+        "/bot123:abc/deleteWebhook",
+    ]
+    assert json.loads(seen[0].content) == {
+        "url": "https://lib.example/api/v1/telegram/webhook",
+        "secret_token": SECRET,
+        "allowed_updates": ["message"],
+    }
+    assert info["url"].endswith("/telegram/webhook")
+
+
+def test_the_webhook_secret_is_checked() -> None:
+    with pytest.raises(ValidationError, match="TELEGRAM_WEBHOOK_SECRET must be"):
+        Settings(
+            _env_file=None,
+            telegram_bot_token=SecretStr("123:abc"),
+            telegram_webhook_secret=SecretStr("short"),
+        )
+    with pytest.raises(ValidationError, match="needs TELEGRAM_BOT_TOKEN"):
+        Settings(_env_file=None, telegram_webhook_secret=SecretStr(SECRET))

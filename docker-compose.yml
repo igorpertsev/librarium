@@ -34,6 +34,7 @@ x-backend-env: &backend-env
   ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
   TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
   TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-}
+  TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-}
   # Sign in with Google / Apple (optional). In development the backend is not behind
   # APP_BASE_URL, so callbacks go straight to it.
   GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}

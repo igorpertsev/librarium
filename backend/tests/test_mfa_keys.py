@@ -5,7 +5,6 @@ from __future__ import annotations
 import secrets
 import time
 import uuid
-from collections.abc import Callable, Iterator
 
 import pytest
 from fastapi import FastAPI
@@ -15,22 +14,8 @@ from app.core import totp
 from app.core.config import Settings
 from app.models import User
 from app.services import mfa
-from tests.conftest import API, ApiUser, MakeClient
+from tests.conftest import API, ApiUser, MakeClient, SwapSettings
 from tests.test_mfa import _password_step, _turn_on
-
-SwapSettings = Callable[[Settings], None]
-
-
-@pytest.fixture
-def swap_settings(app: FastAPI) -> Iterator[SwapSettings]:
-    """Replace the app's settings for one test (monkeypatch would delete them from State)."""
-    original = app.state.settings
-
-    def swap(settings: Settings) -> None:
-        app.state.settings = settings
-
-    yield swap
-    app.state.settings = original
 
 
 def test_the_first_key_encrypts_and_every_key_decrypts() -> None:

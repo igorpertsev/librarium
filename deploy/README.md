@@ -318,6 +318,25 @@ notification there as well as by email; it works even without SMTP. Messages go 
 servers. To turn it off, empty both values and run the same `up -d`; linked chats stop getting
 messages.
 
+**Webhook mode (optional).** Instead of the notifier asking every few minutes, Telegram can post
+each message to the backend right away (replies to Start come instantly). Put a random secret into
+`.env`, restart, and register the webhook (it uses `API_PUBLIC_URL`, i.e. your HTTPS address):
+
+```bash
+python3 -c "import secrets; print('TELEGRAM_WEBHOOK_SECRET=' + secrets.token_urlsafe(32))"
+```
+
+```bash
+docker compose -f docker-compose.prod.yml up -d
+```
+
+```bash
+docker compose -f docker-compose.prod.yml exec backend python -m app.cli telegram-webhook set
+```
+
+`telegram-webhook info` shows Telegram's view (address, waiting updates, last error). To go back to
+polling: `telegram-webhook delete`, then remove the secret and run `up -d`.
+
 ## Sign in with Google or Apple (optional)
 
 **Google.** In Google Cloud Console → APIs & Services → Credentials, create an *OAuth client ID*

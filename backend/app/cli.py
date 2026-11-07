@@ -173,6 +173,36 @@ async def _purge_tokens(settings: Settings, *, older_than_days: int) -> None:
         await db.dispose()
 
 
+async def _telegram_webhook(settings: Settings, action: str) -> None:
+    http = make_http_client(settings)
+    try:
+        bot = telegram.make_bot(settings, http)
+        if bot is None:
+            print("Set TELEGRAM_BOT_TOKEN first.")
+            sys.exit(1)
+        url = f"{settings.public_api_url}/telegram/webhook"
+        if action == "set":
+            if settings.telegram_webhook_secret is None:
+                print("Set TELEGRAM_WEBHOOK_SECRET first (and restart the backend with it).")
+                sys.exit(1)
+            await bot.set_webhook(url, settings.telegram_webhook_secret.get_secret_value())
+            print(f"Telegram now posts updates to {url}.")
+        elif action == "delete":
+            await bot.delete_webhook()
+            print("Webhook removed; remove TELEGRAM_WEBHOOK_SECRET so the notifier polls again.")
+        else:
+            info = await bot.webhook_info()
+            print(f"URL: {info.get('url') or '(none: polling)'}")
+            print(f"Waiting updates: {info.get('pending_update_count', 0)}")
+            if info.get("last_error_message"):
+                print(f"Last error: {info['last_error_message']}")
+    except telegram.TelegramError as exc:
+        print(f"Telegram refused: {exc}")
+        sys.exit(1)
+    finally:
+        await http.aclose()
+
+
 async def _rotate_mfa_keys(settings: Settings) -> None:
     if not settings.mfa_keys:
         print("Set MFA_ENCRYPTION_KEYS first (the new key first); nothing was changed.")
@@ -217,9 +247,9 @@ async def _notifications(settings: Settings, *, loop_seconds: int | None) -> Non
                 await session.commit()
             if queued:
                 print(f"Queued {queued} reminder(s).")
-            if bot is not None:
+            if bot is not None and telegram.polls_updates(settings):
                 async with db.sessionmaker() as session:
-                    # Readers linking (or unlinking) their Telegram chat.
+                    # Readers linking (or unlinking) their Telegram chat (no webhook set up).
                     await telegram.process_updates(session, bot)
             if send is None and not warned:
                 print("SMTP_HOST is not set: emails stay queued (Telegram still works if set up).")
@@ -302,6 +332,10 @@ def main(argv: list[str] | None = None) -> None:
         "--loop", type=int, metavar="SECONDS", help="Repeat every SECONDS instead of running once"
     )
 
+    webhook = commands.add_parser(
+        "telegram-webhook", help="Register, remove or show the Telegram webhook"
+    )
+    webhook.add_argument("action", choices=["set", "delete", "info"])
     commands.add_parser(
         "rotate-mfa-keys",
         help="Re-encrypt two-step sign-in secrets with the first MFA_ENCRYPTION_KEYS key",
@@ -330,6 +364,8 @@ def main(argv: list[str] | None = None) -> None:
         asyncio.run(_purge_tokens(get_settings(), older_than_days=args.older_than_days))
     elif args.command == "notifications":
         asyncio.run(_notifications(get_settings(), loop_seconds=args.loop))
+    elif args.command == "telegram-webhook":
+        asyncio.run(_telegram_webhook(get_settings(), args.action))
     elif args.command == "rotate-mfa-keys":
         asyncio.run(_rotate_mfa_keys(get_settings()))
     elif args.command == "translate-books":
