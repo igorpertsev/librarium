@@ -6,6 +6,9 @@ from typing import Any, ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from app.core.text import MESSAGE as UNSTORABLE_TEXT
+from app.core.text import unstorable
+
 
 class ApiModel(BaseModel):
     """Base for response models (built from ORM objects).
@@ -27,6 +30,13 @@ class RequestModel(BaseModel):
     """
 
     model_config = ConfigDict(extra="forbid")
+
+    @model_validator(mode="before")
+    @classmethod
+    def _storable_text(cls, data: Any) -> Any:
+        if unstorable(data):
+            raise ValueError(UNSTORABLE_TEXT)
+        return data
 
 
 class PatchModel(RequestModel):

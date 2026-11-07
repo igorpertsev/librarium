@@ -1,5 +1,6 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
+from app.api.dependencies import storable_parameters
 from app.api.prefix import API_PREFIX
 from app.api.routes import (
     admin,
@@ -20,7 +21,7 @@ from app.api.routes import (
 
 __all__ = ["API_PREFIX", "api_router"]
 
-api_router = APIRouter(prefix=API_PREFIX)
+api_router = APIRouter(prefix=API_PREFIX, dependencies=[Depends(storable_parameters)])
 api_router.include_router(health.router)
 api_router.include_router(auth.router)
 api_router.include_router(users.router)
