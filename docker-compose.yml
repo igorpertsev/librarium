@@ -42,6 +42,7 @@ x-backend-env: &backend-env
   S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
   S3_PREFIX: ${S3_PREFIX:-}
   MEDIA_PUBLIC_URL: ${MEDIA_PUBLIC_URL:-}
+  TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-}
   # Sign in with Google / Apple (optional). In development the backend is not behind
   # APP_BASE_URL, so callbacks go straight to it.
   GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}

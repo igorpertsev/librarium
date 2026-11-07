@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import secrets
 from enum import StrEnum
 from functools import lru_cache
@@ -112,6 +113,10 @@ class Settings(BaseSettings):
     # Optional Telegram bot for notifications (see app.services.telegram).
     telegram_bot_token: SecretStr | None = None
     telegram_bot_username: str | None = None
+    # Webhook mode (optional): Telegram posts updates to /api/v1/telegram/webhook with this secret
+    # in X-Telegram-Bot-Api-Secret-Token, instead of the notifier polling getUpdates. Register it
+    # with `python -m app.cli telegram-webhook set`.
+    telegram_webhook_secret: SecretStr | None = None
     max_cover_bytes: int = 5 * 1024 * 1024
     # Lifetime of the link in password reset emails.
     password_reset_expire_minutes: int = Field(default=60, ge=5, le=24 * 60)
@@ -181,6 +186,7 @@ class Settings(BaseSettings):
         "jwt_secret_key",
         "mfa_encryption_keys",
         "s3_secret_access_key",
+        "telegram_webhook_secret",
         "seed_admin_password",
         "smtp_password",
         "sentry_dsn",
@@ -245,6 +251,20 @@ class Settings(BaseSettings):
                 if not value.startswith(("http://", "https://")):
                     raise ValueError(f"{name.upper()} must start with http:// or https://")
                 setattr(self, name, value.rstrip("/"))
+        return self
+
+    @model_validator(mode="after")
+    def _validate_telegram_webhook(self) -> Settings:
+        secret = self.telegram_webhook_secret
+        if secret is not None and not re.fullmatch(
+            r"[A-Za-z0-9_-]{32,256}", secret.get_secret_value()
+        ):
+            raise ValueError(
+                "TELEGRAM_WEBHOOK_SECRET must be 32 to 256 letters, digits, '_' or '-', "
+                "e.g. secrets.token_urlsafe(32)"
+            )
+        if secret is not None and not self.telegram_bot_token:
+            raise ValueError("TELEGRAM_WEBHOOK_SECRET needs TELEGRAM_BOT_TOKEN")
         return self
 
     @model_validator(mode="after")
