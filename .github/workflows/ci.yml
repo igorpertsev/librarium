@@ -116,6 +116,8 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
       - name: Browser tests
         run: pnpm e2e
+      - name: API fuzzing (Schemathesis)
+        run: pnpm api:fuzz
       - name: Backend logs
         if: failure()
         run: docker compose -f e2e/docker-compose.yml logs --tail=200 backend

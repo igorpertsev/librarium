@@ -3,7 +3,7 @@
 #
 #   scripts/check.sh            backend and frontend (everything but the browser tests)
 #   scripts/check.sh --fast     format, lint, types and unit tests only (no pytest, build, migrations)
-#   scripts/check.sh --e2e      also the browser tests, on the e2e stack
+#   scripts/check.sh --e2e      also the browser tests and API fuzzing, on the e2e stack
 #   scripts/check.sh --backend  or --frontend: only that half
 #
 # The backend runs in the dev container (docker compose --profile dev), the frontend on this
@@ -102,6 +102,7 @@ fi
 
 if ((e2e)); then
   step "Browser tests" sh -c 'pnpm -s e2e:stack && pnpm -s e2e'
+  step "API fuzzing (Schemathesis)" pnpm -s api:fuzz
 fi
 
 echo
