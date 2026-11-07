@@ -171,10 +171,12 @@ async def test_refresh_token_reuse_revokes_whole_family(
     assert all(t.revoked_at is not None for t in tokens)
 
 
-async def test_refresh_without_cookie_is_401(client: AsyncClient) -> None:
+async def test_refresh_without_cookie_is_an_empty_answer(client: AsyncClient) -> None:
+    # A visitor's page load asks too: "nobody is signed in" is not an error (no 401 in the
+    # browser console). A cookie that does not work still is (see the tests around).
     response = await client.post(REFRESH)
-    assert response.status_code == 401
-    assert response.json()["error"]["code"] == "REFRESH_TOKEN_MISSING"
+    assert response.status_code == 204
+    assert response.content == b""
 
 
 async def test_logout_revokes_refresh_token_and_clears_cookie(

@@ -106,7 +106,7 @@ export interface paths {
         put?: never;
         /**
          * Refresh
-         * @description Rotates the refresh cookie and returns a new access token. Re-using an already rotated refresh token revokes the whole token family.
+         * @description Rotates the refresh cookie and returns a new access token. Re-using an already rotated refresh token revokes the whole token family. Without a refresh cookie the answer is 204, so a visitor's page load is not an error.
          */
         post: operations["refresh_api_v1_auth_refresh_post"];
         delete?: never;
@@ -4472,6 +4472,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["TokenResponse"];
                 };
+            };
+            /** @description No refresh cookie: nobody is signed in on this browser */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Unauthorized */
             401: {

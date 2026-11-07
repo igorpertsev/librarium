@@ -24,9 +24,11 @@ import { useBookLanguageName, useBookText } from '../utils/bookText';
 
 interface BookCardProps {
   book: Book;
+  /** Load the cover right away (cards in the first rows, where it is the largest paint). */
+  eager?: boolean;
 }
 
-export function BookCard({ book }: BookCardProps) {
+export function BookCard({ book, eager = false }: BookCardProps) {
   const { t } = useTranslation();
   const fmt = useFormat();
   const { user } = useAuth();
@@ -120,7 +122,8 @@ export function BookCard({ book }: BookCardProps) {
                     src={coverOfSize(image, 'M')}
                     alt={t('bookDetails.imageAlt', { title: text.title, n: index + 1 })}
                     className="w-full h-full object-cover select-none"
-                    loading="lazy"
+                    loading={eager && index === 0 ? 'eager' : 'lazy'}
+                    fetchPriority={eager && index === 0 ? 'high' : 'auto'}
                     decoding="async"
                     draggable={false}
                   />
@@ -146,8 +149,9 @@ export function BookCard({ book }: BookCardProps) {
             >
               <ChevronRight className="w-4 h-4" />
             </button>
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-10">
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex z-10">
               {images.map((_, index) => (
+                // A 24 × 24 px target (WCAG 2.2) around the small dot.
                 <button
                   key={index}
                   type="button"
@@ -157,10 +161,15 @@ export function BookCard({ book }: BookCardProps) {
                     e.stopPropagation();
                     emblaApi?.scrollTo(index);
                   }}
-                  className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                    index === selectedIndex ? 'bg-white' : 'bg-white/50'
-                  }`}
-                />
+                  className="w-6 h-6 flex items-center justify-center"
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`w-1.5 h-1.5 rounded-full transition-colors ${
+                      index === selectedIndex ? 'bg-white' : 'bg-white/50'
+                    }`}
+                  />
+                </button>
               ))}
             </div>
           </>

@@ -192,9 +192,13 @@ async def login_mfa(
 @router.post(
     "/refresh",
     response_model=TokenResponse,
-    responses=error_responses(401, 403, 429),
+    responses={
+        204: {"description": "No refresh cookie: nobody is signed in on this browser"},
+        **error_responses(401, 403, 429),
+    },
     description="Rotates the refresh cookie and returns a new access token. "
-    "Re-using an already rotated refresh token revokes the whole token family.",
+    "Re-using an already rotated refresh token revokes the whole token family. Without a "
+    "refresh cookie the answer is 204, so a visitor's page load is not an error.",
 )
 async def refresh(
     request: Request,
@@ -203,13 +207,14 @@ async def refresh(
     settings: SettingsDep,
     meta: ClientMetaDep,
     limiter: RateLimiterDep,
-) -> TokenResponse | JSONResponse:
+) -> TokenResponse | Response:
     _check_origin(request, settings)
     limiter.consume(f"refresh:ip:{_client_ip(meta)}", REFRESH_PER_IP)
+    token = _refresh_cookie(request, settings)
+    if token is None:
+        return Response(status_code=204)  # a visitor: nothing to restore
     try:
-        result = await auth_service.refresh(
-            session, settings, _refresh_cookie(request, settings), meta
-        )
+        result = await auth_service.refresh(session, settings, token, meta)
     except AuthenticationError as exc:
         # Drop the useless cookie together with the error.
         error = JSONResponse(

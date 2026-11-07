@@ -295,6 +295,23 @@ pnpm e2e:visual --update-snapshots
 При расхождении в `test-results-visual/` лежат ожидаемое, фактическое и разностное изображение для каждого скриншота
 (CI выгружает их как артефакт).
 
+**Производительность.** `pnpm perf:lighthouse` (`scripts/lighthouse.sh`, `lighthouserc.json`) собирает frontend для
+e2e-стека, отдаёт его через `vite preview` и запускает Lighthouse на каталоге и странице входа: падает при оценке
+доступности или best practices ниже 0.95, сдвиге макета больше 0.1, ошибках в консоли браузера или больше 300 КБ
+JavaScript и предупреждает о низкой оценке производительности или медленной отрисовке крупнейшего элемента (демо-обложки
+грузятся из Open Library). Отчёты — в `.lighthouseci/`. `pnpm load:test` (`load/library.js`, k6 в Docker) минуту
+нагружает e2e-стек: 20 посетителей листают каталог, 5 вошедших читателей работают с профилем и корзиной; тест падает,
+если неудачных запросов больше 1 % или 95-й перцентиль выше 500 мс (посетители) и 800 мс (читатели);
+`VISITORS=50 READERS=10 DURATION=3m pnpm load:test` нагружает сильнее.
+
+```bash
+pnpm perf:lighthouse
+```
+
+```bash
+pnpm load:test
+```
+
 Вместо загрузки Chromium можно использовать установленный Google Chrome: `PLAYWRIGHT_CHANNEL=chrome pnpm e2e`.
 Упавшие тесты оставляют скриншоты и трассировки в `test-results/` (`pnpm exec playwright show-trace <файл>`).
 
@@ -308,8 +325,9 @@ pnpm e2e:visual --update-snapshots
   `pytest` на сервисе PostgreSQL 16 и проверка, что `backend/openapi.json` соответствует коду.
 - *Frontend*: `pnpm install --frozen-lockfile`, проверка, что `src/api/generated/schema.d.ts` соответствует
   `backend/openapi.json`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`.
-- *Браузерные тесты*: e2e-стек, Chromium и `pnpm e2e`, затем `pnpm api:fuzz` на том же стеке; при ошибке
-  выгружается отчёт Playwright.
+- *Браузерные тесты*: e2e-стек, Chromium и `pnpm e2e`, затем `pnpm api:fuzz` и `pnpm perf:lighthouse` на том же
+  стеке; при ошибке выгружается отчёт Playwright.
+- *Нагрузочный тест* (еженедельно и при ручном запуске): `pnpm load:test` в течение двух минут.
 - *Секреты и зависимости*: gitleaks по всей истории git (проверенные ложные срабатывания — в `.gitleaksignore`) и
   Trivy по `backend/uv.lock` и `pnpm-lock.yaml`; найденный секрет или уязвимость HIGH/CRITICAL, для которой есть
   исправление, роняют сборку.

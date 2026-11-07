@@ -1,0 +1,6 @@
+# The library's pages are not meant for search engines (index.html also says noindex).
+# Link previews of shared books (/books/<id>, answered by /api/v1/share/...) stay allowed.
+User-agent: *
+Allow: /books/
+Allow: /api/v1/share/
+Disallow: /

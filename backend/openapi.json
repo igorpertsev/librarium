@@ -273,7 +273,7 @@
           "auth"
         ],
         "summary": "Refresh",
-        "description": "Rotates the refresh cookie and returns a new access token. Re-using an already rotated refresh token revokes the whole token family.",
+        "description": "Rotates the refresh cookie and returns a new access token. Re-using an already rotated refresh token revokes the whole token family. Without a refresh cookie the answer is 204, so a visitor's page load is not an error.",
         "operationId": "refresh_api_v1_auth_refresh_post",
         "responses": {
           "200": {
@@ -285,6 +285,9 @@
                 }
               }
             }
+          },
+          "204": {
+            "description": "No refresh cookie: nobody is signed in on this browser"
           },
           "401": {
             "description": "Unauthorized",

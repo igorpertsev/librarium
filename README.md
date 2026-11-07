@@ -298,6 +298,23 @@ pnpm e2e:visual --update-snapshots
 On a difference, `test-results-visual/` has the expected, actual and diff image for each screenshot (CI uploads it
 as an artifact).
 
+**Performance.** `pnpm perf:lighthouse` (`scripts/lighthouse.sh`, `lighthouserc.json`) builds the frontend for the
+e2e stack, serves it with `vite preview` and runs Lighthouse on the catalogue and the sign-in page: it fails on
+accessibility or best practices under 0.95, a layout shift over 0.1, errors in the browser console or more than
+300 KB of JavaScript, and warns on a low performance score or a slow largest paint (the demo covers come from Open
+Library). Reports land in `.lighthouseci/`. `pnpm load:test` (`load/library.js`, k6 in Docker) puts 20 visitors
+browsing the catalogue and 5 signed-in readers using their account and cart on the e2e stack for a minute and fails
+when more than 1 % of requests fail or the 95th percentile is over 500 ms (visitors) or 800 ms (readers);
+`VISITORS=50 READERS=10 DURATION=3m pnpm load:test` pushes harder.
+
+```bash
+pnpm perf:lighthouse
+```
+
+```bash
+pnpm load:test
+```
+
 Instead of downloading Chromium you can use an installed Google Chrome: `PLAYWRIGHT_CHANNEL=chrome pnpm e2e`.
 Failed tests leave screenshots and traces in `test-results/` (`pnpm exec playwright show-trace <file>`).
 
@@ -311,8 +328,9 @@ Monday (so newly published vulnerabilities show up; that run never deploys):
   `pytest` against a PostgreSQL 16 service, and a check that `backend/openapi.json` matches the code.
 - *Frontend*: `pnpm install --frozen-lockfile`, a check that `src/api/generated/schema.d.ts` matches
   `backend/openapi.json`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`.
-- *Browser tests*: the e2e stack, Chromium and `pnpm e2e`, then `pnpm api:fuzz` on the same stack; the Playwright
-  report is uploaded when they fail.
+- *Browser tests*: the e2e stack, Chromium and `pnpm e2e`, then `pnpm api:fuzz` and `pnpm perf:lighthouse` on the
+  same stack; the Playwright report is uploaded when they fail.
+- *Load test* (weekly and when started by hand): `pnpm load:test` for two minutes.
 - *Secrets and dependencies*: gitleaks over the whole git history (reviewed false positives are in
   `.gitleaksignore`) and Trivy over `backend/uv.lock` and `pnpm-lock.yaml`; a secret or a HIGH/CRITICAL
   vulnerability that has a fix fails the build.

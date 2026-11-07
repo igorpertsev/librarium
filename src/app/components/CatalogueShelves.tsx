@@ -18,7 +18,7 @@ export function CatalogueShelves() {
   return (
     <>
       {user && <BookShelf id="for-you-title" title={t('forYou.title')} icon={Heart} load={loadForYou} minimum={2} />}
-      <BookShelf id="new-arrivals-title" title={t('newArrivals.title')} icon={Sparkles} load={loadNewArrivals} />
+      <BookShelf id="new-arrivals-title" title={t('newArrivals.title')} icon={Sparkles} load={loadNewArrivals} reserve />
     </>
   );
 }
