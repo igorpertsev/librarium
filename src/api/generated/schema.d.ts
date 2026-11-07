@@ -3397,7 +3397,10 @@ export interface components {
             title: string;
             /** Author */
             author: string;
-            /** Isbn */
+            /**
+             * Isbn
+             * @description ISBN-10 or ISBN-13; stored as its digits
+             */
             isbn?: string | null;
             /** Note */
             note?: string | null;

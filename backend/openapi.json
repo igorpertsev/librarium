@@ -12700,7 +12700,8 @@
                 "type": "null"
               }
             ],
-            "title": "Isbn"
+            "title": "Isbn",
+            "description": "ISBN-10 or ISBN-13; stored as its digits"
           },
           "note": {
             "anyOf": [
