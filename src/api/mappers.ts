@@ -19,6 +19,7 @@ import type {
   BookTag,
   BookTranslation,
   BorrowedBook,
+  CopyCondition,
   CartItem,
   Order,
   PreferredContact,
@@ -78,6 +79,8 @@ export function bookFromDto(dto: BookDto | BookBriefDto): Book {
     category: dto.category,
     ageRange: dto.age_range,
     status: dto.status,
+    condition: dto.condition,
+    conditionNote: dto.condition_note,
     coverImage: dto.cover_url ?? '',
     images: imagesOf(dto.cover_url, dto.image_urls),
     description: dto.description,
@@ -108,6 +111,8 @@ export interface BookFormValues {
   category: Book['category'];
   ageRange: string;
   status: BookStatus;
+  condition: CopyCondition;
+  conditionNote: string;
   coverImage: string;
   images: string[];
   description: string;
@@ -136,6 +141,8 @@ export function bookFormToDto(form: BookFormValues): BookCreateDto {
     age_range: form.ageRange,
     // "pending" is a UI-only state (book in the cart) and is never persisted.
     status: form.status === 'pending' ? 'available' : form.status,
+    condition: form.condition,
+    condition_note: form.conditionNote.trim() || null,
     cover_url: cover || null,
     image_urls: images.length > 0 ? images : cover ? [cover] : [],
     description: form.description,

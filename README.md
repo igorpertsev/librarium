@@ -441,6 +441,10 @@ two copies of the same title are two records (ISBN is not unique).
   hold. Cancelling (`DELETE /users/me/reservations/{id}`) gives a set-aside copy to the readers waiting for it.
   Librarians see upcoming reservations above the order list (`GET /admin/reservations`). Deleting an account
   drops its holds and reservations and passes those copies on.
+- **Copy condition**: each copy has a condition (`new/good/worn/damaged`) and an optional note, set in the book
+  form and when an order comes back (*Mark Returned* asks how each copy came back; only changed copies are saved).
+  It is not shared between copies of a title. Worn and damaged copies are marked in the admin book list, and
+  damaged ones are listed under *Data quality* (`quality=damaged`).
 - **Notification bell**: the header shows the reader's news — the same events as the emails (`notifications`), even
   when an email could not be sent, except news that went stale before delivery. Opening the list marks it read
   (`read_at`); it refreshes every minute while the tab is visible. Notifications from before the bell existed
@@ -472,7 +476,7 @@ Concurrency is covered by tests in which both requests are held at a barrier rig
 | Table | Key points |
 | --- | --- |
 | `users` | email unique and lower-case (CHECK), Argon2 hash, role `customer/librarian/admin`, contacts (nullable), `preferred_contact_method` |
-| `books` | one row per physical copy: `cover_url`, `image_urls[]`, `age_range`, `category`, `status` (`available/available-soon/not-available`), `language`, `publication_year`, `is_active` (soft delete), `copy_group_id` (copies of one title), `series_id` + `series_position` (CHECK > 0) |
+| `books` | one row per physical copy: `cover_url`, `image_urls[]`, `age_range`, `category`, `status` (`available/available-soon/not-available`), `condition` (`new/good/worn/damaged`, per copy) + `condition_note`, `language`, `publication_year`, `is_active` (soft delete), `copy_group_id` (copies of one title), `series_id` + `series_position` (CHECK > 0) |
 | `tags`, `book_tags` | tag `slug` (unique, CHECK format), `name_en`, `name_ru`; book ↔ tag link table |
 | `series` | `name` (unique), `name_en` / `name_ru` (names in each interface language, optional), `description`, `openlibrary_key` (unique, from ISBN lookups) |
 | `book_translations` | per book and language (`en`/`ru`): `title`, `author`, `description`, `title_source`/`description_source` (`manual/wikidata/wikipedia/machine`), `source_url` (Wikipedia attribution) |

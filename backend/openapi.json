@@ -7337,6 +7337,21 @@
           "status": {
             "$ref": "#/components/schemas/BookStatus"
           },
+          "condition": {
+            "$ref": "#/components/schemas/CopyCondition",
+            "description": "Of this copy: new, good, worn or damaged"
+          },
+          "condition_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Condition Note"
+          },
           "cover_url": {
             "anyOf": [
               {
@@ -7445,6 +7460,8 @@
           "category",
           "age_range",
           "status",
+          "condition",
+          "condition_note",
           "cover_url",
           "image_urls",
           "isbn",
@@ -7505,6 +7522,22 @@
           "status": {
             "$ref": "#/components/schemas/BookStatus",
             "default": "available"
+          },
+          "condition": {
+            "$ref": "#/components/schemas/CopyCondition",
+            "default": "good"
+          },
+          "condition_note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Condition Note"
           },
           "cover_url": {
             "anyOf": [
@@ -7904,6 +7937,21 @@
           "status": {
             "$ref": "#/components/schemas/BookStatus"
           },
+          "condition": {
+            "$ref": "#/components/schemas/CopyCondition",
+            "description": "Of this copy: new, good, worn or damaged"
+          },
+          "condition_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Condition Note"
+          },
           "cover_url": {
             "anyOf": [
               {
@@ -8056,6 +8104,8 @@
           "category",
           "age_range",
           "status",
+          "condition",
+          "condition_note",
           "cover_url",
           "image_urls",
           "isbn",
@@ -8308,6 +8358,28 @@
                 "type": "null"
               }
             ]
+          },
+          "condition": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CopyCondition"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "condition_note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Condition Note"
           },
           "cover_url": {
             "anyOf": [
@@ -8598,6 +8670,17 @@
           "email"
         ],
         "title": "ContactMethod"
+      },
+      "CopyCondition": {
+        "type": "string",
+        "enum": [
+          "new",
+          "good",
+          "worn",
+          "damaged"
+        ],
+        "title": "CopyCondition",
+        "description": "Physical state of a copy, noted by librarians (per copy, not per title)."
       },
       "DeleteAccountRequest": {
         "properties": {
@@ -10217,7 +10300,8 @@
           "no_tags",
           "no_isbn",
           "no_translation",
-          "machine_translation"
+          "machine_translation",
+          "damaged"
         ],
         "title": "QualityIssue",
         "description": "Gaps in a title's catalogue data, for the admin data-quality page."

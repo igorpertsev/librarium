@@ -8,7 +8,7 @@ from typing import Annotated, Any, ClassVar
 from pydantic import Field, field_validator, model_validator
 
 from app.models.book import Book
-from app.models.enums import BookCategory, BookStatus
+from app.models.enums import BookCategory, BookStatus, CopyCondition
 from app.schemas.catalog import SeriesBrief, SeriesName, SeriesPosition, TagBrief, TagSlug
 from app.schemas.common import ApiModel, Page, PatchModel, RequestModel
 from app.schemas.translation import BookTranslationRead, Translations
@@ -20,10 +20,12 @@ from app.schemas.types import (
     Isbn,
     LanguageCode,
     OptionalHttpUrlStr,
+    OptionalShortNote,
     Title,
 )
 
 ImageUrls = Annotated[list[HttpUrlStr], Field(max_length=20)]
+ConditionNote = OptionalShortNote
 PublicationYear = Annotated[int, Field(ge=0, le=9999)]
 
 
@@ -60,6 +62,8 @@ class BookBrief(ApiModel):
     category: BookCategory
     age_range: str
     status: BookStatus
+    condition: CopyCondition = Field(description="Of this copy: new, good, worn or damaged")
+    condition_note: str | None
     cover_url: str | None
     image_urls: list[str]
     isbn: str | None
@@ -129,6 +133,7 @@ class QualityIssue(StrEnum):
     NO_ISBN = "no_isbn"
     NO_TRANSLATION = "no_translation"
     MACHINE_TRANSLATION = "machine_translation"  # not yet checked by a librarian
+    DAMAGED = "damaged"  # a copy in damaged condition (to repair or replace)
 
 
 class QualitySummary(ApiModel):
@@ -160,6 +165,8 @@ class BookCreate(RequestModel):
     category: BookCategory
     age_range: AgeRange = ""
     status: BookStatus = BookStatus.AVAILABLE
+    condition: CopyCondition = CopyCondition.GOOD
+    condition_note: ConditionNote = None
     cover_url: OptionalHttpUrlStr = None
     image_urls: ImageUrls = Field(default_factory=list)
     isbn: Isbn = None
@@ -191,6 +198,7 @@ class BookUpdate(PatchModel):
             "category",
             "age_range",
             "status",
+            "condition",
             "image_urls",
             "tags",
             "translations",
@@ -203,6 +211,8 @@ class BookUpdate(PatchModel):
     category: BookCategory | None = None
     age_range: AgeRange | None = None
     status: BookStatus | None = None
+    condition: CopyCondition | None = None
+    condition_note: ConditionNote = None
     cover_url: OptionalHttpUrlStr = None
     image_urls: ImageUrls | None = None
     isbn: Isbn = None

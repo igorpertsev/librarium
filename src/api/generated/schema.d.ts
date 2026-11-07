@@ -1749,6 +1749,10 @@ export interface components {
             /** Age Range */
             age_range: string;
             status: components["schemas"]["BookStatus"];
+            /** @description Of this copy: new, good, worn or damaged */
+            condition: components["schemas"]["CopyCondition"];
+            /** Condition Note */
+            condition_note: string | null;
             /** Cover Url */
             cover_url: string | null;
             /** Image Urls */
@@ -1805,6 +1809,10 @@ export interface components {
             age_range: string;
             /** @default available */
             status: components["schemas"]["BookStatus"];
+            /** @default good */
+            condition: components["schemas"]["CopyCondition"];
+            /** Condition Note */
+            condition_note?: string | null;
             /** Cover Url */
             cover_url?: string | null;
             /** Image Urls */
@@ -1923,6 +1931,10 @@ export interface components {
             /** Age Range */
             age_range: string;
             status: components["schemas"]["BookStatus"];
+            /** @description Of this copy: new, good, worn or damaged */
+            condition: components["schemas"]["CopyCondition"];
+            /** Condition Note */
+            condition_note: string | null;
             /** Cover Url */
             cover_url: string | null;
             /** Image Urls */
@@ -2067,6 +2079,9 @@ export interface components {
             /** Age Range */
             age_range?: string | null;
             status?: components["schemas"]["BookStatus"] | null;
+            condition?: components["schemas"]["CopyCondition"] | null;
+            /** Condition Note */
+            condition_note?: string | null;
             /** Cover Url */
             cover_url?: string | null;
             /** Image Urls */
@@ -2159,6 +2174,12 @@ export interface components {
          * @enum {string}
          */
         ContactMethod: "whatsapp" | "telegram" | "instagram" | "phone" | "email";
+        /**
+         * CopyCondition
+         * @description Physical state of a copy, noted by librarians (per copy, not per title).
+         * @enum {string}
+         */
+        CopyCondition: "new" | "good" | "worn" | "damaged";
         /** DeleteAccountRequest */
         DeleteAccountRequest: {
             /**
@@ -2772,7 +2793,7 @@ export interface components {
          * @description Gaps in a title's catalogue data, for the admin data-quality page.
          * @enum {string}
          */
-        QualityIssue: "no_cover" | "no_description" | "no_tags" | "no_isbn" | "no_translation" | "machine_translation";
+        QualityIssue: "no_cover" | "no_description" | "no_tags" | "no_isbn" | "no_translation" | "machine_translation" | "damaged";
         /** QualitySummary */
         QualitySummary: {
             /**

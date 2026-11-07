@@ -90,6 +90,10 @@ Address = Annotated[
 ]
 _Note = Annotated[str, StringConstraints(strip_whitespace=True, max_length=500)]
 OptionalNote = Annotated[_Note | None, BeforeValidator(_blank_to_none)]
+_ShortNote = Annotated[
+    str, StringConstraints(strip_whitespace=True, max_length=300), AfterValidator(_no_control_chars)
+]
+OptionalShortNote = Annotated[_ShortNote | None, BeforeValidator(_blank_to_none)]
 
 
 @cache

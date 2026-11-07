@@ -448,6 +448,12 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 ближайшие брони над списком заказов (`GET /admin/reservations`). Удаление аккаунта снимает его удержания и брони,
 а экземпляры переходят дальше.
 
+**Состояние экземпляров**: у каждого экземпляра есть состояние (`new/good/worn/damaged`) и необязательная
+заметка — их задают в форме книги и при возврате заказа (*Отметить возврат* спрашивает, в каком виде вернулся каждый
+экземпляр; сохраняются только изменения). Между экземплярами одной книги оно не общее. Потёртые и повреждённые
+экземпляры помечены в списке книг администратора, а повреждённые видны в разделе *Качество данных*
+(`quality=damaged`).
+
 **Колокольчик уведомлений**: в шапке видны новости читателя — те же события, что и письма (`notifications`), даже
 если письмо не удалось отправить, кроме новостей, устаревших до отправки. Открытие списка отмечает их прочитанными
 (`read_at`); список обновляется раз в минуту, пока вкладка видна. Уведомления, появившиеся до колокольчика,
@@ -480,7 +486,7 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 | Таблица | Ключевое |
 | --- | --- |
 | `users` | email уникален и в нижнем регистре (CHECK), Argon2-хеш, роль `customer/librarian/admin`, контакты (nullable), `preferred_contact_method` |
-| `books` | `cover_url`, `image_urls[]`, `age_range`, `category`, `status` (`available/available-soon/not-available`), `language`, `publication_year`, `is_active` (мягкое удаление), `series_id` + `series_position` (CHECK > 0) |
+| `books` | `cover_url`, `image_urls[]`, `age_range`, `category`, `status` (`available/available-soon/not-available`), `condition` (`new/good/worn/damaged`, у каждого экземпляра своё) + `condition_note`, `language`, `publication_year`, `is_active` (мягкое удаление), `series_id` + `series_position` (CHECK > 0) |
 | `tags`, `book_tags` | `slug` тега (уникальный, CHECK формата), `name_en`, `name_ru`; связь книга ↔ тег |
 | `series` | `name` (уникальное), `name_en` / `name_ru` (названия на языках интерфейса, необязательно), `description`, `openlibrary_key` (уникальный, из поиска по ISBN) |
 | `book_translations` | на книгу и язык (`en`/`ru`): `title`, `author`, `description`, `title_source`/`description_source` (`manual/wikidata/wikipedia/machine`), `source_url` (ссылка на Википедию) |

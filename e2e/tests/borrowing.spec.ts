@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { ADMIN, createBooks, registerCustomer, setBatchSize, signIn, signOut, unique } from '../helpers';
+import { ADMIN, API_URL, createBooks, registerCustomer, setBatchSize, signIn, signOut, unique } from '../helpers';
 
 test.beforeAll(async ({ request }) => {
   await setBatchSize(request, 2);
@@ -72,7 +72,15 @@ test('a reader borrows a batch; the library hands it over and takes it back', as
   await page.getByRole('tab', { name: /Orders/ }).click();
   await page.getByRole('searchbox').fill(orderNumber);
   await row.getByRole('button', { name: 'Mark Returned' }).click();
+  // The librarian notes how the copies came back.
+  const back = page.getByRole('dialog', { name: 'Books are back' });
+  await back.getByRole('combobox', { name: `Condition of “${titles[0]}”` }).selectOption('worn');
+  await back.getByLabel(`Condition note for “${titles[0]}”`).fill('Spine creased');
+  await back.getByRole('button', { name: 'Mark Returned' }).click();
   await expect(row).toContainText('Returned');
+  // The copy's condition was saved.
+  const found = await (await request.get(`${API_URL}/books`, { params: { q: titles[0] } })).json();
+  expect(found.items[0]).toMatchObject({ condition: 'worn', condition_note: 'Spine creased' });
   await page.goto('/');
   await page.getByPlaceholder('Search books...').fill(titles[0]);
   await expect(bookCard(page, titles[0]).getByRole('button', { name: 'Add to Cart' })).toBeEnabled();

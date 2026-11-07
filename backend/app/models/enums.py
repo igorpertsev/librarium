@@ -46,6 +46,15 @@ class BookStatus(StrEnum):
     NOT_AVAILABLE = "not-available"
 
 
+class CopyCondition(StrEnum):
+    """Physical state of a copy, noted by librarians (per copy, not per title)."""
+
+    NEW = "new"
+    GOOD = "good"
+    WORN = "worn"
+    DAMAGED = "damaged"
+
+
 class OrderStatus(StrEnum):
     PENDING = "pending"  # requested by the customer, books reserved
     CONFIRMED = "confirmed"  # books handed over to the customer

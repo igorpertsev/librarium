@@ -10,6 +10,8 @@ export function bookDto(overrides: Partial<BookDto> = {}): BookDto {
     category: 'fiction',
     age_range: '8+',
     status: 'available',
+    condition: 'good',
+    condition_note: null,
     cover_url: 'https://covers.example.com/hobbit.jpg',
     image_urls: [],
     isbn: '9780547928227',

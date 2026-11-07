@@ -1,4 +1,5 @@
 export type BookStatus = 'available' | 'available-soon' | 'not-available' | 'pending';
+export type CopyCondition = 'new' | 'good' | 'worn' | 'damaged';
 
 export type BookCategory = 'fiction' | 'non-fiction' | 'children' | 'young-adult' | 'science' | 'history' | 'biography';
 
@@ -38,6 +39,9 @@ export interface Book {
   category: BookCategory;
   ageRange: string;
   status: BookStatus;
+  /** How this copy looks (per copy, noted by librarians). */
+  condition?: CopyCondition;
+  conditionNote?: string | null;
   coverImage: string;
   images: string[];
   description: string;

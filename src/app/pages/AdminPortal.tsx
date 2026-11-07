@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { BatchConfig, Book, BookCategory, BookStatus, Order } from '../types';
+import { BatchConfig, Book, BookCategory, BookStatus, CopyCondition, Order } from '../types';
+
+const COPY_CONDITIONS: CopyCondition[] = ['new', 'good', 'worn', 'damaged'];
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -20,6 +22,7 @@ import { PickupLine } from '../components/PickupLine';
 import { PickupPointsTab } from '../components/PickupPointsTab';
 import { UpcomingReservations } from '../components/UpcomingReservations';
 import { ActivityTab } from '../components/ActivityTab';
+import { ReturnDialog } from '../components/ReturnDialog';
 import { isAdmin, type Role } from '../utils/roles';
 import { ReportsTab } from '../components/ReportsTab';
 import { BookCatalogFields } from '../components/BookCatalogFields';
@@ -109,6 +112,8 @@ export default function AdminPortal() {
     category: 'fiction' as BookCategory,
     ageRange: '',
     status: 'available' as BookStatus,
+    condition: 'good',
+    conditionNote: '',
     coverImage: '',
     images: [] as string[],
     description: '',
@@ -129,6 +134,8 @@ export default function AdminPortal() {
       category: 'fiction',
       ageRange: '',
       status: 'available',
+      condition: 'good',
+      conditionNote: '',
       coverImage: '',
       images: [],
       description: '',
@@ -209,6 +216,8 @@ export default function AdminPortal() {
       category: book.category,
       ageRange: book.ageRange,
       status: book.status,
+      condition: book.condition ?? 'good',
+      conditionNote: book.conditionNote ?? '',
       coverImage: book.coverImage,
       images: book.images || [book.coverImage],
       description: book.description,
@@ -449,6 +458,15 @@ export default function AdminPortal() {
                       {book.status === 'available' && <Badge className="bg-green-700 text-white">{getStatusTranslation(t, book.status)}</Badge>}
                       {book.status === 'available-soon' && <Badge className="bg-amber-700 text-white">{getStatusTranslation(t, book.status)}</Badge>}
                       {book.status === 'not-available' && <Badge variant="destructive">{getStatusTranslation(t, book.status)}</Badge>}
+                      {(book.condition === 'worn' || book.condition === 'damaged') && (
+                        <Badge
+                          variant="outline"
+                          className={book.condition === 'damaged' ? 'ml-1 border-destructive text-destructive dark:text-red-400' : 'ml-1'}
+                          title={book.conditionNote ?? undefined}
+                        >
+                          {t(`condition.${book.condition}`)}
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell>{book.ageRange}</TableCell>
                     <TableCell>
@@ -811,6 +829,31 @@ function BookForm({ formData, setFormData, t, onAddCopy }: {
         </div>
 
         <div className="space-y-2">
+          <Label htmlFor="condition">{t('condition.label')}</Label>
+          <Select value={formData.condition} onValueChange={(value) => setFormData({ ...formData, condition: value as CopyCondition })}>
+            <SelectTrigger id="condition">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {COPY_CONDITIONS.map((condition) => (
+                <SelectItem key={condition} value={condition}>{t(`condition.${condition}`)}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="conditionNote">{t('condition.note')}</Label>
+          <Input
+            id="conditionNote"
+            maxLength={300}
+            placeholder={t('condition.notePlaceholder')}
+            value={formData.conditionNote}
+            onChange={(e) => setFormData({ ...formData, conditionNote: e.target.value })}
+          />
+        </div>
+
+        <div className="space-y-2">
           <Label htmlFor="ageRange">{t('bookForm.ageRange')}</Label>
           <Input
             id="ageRange"
@@ -1041,6 +1084,7 @@ function OrdersTab({
   const fmt = useFormat();
   const [busyOrderId, setBusyOrderId] = useState<string | null>(null);
   const { confirm, confirmDialog } = useConfirm();
+  const [returning, setReturning] = useState<Order | null>(null);
 
   const runOrderAction = async (
     orderId: string,
@@ -1269,7 +1313,7 @@ function OrdersTab({
                           size="sm"
                           variant="outline"
                           disabled={busyOrderId === order.id}
-                          onClick={() => runOrderAction(order.id, () => onMarkReturned(order.id), 'admin.orderReturnedMsg')}
+                          onClick={() => setReturning(order)}
                         >
                           <RotateCcw className="w-4 h-4 mr-1" />
                           {t('admin.markReturned')}
@@ -1322,6 +1366,14 @@ function OrdersTab({
         </div>
       )}
 
+      <ReturnDialog
+        order={returning}
+        onClose={() => setReturning(null)}
+        onReturn={async (order) => {
+          await runOrderAction(order.id, () => onMarkReturned(order.id), 'admin.orderReturnedMsg');
+          setReturning(null);
+        }}
+      />
       <OrderBooksModal
         order={selectedOrder}
         userContacts={selectedUserContacts}

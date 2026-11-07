@@ -712,7 +712,7 @@
     "title": "Data quality",
     "description_one": "Gaps in the catalogue data of {{count}} title. Choose a gap to see the titles and fix them.",
     "description_other": "Gaps in the catalogue data of {{count}} titles. Choose a gap to see the titles and fix them.",
-    "issue": {"machine_translation": "Machine translations to check", "no_cover": "No cover", "no_description": "No description", "no_tags": "No tags", "no_translation": "No translation", "no_isbn": "No ISBN"},
+    "issue": {"machine_translation": "Machine translations to check", "no_cover": "No cover", "no_description": "No description", "no_tags": "No tags", "no_translation": "No translation", "no_isbn": "No ISBN", "damaged": "Damaged copies"},
     "none": "Nothing to fix here.",
     "fix": "Edit",
     "previous": "Previous",
@@ -901,5 +901,18 @@
     "empty": "No changes recorded yet.",
     "more": "Show more",
     "actions": {"admin_create_book": "Added a book", "admin_import_books": "Imported books", "admin_add_copies": "Added copies", "admin_update_book": "Edited a book", "admin_delete_book": "Removed a book", "admin_update_user": "Changed a user", "admin_change_order_status": "Changed an order's status", "admin_change_order_due_date": "Changed a due date", "admin_settle_late_fee": "Settled a late fee", "admin_remind_customer": "Sent a reminder", "admin_create_tag": "Added a tag", "admin_update_tag": "Edited a tag", "admin_delete_tag": "Deleted a tag", "admin_merge_tag": "Merged tags", "admin_create_series": "Added a series", "admin_update_series": "Edited a series", "admin_delete_series": "Deleted a series", "admin_merge_series": "Merged series", "admin_update_settings": "Changed library settings", "admin_moderate_review": "Moderated a review", "admin_delete_review": "Deleted a review", "admin_create_pickup_point": "Added a pickup point", "admin_update_pickup_point": "Edited a pickup point", "admin_delete_pickup_point": "Deleted a pickup point"}
+  },
+  "condition": {
+    "label": "Condition of this copy",
+    "new": "New",
+    "good": "Good",
+    "worn": "Worn",
+    "damaged": "Damaged",
+    "note": "Condition note",
+    "notePlaceholder": "e.g. torn cover, pages marked",
+    "of": "Condition of “{{title}}”",
+    "noteOf": "Condition note for “{{title}}”",
+    "returnTitle": "Books are back",
+    "returnHint": "Note how each copy came back. The order is then marked returned."
   }
 }
