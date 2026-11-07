@@ -244,13 +244,13 @@ async def test_no_providers_without_credentials(client: AsyncClient) -> None:
     assert refused.json()["error"]["code"] == "OAUTH_NOT_CONFIGURED"
 
 
-def test_an_apple_key_written_on_one_line_works() -> None:
+def test_an_apple_key_written_on_one_line_works(monkeypatch: pytest.MonkeyPatch) -> None:
     pem = APPLE_TEAM_KEY.private_bytes(
         serialization.Encoding.PEM,
         serialization.PrivateFormat.PKCS8,
         serialization.NoEncryption(),
     ).decode()
-    one_line = pem.replace("\n", "\\n")
-    settings = Settings(_env_file=None, apple_private_key=one_line)  # type: ignore[call-arg]
+    monkeypatch.setenv("APPLE_PRIVATE_KEY", pem.replace("\n", "\\n"))
+    settings = Settings(_env_file=None)
     assert settings.apple_private_key is not None
     assert settings.apple_private_key.get_secret_value() == pem

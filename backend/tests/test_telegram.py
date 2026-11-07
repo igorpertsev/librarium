@@ -52,7 +52,7 @@ def _with_bot(app: FastAPI) -> Any:
 
 async def _user(app: FastAPI, reader: ApiUser) -> User:
     async with app.state.db.sessionmaker() as session:
-        user = await session.get(User, uuid.UUID(reader.id))
+        user: User | None = await session.get(User, uuid.UUID(reader.id))
         assert user is not None
         return user
 
