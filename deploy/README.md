@@ -378,7 +378,8 @@ trace, without IP addresses, cookies or request bodies.
 - `ENVIRONMENT=production` is enforced: the backend refuses to start with a weak `JWT_SECRET_KEY`,
   and cookies are `Secure` and `HttpOnly`.
 - Caddy sets HSTS, a Content-Security-Policy (scripts, styles and API calls only from your domain;
-  images from any HTTPS host, for book covers), `Permissions-Policy` and the usual hardening headers,
+  images from any HTTPS host, for book covers), `Permissions-Policy` (the camera only for the site itself, for
+  scanning ISBN barcodes; no microphone, location or payments) and the usual hardening headers,
   and ignores client-supplied `X-Forwarded-For`, so the IP addresses stored with sessions cannot be
   spoofed. If you add a third-party script or font later, extend the policy in `deploy/web/Caddyfile`.
 - The backend makes outbound HTTPS requests with book data only: Open Library (ISBN lookup),

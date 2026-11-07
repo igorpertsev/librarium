@@ -84,3 +84,16 @@ test('the librarian changes several books at once', async ({ page, request }) =>
   }
   await expect(bar).toHaveCount(0);
 });
+
+test('without a camera the librarian types the ISBN in the scanner', async ({ page }) => {
+  await signIn(page, ADMIN);
+  await page.goto('/admin');
+  await page.getByRole('button', { name: 'Add New Book' }).click();
+  await page.getByRole('button', { name: 'Scan the ISBN barcode with the camera' }).click();
+  const scanner = page.getByRole('dialog', { name: 'Scan a barcode' });
+  await expect(scanner.getByRole('alert')).toBeVisible(); // no camera in the test browser
+  await scanner.getByLabel('Or type the ISBN').fill('978-0-547-92822-7');
+  await scanner.getByRole('button', { name: 'Use' }).click();
+  await expect(scanner).toHaveCount(0);
+  await expect(page.getByRole('dialog').getByLabel('ISBN', { exact: true })).toHaveValue('9780547928227');
+});

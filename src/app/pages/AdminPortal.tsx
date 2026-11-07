@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type Dispatch, type SetStateAction } from 'react';
 import { BatchConfig, Book, BookCategory, BookStatus, CopyCondition, Order } from '../types';
 
 const COPY_CONDITIONS: CopyCondition[] = ['new', 'good', 'worn', 'damaged'];
@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Textarea } from '../components/ui/textarea';
 import { Badge } from '../components/ui/badge';
-import { Plus, Pencil, Trash2, Users, BookOpen as BookOpenIcon, ClipboardList, CheckCircle2, RotateCcw, Clock, Star, ImageDown, BellRing, BarChart3, CopyPlus, Tags, History, ListChecks, MapPin, MessageSquare } from 'lucide-react';
+import { Plus, Pencil, Trash2, Users, BookOpen as BookOpenIcon, ClipboardList, CheckCircle2, RotateCcw, Clock, Star, ImageDown, BellRing, BarChart3, CopyPlus, Tags, History, ListChecks, MapPin, MessageSquare, ScanBarcode } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -24,6 +24,7 @@ import { UpcomingReservations } from '../components/UpcomingReservations';
 import { ActivityTab } from '../components/ActivityTab';
 import { ReturnDialog } from '../components/ReturnDialog';
 import { BulkBookActions } from '../components/BulkBookActions';
+import { IsbnScanner } from '../components/IsbnScanner';
 import { Checkbox } from '../components/ui/checkbox';
 import { isAdmin, type Role } from '../utils/roles';
 import { ReportsTab } from '../components/ReportsTab';
@@ -751,16 +752,17 @@ export default function AdminPortal() {
 
 function BookForm({ formData, setFormData, t, onAddCopy }: {
   formData: BookFormValues;
-  setFormData: (data: BookFormValues) => void;
+  setFormData: Dispatch<SetStateAction<BookFormValues>>;
   t: TFunction;
   /** Only when adding: offer "add a copy" of a title that looks the same. */
   onAddCopy?: (book: Book) => void;
 }) {
   const [findingCover, setFindingCover] = useState(false);
 
-  const handleFindCover = async () => {
+  const [scanning, setScanning] = useState(false);
+  const handleFindCover = async (isbn: string = formData.isbn ?? '') => {
     setFindingCover(true);
-    const result = await lookupBookByIsbn(formData.isbn ?? '');
+    const result = await lookupBookByIsbn(isbn);
     setFindingCover(false);
     if (result.status === 'found') {
       const { details } = result;
@@ -771,6 +773,7 @@ function BookForm({ formData, setFormData, t, onAddCopy }: {
       // Only empty fields are filled in; what the librarian typed is kept.
       setFormData({
         ...formData,
+        isbn,
         title: formData.title || details.title,
         author: formData.author || details.author || '',
         description: formData.description || details.description || '',
@@ -907,10 +910,24 @@ function BookForm({ formData, setFormData, t, onAddCopy }: {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="isbn">{t('bookForm.isbn')}</Label>
-          <Input
-            id="isbn"
-            value={formData.isbn}
-            onChange={(e) => setFormData({ ...formData, isbn: e.target.value })}
+          <div className="flex gap-2">
+            <Input
+              id="isbn"
+              value={formData.isbn}
+              onChange={(e) => setFormData({ ...formData, isbn: e.target.value })}
+              className="flex-1"
+            />
+            <Button type="button" variant="outline" onClick={() => setScanning(true)} aria-label={t('scanner.open')} title={t('scanner.open')}>
+              <ScanBarcode className="w-4 h-4" aria-hidden="true" />
+            </Button>
+          </div>
+          <IsbnScanner
+            open={scanning}
+            onClose={() => setScanning(false)}
+            onDetected={(isbn) => {
+              setFormData((current) => ({ ...current, isbn }));
+              void handleFindCover(isbn);
+            }}
           />
         </div>
         <div className="space-y-2">
@@ -937,7 +954,7 @@ function BookForm({ formData, setFormData, t, onAddCopy }: {
           <Button
             type="button"
             variant="outline"
-            onClick={handleFindCover}
+            onClick={() => handleFindCover()}
             disabled={findingCover || !formData.isbn?.trim()}
           >
             <ImageDown className="w-4 h-4 mr-2" />

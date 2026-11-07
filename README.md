@@ -441,6 +441,11 @@ two copies of the same title are two records (ISBN is not unique).
   hold. Cancelling (`DELETE /users/me/reservations/{id}`) gives a set-aside copy to the readers waiting for it.
   Librarians see upcoming reservations above the order list (`GET /admin/reservations`). Deleting an account
   drops its holds and reservations and passes those copies on.
+- **ISBN scanner**: the camera button next to the ISBN field in the book form reads the barcode on the back of a
+  book and runs the Open Library lookup. It uses the browser's `BarcodeDetector` where there is one (Chrome, Edge,
+  Android) and otherwise ZXing (`@zxing/browser`, loaded only when scanning). Only ISBN barcodes (EAN-13 978/979
+  with a valid check digit) are taken; without a camera the ISBN can be typed in the same dialog. The camera needs
+  HTTPS (or localhost) and `Permissions-Policy: camera=(self)`, which Caddy sends.
 - **Bulk edit**: in the admin book list, tick titles (or the whole page) and apply one change to every copy of
   them: status, category, condition, add or remove a tag, or remove them from the catalogue (asks first; drops them
   from carts). Unknown tags change nothing (`UNKNOWN_TAGS`).

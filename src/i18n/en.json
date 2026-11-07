@@ -933,5 +933,17 @@
     "removeTitle_other": "Remove {{count}} titles from the catalogue?",
     "removeDesc": "Every copy is taken out of the catalogue and out of readers' carts. Order history keeps them.",
     "remove": "Remove"
+  },
+  "scanner": {
+    "open": "Scan the ISBN barcode with the camera",
+    "title": "Scan a barcode",
+    "hint": "Hold the barcode on the back of the book in front of the camera.",
+    "hintContinuous": "Show the barcodes one after another; every book found is counted.",
+    "denied": "The browser was not allowed to use the camera. Allow it in the site settings, or type the ISBN below.",
+    "noCamera": "No camera was found. Type the ISBN below.",
+    "failed": "The camera could not be started. Type the ISBN below.",
+    "found": "Found ISBN {{isbn}}",
+    "type": "Or type the ISBN",
+    "use": "Use"
   }
 }
