@@ -392,7 +392,8 @@
     "noCopyForDate": "На этот день свободного экземпляра не будет. Попробуйте другой день.",
     "alreadyReserved": "Вы уже забронировали эту книгу.",
     "tooManyReservations": "Забронировать заранее можно до 5 книг.",
-    "invalidReservationDate": "Выберите день с завтрашнего и не дальше чем через 90 дней."
+    "invalidReservationDate": "Выберите день с завтрашнего и не дальше чем через 90 дней.",
+    "invalidFinishedOn": "День, когда вы дочитали книгу, не может быть в будущем."
   },
   "checkout": {
     "title": "Подтверждение заказа",
@@ -925,5 +926,29 @@
     "empty": "Пока ничего нового. Здесь появятся новости о ваших заказах и книгах.",
     "new": "новое",
     "kinds": {"order_received": "Мы получили вашу заявку №{{number}}", "order_confirmed": "Заказ №{{number}}: книги выданы", "order_cancelled": "Библиотека отменила заказ №{{number}}", "due_soon": "Заказ №{{number}}: скоро нужно вернуть книги", "overdue": "Заказ №{{number}} просрочен", "book_available": "«{{title}}» снова доступна", "book_held": "«{{title}}» отложена для вас", "reservation_ready": "«{{title}}», которую вы забронировали, готова"}
+  },
+  "readingLog": {
+    "title": "Мой дневник чтения",
+    "summary": "В этом году: {{year}} · всего: {{total}} · {{badges}}",
+    "badgeCount_one": "{{count}} значок",
+    "badgeCount_few": "{{count}} значка",
+    "badgeCount_many": "{{count}} значков",
+    "badgeCount_other": "{{count}} значка",
+    "badges": "Значки",
+    "earned": "Получен!",
+    "progress": "{{progress}} из {{goal}}",
+    "toLog": "Дочитали что-то из этого?",
+    "finishedBooks": "Прочитанные книги",
+    "empty": "Отмечайте прочитанные книги кнопкой «Прочитал(а)» и собирайте значки.",
+    "finishedOn": "Прочитана {{date}}",
+    "markShort": "Прочитал(а)",
+    "finished": "Прочитана",
+    "markTitle": "Отметить «{{title}}» как прочитанную",
+    "unmarkTitle": "Убрать «{{title}}» из дневника чтения",
+    "marked": "«{{title}}» добавлена в дневник чтения",
+    "unmarked": "«{{title}}» убрана из дневника чтения",
+    "showAll": "Показать все ({{count}})",
+    "showLess": "Свернуть",
+    "badge": {"first_book": {"name": "Первая книга", "hint": "Прочитать книгу"}, "five_books": {"name": "Книжный червь", "hint": "Прочитать 5 книг"}, "ten_books": {"name": "Чемпион чтения", "hint": "Прочитать 10 книг"}, "twenty_five_books": {"name": "Король чтения", "hint": "Прочитать 25 книг"}, "explorer": {"name": "Исследователь", "hint": "Книги 3 категорий"}, "two_languages": {"name": "Два языка", "hint": "Читать на 2 языках"}, "series_finisher": {"name": "Вся серия", "hint": "Все книги серии"}, "three_months": {"name": "Постоянный читатель", "hint": "По книге 3 месяца подряд"}}
   }
 }

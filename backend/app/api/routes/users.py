@@ -12,9 +12,18 @@ from app.schemas.book import BookRead
 from app.schemas.common import error_responses
 from app.schemas.hold import HeldBookRead
 from app.schemas.inbox import Inbox, MarkRead
+from app.schemas.reading_log import MarkFinished, ReadingLogRead
 from app.schemas.reservation import ReservationCreate, ReservationRead
 from app.schemas.user import DeleteAccountRequest, UserRead, UserUpdate
-from app.services import account, holds, inbox, recommendations, reservations, series_reading
+from app.services import (
+    account,
+    holds,
+    inbox,
+    reading_log,
+    recommendations,
+    reservations,
+    series_reading,
+)
 from app.services import users as users_service
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -74,6 +83,43 @@ async def my_holds(user: CurrentUser, session: SessionDep) -> list[HeldBookRead]
 )
 async def release_hold(book_id: uuid.UUID, user: CurrentUser, session: SessionDep) -> Response:
     await holds.release(session, user, book_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get(
+    "/me/reading-log",
+    response_model=ReadingLogRead,
+    responses=error_responses(401),
+    description="Titles the reader has finished (newest first), counts, badges and borrowed "
+    "titles not logged yet.",
+)
+async def my_reading_log(user: CurrentUser, session: SessionDep) -> ReadingLogRead:
+    log = await reading_log.reading_log(session, user)
+    return ReadingLogRead.model_validate(log, from_attributes=True)
+
+
+@router.put(
+    "/me/reading-log/{book_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
+    responses=error_responses(400, 401, 404, 422),
+    description="Log the title as finished (finished_on defaults to today; not in the future).",
+)
+async def mark_finished(
+    book_id: uuid.UUID, user: CurrentUser, session: SessionDep, body: MarkFinished | None = None
+) -> Response:
+    await reading_log.mark_read(session, user, book_id, body.finished_on if body else None)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.delete(
+    "/me/reading-log/{book_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
+    responses=error_responses(401, 422),
+)
+async def unmark_finished(book_id: uuid.UUID, user: CurrentUser, session: SessionDep) -> Response:
+    await reading_log.unmark(session, user, book_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

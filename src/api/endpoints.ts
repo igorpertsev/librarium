@@ -19,6 +19,7 @@ import type {
   ForgotPasswordDto,
   HeldBookDto,
   InboxDto,
+  ReadingLogDto,
   LibraryRulesDto,
   LibrarySettingsDto,
   LibrarySettingsUpdateDto,
@@ -92,6 +93,14 @@ export const usersApi = {
     apiRequest<void>(`/users/me/holds/${id(bookId)}`, { method: 'DELETE' }),
   reservations: () => apiRequest<ReservationDto[]>('/users/me/reservations'),
   notifications: () => apiRequest<InboxDto>('/users/me/notifications'),
+  readingLog: () => apiRequest<ReadingLogDto>('/users/me/reading-log'),
+  markFinished: (bookId: string, finishedOn?: string) =>
+    apiRequest<void>(`/users/me/reading-log/${id(bookId)}`, {
+      method: 'PUT',
+      body: finishedOn ? { finished_on: finishedOn } : undefined,
+    }),
+  unmarkFinished: (bookId: string) =>
+    apiRequest<void>(`/users/me/reading-log/${id(bookId)}`, { method: 'DELETE' }),
   markNotificationsRead: (ids?: string[]) =>
     apiRequest<void>('/users/me/notifications/read', { method: 'POST', body: ids ? { ids } : undefined }),
   reserve: (bookId: string, startsOn: string) =>

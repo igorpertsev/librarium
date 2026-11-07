@@ -10,6 +10,7 @@ import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useSignInFirst } from '../utils/useSignInFirst';
 import { ReserveAhead } from './ReserveAhead';
+import { FinishedButton } from './FinishedButton';
 import { useLibraryRules } from '../utils/useLibraryRules';
 import { useOrders } from '../contexts/OrdersContext';
 import { toast } from 'sonner';
@@ -460,8 +461,9 @@ export function BookDetailsModal({ book: initialBook, open, onOpenChange }: Book
                     <WaitlistButton bookId={book.id} groupId={book.groupId} title={text.title} withLabel />
                   </div>
                 )}
-                <div className="flex justify-center">
+                <div className="flex flex-wrap justify-center gap-2">
                   <ReadingListButton bookId={book.id} groupId={book.groupId} title={text.title} withLabel />
+                  <FinishedButton bookId={book.id} groupId={book.groupId} title={text.title} />
                 </div>
                 <ReserveAhead bookId={book.id} groupId={book.groupId} title={text.title} />
               </>

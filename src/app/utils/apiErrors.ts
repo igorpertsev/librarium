@@ -48,6 +48,7 @@ const MESSAGE_KEYS: Record<string, string> = {
   TOO_MANY_RESERVATIONS: 'errors.tooManyReservations',
   INVALID_RESERVATION_DATE: 'errors.invalidReservationDate',
   RESERVATION_NOT_FOUND: 'errors.notFound',
+  INVALID_FINISHED_ON: 'errors.invalidFinishedOn',
 };
 
 /** Translated, user-facing message for an API error. */

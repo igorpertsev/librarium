@@ -27,6 +27,7 @@ from app.models import (
     Notification,
     Order,
     ReadingListEntry,
+    ReadingLogEntry,
     RefreshToken,
     Review,
     User,
@@ -63,6 +64,14 @@ async def export_data(session: AsyncSession, user: User) -> dict[str, Any]:
             select(Book.title, Book.author, ReadingListEntry.created_at)
             .join(Book, Book.id == ReadingListEntry.book_id)
             .where(ReadingListEntry.user_id == user.id)
+        )
+    ).all()
+    finished = (
+        await session.execute(
+            select(Book.title, Book.author, ReadingLogEntry.finished_on)
+            .join(Book, Book.id == ReadingLogEntry.book_id)
+            .where(ReadingLogEntry.user_id == user.id)
+            .order_by(ReadingLogEntry.finished_on)
         )
     ).all()
     reserved = (
@@ -129,6 +138,10 @@ async def export_data(session: AsyncSession, user: User) -> dict[str, Any]:
         "want_to_read": [
             {"title": title, "author": author, "since": _iso(since)}
             for title, author, since in saved
+        ],
+        "reading_log": [
+            {"title": title, "author": author, "finished_on": day.isoformat()}
+            for title, author, day in finished
         ],
         "reservations": [
             {
@@ -217,7 +230,16 @@ async def delete_account(session: AsyncSession, user: User, password: str) -> No
             .returning(AdvanceReservation.book_id)
         )
     ).all()
-    for table in (RefreshToken, Notification, WaitlistEntry, ReadingListEntry, Review, Cart):
+    personal = (
+        RefreshToken,
+        Notification,
+        WaitlistEntry,
+        ReadingListEntry,
+        ReadingLogEntry,
+        Review,
+        Cart,
+    )
+    for table in personal:
         await session.execute(delete(table).where(table.user_id == user.id))
     await waitlist.notify_waiting_readers(session, [*released, *set_aside])
     user.email = anonymous_email

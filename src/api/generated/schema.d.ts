@@ -291,6 +291,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/users/me/reading-log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My Reading Log
+         * @description Titles the reader has finished (newest first), counts, badges and borrowed titles not logged yet.
+         */
+        get: operations["my_reading_log_api_v1_users_me_reading_log_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/me/reading-log/{book_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Mark Finished
+         * @description Log the title as finished (finished_on defaults to today; not in the future).
+         */
+        put: operations["mark_finished_api_v1_users_me_reading_log__book_id__put"];
+        post?: never;
+        /** Unmark Finished */
+        delete: operations["unmark_finished_api_v1_users_me_reading_log__book_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users/me/notifications": {
         parameters: {
             query?: never;
@@ -1606,6 +1647,20 @@ export interface components {
             /** Is Active */
             is_active?: boolean | null;
         };
+        /** BadgeRead */
+        BadgeRead: {
+            /**
+             * Key
+             * @description first_book, five_books, ten_books, twenty_five_books, explorer (3 categories), two_languages, series_finisher, three_months (a book in each of the last three months)
+             */
+            key: string;
+            /** Earned */
+            earned: boolean;
+            /** Progress */
+            progress: number;
+            /** Goal */
+            goal: number;
+        };
         /**
          * BookBrief
          * @description Current catalogue data of a book (no availability computation).
@@ -2242,6 +2297,15 @@ export interface components {
             /** Timezone */
             timezone?: string | null;
         };
+        /** LoggedBookRead */
+        LoggedBookRead: {
+            book: components["schemas"]["BookRead"];
+            /**
+             * Finished On
+             * Format: date
+             */
+            finished_on: string;
+        };
         /** LoginRequest */
         LoginRequest: {
             /** Email */
@@ -2262,6 +2326,11 @@ export interface components {
             openlibrary_key: string | null;
             /** Position */
             position: number | null;
+        };
+        /** MarkFinished */
+        MarkFinished: {
+            /** Finished On */
+            finished_on?: string | null;
         };
         /** MarkRead */
         MarkRead: {
@@ -2659,6 +2728,22 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+        };
+        /** ReadingLogRead */
+        ReadingLogRead: {
+            /** Entries */
+            entries: components["schemas"]["LoggedBookRead"][];
+            /** Total */
+            total: number;
+            /** This Year */
+            this_year: number;
+            /** Badges */
+            badges: components["schemas"]["BadgeRead"][];
+            /**
+             * To Log
+             * @description Borrowed titles that are not in the log yet
+             */
+            to_log: components["schemas"]["BookRead"][];
         };
         /** RegisterRequest */
         RegisterRequest: {
@@ -3856,6 +3941,133 @@ export interface operations {
         };
     };
     release_hold_api_v1_users_me_holds__book_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    my_reading_log_api_v1_users_me_reading_log_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReadingLogRead"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    mark_finished_api_v1_users_me_reading_log__book_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["MarkFinished"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    unmark_finished_api_v1_users_me_reading_log__book_id__delete: {
         parameters: {
             query?: never;
             header?: never;

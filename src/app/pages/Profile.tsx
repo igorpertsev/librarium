@@ -19,6 +19,7 @@ import { useLibraryRules } from '../utils/useLibraryRules';
 import { LateReturnsCard } from '../components/LateReturnsCard';
 import { PickupLine } from '../components/PickupLine';
 import { ReservationsCard } from '../components/ReservationsCard';
+import { ReadingLogCard } from '../components/ReadingLogCard';
 import { useWaitlist } from '../contexts/WaitlistContext';
 import { WaitlistButton } from '../components/WaitlistButton';
 import { ReadingListCard } from '../components/ReadingListCard';
@@ -272,6 +273,7 @@ export default function Profile() {
       <NextInSeriesCard />
 
       <ReadingListCard />
+      <ReadingLogCard />
 
       {waitlist.length > 0 && (
         <Card>

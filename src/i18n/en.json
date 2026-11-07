@@ -386,7 +386,8 @@
     "noCopyForDate": "No copy can be free for that day. Please try another day.",
     "alreadyReserved": "You have already reserved this book.",
     "tooManyReservations": "You can reserve up to 5 books ahead.",
-    "invalidReservationDate": "Choose a day from tomorrow up to 90 days ahead."
+    "invalidReservationDate": "Choose a day from tomorrow up to 90 days ahead.",
+    "invalidFinishedOn": "The day you finished a book cannot be in the future."
   },
   "checkout": {
     "title": "Confirm Order",
@@ -867,5 +868,27 @@
     "empty": "Nothing new yet. News about your orders and books will appear here.",
     "new": "new",
     "kinds": {"order_received": "We received your request #{{number}}", "order_confirmed": "Order #{{number}}: your books have been handed over", "order_cancelled": "Order #{{number}} was cancelled by the library", "due_soon": "Order #{{number}}: please return the books soon", "overdue": "Order #{{number}} is overdue", "book_available": "“{{title}}” is available again", "book_held": "“{{title}}” is held for you", "reservation_ready": "“{{title}}”, which you reserved, is ready"}
+  },
+  "readingLog": {
+    "title": "My reading log",
+    "summary": "{{year}} this year · {{total}} in total · {{badges}}",
+    "badgeCount_one": "{{count}} badge",
+    "badgeCount_other": "{{count}} badges",
+    "badges": "Badges",
+    "earned": "Earned!",
+    "progress": "{{progress}} of {{goal}}",
+    "toLog": "Finished one of these?",
+    "finishedBooks": "Books I've read",
+    "empty": "Mark the books you have finished with “I've read it” to collect badges.",
+    "finishedOn": "Finished {{date}}",
+    "markShort": "I've read it",
+    "finished": "Read",
+    "markTitle": "Mark “{{title}}” as read",
+    "unmarkTitle": "Take “{{title}}” off my reading log",
+    "marked": "“{{title}}” added to your reading log",
+    "unmarked": "“{{title}}” taken off your reading log",
+    "showAll": "Show all {{count}}",
+    "showLess": "Show fewer",
+    "badge": {"first_book": {"name": "First book", "hint": "Finish a book"}, "five_books": {"name": "Bookworm", "hint": "Finish 5 books"}, "ten_books": {"name": "Book champion", "hint": "Finish 10 books"}, "twenty_five_books": {"name": "Reading royalty", "hint": "Finish 25 books"}, "explorer": {"name": "Explorer", "hint": "Books from 3 categories"}, "two_languages": {"name": "Two languages", "hint": "Read in 2 languages"}, "series_finisher": {"name": "Series finisher", "hint": "Every book of a series"}, "three_months": {"name": "Steady reader", "hint": "A book in each of 3 months"}}
   }
 }

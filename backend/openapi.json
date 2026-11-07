@@ -857,6 +857,181 @@
         }
       }
     },
+    "/api/v1/users/me/reading-log": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "My Reading Log",
+        "description": "Titles the reader has finished (newest first), counts, badges and borrowed titles not logged yet.",
+        "operationId": "my_reading_log_api_v1_users_me_reading_log_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadingLogRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/me/reading-log/{book_id}": {
+      "put": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Mark Finished",
+        "description": "Log the title as finished (finished_on defaults to today; not in the future).",
+        "operationId": "mark_finished_api_v1_users_me_reading_log__book_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/MarkFinished"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Unmark Finished",
+        "operationId": "unmark_finished_api_v1_users_me_reading_log__book_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
     "/api/v1/users/me/notifications": {
       "get": {
         "tags": [
@@ -6888,6 +7063,35 @@
         "type": "object",
         "title": "AdminUserUpdate"
       },
+      "BadgeRead": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key",
+            "description": "first_book, five_books, ten_books, twenty_five_books, explorer (3 categories), two_languages, series_finisher, three_months (a book in each of the last three months)"
+          },
+          "earned": {
+            "type": "boolean",
+            "title": "Earned"
+          },
+          "progress": {
+            "type": "integer",
+            "title": "Progress"
+          },
+          "goal": {
+            "type": "integer",
+            "title": "Goal"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "earned",
+          "progress",
+          "goal"
+        ],
+        "title": "BadgeRead"
+      },
       "BookBrief": {
         "properties": {
           "id": {
@@ -8704,6 +8908,24 @@
         "type": "object",
         "title": "LibrarySettingsUpdate"
       },
+      "LoggedBookRead": {
+        "properties": {
+          "book": {
+            "$ref": "#/components/schemas/BookRead"
+          },
+          "finished_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Finished On"
+          }
+        },
+        "type": "object",
+        "required": [
+          "book",
+          "finished_on"
+        ],
+        "title": "LoggedBookRead"
+      },
       "LoginRequest": {
         "properties": {
           "email": {
@@ -8776,6 +8998,25 @@
           "position"
         ],
         "title": "LookupSeries"
+      },
+      "MarkFinished": {
+        "properties": {
+          "finished_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished On"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "MarkFinished"
       },
       "MarkRead": {
         "properties": {
@@ -9808,6 +10049,49 @@
           "created_at"
         ],
         "title": "ReadingListItemRead"
+      },
+      "ReadingLogRead": {
+        "properties": {
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/LoggedBookRead"
+            },
+            "type": "array",
+            "title": "Entries"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "this_year": {
+            "type": "integer",
+            "title": "This Year"
+          },
+          "badges": {
+            "items": {
+              "$ref": "#/components/schemas/BadgeRead"
+            },
+            "type": "array",
+            "title": "Badges"
+          },
+          "to_log": {
+            "items": {
+              "$ref": "#/components/schemas/BookRead"
+            },
+            "type": "array",
+            "title": "To Log",
+            "description": "Borrowed titles that are not in the log yet"
+          }
+        },
+        "type": "object",
+        "required": [
+          "entries",
+          "total",
+          "this_year",
+          "badges",
+          "to_log"
+        ],
+        "title": "ReadingLogRead"
       },
       "RegisterRequest": {
         "properties": {
