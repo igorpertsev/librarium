@@ -12,6 +12,16 @@ from tests.test_holds import FakeSender
 URL = f"{API}/purchase-requests"
 
 
+async def test_suggested_isbns_have_ten_or_thirteen_digits(customer: ApiUser) -> None:
+    # Found by the API fuzzer: a long "ISBN" overflowed the column and answered 500.
+    for isbn in ("0352X5X-0-X1X705620X007", "123-456-789"):
+        response = await customer.post(URL, json={"title": "T", "author": "A", "isbn": isbn})
+        assert response.status_code == 422, (isbn, response.text)
+    made = await customer.post(URL, json={"title": "T", "author": "A", "isbn": "0-306-40615-2"})
+    assert made.status_code == 201, made.text
+    assert made.json()["request"]["isbn"] == "0306406152"
+
+
 async def test_readers_suggest_books_and_vote_for_them(
     customer: ApiUser, other_customer: ApiUser, register_user: RegisterUser, admin: ApiUser
 ) -> None:

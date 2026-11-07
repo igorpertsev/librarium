@@ -195,7 +195,8 @@ secret and dependency scans. It prints which checks failed and exits non-zero if
 pnpm check
 ```
 
-`pnpm check --fast` skips the slow parts (pytest, migrations, build, scans); `--e2e` adds the browser tests; `--backend`
+`pnpm check --fast` skips the slow parts (pytest, migrations, build, scans); `--e2e` adds the browser tests and API
+fuzzing; `--backend`
 or `--frontend` runs one half.
 
 **Git hooks** (`.githooks/`, opt-in): before a commit, gitleaks on the staged changes, ruff on the staged Python
@@ -261,6 +262,17 @@ pnpm e2e
 pnpm e2e:stack:down
 ```
 
+**API fuzzing** (Schemathesis, `e2e/api-fuzz.sh`) sends thousands of requests generated from the OpenAPI
+schema to the same e2e stack, as a visitor, a reader and the e2e administrator, and fails on any 5xx answer, a
+response that does not match its documented schema or a wrong content type. A failure prints a `curl` command
+that reproduces it. It changes data, so only ever run it against the e2e stack.
+
+```bash
+pnpm api:fuzz
+```
+
+`API_FUZZ_EXAMPLES=50 pnpm api:fuzz` digs deeper (default 10 examples per operation).
+
 Instead of downloading Chromium you can use an installed Google Chrome: `PLAYWRIGHT_CHANNEL=chrome pnpm e2e`.
 Failed tests leave screenshots and traces in `test-results/` (`pnpm exec playwright show-trace <file>`).
 
@@ -274,7 +286,8 @@ Monday (so newly published vulnerabilities show up; that run never deploys):
   `pytest` against a PostgreSQL 16 service, and a check that `backend/openapi.json` matches the code.
 - *Frontend*: `pnpm install --frozen-lockfile`, a check that `src/api/generated/schema.d.ts` matches
   `backend/openapi.json`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`.
-- *Browser tests*: the e2e stack, Chromium and `pnpm e2e`; the Playwright report is uploaded when they fail.
+- *Browser tests*: the e2e stack, Chromium and `pnpm e2e`, then `pnpm api:fuzz` on the same stack; the Playwright
+  report is uploaded when they fail.
 - *Secrets and dependencies*: gitleaks over the whole git history (reviewed false positives are in
   `.gitleaksignore`) and Trivy over `backend/uv.lock` and `pnpm-lock.yaml`; a secret or a HIGH/CRITICAL
   vulnerability that has a fix fails the build.

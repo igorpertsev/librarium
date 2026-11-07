@@ -191,7 +191,8 @@ docker compose --profile dev run --rm backend-dev alembic check
 pnpm check
 ```
 
-`pnpm check --fast` пропускает долгое (pytest, миграции, сборку, сканирование); `--e2e` добавляет браузерные тесты; `--backend`
+`pnpm check --fast` пропускает долгое (pytest, миграции, сборку, сканирование); `--e2e` добавляет браузерные
+тесты и фаззинг API; `--backend`
 или `--frontend` запускает только одну половину.
 
 **Git-хуки** (`.githooks/`, включаются вручную): перед коммитом — gitleaks для добавленных изменений, ruff для
@@ -258,6 +259,17 @@ pnpm e2e
 pnpm e2e:stack:down
 ```
 
+**Фаззинг API** (Schemathesis, `e2e/api-fuzz.sh`) отправляет на тот же e2e-стек тысячи запросов, сгенерированных
+по схеме OpenAPI, — от имени посетителя, читателя и e2e-администратора — и падает на любом ответе 5xx, ответе, не
+совпадающем с описанной схемой, или неверном content type. Для каждой ошибки выводится команда `curl`, которая её
+воспроизводит. Он меняет данные, поэтому запускайте его только на e2e-стеке.
+
+```bash
+pnpm api:fuzz
+```
+
+`API_FUZZ_EXAMPLES=50 pnpm api:fuzz` проверяет глубже (по умолчанию 10 примеров на операцию).
+
 Вместо загрузки Chromium можно использовать установленный Google Chrome: `PLAYWRIGHT_CHANNEL=chrome pnpm e2e`.
 Упавшие тесты оставляют скриншоты и трассировки в `test-results/` (`pnpm exec playwright show-trace <файл>`).
 
@@ -271,7 +283,8 @@ pnpm e2e:stack:down
   `pytest` на сервисе PostgreSQL 16 и проверка, что `backend/openapi.json` соответствует коду.
 - *Frontend*: `pnpm install --frozen-lockfile`, проверка, что `src/api/generated/schema.d.ts` соответствует
   `backend/openapi.json`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`.
-- *Браузерные тесты*: e2e-стек, Chromium и `pnpm e2e`; при ошибке выгружается отчёт Playwright.
+- *Браузерные тесты*: e2e-стек, Chromium и `pnpm e2e`, затем `pnpm api:fuzz` на том же стеке; при ошибке
+  выгружается отчёт Playwright.
 - *Секреты и зависимости*: gitleaks по всей истории git (проверенные ложные срабатывания — в `.gitleaksignore`) и
   Trivy по `backend/uv.lock` и `pnpm-lock.yaml`; найденный секрет или уязвимость HIGH/CRITICAL, для которой есть
   исправление, роняют сборку.

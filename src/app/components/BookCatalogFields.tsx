@@ -131,6 +131,7 @@ export function BookCatalogFields({
             id="seriesPosition"
             type="number"
             min="0.5"
+            max="9999.5"
             step="0.5"
             disabled={!value.seriesName.trim()}
             value={value.seriesPosition ?? ''}

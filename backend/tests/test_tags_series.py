@@ -157,6 +157,26 @@ async def test_series_are_created_by_name_and_listed_in_order(
     assert (await client.get(f"{API}/series/{series_id}")).json()["book_count"] == 3
 
 
+async def test_series_positions_fit_what_the_database_stores(admin: ApiUser) -> None:
+    # Found by the API fuzzer: these used to reach the database and fail with a 500.
+    for position in (5e-324, 0.004, 9999.999, 10000):
+        response = await admin.post(
+            f"{API}/admin/books",
+            json={
+                "title": "Odd",
+                "author": "A",
+                "category": "fiction",
+                "series_name": "Odd Series",
+                "series_position": position,
+            },
+        )
+        assert response.status_code == 422, (position, response.text)
+    book = await _book(admin, "Half", series_name="Odd Series", series_position=2.504)
+    assert book["series_position"] == 2.5
+    patched = await admin.patch(f"{API}/admin/books/{book['id']}", json={"series_position": 1e-300})
+    assert patched.status_code == 422, patched.text
+
+
 async def test_editing_merging_and_deleting_series(client: AsyncClient, admin: ApiUser) -> None:
     book = await _book(admin, "Volume One", series_name="Detective Ivanov", series_position=1)
     other = await _book(admin, "Volume Two", series_name="Ivanov Detective", series_position=2)

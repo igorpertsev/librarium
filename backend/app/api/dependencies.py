@@ -11,9 +11,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
 from app.core.database import Database
-from app.core.exceptions import AuthenticationError, PermissionDeniedError
+from app.core.exceptions import AppError, AuthenticationError, PermissionDeniedError
 from app.core.rate_limit import RateLimiter
 from app.core.security import InvalidAccessTokenError, decode_access_token
+from app.core.text import MESSAGE as UNSTORABLE_TEXT
+from app.core.text import unstorable
 from app.models import User
 from app.models.enums import STAFF_ROLES, UserRole
 from app.services import audit
@@ -173,3 +175,11 @@ class Pagination:
 
 
 PaginationDep = Annotated[Pagination, Depends()]
+
+
+async def storable_parameters(request: Request) -> None:
+    """Query and path parameters with a NUL character (``?q=%00``) are refused (see core.text)."""
+    if unstorable(list(request.query_params.multi_items())) or unstorable(
+        list(request.path_params.values())
+    ):
+        raise AppError(UNSTORABLE_TEXT, code="INVALID_CHARACTERS", status_code=422)
