@@ -122,3 +122,27 @@ async def test_reserved_books_report_when_they_are_expected_back(
 
     await customer.post(f"{API}/orders/{order['id']}/cancel")
     assert (await client.get(f"{API}/books/{reserved}")).json()["available_from"] is None
+
+
+async def test_books_suitable_for_a_childs_age(
+    client: AsyncClient, create_book: CreateBook
+) -> None:
+    for title, ages in [
+        ("Picture Book", "3+"),
+        ("Six Up", "6+"),
+        ("Range", "8-12"),
+        ("Teen", "14+"),
+        ("Unlabelled", ""),
+        ("Words", "12 лет"),
+    ]:
+        await create_book(title, age_range=ages)
+
+    async def titles(age: int) -> list[str]:
+        response = await client.get(f"{API}/books", params={"for_age": age, "sort": "title"})
+        assert response.status_code == 200, response.text
+        return [b["title"] for b in response.json()["items"]]
+
+    assert await titles(7) == ["Picture Book", "Six Up", "Unlabelled"]
+    assert await titles(12) == ["Picture Book", "Range", "Six Up", "Unlabelled", "Words"]
+    assert len(await titles(18)) == 6
+    assert (await client.get(f"{API}/books", params={"for_age": 19})).status_code == 422

@@ -5,6 +5,7 @@ import { BookDetailsModal } from '../components/BookDetailsModal';
 import { BookCard } from '../components/BookCard';
 import { BatchProgress } from '../components/BatchProgress';
 import { AuthorBanner, SelectedTags, SeriesBanner, SeriesFilter, TagFilter } from '../components/CatalogFilters';
+import { childAge, parseForAge } from '../utils/ages';
 import { useBookText } from '../utils/bookText';
 import { CatalogueShelves } from '../components/CatalogueShelves';
 import { Input } from '../components/ui/input';
@@ -20,6 +21,7 @@ import { booksApi } from '../../api/endpoints';
 import { ApiError, toApiError } from '../../api/errors';
 import { bookFromDto } from '../../api/mappers';
 import { useCatalog } from '../contexts/CatalogContext';
+import { useFamily } from '../contexts/FamilyContext';
 import { errorMessage } from '../utils/apiErrors';
 import type { BookListQuery } from '../../api/types';
 import { parseSeriesParam, parseTagParam } from '../utils/catalogLists';
@@ -91,6 +93,11 @@ export default function CustomerPortal() {
   const categoryFilter = parseCategory(params.get('category'));
   const ageFilter = params.get('age') || 'all';
   const availableOnly = params.get('available') === '1';
+  const forAge = parseForAge(params.get('for_age'));
+  const { children: kids } = useFamily();
+  const kidsWithAge = kids
+    .map((kid) => ({ ...kid, age: childAge(kid.birth_year) }))
+    .filter((kid): kid is typeof kid & { age: number } => kid.age !== null);
   const tagsParam = params.get('tags');
   const tagFilter = useMemo(() => parseTagParam(tagsParam), [tagsParam]);
   const tagKey = tagFilter.join(',');
@@ -172,6 +179,7 @@ export default function CustomerPortal() {
             q: urlQuery || undefined,
             category: categoryFilter === 'all' ? undefined : categoryFilter,
             age_range: ageFilter === 'all' ? undefined : ageFilter,
+            for_age: forAge ?? undefined,
             available: availableOnly ? true : undefined,
             tags: tagKey || undefined,
             series: seriesFilter ?? undefined,
@@ -192,7 +200,7 @@ export default function CustomerPortal() {
         if (requestRef.current === controller) setIsLoading(false);
       }
     },
-    [urlQuery, categoryFilter, ageFilter, availableOnly, tagKey, seriesFilter, languageFilter, authorFilter, sort],
+    [urlQuery, categoryFilter, ageFilter, forAge, availableOnly, tagKey, seriesFilter, languageFilter, authorFilter, sort],
   );
 
   // Reload from the first page when filters change or availability may have changed.
@@ -249,7 +257,7 @@ export default function CustomerPortal() {
   const closeLinkedBook = () => navigate({ pathname: '/', search: window.location.search });
   // The new arrivals shelf belongs to the plain catalogue, not to a search or a filter.
   const hasFilters = Boolean(
-    urlQuery || categoryFilter !== 'all' || ageFilter !== 'all' || availableOnly || tagFilter.length ||
+    urlQuery || categoryFilter !== 'all' || ageFilter !== 'all' || forAge !== null || availableOnly || tagFilter.length ||
       seriesFilter || authorFilter || languageFilter !== 'all',
   );
 
@@ -344,6 +352,28 @@ export default function CustomerPortal() {
 
           <div className="flex flex-wrap items-center justify-between gap-4 mt-4">
             <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+              {kidsWithAge.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2" role="group" aria-label={t('ages.forChild')}>
+                  <span className="text-sm">{t('ages.forChild')}</span>
+                  {kidsWithAge.map((kid) => (
+                    <Button
+                      key={kid.id}
+                      type="button"
+                      size="sm"
+                      variant={forAge === kid.age ? 'default' : 'outline'}
+                      aria-pressed={forAge === kid.age}
+                      onClick={() => updateParams({ for_age: forAge === kid.age ? null : String(kid.age) })}
+                    >
+                      {t('ages.childChip', { name: kid.name, age: kid.age })}
+                    </Button>
+                  ))}
+                </div>
+              )}
+              {forAge !== null && !kidsWithAge.some((kid) => kid.age === forAge) && (
+                <Button type="button" size="sm" variant="default" aria-pressed onClick={() => updateParams({ for_age: null })}>
+                  {t('ages.forAge', { age: forAge })} ×
+                </Button>
+              )}
               <div className="flex items-center gap-2">
                 <Switch id="available-only" checked={availableOnly} onCheckedChange={(checked) => updateParams({ available: checked ? '1' : null })} />
                 <Label htmlFor="available-only">{t('catalog.availableOnly')}</Label>

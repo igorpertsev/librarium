@@ -85,6 +85,7 @@ export async function createBook(
     tags?: string[];
     series_name?: string;
     series_position?: number;
+    age_range?: string;
     translations?: { language: 'en' | 'ru'; title: string; author?: string; description?: string }[];
   },
 ) {

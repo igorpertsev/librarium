@@ -1118,5 +1118,11 @@
     "notAllowed": "Notifications were not allowed",
     "blocked": "Notifications are blocked for this site; allow them in the browser settings to turn them on.",
     "failed": "Could not change notifications on this device"
+  },
+  "ages": {
+    "forChild": "Suitable for",
+    "childChip": "{{name}}, {{age}}",
+    "forAge": "Age {{age}}",
+    "olderReaders": "{{name}} is about {{age}}; these books are marked for older readers:"
   }
 }
