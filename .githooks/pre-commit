@@ -25,7 +25,7 @@ fi
 
 if ((${#py[@]})); then
   docker compose --profile dev run --rm --no-deps -T backend-dev sh -ec \
-    'ruff format --check "$@" && ruff check "$@"' ruff "${py[@]}" || {
+    'ruff format --check --force-exclude "$@" && ruff check --force-exclude "$@"' ruff "${py[@]}" || {
     echo "pre-commit: fix the Python issues above (ruff format / ruff check --fix in backend/)." >&2
     exit 1
   }

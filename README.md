@@ -121,6 +121,7 @@ Docker Compose and Vite read the root `.env` (template: `.env.example`). Filled-
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `APPLE_CLIENT_ID`, `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY`, `API_PUBLIC_URL` | empty | optional Google / Apple sign-in; callback base URL (default `APP_BASE_URL/api/v1`) |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME` | empty | optional Telegram bot for notifications |
 | `TELEGRAM_WEBHOOK_SECRET` | empty | optional webhook mode (32–256 letters, digits, `_`, `-`): Telegram posts updates to `/api/v1/telegram/webhook` instead of the notifier polling |
+| `WEB_PUSH_PUBLIC_KEY`, `WEB_PUSH_PRIVATE_KEY`, `WEB_PUSH_CONTACT` | empty | optional notifications on readers' devices (Web Push); keys from `python -m app.cli generate-vapid-keys` |
 | `MEDIA_DIR`, `MAX_COVER_BYTES` | `media`, `5242880` | where uploaded covers are kept (the `media` volume, `/app/media`, in Docker); upload limit |
 | `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_PREFIX` | — | with `S3_BUCKET` set, covers go to that S3-compatible bucket instead of `MEDIA_DIR` |
 | `MEDIA_PUBLIC_URL` | — | public address of the bucket or a CDN: `/media/...` redirects there (301); empty: the backend streams covers from a private bucket |
@@ -591,6 +592,15 @@ two copies of the same title are two records (ISBN is not unique).
   in `X-Telegram-Bot-Api-Secret-Token` (wrong or missing: 403; not set up: 404), the reply is immediate and the
   notifier stops polling; an update delivered twice is answered once. `python -m app.cli telegram-webhook
   set|delete|info` registers the webhook at `API_PUBLIC_URL/telegram/webhook`, removes it or shows its state.
+- **Notifications on this device** (optional, `WEB_PUSH_*`): the profile offers *Turn on* where the app runs with
+  its service worker (installed app or production site). The browser subscribes with the library's VAPID public key
+  (`GET /library/rules` → `web_push_key`) and `POST /users/me/push-subscriptions` stores its endpoint and keys
+  (`DELETE ...?endpoint=` removes it). Only the browsers' own push services are accepted as endpoints (FCM, Mozilla,
+  Apple, Windows), so a subscription cannot make the server call other addresses. The notifier sends every
+  notification to the reader's devices too, once (`push_sent_at`): encrypted for each browser (RFC 8291,
+  `aes128gcm`) and signed with the VAPID key (RFC 8292); a device the push service reports gone (404/410) is
+  forgotten, and the news counts as delivered when one device has it. `public/sw.js` shows it and opens the page
+  it is about.
 - **Notification bell**: the header shows the reader's news — the same events as the emails (`notifications`), even
   when an email could not be sent, except news that went stale before delivery. Opening the list marks it read
   (`read_at`); it refreshes every minute while the tab is visible. Notifications from before the bell existed

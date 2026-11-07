@@ -29,6 +29,7 @@ import { ExtendFromLink } from '../components/ExtendFromLink';
 import { AccountDataCard } from '../components/AccountDataCard';
 import { TwoStepCard } from '../components/TwoStepCard';
 import { FamilyCard } from '../components/FamilyCard';
+import { PushCard } from '../components/PushCard';
 import { TelegramCard } from '../components/TelegramCard';
 import { useBookText } from '../utils/bookText';
 import { coverOfSize } from '../utils/covers';
@@ -530,6 +531,7 @@ export default function Profile() {
         </DialogContent>
       </Dialog>
       <TelegramCard />
+      <PushCard />
       <TwoStepCard />
       <AccountDataCard />
       {confirmDialog}

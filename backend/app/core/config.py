@@ -117,6 +117,11 @@ class Settings(BaseSettings):
     # in X-Telegram-Bot-Api-Secret-Token, instead of the notifier polling getUpdates. Register it
     # with `python -m app.cli telegram-webhook set`.
     telegram_webhook_secret: SecretStr | None = None
+    # Web Push (optional): a VAPID key pair (`python -m app.cli generate-vapid-keys`) and a contact
+    # address push services can reach the library at (mailto:… or https://…).
+    web_push_public_key: str | None = None
+    web_push_private_key: SecretStr | None = None
+    web_push_contact: str | None = None
     max_cover_bytes: int = 5 * 1024 * 1024
     # Lifetime of the link in password reset emails.
     password_reset_expire_minutes: int = Field(default=60, ge=5, le=24 * 60)
@@ -174,6 +179,8 @@ class Settings(BaseSettings):
         "s3_bucket",
         "s3_access_key_id",
         "media_public_url",
+        "web_push_public_key",
+        "web_push_contact",
         mode="before",
     )
     @classmethod
@@ -187,6 +194,7 @@ class Settings(BaseSettings):
         "mfa_encryption_keys",
         "s3_secret_access_key",
         "telegram_webhook_secret",
+        "web_push_private_key",
         "seed_admin_password",
         "smtp_password",
         "sentry_dsn",
@@ -266,6 +274,21 @@ class Settings(BaseSettings):
         if secret is not None and not self.telegram_bot_token:
             raise ValueError("TELEGRAM_WEBHOOK_SECRET needs TELEGRAM_BOT_TOKEN")
         return self
+
+    @model_validator(mode="after")
+    def _validate_web_push(self) -> Settings:
+        values = (self.web_push_public_key, self.web_push_private_key, self.web_push_contact)
+        if any(v is not None for v in values) and not all(v is not None for v in values):
+            raise ValueError(
+                "Web Push needs WEB_PUSH_PUBLIC_KEY, WEB_PUSH_PRIVATE_KEY and WEB_PUSH_CONTACT"
+            )
+        if self.web_push_contact and not self.web_push_contact.startswith(("mailto:", "https://")):
+            raise ValueError("WEB_PUSH_CONTACT must be a mailto: or https:// address")
+        return self
+
+    @property
+    def web_push_enabled(self) -> bool:
+        return self.web_push_private_key is not None
 
     @model_validator(mode="after")
     def _validate_mfa_keys(self) -> Settings:

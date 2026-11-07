@@ -366,6 +366,30 @@ docker compose -f docker-compose.prod.yml exec backend python -m app.cli media-t
 Cover URLs do not change (`/media/covers/…`), so nothing else needs updating. `deploy/backup.sh` no
 longer archives covers then; keep the bucket safe with the provider's versioning or replication.
 
+## Notifications on readers' devices (optional)
+
+Readers who installed the app (or use the site over HTTPS) can get the library's news as phone or
+computer notifications. Generate a key pair once and put it into `.env` with a contact address the
+browsers' push services can reach you at:
+
+```bash
+docker compose -f docker-compose.prod.yml run --rm backend python -m app.cli generate-vapid-keys
+```
+
+```text
+WEB_PUSH_PUBLIC_KEY=…
+WEB_PUSH_PRIVATE_KEY=…
+WEB_PUSH_CONTACT=mailto:library@example.com
+```
+
+```bash
+docker compose -f docker-compose.prod.yml up -d
+```
+
+The profile then shows **Notifications on this device**. Messages go through the browsers' push
+services (Google, Mozilla, Apple, Microsoft), encrypted so that only the reader's device can read
+them. Keep the private key: a new key pair means every reader has to turn notifications on again.
+
 ## Sign in with Google or Apple (optional)
 
 **Google.** In Google Cloud Console → APIs & Services → Credentials, create an *OAuth client ID*

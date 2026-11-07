@@ -18,6 +18,8 @@ export interface LibraryRules {
   timezone: string;
   /** Username of the library's Telegram bot, when notifications can go there. */
   telegramBot: string | null;
+  /** VAPID public key for notifications on this device (null: push is not set up). */
+  webPushKey: string | null;
 }
 
 let cached: Promise<LibraryRules> | null = null;
@@ -35,6 +37,7 @@ function loadRules(): Promise<LibraryRules> {
       currency: dto.currency,
       timezone: dto.timezone,
       telegramBot: dto.telegram_bot ?? null,
+      webPushKey: dto.web_push_key ?? null,
     }))
     .catch((error: unknown) => {
       cached = null; // try again next time

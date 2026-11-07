@@ -22,13 +22,21 @@ from email.message import EmailMessage
 from email.utils import formataddr, make_msgid
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import func, select
+from sqlalchemy import ColumnElement, func, or_, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
 from app.core.exceptions import ConflictError
-from app.models import Book, BookHold, BookTranslation, Notification, Order, User
+from app.models import (
+    Book,
+    BookHold,
+    BookTranslation,
+    Notification,
+    Order,
+    PushSubscription,
+    User,
+)
 from app.models.enums import (
     BookStatus,
     NotificationKind,
@@ -40,6 +48,7 @@ from app.repositories import orders as orders_repo
 from app.repositories.books import reserved_book_ids
 from app.services.library_settings import get_library_settings
 from app.services.telegram import Bot, TelegramError
+from app.services.web_push import PushMessage, PushSender, has_subscriptions, send_to_user
 
 MAX_ATTEMPTS = 5
 MAX_AGE = timedelta(days=7)  # older queued messages are no longer useful
@@ -494,18 +503,43 @@ async def _to_telegram(
     return None
 
 
+def _push_link(notification: Notification, app_url: str) -> str:
+    if notification.book_id is not None:
+        return f"{app_url}/books/{notification.book_id}"
+    return f"{app_url}/profile"
+
+
+async def _to_push(
+    session: AsyncSession,
+    push: PushSender | None,
+    notification: Notification,
+    user: User,
+    message: tuple[str, str, str],
+    now: datetime,
+) -> str | None:
+    """Send it to the reader's browsers once (Web Push); returns an error message, if any."""
+    if push is None or notification.push_sent_at or not await has_subscriptions(session, user.id):
+        return None
+    title, body, url = message
+    error = await send_to_user(session, push, user.id, PushMessage(title, body, url), now)
+    if error is None:
+        notification.push_sent_at = now
+    return error
+
+
 async def deliver_pending(
     session: AsyncSession,
     settings: Settings,
     send: Sender | None,
     *,
     telegram: Bot | None = None,
+    push: PushSender | None = None,
     now: datetime | None = None,
     limit: int = 50,
 ) -> DeliveryReport:
-    """Send due notifications by email (and to linked Telegram chats). Without email
-    (``send`` is None) only readers with Telegram are served; the rest wait for SMTP.
-    SKIP LOCKED lets several workers run without double sends."""
+    """Send due notifications by email (and to linked Telegram chats and subscribed browsers).
+    Without email (``send`` is None) only readers with Telegram or push are served; the rest
+    wait for SMTP. SKIP LOCKED lets several workers run without double sends."""
     now = now or datetime.now(UTC)
     report = DeliveryReport()
     stmt = (
@@ -519,9 +553,12 @@ async def deliver_pending(
         .with_for_update(skip_locked=True, of=Notification)
     )
     if send is None:
-        stmt = stmt.join(User, User.id == Notification.user_id).where(
-            User.telegram_chat_id.is_not(None)
-        )
+        reachable: list[ColumnElement[bool]] = [User.telegram_chat_id.is_not(None)]
+        if push is not None:
+            reachable.append(
+                select(PushSubscription.id).where(PushSubscription.user_id == User.id).exists()
+            )
+        stmt = stmt.join(User, User.id == Notification.user_id).where(or_(*reachable))
     batch = (await session.scalars(stmt)).all()
     zone = ZoneInfo((await get_library_settings(session)).timezone if batch else "UTC")
 
@@ -542,9 +579,12 @@ async def deliver_pending(
         telegram_error = await _to_telegram(
             telegram, notification, user, f"{subject}\n\n{body}", now
         )
+        link = _push_link(notification, settings.app_base_url)
+        push_error = await _to_push(session, push, notification, user, (subject, body, link), now)
         if send is None:
-            if telegram_error:
-                _failed(notification, telegram_error, now, report)
+            # A channel that worked is not repeated on the retry (its *_sent_at is set).
+            if telegram_error or push_error:
+                _failed(notification, telegram_error or push_error or "", now, report)
             else:
                 notification.status = NotificationStatus.SENT
                 notification.sent_at = now
