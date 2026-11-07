@@ -914,5 +914,16 @@
     "upcoming_few": "{{count}} книги забронированы на будущее",
     "upcoming_many": "{{count}} книг забронировано на будущее",
     "upcoming_other": "{{count}} книги забронированы на будущее"
+  },
+  "inbox": {
+    "label": "Уведомления",
+    "labelUnread_one": "Уведомления: {{count}} новое",
+    "labelUnread_few": "Уведомления: {{count}} новых",
+    "labelUnread_many": "Уведомления: {{count}} новых",
+    "labelUnread_other": "Уведомления: {{count}} новых",
+    "title": "Уведомления",
+    "empty": "Пока ничего нового. Здесь появятся новости о ваших заказах и книгах.",
+    "new": "новое",
+    "kinds": {"order_received": "Мы получили вашу заявку №{{number}}", "order_confirmed": "Заказ №{{number}}: книги выданы", "order_cancelled": "Библиотека отменила заказ №{{number}}", "due_soon": "Заказ №{{number}}: скоро нужно вернуть книги", "overdue": "Заказ №{{number}} просрочен", "book_available": "«{{title}}» снова доступна", "book_held": "«{{title}}» отложена для вас", "reservation_ready": "«{{title}}», которую вы забронировали, готова"}
   }
 }

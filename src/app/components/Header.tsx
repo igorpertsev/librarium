@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
+import { NotificationBell } from './NotificationBell';
 import { ShoppingCart, User, LogOut, LogIn, UserPlus, LayoutDashboard, Settings, Menu } from 'lucide-react';
 import dragonLogo from '../../imports/dragon.webp';
 import { useTranslation } from 'react-i18next';
@@ -88,6 +89,7 @@ export function Header() {
                     </Badge>
                   )}
                 </Button>
+                <NotificationBell />
               </>
             )}
 
@@ -131,6 +133,7 @@ export function Header() {
                 )}
               </Button>
             )}
+            {user && <NotificationBell compact />}
             <Button variant="ghost" size="icon" onClick={() => setMenuOpen(true)} aria-label={t('nav.openMenu')}>
               <Menu className="w-5 h-5" />
             </Button>

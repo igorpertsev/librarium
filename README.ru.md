@@ -439,6 +439,11 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 ближайшие брони над списком заказов (`GET /admin/reservations`). Удаление аккаунта снимает его удержания и брони,
 а экземпляры переходят дальше.
 
+**Колокольчик уведомлений**: в шапке видны новости читателя — те же события, что и письма (`notifications`), даже
+если письмо не удалось отправить, кроме новостей, устаревших до отправки. Открытие списка отмечает их прочитанными
+(`read_at`); список обновляется раз в минуту, пока вкладка видна. Уведомления, появившиеся до колокольчика,
+считаются прочитанными.
+
 `POST /api/v1/orders` выполняется в одной транзакции (`app/services/orders.py`):
 
 1. `SELECT … FOR UPDATE` строки корзины (защита от двойного клика/двух вкладок);
@@ -508,6 +513,7 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 | GET `/users/me/recommendations` (книги по тегам взятых и отложенных) | полка «Вам может понравиться» | пользователь |
 | GET `/users/me/holds` · DELETE `/users/me/holds/{book_id}` | книги, отложенные для читателя; отказ | пользователь |
 | GET/POST `/users/me/reservations` · DELETE `/users/me/reservations/{id}` | бронь книги на дату; отмена | пользователь |
+| GET `/users/me/notifications` · POST `/users/me/notifications/read` (`{ids}` или пусто — все) | колокольчик: последние 30 новостей за 60 дней и число непрочитанных | пользователь |
 | GET/POST | `/admin/books`, GET `/admin/books/stats`, GET/PATCH/DELETE `/admin/books/{id}` | admin |
 | POST | `/admin/books/import` (CSV, всё или ничего, `dry_run`; `warnings` — строки, похожие на уже имеющиеся книги), GET `/admin/isbn/{isbn}` (данные из Open Library) | admin |
 | GET | `/admin/books/duplicates?isbn&title&author` (издания с тем же ISBN или с тем же названием и автором) | admin |

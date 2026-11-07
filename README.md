@@ -432,6 +432,10 @@ two copies of the same title are two records (ISBN is not unique).
   hold. Cancelling (`DELETE /users/me/reservations/{id}`) gives a set-aside copy to the readers waiting for it.
   Librarians see upcoming reservations above the order list (`GET /admin/reservations`). Deleting an account
   drops its holds and reservations and passes those copies on.
+- **Notification bell**: the header shows the reader's news — the same events as the emails (`notifications`), even
+  when an email could not be sent, except news that went stale before delivery. Opening the list marks it read
+  (`read_at`); it refreshes every minute while the tab is visible. Notifications from before the bell existed
+  count as read.
 
 `POST /api/v1/orders` runs in a single transaction (`app/services/orders.py`):
 
@@ -503,6 +507,7 @@ Differences (adapters in `src/api/mappers.ts`):
 | GET `/users/me/recommendations` (titles ranked by the tags of borrowed and saved ones) | “For you” shelf | signed-in user |
 | GET `/users/me/holds` · DELETE `/users/me/holds/{book_id}` | books held for the reader; give one up | signed-in user |
 | GET/POST `/users/me/reservations` · DELETE `/users/me/reservations/{id}` | reserve a title for a date; cancel | signed-in user |
+| GET `/users/me/notifications` · POST `/users/me/notifications/read` (`{ids}` or nothing for all) | the bell: latest 30 news items of the last 60 days and the unread count | signed-in user |
 | GET/POST | `/admin/books`, GET `/admin/books/stats`, GET/PATCH/DELETE `/admin/books/{id}` | admin |
 | POST | `/admin/books/import` (CSV, all or nothing, `dry_run`; `warnings` for rows that look like books already there), GET `/admin/isbn/{isbn}` (details from Open Library) | admin |
 | GET | `/admin/books/duplicates?isbn&title&author` (titles with the same ISBN, or the same title and author) | admin |

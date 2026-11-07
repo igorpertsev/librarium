@@ -858,5 +858,14 @@
     "description": "On the day, the book is held for you and we send you an email.",
     "upcoming_one": "{{count}} book reserved for later",
     "upcoming_other": "{{count}} books reserved for later"
+  },
+  "inbox": {
+    "label": "Notifications",
+    "labelUnread_one": "Notifications: {{count}} new",
+    "labelUnread_other": "Notifications: {{count}} new",
+    "title": "Notifications",
+    "empty": "Nothing new yet. News about your orders and books will appear here.",
+    "new": "new",
+    "kinds": {"order_received": "We received your request #{{number}}", "order_confirmed": "Order #{{number}}: your books have been handed over", "order_cancelled": "Order #{{number}} was cancelled by the library", "due_soon": "Order #{{number}}: please return the books soon", "overdue": "Order #{{number}} is overdue", "book_available": "“{{title}}” is available again", "book_held": "“{{title}}” is held for you", "reservation_ready": "“{{title}}”, which you reserved, is ready"}
   }
 }

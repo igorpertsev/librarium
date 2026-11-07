@@ -291,6 +291,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/users/me/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My Notifications
+         * @description The reader's latest news (up to 30 from the last 60 days), newest first, and how many are unread. The same events as the emails, even when an email could not be sent.
+         */
+        get: operations["my_notifications_api_v1_users_me_notifications_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/me/notifications/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark Notifications Read */
+        post: operations["mark_notifications_read_api_v1_users_me_notifications_read_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users/me/reservations": {
         parameters: {
             query?: never;
@@ -2073,6 +2110,35 @@ export interface components {
              */
             held_until: string;
         };
+        /** Inbox */
+        Inbox: {
+            /** Items */
+            items: components["schemas"]["InboxItem"][];
+            /** Unread */
+            unread: number;
+        };
+        /** InboxItem */
+        InboxItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            kind: components["schemas"]["NotificationKind"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Read */
+            read: boolean;
+            /** Order Id */
+            order_id: string | null;
+            /** Order Number */
+            order_number: number | null;
+            /** @description For news about a book (back, held, ready) */
+            book: components["schemas"]["BookBrief"] | null;
+        };
         /** LateFeeSettlement */
         LateFeeSettlement: {
             /**
@@ -2196,6 +2262,14 @@ export interface components {
             openlibrary_key: string | null;
             /** Position */
             position: number | null;
+        };
+        /** MarkRead */
+        MarkRead: {
+            /**
+             * Ids
+             * @description Leave out to mark everything read
+             */
+            ids?: string[] | null;
         };
         /** MergeInto */
         MergeInto: {
@@ -3791,6 +3865,75 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    my_notifications_api_v1_users_me_notifications_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Inbox"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    mark_notifications_read_api_v1_users_me_notifications_read_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["MarkRead"] | null;
+            };
+        };
         responses: {
             /** @description Successful Response */
             204: {

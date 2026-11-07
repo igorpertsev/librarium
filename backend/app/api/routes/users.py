@@ -11,9 +11,10 @@ from app.api.routes.auth import clear_refresh_cookie
 from app.schemas.book import BookRead
 from app.schemas.common import error_responses
 from app.schemas.hold import HeldBookRead
+from app.schemas.inbox import Inbox, MarkRead
 from app.schemas.reservation import ReservationCreate, ReservationRead
 from app.schemas.user import DeleteAccountRequest, UserRead, UserUpdate
-from app.services import account, holds, recommendations, reservations, series_reading
+from app.services import account, holds, inbox, recommendations, reservations, series_reading
 from app.services import users as users_service
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -73,6 +74,30 @@ async def my_holds(user: CurrentUser, session: SessionDep) -> list[HeldBookRead]
 )
 async def release_hold(book_id: uuid.UUID, user: CurrentUser, session: SessionDep) -> Response:
     await holds.release(session, user, book_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get(
+    "/me/notifications",
+    response_model=Inbox,
+    responses=error_responses(401),
+    description="The reader's latest news (up to 30 from the last 60 days), newest first, and "
+    "how many are unread. The same events as the emails, even when an email could not be sent.",
+)
+async def my_notifications(user: CurrentUser, session: SessionDep) -> Inbox:
+    return await inbox.inbox(session, user)
+
+
+@router.post(
+    "/me/notifications/read",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
+    responses=error_responses(401, 422),
+)
+async def mark_notifications_read(
+    user: CurrentUser, session: SessionDep, body: MarkRead | None = None
+) -> Response:
+    await inbox.mark_read(session, user, body.ids if body else None)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

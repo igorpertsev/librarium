@@ -18,6 +18,7 @@ import type {
   ChangePasswordDto,
   ForgotPasswordDto,
   HeldBookDto,
+  InboxDto,
   LibraryRulesDto,
   LibrarySettingsDto,
   LibrarySettingsUpdateDto,
@@ -90,6 +91,9 @@ export const usersApi = {
   releaseHold: (bookId: string) =>
     apiRequest<void>(`/users/me/holds/${id(bookId)}`, { method: 'DELETE' }),
   reservations: () => apiRequest<ReservationDto[]>('/users/me/reservations'),
+  notifications: () => apiRequest<InboxDto>('/users/me/notifications'),
+  markNotificationsRead: (ids?: string[]) =>
+    apiRequest<void>('/users/me/notifications/read', { method: 'POST', body: ids ? { ids } : undefined }),
   reserve: (bookId: string, startsOn: string) =>
     apiRequest<ReservationDto>('/users/me/reservations', {
       method: 'POST',
