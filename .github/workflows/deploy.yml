@@ -49,7 +49,7 @@ jobs:
             echo "::error::expected a commit id, got '$WANTED'"; exit 1
           fi
           echo "sha=$WANTED" >> "$GITHUB_OUTPUT"
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ steps.ref.outputs.sha }}
       - name: Deploy over SSH
@@ -74,7 +74,7 @@ jobs:
       name: production
       url: ${{ vars.SITE_URL }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.staging.outputs.ref }}
       - name: Deploy over SSH (backup first)
