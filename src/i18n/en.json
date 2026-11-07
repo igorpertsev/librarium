@@ -967,7 +967,11 @@
     "failed": "The camera could not be started. Type the ISBN below.",
     "found": "Found ISBN {{isbn}}",
     "type": "Or type the ISBN",
-    "use": "Use"
+    "use": "Use",
+    "labelTitle": "Scan a copy label",
+    "labelHint": "Hold the QR code on the label in front of the camera.",
+    "labelFound": "Label found",
+    "labelType": "Or paste the label link"
   },
   "stock": {
     "tab": "Stocktaking",
@@ -1251,5 +1255,31 @@
     "month": "Month",
     "byCategory": "Books lent by category (the period above)",
     "noLoans": "No books lent in this period."
+  },
+  "labels": {
+    "title": "Labels",
+    "hint": "One label per copy: phones open the book page, the scan desk finds the copy and its order.",
+    "back": "Back to the admin portal",
+    "print": "Print",
+    "printSelected": "Print labels",
+    "none": "No copies chosen: select books in the Books tab, then Print labels.",
+    "qrAlt": "QR code for {{title}}"
+  },
+  "desk": {
+    "tab": "Scan desk",
+    "scanField": "Scan or paste a label",
+    "look": "Look up",
+    "camera": "Scan with the camera",
+    "hint": "A barcode scanner types the label into the field; the camera reads the QR code.",
+    "notALabel": "That is not a copy label",
+    "onShelf": "On the shelf: not in any order.",
+    "waiting_one": "Ordered by {{name}} ({{count}} book), waiting to be handed over",
+    "waiting_other": "Ordered by {{name}} ({{count}} books), waiting to be handed over",
+    "handOver": "Hand over order #{{number}}",
+    "handedOver": "Order #{{number}} handed over",
+    "onLoan": "On loan to {{name}}, due {{date}}",
+    "takeBack": "Take back order #{{number}}",
+    "takenBack": "Order #{{number}} taken back",
+    "heldFor": "Held for {{name}} until {{date}}"
   }
 }

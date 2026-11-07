@@ -6560,6 +6560,85 @@
         }
       }
     },
+    "/api/v1/admin/copies/{book_id}/desk": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Copy At Desk",
+        "description": "For the scan desk: a copy and where it stands - the active order it is in (waiting to be handed over, or out on loan) and whom it is held for.",
+        "operationId": "admin_copy_at_desk_api_v1_admin_copies__book_id__desk_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeskCopyRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
     "/api/v1/admin/orders/{order_id}": {
       "get": {
         "tags": [
@@ -13460,6 +13539,120 @@
           "tags"
         ],
         "title": "DemandRead"
+      },
+      "DeskCopyRead": {
+        "properties": {
+          "book": {
+            "$ref": "#/components/schemas/BookRead"
+          },
+          "order": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DeskOrderRead"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The active order with this copy, if any"
+          },
+          "held_for": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Held For",
+            "description": "The reader it is held for, if any"
+          },
+          "held_until": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Held Until"
+          }
+        },
+        "type": "object",
+        "required": [
+          "book",
+          "order",
+          "held_for",
+          "held_until"
+        ],
+        "title": "DeskCopyRead"
+      },
+      "DeskOrderRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "number": {
+            "type": "integer",
+            "title": "Number"
+          },
+          "status": {
+            "$ref": "#/components/schemas/OrderStatus"
+          },
+          "reader_name": {
+            "type": "string",
+            "title": "Reader Name"
+          },
+          "child_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Child Name"
+          },
+          "due_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Due Date"
+          },
+          "pickup_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pickup At"
+          },
+          "book_count": {
+            "type": "integer",
+            "title": "Book Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "number",
+          "status",
+          "reader_name",
+          "child_name",
+          "due_date",
+          "pickup_at",
+          "book_count"
+        ],
+        "title": "DeskOrderRead"
       },
       "ErrorBody": {
         "properties": {

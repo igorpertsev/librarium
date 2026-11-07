@@ -80,6 +80,10 @@ export const router = createBrowserRouter([
                 index: true,
                 lazy: page(() => import('./pages/AdminPortal')),
               },
+              {
+                path: 'labels',
+                lazy: page(() => import('./pages/LabelsPage')),
+              },
             ],
           },
         ],

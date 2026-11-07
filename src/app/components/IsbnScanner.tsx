@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { isIsbn13 } from '../utils/isbn';
+import { copyIdFrom } from '../utils/labels';
 
 /** The browser's own barcode reader (Chrome, Edge, Android); not in TypeScript's DOM types. */
 interface DetectedBarcode {
@@ -24,7 +25,7 @@ const SAME_CODE_PAUSE_MS = 2500;
 type ScanError = 'denied' | 'noCamera' | 'failed';
 
 /**
- * Scans ISBN barcodes with the camera. With `continuous` it keeps scanning and reports every
+ * Scans ISBN barcodes (or, with mode "label", the QR labels of copies) with the camera. With `continuous` it keeps scanning and reports every
  * new code (stocktaking); otherwise it reports the first one and closes. An ISBN can also be
  * typed in, for books without a barcode or devices without a camera.
  */
@@ -33,12 +34,16 @@ export function IsbnScanner({
   onClose,
   onDetected,
   continuous = false,
+  mode = 'isbn',
 }: {
   open: boolean;
   onClose: () => void;
-  onDetected: (isbn: string) => void;
+  /** The ISBN, or in "label" mode the copy id read from its label. */
+  onDetected: (code: string) => void;
   continuous?: boolean;
+  mode?: 'isbn' | 'label';
 }) {
+  const labels = mode === 'label';
   const { t } = useTranslation();
   // The dialog mounts its content a moment after opening: start once the element exists.
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -70,8 +75,8 @@ export function IsbnScanner({
     setLast(null);
 
     const found = (raw: string) => {
-      const code = raw.replace(/\D/g, '');
-      if (stopped || !isIsbn13(code)) return;
+      const code = labels ? copyIdFrom(raw) : raw.replace(/\D/g, '');
+      if (stopped || !code || (!labels && !isIsbn13(code))) return;
       const now = Date.now();
       if (recent && recent.code === code && now - recent.at < SAME_CODE_PAUSE_MS) return;
       recent = { code, at: now };
@@ -84,8 +89,9 @@ export function IsbnScanner({
       const constraints: MediaStreamConstraints = { video: { facingMode: { ideal: 'environment' } }, audio: false };
       const Native = (window as unknown as { BarcodeDetector?: NativeBarcodeDetectorClass }).BarcodeDetector;
       try {
-        if (Native && (await Native.getSupportedFormats()).includes('ean_13')) {
-          const detector = new Native({ formats: ['ean_13'] });
+        const format = labels ? 'qr_code' : 'ean_13';
+        if (Native && (await Native.getSupportedFormats()).includes(format)) {
+          const detector = new Native({ formats: [format] });
           stream = await navigator.mediaDevices.getUserMedia(constraints);
           if (stopped) return;
           video.srcObject = stream;
@@ -97,8 +103,8 @@ export function IsbnScanner({
           }, SCAN_EVERY_MS);
         } else {
           // Other browsers: ZXing, loaded only when someone scans.
-          const { BrowserMultiFormatOneDReader } = await import('@zxing/browser');
-          const reader = new BrowserMultiFormatOneDReader();
+          const { BrowserMultiFormatOneDReader, BrowserQRCodeReader } = await import('@zxing/browser');
+          const reader = labels ? new BrowserQRCodeReader() : new BrowserMultiFormatOneDReader();
           const controls = await reader.decodeFromConstraints(constraints, video, (result) => {
             if (result) found(result.getText());
           });
@@ -118,11 +124,11 @@ export function IsbnScanner({
       stopZxing?.();
       stream?.getTracks().forEach((track) => track.stop());
     };
-  }, [open, continuous, mounted]);
+  }, [open, continuous, mounted, labels]);
 
   const submitTyped = () => {
-    const code = typed.replace(/[\s-]/g, '');
-    if (!isIsbn13(code) && !/^\d{9}[\dXx]$/.test(code)) return;
+    const code = labels ? copyIdFrom(typed) : typed.replace(/[\s-]/g, '');
+    if (!code || (!labels && !isIsbn13(code) && !/^\d{9}[\dXx]$/.test(code))) return;
     setTyped('');
     setLast(code);
     detectedRef.current(code);
@@ -133,8 +139,10 @@ export function IsbnScanner({
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{t('scanner.title')}</DialogTitle>
-          <DialogDescription>{t(continuous ? 'scanner.hintContinuous' : 'scanner.hint')}</DialogDescription>
+          <DialogTitle>{t(labels ? 'scanner.labelTitle' : 'scanner.title')}</DialogTitle>
+          <DialogDescription>
+            {t(labels ? 'scanner.labelHint' : continuous ? 'scanner.hintContinuous' : 'scanner.hint')}
+          </DialogDescription>
         </DialogHeader>
         <div className="relative overflow-hidden rounded-md bg-black aspect-video">
           <video ref={attachVideo} className="h-full w-full object-cover" muted playsInline aria-hidden="true" />
@@ -147,7 +155,7 @@ export function IsbnScanner({
         )}
         {last && (
           <p role="status" className="text-sm">
-            {t('scanner.found', { isbn: last })}
+            {labels ? t('scanner.labelFound') : t('scanner.found', { isbn: last })}
           </p>
         )}
         <form
@@ -158,8 +166,8 @@ export function IsbnScanner({
           }}
         >
           <div className="flex-1 space-y-1">
-            <Label htmlFor="typed-isbn">{t('scanner.type')}</Label>
-            <Input id="typed-isbn" inputMode="numeric" value={typed} onChange={(e) => setTyped(e.target.value)} />
+            <Label htmlFor="typed-isbn">{t(labels ? 'scanner.labelType' : 'scanner.type')}</Label>
+            <Input id="typed-isbn" inputMode={labels ? 'text' : 'numeric'} value={typed} onChange={(e) => setTyped(e.target.value)} />
           </div>
           <Button type="submit" variant="outline" disabled={!typed.trim()}>
             {t('scanner.use')}

@@ -42,6 +42,7 @@ import type {
   ChallengeDto,
   CategoryLoansDto,
   MonthStatsDto,
+  DeskCopyDto,
   BookPickDto,
   CollectionCreateDto,
   CollectionDto,
@@ -270,6 +271,9 @@ export const adminApi = {
   challengeParticipants: (challengeId: string) =>
     apiRequest<ChallengeParticipantDto[]>(`/admin/challenges/${challengeId}/participants`),
   listBooks: (query: AdminBookListQuery) => apiRequest<BookPageDto>('/admin/books', { query }),
+  getBook: (bookId: string) => apiRequest<BookDto>(`/admin/books/${id(bookId)}`),
+  copyAtDesk: (bookId: string) => apiRequest<DeskCopyDto>(`/admin/copies/${id(bookId)}/desk`),
+  getOrder: (orderId: string) => apiRequest<OrderDto>(`/admin/orders/${id(orderId)}`),
   bookStats: () => apiRequest<BookStatsDto>('/admin/books/stats'),
   bookQuality: () => apiRequest<QualitySummaryDto>('/admin/books/quality'),
   findDuplicates: (query: { isbn?: string; title?: string; author?: string }) =>

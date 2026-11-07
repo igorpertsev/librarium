@@ -647,6 +647,12 @@ two copies of the same title are two records (ISBN is not unique).
 - **Statistics**: the *Reports* tab charts books lent and returned and active and new readers per month (6, 12 or
   24 months, in the library's time zone, with the figures as a table and a CSV) and lists the books lent in the
   chosen period by category. The charts library loads only when the reports are opened.
+- **Labels and scan desk**: select books in the admin list and *Print labels*: a printable sheet
+  (`/admin/labels?ids=`) with one label per copy — a QR code of its book page (a phone camera opens the page), the
+  title, the author and the start of the copy id. The *Scan desk* tab reads a label (the camera, a USB barcode
+  scanner typing into its field, or a pasted link) and shows where the copy stands (`GET
+  /admin/copies/{id}/desk`): in an order waiting to be handed over (*Hand over order*), on loan (*Take back order*,
+  with the usual condition notes), held for a reader, or on the shelf.
 - **Notification bell**: the header shows the reader's news — the same events as the emails (`notifications`), even
   when an email could not be sent, except news that went stale before delivery. Opening the list marks it read
   (`read_at`); it refreshes every minute while the tab is visible. Notifications from before the bell existed
