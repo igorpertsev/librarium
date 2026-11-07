@@ -188,18 +188,18 @@ The application never calls `metadata.create_all()`.
 ## Tests, lint, typecheck
 
 **Everything CI checks, in one command** (`scripts/check.sh`): backend format, lint, types, migrations (on a
-throwaway database), tests, the API schema and generated types, then frontend lint, types, unit tests and build.
-It prints which checks failed and exits non-zero if any did.
+throwaway database), tests, the API schema and generated types, frontend lint, types, unit tests and build, and the
+secret and dependency scans. It prints which checks failed and exits non-zero if any did.
 
 ```bash
 pnpm check
 ```
 
-`pnpm check --fast` skips the slow parts (pytest, migrations, build); `--e2e` adds the browser tests; `--backend`
+`pnpm check --fast` skips the slow parts (pytest, migrations, build, scans); `--e2e` adds the browser tests; `--backend`
 or `--frontend` runs one half.
 
-**Git hooks** (`.githooks/`, opt-in): before a commit, ruff on the staged Python files and ESLint on the staged
-frontend files; before a push, `pnpm check`. `git commit --no-verify` / `git push --no-verify` skips them once.
+**Git hooks** (`.githooks/`, opt-in): before a commit, gitleaks on the staged changes, ruff on the staged Python
+files and ESLint on the staged frontend files; before a push, `pnpm check`. `git commit --no-verify` / `git push --no-verify` skips them once.
 
 ```bash
 pnpm hooks:install
@@ -267,14 +267,22 @@ Failed tests leave screenshots and traces in `test-results/` (`pnpm exec playwri
 The test session runs migrations `upgrade → downgrade base → upgrade`, truncates tables before each test and does
 not wrap tests in a transaction, so concurrent requests really go through separate database connections.
 
-**Continuous integration** (`.github/workflows/ci.yml`) runs on every pull request and on pushes to `main`:
+**Continuous integration** (`.github/workflows/ci.yml`) runs on every pull request, on pushes to `main` and every
+Monday (so newly published vulnerabilities show up; that run never deploys):
 
 - *Backend*: `ruff format --check`, `ruff check`, `mypy`, `alembic upgrade head` + `alembic check` + `downgrade base`,
   `pytest` against a PostgreSQL 16 service, and a check that `backend/openapi.json` matches the code.
 - *Frontend*: `pnpm install --frozen-lockfile`, a check that `src/api/generated/schema.d.ts` matches
   `backend/openapi.json`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`.
 - *Browser tests*: the e2e stack, Chromium and `pnpm e2e`; the Playwright report is uploaded when they fail.
-- *Production images*: `docker compose -f docker-compose.prod.yml build`.
+- *Secrets and dependencies*: gitleaks over the whole git history (reviewed false positives are in
+  `.gitleaksignore`) and Trivy over `backend/uv.lock` and `pnpm-lock.yaml`; a secret or a HIGH/CRITICAL
+  vulnerability that has a fix fails the build.
+- *Production images*: `docker compose -f docker-compose.prod.yml build --pull`, then a Trivy report of the backend,
+  web and PostgreSQL images in the job summary (report only: fixes in base images wait for upstream releases).
+
+The scanners (gitleaks v8.30.1, Trivy 0.76.1) are pinned in `ci.yml`, `scripts/check.sh` and `.githooks/pre-commit`;
+update all three together. The pre-commit hook also runs gitleaks on the staged changes.
 
 So after an API change, commit the exported `backend/openapi.json` and the regenerated types together.
 
