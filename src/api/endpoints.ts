@@ -40,6 +40,11 @@ import type {
   PickupPointDto,
   ChallengeCreateDto,
   ChallengeDto,
+  BookPickDto,
+  CollectionCreateDto,
+  CollectionDto,
+  CollectionSummaryDto,
+  CollectionUpdateDto,
   ChallengeParticipantDto,
   ChallengeUpdateDto,
   PickupPointUpdateDto,
@@ -224,10 +229,17 @@ export const purchasesApi = {
 };
 
 export const libraryApi = {
+  pick: () => apiRequest<BookPickDto | null>('/library/pick', { auth: false }),
   rules: () => apiRequest<LibraryRulesDto>('/library/rules', { auth: false }),
   pickupPoints: () => apiRequest<PickupPointDto[]>('/library/pickup-points', { auth: false }),
   pickupSlots: (pointId: string) =>
     apiRequest<PickupSlotDto[]>(`/library/pickup-points/${id(pointId)}/slots`, { auth: false }),
+};
+
+export const collectionsApi = {
+  list: (featured = false) =>
+    apiRequest<CollectionSummaryDto[]>(`/collections${featured ? '?featured=true' : ''}`, { auth: false }),
+  get: (slug: string) => apiRequest<CollectionDto>(`/collections/${encodeURIComponent(slug)}`, { auth: false }),
 };
 
 export const challengesApi = {
@@ -239,6 +251,15 @@ export const challengesApi = {
 };
 
 export const adminApi = {
+  createCollection: (body: CollectionCreateDto) => apiRequest<CollectionDto>('/admin/collections', { method: 'POST', body }),
+  updateCollection: (collectionId: string, body: CollectionUpdateDto) =>
+    apiRequest<CollectionSummaryDto>(`/admin/collections/${collectionId}`, { method: 'PATCH', body }),
+  deleteCollection: (collectionId: string) => apiRequest<void>(`/admin/collections/${collectionId}`, { method: 'DELETE' }),
+  setCollectionBooks: (collectionId: string, bookIds: string[]) =>
+    apiRequest<CollectionDto>(`/admin/collections/${collectionId}/books`, { method: 'PUT', body: { book_ids: bookIds } }),
+  setPick: (body: { book_id: string; note_en: string | null; note_ru: string | null }) =>
+    apiRequest<BookPickDto>('/admin/pick', { method: 'PUT', body }),
+  clearPick: () => apiRequest<void>('/admin/pick', { method: 'DELETE' }),
   listChallenges: () => apiRequest<ChallengeDto[]>('/admin/challenges'),
   createChallenge: (body: ChallengeCreateDto) => apiRequest<ChallengeDto>('/admin/challenges', { method: 'POST', body }),
   updateChallenge: (challengeId: string, body: ChallengeUpdateDto) =>

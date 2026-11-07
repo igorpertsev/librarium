@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router';
 import type { LucideIcon } from 'lucide-react';
 import { useCatalog } from '../contexts/CatalogContext';
 import type { Book } from '../types';
@@ -14,6 +16,7 @@ export function BookShelf({
   load,
   minimum = 3,
   reserve = false,
+  href,
 }: {
   id: string;
   title: string;
@@ -25,7 +28,10 @@ export function BookShelf({
   /** Keep the shelf's place while it loads, so the catalogue below does not jump (for a shelf
    * that is nearly always there). */
   reserve?: boolean;
+  /** A page with the whole list (a collection): the shelf links to it. */
+  href?: string;
 }) {
+  const { t } = useTranslation();
   const { version } = useCatalog();
   const textOf = useBookText();
   const [books, setBooks] = useState<Book[] | null>(null); // null: loading
@@ -45,10 +51,17 @@ export function BookShelf({
     if (!reserve) return null;
     return (
       <section aria-labelledby={id} aria-busy="true" className="mb-6">
-        <h2 id={id} className="flex items-center gap-2 text-lg mb-3">
-          <Icon className="w-5 h-5 text-primary" aria-hidden="true" />
-          {title}
-        </h2>
+        <div className="flex items-baseline justify-between gap-2 mb-3">
+          <h2 id={id} className="flex items-center gap-2 text-lg">
+            <Icon className="w-5 h-5 text-primary" aria-hidden="true" />
+            {title}
+          </h2>
+          {href && (
+            <Link to={href} className="text-sm text-primary underline-offset-2 hover:underline shrink-0">
+              {t('collections.seeAll')}
+            </Link>
+          )}
+        </div>
         <ul className="flex gap-4 overflow-hidden pb-2" aria-hidden="true">
           {Array.from({ length: 8 }, (_, i) => (
             <li key={i} className="shrink-0 w-28 sm:w-32">
@@ -64,10 +77,17 @@ export function BookShelf({
   if (books.length < minimum) return null;
   return (
     <section aria-labelledby={id} className="mb-6">
-      <h2 id={id} className="flex items-center gap-2 text-lg mb-3">
-        <Icon className="w-5 h-5 text-primary" aria-hidden="true" />
-        {title}
-      </h2>
+      <div className="flex items-baseline justify-between gap-2 mb-3">
+        <h2 id={id} className="flex items-center gap-2 text-lg">
+          <Icon className="w-5 h-5 text-primary" aria-hidden="true" />
+          {title}
+        </h2>
+        {href && (
+          <Link to={href} className="text-sm text-primary underline-offset-2 hover:underline shrink-0">
+            {t('collections.seeAll')}
+          </Link>
+        )}
+      </div>
       <ul className="flex gap-4 overflow-x-auto pb-2 snap-x">
         {books.map((book, index) => {
           const text = textOf(book);

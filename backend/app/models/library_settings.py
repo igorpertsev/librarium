@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 from decimal import Decimal
 
 import sqlalchemy as sa
@@ -49,6 +50,10 @@ class LibrarySettings(TimestampMixin, Base):
     timezone: Mapped[str] = mapped_column(sa.String(64), default="UTC", server_default="UTC")
     # Librarians and administrators must use two-step sign-in to open the admin portal.
     require_staff_mfa: Mapped[bool] = mapped_column(default=False, server_default=sa.false())
+    # Book of the month: a title (copy group) shown at the top of the catalogue, with a note.
+    pick_group_id: Mapped[uuid.UUID | None] = mapped_column(sa.Uuid)
+    pick_note_en: Mapped[str | None] = mapped_column(sa.String(500))
+    pick_note_ru: Mapped[str | None] = mapped_column(sa.String(500))
 
 
 DEFAULT_LIBRARY_SETTINGS = {
@@ -63,4 +68,7 @@ DEFAULT_LIBRARY_SETTINGS = {
     "late_fee_per_day": Decimal("0.00"),
     "timezone": "UTC",
     "require_staff_mfa": False,
+    "pick_group_id": None,
+    "pick_note_en": None,
+    "pick_note_ru": None,
 }

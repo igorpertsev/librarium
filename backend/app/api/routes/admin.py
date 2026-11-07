@@ -20,6 +20,7 @@ from app.api.dependencies import (
 )
 from app.api.routes.books import LanguageQuery, TagsQuery, tag_slugs
 from app.api.routes.challenges import challenge_read
+from app.api.routes.collections import read_of, summary_of
 from app.core.exceptions import BadRequestError, ConflictError
 from app.models.enums import (
     BookCategory,
@@ -62,6 +63,15 @@ from app.schemas.challenge import (
     ChallengeRead,
     ChallengeUpdate,
 )
+from app.schemas.collection import (
+    BookPick,
+    BookPickUpdate,
+    CollectionBooks,
+    CollectionCreate,
+    CollectionRead,
+    CollectionSummary,
+    CollectionUpdate,
+)
 from app.schemas.common import error_responses
 from app.schemas.library_settings import LibrarySettingsRead, LibrarySettingsUpdate
 from app.schemas.order import (
@@ -100,6 +110,7 @@ from app.services import (
     book_import,
     catalog,
     challenges,
+    collections,
     covers,
     duplicates,
     pickup,
@@ -957,3 +968,68 @@ async def admin_challenge_participants(
     """Who takes part and how far they are, most books first (to hand out prizes)."""
     found = await challenges.participants(session, challenge_id)
     return [ChallengeParticipant.model_validate(p, from_attributes=True) for p in found]
+
+
+# --- Collections and book of the month ----------------------------------------------------
+
+
+@router.post(
+    "/collections", response_model=CollectionRead, status_code=201, responses=error_responses(422)
+)
+async def admin_create_collection(
+    body: CollectionCreate, _: StaffUser, session: SessionDep
+) -> CollectionRead:
+    """A new, empty collection (its address is made unique if the slug is taken)."""
+    return read_of(await collections.create(session, body.model_dump()), [])
+
+
+@router.patch(
+    "/collections/{collection_id}",
+    response_model=CollectionSummary,
+    responses=error_responses(404, 409, 422),
+)
+async def admin_update_collection(
+    collection_id: uuid.UUID, body: CollectionUpdate, _: StaffUser, session: SessionDep
+) -> CollectionSummary:
+    collection = await collections.update(session, collection_id, body.changes())
+    books = (await collections.detail(session, collection.slug))[1]
+    return summary_of(collection, len(books))
+
+
+@router.delete(
+    "/collections/{collection_id}",
+    status_code=204,
+    response_class=Response,
+    responses=error_responses(404),
+)
+async def admin_delete_collection(
+    collection_id: uuid.UUID, _: StaffUser, session: SessionDep
+) -> Response:
+    await collections.remove(session, collection_id)
+    return Response(status_code=204)
+
+
+@router.put(
+    "/collections/{collection_id}/books",
+    response_model=CollectionRead,
+    responses=error_responses(404, 422),
+)
+async def admin_set_collection_books(
+    collection_id: uuid.UUID, body: CollectionBooks, _: StaffUser, session: SessionDep
+) -> CollectionRead:
+    """Replace the titles of a collection (in this order)."""
+    collection, books = await collections.set_books(session, collection_id, body.book_ids)
+    return read_of(collection, books)
+
+
+@router.put("/pick", response_model=BookPick, responses=error_responses(404, 422))
+async def admin_set_pick(body: BookPickUpdate, _: StaffUser, session: SessionDep) -> BookPick:
+    """Choose the book of the month (shown at the top of the catalogue)."""
+    chosen = await collections.set_pick(session, body.book_id, body.note_en, body.note_ru)
+    return BookPick.model_validate(chosen, from_attributes=True)
+
+
+@router.delete("/pick", status_code=204, response_class=Response)
+async def admin_clear_pick(_: StaffUser, session: SessionDep) -> Response:
+    await collections.clear_pick(session)
+    return Response(status_code=204)

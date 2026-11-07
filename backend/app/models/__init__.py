@@ -6,6 +6,7 @@ from app.models.book import Book
 from app.models.cart import Cart, CartItem
 from app.models.challenge import Challenge, ChallengeEntry
 from app.models.child import ChildProfile
+from app.models.collection import Collection, CollectionBook
 from app.models.hold import BookHold
 from app.models.identity import UserIdentity
 from app.models.library_settings import LibrarySettings
@@ -38,6 +39,8 @@ __all__ = [
     "Challenge",
     "ChallengeEntry",
     "ChildProfile",
+    "Collection",
+    "CollectionBook",
     "LibrarySettings",
     "Notification",
     "Order",

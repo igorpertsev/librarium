@@ -2508,6 +2508,108 @@
         }
       }
     },
+    "/api/v1/collections": {
+      "get": {
+        "tags": [
+          "collections"
+        ],
+        "summary": "List Collections",
+        "operationId": "list_collections_api_v1_collections_get",
+        "parameters": [
+          {
+            "name": "featured",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Only those shown on the catalogue",
+              "default": false,
+              "title": "Featured"
+            },
+            "description": "Only those shown on the catalogue"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CollectionSummary"
+                  },
+                  "title": "Response List Collections Api V1 Collections Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/collections/{slug}": {
+      "get": {
+        "tags": [
+          "collections"
+        ],
+        "summary": "Get Collection",
+        "operationId": "get_collection_api_v1_collections__slug__get",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 80,
+              "title": "Slug"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionRead"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
     "/api/v1/calendar/{token}.ics": {
       "get": {
         "tags": [
@@ -3981,6 +4083,36 @@
               }
             },
             "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/library/pick": {
+      "get": {
+        "tags": [
+          "library"
+        ],
+        "summary": "Book Of The Month",
+        "description": "The librarians' book of the month with its note (null: none chosen).",
+        "operationId": "book_of_the_month_api_v1_library_pick_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/BookPick"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Book Of The Month Api V1 Library Pick Get"
+                }
+              }
+            }
           }
         }
       }
@@ -9729,6 +9861,443 @@
           }
         }
       }
+    },
+    "/api/v1/admin/collections": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Create Collection",
+        "description": "A new, empty collection (its address is made unique if the slug is taken).",
+        "operationId": "admin_create_collection_api_v1_admin_collections_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectionCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/collections/{collection_id}": {
+      "patch": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Update Collection",
+        "operationId": "admin_update_collection_api_v1_admin_collections__collection_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "collection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Collection Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectionUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionSummary"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Delete Collection",
+        "operationId": "admin_delete_collection_api_v1_admin_collections__collection_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "collection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Collection Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/collections/{collection_id}/books": {
+      "put": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Set Collection Books",
+        "description": "Replace the titles of a collection (in this order).",
+        "operationId": "admin_set_collection_books_api_v1_admin_collections__collection_id__books_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "collection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Collection Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectionBooks"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/pick": {
+      "put": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Set Pick",
+        "description": "Choose the book of the month (shown at the top of the catalogue).",
+        "operationId": "admin_set_pick_api_v1_admin_pick_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BookPickUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookPick"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Clear Pick",
+        "operationId": "admin_clear_pick_api_v1_admin_pick_delete",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -10779,6 +11348,82 @@
           "page_size"
         ],
         "title": "BookPage"
+      },
+      "BookPick": {
+        "properties": {
+          "book": {
+            "$ref": "#/components/schemas/BookRead"
+          },
+          "note_en": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note En"
+          },
+          "note_ru": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note Ru"
+          }
+        },
+        "type": "object",
+        "required": [
+          "book",
+          "note_en",
+          "note_ru"
+        ],
+        "title": "BookPick"
+      },
+      "BookPickUpdate": {
+        "properties": {
+          "book_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Book Id",
+            "description": "Any copy of the title"
+          },
+          "note_en": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note En"
+          },
+          "note_ru": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note Ru"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "book_id"
+        ],
+        "title": "BookPickUpdate"
       },
       "BookRead": {
         "properties": {
@@ -12100,6 +12745,344 @@
         "type": "object",
         "title": "ChildUpdate"
       },
+      "CollectionBooks": {
+        "properties": {
+          "book_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Book Ids",
+            "description": "Any copy of each title, in order (a title counts once)"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "book_ids"
+        ],
+        "title": "CollectionBooks"
+      },
+      "CollectionCreate": {
+        "properties": {
+          "title_en": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title En"
+          },
+          "title_ru": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title Ru"
+          },
+          "description_en": {
+            "type": "string",
+            "maxLength": 5000,
+            "title": "Description En",
+            "default": ""
+          },
+          "description_ru": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Ru"
+          },
+          "slug": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9-]+$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slug",
+            "description": "Default: made from the English title"
+          },
+          "featured": {
+            "type": "boolean",
+            "title": "Featured",
+            "default": false
+          },
+          "position": {
+            "type": "integer",
+            "maximum": 1000.0,
+            "minimum": 0.0,
+            "title": "Position",
+            "description": "Lower comes first",
+            "default": 0
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "title_en"
+        ],
+        "title": "CollectionCreate"
+      },
+      "CollectionRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug",
+            "description": "Its page: /collections/<slug>"
+          },
+          "title_en": {
+            "type": "string",
+            "title": "Title En"
+          },
+          "title_ru": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title Ru"
+          },
+          "description_en": {
+            "type": "string",
+            "title": "Description En"
+          },
+          "description_ru": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Ru"
+          },
+          "featured": {
+            "type": "boolean",
+            "title": "Featured",
+            "description": "Shown as a shelf above the catalogue"
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          },
+          "book_count": {
+            "type": "integer",
+            "title": "Book Count"
+          },
+          "books": {
+            "items": {
+              "$ref": "#/components/schemas/BookRead"
+            },
+            "type": "array",
+            "title": "Books",
+            "description": "Its titles in the librarians' order"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "slug",
+          "title_en",
+          "title_ru",
+          "description_en",
+          "description_ru",
+          "featured",
+          "position",
+          "book_count",
+          "books"
+        ],
+        "title": "CollectionRead"
+      },
+      "CollectionSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug",
+            "description": "Its page: /collections/<slug>"
+          },
+          "title_en": {
+            "type": "string",
+            "title": "Title En"
+          },
+          "title_ru": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title Ru"
+          },
+          "description_en": {
+            "type": "string",
+            "title": "Description En"
+          },
+          "description_ru": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Ru"
+          },
+          "featured": {
+            "type": "boolean",
+            "title": "Featured",
+            "description": "Shown as a shelf above the catalogue"
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          },
+          "book_count": {
+            "type": "integer",
+            "title": "Book Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "slug",
+          "title_en",
+          "title_ru",
+          "description_en",
+          "description_ru",
+          "featured",
+          "position",
+          "book_count"
+        ],
+        "title": "CollectionSummary"
+      },
+      "CollectionUpdate": {
+        "properties": {
+          "title_en": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title En"
+          },
+          "title_ru": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title Ru"
+          },
+          "description_en": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description En"
+          },
+          "description_ru": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Ru"
+          },
+          "slug": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9-]+$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slug"
+          },
+          "featured": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Featured"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1000.0,
+                "minimum": 0.0,
+                "description": "Lower comes first"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "CollectionUpdate"
+      },
       "ContactMethod": {
         "type": "string",
         "enum": [
@@ -12493,6 +13476,12 @@
             "title": "Timezone",
             "description": "IANA time zone of opening hours and pickup slots"
           },
+          "has_pick": {
+            "type": "boolean",
+            "title": "Has Pick",
+            "description": "A book of the month is chosen (see /library/pick)",
+            "default": false
+          },
           "telegram_bot": {
             "anyOf": [
               {
@@ -12529,6 +13518,7 @@
           "block_overdue",
           "late_fee_per_day",
           "timezone",
+          "has_pick",
           "telegram_bot",
           "web_push_key"
         ],
@@ -12577,6 +13567,12 @@
             "title": "Timezone",
             "description": "IANA time zone of opening hours and pickup slots"
           },
+          "has_pick": {
+            "type": "boolean",
+            "title": "Has Pick",
+            "description": "A book of the month is chosen (see /library/pick)",
+            "default": false
+          },
           "telegram_bot": {
             "anyOf": [
               {
@@ -12623,6 +13619,7 @@
           "block_overdue",
           "late_fee_per_day",
           "timezone",
+          "has_pick",
           "telegram_bot",
           "web_push_key",
           "updated_at",
