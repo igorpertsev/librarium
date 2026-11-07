@@ -49,7 +49,11 @@ fi
 git fetch --quiet origin
 git -c advice.detachedHead=false checkout --quiet --detach "$ref"
 echo "$(date -u +%FT%TZ) deploying $(git log -1 --format='%h %s')"
+# Fresh base images every time, so security fixes in Python, Node, Caddy and PostgreSQL arrive:
+# --pull for the images built here, `pull` for the published ones (PostgreSQL).
+"${compose[@]}" build --pull
+"${compose[@]}" pull --ignore-buildable --quiet
 # --wait: returns once every service with a health check is healthy (or fails).
-"${compose[@]}" up -d --build --wait --wait-timeout 300
+"${compose[@]}" up -d --wait --wait-timeout 300
 docker image prune -f >/dev/null
 echo "$(date -u +%FT%TZ) running $(git rev-parse --short HEAD)"

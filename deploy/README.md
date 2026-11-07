@@ -368,8 +368,18 @@ commands" below).
 cd ~/librarium && deploy/backup.sh && git pull
 ```
 
+Rebuild with fresh base images and pull the newest PostgreSQL 16 image, so security fixes arrive too:
+
 ```bash
-docker compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.yml build --pull
+```
+
+```bash
+docker compose -f docker-compose.prod.yml pull --ignore-buildable
+```
+
+```bash
+docker compose -f docker-compose.prod.yml up -d
 ```
 
 ```bash
@@ -398,7 +408,8 @@ optionally with a commit id).
    ```
 
    The script only accepts a commit id, refuses to run over local changes, fetches, checks out
-   that commit, runs `docker compose … up -d --build --wait` and prunes old images.
+   that commit, rebuilds with fresh base images, pulls PostgreSQL, runs `docker compose … up -d --wait`
+   and prunes old images.
 3. **GitHub environments.** In the repository's *Settings → Environments* create `staging` and
    `production`; give `production` *Required reviewers*. In each, add the variables `SITE_URL`
    (`https://…`), `DEPLOY_HOST`, `DEPLOY_USER` (e.g. `ubuntu`), `DEPLOY_DIR`

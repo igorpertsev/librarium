@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Runs the same checks as CI (.github/workflows/ci.yml), so a push does not turn CI red.
 #
-#   scripts/check.sh            backend and frontend (everything but the browser tests)
-#   scripts/check.sh --fast     format, lint, types and unit tests only (no pytest, build, migrations)
+#   scripts/check.sh            backend, frontend and the security scans (all but browser tests)
+#   scripts/check.sh --fast     format, lint, types and unit tests only (no pytest, build,
+#                               migrations, scans)
 #   scripts/check.sh --e2e      also the browser tests, on the e2e stack
 #   scripts/check.sh --backend  or --frontend: only that half
 #
@@ -20,7 +21,7 @@ for arg in "$@"; do
     --backend) frontend=0 ;;
     --frontend) backend=0 ;;
     -h | --help)
-      sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'
+      sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     *)
@@ -98,6 +99,18 @@ if ((frontend)); then
   if ((!fast)); then
     step "Frontend build" pnpm -s build
   fi
+fi
+
+# Same scanner versions as the "Secrets and dependencies" job in ci.yml.
+gitleaks_image=ghcr.io/gitleaks/gitleaks:v8.30.1
+trivy_image=aquasec/trivy:0.76.1
+if ((!fast && backend && frontend)); then
+  step "Secrets in the history (gitleaks)" \
+    docker run --rm -v "$PWD:/repo:ro" "$gitleaks_image" git /repo --redact --no-banner --log-level warn
+  step "Known vulnerabilities in the lockfiles (Trivy)" \
+    docker run --rm -v "$PWD:/src:ro" -v librarium-trivy-cache:/root/.cache/trivy "$trivy_image" \
+    fs /src --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 --quiet \
+    --skip-dirs node_modules --skip-dirs dist
 fi
 
 if ((e2e)); then

@@ -183,18 +183,19 @@ docker compose --profile dev run --rm backend-dev alembic check
 ## Тесты, lint, typecheck
 
 **Всё, что проверяет CI, одной командой** (`scripts/check.sh`): формат, lint и типы backend, миграции (на временной
-БД), тесты, схема API и сгенерированные типы, затем lint, типы, unit-тесты и сборка frontend. В конце команда пишет,
+БД), тесты, схема API и сгенерированные типы, lint, типы, unit-тесты и сборка frontend, а также проверка секретов и
+уязвимостей в зависимостях. В конце команда пишет,
 какие проверки не прошли, и завершается с ошибкой, если такие есть.
 
 ```bash
 pnpm check
 ```
 
-`pnpm check --fast` пропускает долгое (pytest, миграции, сборку); `--e2e` добавляет браузерные тесты; `--backend`
+`pnpm check --fast` пропускает долгое (pytest, миграции, сборку, сканирование); `--e2e` добавляет браузерные тесты; `--backend`
 или `--frontend` запускает только одну половину.
 
-**Git-хуки** (`.githooks/`, включаются вручную): перед коммитом — ruff для изменённых Python-файлов и ESLint для
-изменённых файлов frontend; перед пушем — `pnpm check`. `git commit --no-verify` / `git push --no-verify` один раз
+**Git-хуки** (`.githooks/`, включаются вручную): перед коммитом — gitleaks для добавленных изменений, ruff для
+изменённых Python-файлов и ESLint для изменённых файлов frontend; перед пушем — `pnpm check`. `git commit --no-verify` / `git push --no-verify` один раз
 их пропускает.
 
 ```bash
@@ -263,14 +264,22 @@ pnpm e2e:stack:down
 Тесты прогоняют миграции `upgrade → downgrade base → upgrade`, перед каждым тестом очищают таблицы и не
 оборачивают тест в транзакцию — поэтому конкурентные запросы реально идут через разные соединения.
 
-**Непрерывная интеграция** (`.github/workflows/ci.yml`) запускается для каждого pull request и при push в `main`:
+**Непрерывная интеграция** (`.github/workflows/ci.yml`) запускается для каждого pull request, при push в `main` и по
+понедельникам (чтобы новые уязвимости находились и без коммитов; этот запуск ничего не деплоит):
 
 - *Backend*: `ruff format --check`, `ruff check`, `mypy`, `alembic upgrade head` + `alembic check` + `downgrade base`,
   `pytest` на сервисе PostgreSQL 16 и проверка, что `backend/openapi.json` соответствует коду.
 - *Frontend*: `pnpm install --frozen-lockfile`, проверка, что `src/api/generated/schema.d.ts` соответствует
   `backend/openapi.json`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`.
 - *Браузерные тесты*: e2e-стек, Chromium и `pnpm e2e`; при ошибке выгружается отчёт Playwright.
-- *Production-образы*: `docker compose -f docker-compose.prod.yml build`.
+- *Секреты и зависимости*: gitleaks по всей истории git (проверенные ложные срабатывания — в `.gitleaksignore`) и
+  Trivy по `backend/uv.lock` и `pnpm-lock.yaml`; найденный секрет или уязвимость HIGH/CRITICAL, для которой есть
+  исправление, роняют сборку.
+- *Production-образы*: `docker compose -f docker-compose.prod.yml build --pull`, затем отчёт Trivy по образам backend,
+  web и PostgreSQL в сводке задачи (только отчёт: исправления в базовых образах ждут новых выпусков от их авторов).
+
+Версии сканеров (gitleaks v8.30.1, Trivy 0.76.1) закреплены в `ci.yml`, `scripts/check.sh` и `.githooks/pre-commit`;
+обновляйте их вместе. Хук pre-commit также проверяет gitleaks изменения, добавленные в коммит.
 
 Поэтому после изменения API коммитьте экспортированный `backend/openapi.json` и перегенерированные типы вместе.
 
