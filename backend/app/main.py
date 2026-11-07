@@ -7,12 +7,16 @@ The schema is managed by Alembic only (``alembic upgrade head``); the app never 
 from __future__ import annotations
 
 import logging
+import mimetypes
 import time
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from starlette.types import Scope
 
 from app.api.router import API_PREFIX, api_router
 from app.core.config import Settings, get_settings
@@ -57,15 +61,8 @@ def _add_cors_and_caching(app: FastAPI, settings: Settings) -> None:
 
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or get_settings()
-    configure_logging(settings)
-    if init_sentry(settings):
-        logger.info("Error reporting to Sentry is enabled")
+    _configure_observability(settings)
     database = Database(settings)
-    if settings.jwt_secret_is_ephemeral:
-        logger.warning(
-            "JWT_SECRET_KEY is not set; using an ephemeral random secret. "
-            "All sessions are invalidated on restart. Set JWT_SECRET_KEY to persist them."
-        )
 
     # Outgoing HTTP (Open Library, Wikidata and Wikipedia lookups from the admin portal).
     http = make_http_client(settings)
@@ -162,7 +159,35 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return {"status": "ok"}
 
     app.include_router(api_router)
+    _mount_media(app, settings)
     return app
+
+
+def _configure_observability(settings: Settings) -> None:
+    configure_logging(settings)
+    if init_sentry(settings):
+        logger.info("Error reporting to Sentry is enabled")
+    if settings.jwt_secret_is_ephemeral:
+        logger.warning(
+            "JWT_SECRET_KEY is not set; using an ephemeral random secret. "
+            "All sessions are invalidated on restart. Set JWT_SECRET_KEY to persist them."
+        )
+
+
+def _mount_media(app: FastAPI, settings: Settings) -> None:
+    mimetypes.add_type("image/webp", ".webp")  # not known to every Python build
+    """Uploaded covers. Names are random and never reused, so browsers may keep them."""
+    Path(settings.media_dir, "covers").mkdir(parents=True, exist_ok=True)
+    app.mount("/media", MediaFiles(directory=settings.media_dir), name="media")
+
+
+class MediaFiles(StaticFiles):
+    async def get_response(self, path: str, scope: Scope) -> Response:
+        response = await super().get_response(path, scope)
+        if response.status_code == 200:
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        return response
 
 
 app = create_app()

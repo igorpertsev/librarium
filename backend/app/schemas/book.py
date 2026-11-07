@@ -16,15 +16,15 @@ from app.schemas.types import (
     AgeRange,
     AuthorName,
     Description,
-    HttpUrlStr,
+    ImageUrlStr,
     Isbn,
     LanguageCode,
-    OptionalHttpUrlStr,
+    OptionalImageUrlStr,
     OptionalShortNote,
     Title,
 )
 
-ImageUrls = Annotated[list[HttpUrlStr], Field(max_length=20)]
+ImageUrls = Annotated[list[ImageUrlStr], Field(max_length=20)]
 ConditionNote = OptionalShortNote
 PublicationYear = Annotated[int, Field(ge=0, le=9999)]
 
@@ -167,7 +167,7 @@ class BookCreate(RequestModel):
     status: BookStatus = BookStatus.AVAILABLE
     condition: CopyCondition = CopyCondition.GOOD
     condition_note: ConditionNote = None
-    cover_url: OptionalHttpUrlStr = None
+    cover_url: OptionalImageUrlStr = None
     image_urls: ImageUrls = Field(default_factory=list)
     isbn: Isbn = None
     language: LanguageCode = None
@@ -213,7 +213,7 @@ class BookUpdate(PatchModel):
     status: BookStatus | None = None
     condition: CopyCondition | None = None
     condition_note: ConditionNote = None
-    cover_url: OptionalHttpUrlStr = None
+    cover_url: OptionalImageUrlStr = None
     image_urls: ImageUrls | None = None
     isbn: Isbn = None
     language: LanguageCode = None

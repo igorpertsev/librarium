@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Textarea } from '../components/ui/textarea';
 import { Badge } from '../components/ui/badge';
-import { Plus, Pencil, Trash2, Users, BookOpen as BookOpenIcon, ClipboardList, CheckCircle2, RotateCcw, Clock, Star, ImageDown, BellRing, BarChart3, CopyPlus, Tags, ClipboardCheck, History, ListChecks, MapPin, MessageSquare, ScanBarcode } from 'lucide-react';
+import { Plus, Pencil, Trash2, Users, BookOpen as BookOpenIcon, ClipboardList, CheckCircle2, RotateCcw, Clock, Star, ImageDown, BellRing, BarChart3, CopyPlus, Tags, ClipboardCheck, History, ListChecks, MapPin, MessageSquare, ScanBarcode, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -746,7 +746,7 @@ export default function AdminPortal() {
             <DialogTitle>{t('admin.editBookTitle')}</DialogTitle>
             <DialogDescription>{t('admin.editBookDesc')}</DialogDescription>
           </DialogHeader>
-          <BookForm formData={formData} setFormData={setFormData} t={t} />
+          <BookForm formData={formData} setFormData={setFormData} t={t} bookId={editingBook?.id} onCoverUploaded={() => { invalidateCatalog(); loadBooks(currentPage); }} />
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>{t('admin.cancel')}</Button>
             <Button onClick={handleEditBook}>{t('admin.saveChanges')}</Button>
@@ -758,14 +758,33 @@ export default function AdminPortal() {
   );
 }
 
-function BookForm({ formData, setFormData, t, onAddCopy }: {
+function BookForm({ formData, setFormData, t, onAddCopy, bookId, onCoverUploaded }: {
   formData: BookFormValues;
   setFormData: Dispatch<SetStateAction<BookFormValues>>;
   t: TFunction;
   /** Only when adding: offer "add a copy" of a title that looks the same. */
   onAddCopy?: (book: Book) => void;
+  /** Only when editing: covers are uploaded straight to the saved book. */
+  bookId?: string;
+  onCoverUploaded?: () => void;
 }) {
   const [findingCover, setFindingCover] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
+
+  const uploadCover = async (file: File) => {
+    if (!bookId) return;
+    setUploadingCover(true);
+    const result = await runAction(() => adminApi.uploadCover(bookId, file));
+    setUploadingCover(false);
+    if (!result.ok) {
+      toast.error(errorMessage(t, result.error));
+      return;
+    }
+    const saved = bookFromDto(result.data);
+    setFormData((current) => ({ ...current, coverImage: saved.coverImage, images: saved.images ?? [saved.coverImage] }));
+    toast.success(t('cover.uploaded'));
+    onCoverUploaded?.();
+  };
 
   const [scanning, setScanning] = useState(false);
   const handleFindCover = async (isbn: string = formData.isbn ?? '') => {
@@ -968,7 +987,27 @@ function BookForm({ formData, setFormData, t, onAddCopy }: {
             <ImageDown className="w-4 h-4 mr-2" />
             {t('bookForm.lookupIsbn')}
           </Button>
+          {bookId && (
+            <Button type="button" variant="outline" disabled={uploadingCover} onClick={() => document.getElementById('cover-file')?.click()}>
+              <Upload className="w-4 h-4 mr-2" aria-hidden="true" />
+              {t('cover.upload')}
+            </Button>
+          )}
+          <input
+            id="cover-file"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="sr-only"
+            tabIndex={-1}
+            aria-hidden="true"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = '';
+              if (file) void uploadCover(file);
+            }}
+          />
         </div>
+        {bookId && <p className="text-xs text-muted-foreground">{t('cover.hint')}</p>}
         <p className="text-xs text-muted-foreground">{t('bookForm.lookupIsbnDesc')}</p>
         {formData.coverImage && (
           <img

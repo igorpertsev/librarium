@@ -117,6 +117,7 @@ Docker Compose and Vite read the root `.env` (template: `.env.example`). Filled-
 | `VITE_API_URL` | `http://localhost:8000/api/v1` | API base URL for the frontend |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_STARTTLS`, `SMTP_SSL`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `MAIL_FROM` | empty / `587` / `true` / `false` | outgoing email; empty `SMTP_HOST` disables sending |
 | `APP_BASE_URL`, `DUE_SOON_DAYS` | `http://localhost:5173`, `3` | links in emails; reminder lead time in days |
+| `MEDIA_DIR`, `MAX_COVER_BYTES` | `media`, `5242880` | where uploaded covers are kept (the `media` volume, `/app/media`, in Docker); upload limit |
 | `PASSWORD_RESET_EXPIRE_MINUTES` | `60` | lifetime of password reset links (5–1440) |
 | `ANTHROPIC_API_KEY`, `TRANSLATION_MODEL` | —, `claude-opus-5-5` | optional machine translation of book titles and descriptions when Wikidata and Wikipedia have none; without a key only those two are used |
 
@@ -441,6 +442,12 @@ two copies of the same title are two records (ISBN is not unique).
   hold. Cancelling (`DELETE /users/me/reservations/{id}`) gives a set-aside copy to the readers waiting for it.
   Librarians see upcoming reservations above the order list (`GET /admin/reservations`). Deleting an account
   drops its holds and reservations and passes those copies on.
+- **Cover upload**: *Upload cover* in the book form (when editing) takes a JPEG, PNG or WebP up to 5 MB
+  (`POST /admin/books/{id}/cover`, multipart `file`). Pillow decodes it (at most 40 megapixels), drops its metadata
+  and stores WebP renditions L/M/S (800/400/160 px high) as `media/covers/<random>-<size>.webp`; every copy of the
+  title gets `cover_url = /media/covers/<random>-L.webp`, and the previous upload is deleted. The backend serves
+  `/media` with long-lived cache headers (Caddy passes `/media/*` to it); the frontend loads the size it needs (S
+  in lists, M on cards, L in the dialog). Share previews use the full address (`APP_BASE_URL` + path).
 - **Stocktaking** (admin tab, staff): start a count, scan every book on the shelves (the ISBN scanner keeps
   scanning; typed ISBNs work too) or count books without an ISBN by hand (+1/−1). Copies are counted per title. A
   title is expected on the shelf with every active copy that is not out on loan and not marked *not available*.

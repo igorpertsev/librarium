@@ -80,6 +80,8 @@ services:
       context: ./backend
       target: runtime
     environment: *backend-env
+    volumes:
+      - media:/app/media
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -123,5 +125,6 @@ services:
 
 volumes:
   pgdata:
+  media:
   caddy_data:
   caddy_config:

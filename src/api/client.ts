@@ -61,15 +61,20 @@ function buildUrl(path: string, query?: RequestOptions['query']): string {
   return url.toString();
 }
 
+/** Origin of the backend, which also serves uploaded covers under /media. */
+export const API_ORIGIN = new URL(API_URL, window.location.origin).origin;
+
 async function send(path: string, options: RequestOptions): Promise<Response> {
   const headers: Record<string, string> = { Accept: 'application/json' };
-  if (options.body !== undefined) headers['Content-Type'] = 'application/json';
+  const isForm = options.body instanceof FormData;
+  // A FormData body (file upload) sets its own multipart Content-Type with the boundary.
+  if (options.body !== undefined && !isForm) headers['Content-Type'] = 'application/json';
   if (options.auth !== false && accessToken) headers.Authorization = `Bearer ${accessToken}`;
   try {
     return await fetch(buildUrl(path, options.query), {
       method: options.method ?? 'GET',
       headers,
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      body: options.body === undefined ? undefined : isForm ? (options.body as FormData) : JSON.stringify(options.body),
       credentials: 'include',
       signal: options.signal,
     });

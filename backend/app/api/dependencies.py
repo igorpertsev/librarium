@@ -125,7 +125,9 @@ async def audit_trail(
     FastAPI has already read the body (it is cached on the request); an endpoint that fails
     raises through the ``yield``, so nothing is recorded for it.
     """
-    body = await request.body() if request.method in AUDITED_METHODS else b""
+    # File uploads (multipart) are not copied into the log; only JSON bodies are.
+    is_json = request.headers.get("content-type", "").startswith("application/json")
+    body = await request.body() if request.method in AUDITED_METHODS and is_json else b""
     yield
     route = request.scope.get("route")
     name = getattr(route, "name", None) or request.url.path

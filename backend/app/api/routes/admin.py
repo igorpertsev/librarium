@@ -4,13 +4,14 @@ import uuid
 from datetime import UTC, date, datetime, timedelta
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Response, status
+from fastapi import APIRouter, Depends, Query, Response, UploadFile, status
 
 from app.api.dependencies import (
     AdminUser,
     OpenLibraryDep,
     PaginationDep,
     SessionDep,
+    SettingsDep,
     StaffUser,
     TranslationLookupDep,
     audit_trail,
@@ -83,6 +84,7 @@ from app.services import (
     audit,
     book_import,
     catalog,
+    covers,
     duplicates,
     pickup,
     reports,
@@ -284,6 +286,26 @@ async def admin_add_copies(
 )
 async def admin_bulk_update_books(body: BulkBookUpdate, session: SessionDep) -> BulkResult:
     return await books_service.bulk_update(session, body)
+
+
+@router.post(
+    "/books/{book_id}/cover",
+    response_model=BookRead,
+    responses=error_responses(400, 404, 413, 422),
+    description="Upload a cover (JPEG, PNG or WebP, at most 5 MB) for every copy of the title. "
+    "It is stored as WebP in three sizes; cover_url becomes /media/covers/<name>-L.webp.",
+)
+async def admin_upload_cover(
+    book_id: uuid.UUID, file: UploadFile, session: SessionDep, settings: SettingsDep
+) -> BookRead:
+    data = await file.read(settings.max_cover_bytes + 1)
+    return await covers.upload(
+        session,
+        book_id,
+        data,
+        media_dir=settings.media_dir,
+        max_bytes=settings.max_cover_bytes,
+    )
 
 
 @router.get("/books/{book_id}", response_model=BookRead, responses=error_responses(404, 422))

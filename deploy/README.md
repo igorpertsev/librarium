@@ -159,7 +159,9 @@ purpose; add real books in the admin portal. Customers register themselves on th
 ## 8. Backups
 
 `deploy/backup.sh` writes a compressed `pg_dump` to `~/librarium-backups` (override with
-`BACKUP_DIR`) and deletes dumps older than 14 days (`KEEP_DAYS`). Run it once by hand — this also
+`BACKUP_DIR`), next to it an archive of the uploaded book covers (`librarium-media-*.tar.gz`, the
+`media` volume), and deletes both after 14 days (`KEEP_DAYS`). To restore covers, unpack the archive
+into the volume: `docker compose -f docker-compose.prod.yml exec -T backend tar -xzf - -C /app < librarium-media-….tar.gz`. Run it once by hand — this also
 creates the directory — then schedule it:
 
 ```bash

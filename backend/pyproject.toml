@@ -17,6 +17,8 @@ dependencies = [
     "sentry-sdk>=2.20",
     "httpx>=0.28",
     "anthropic>=1",
+    "pillow>=12",
+    "python-multipart>=0.0.20",
 ]
 
 [dependency-groups]

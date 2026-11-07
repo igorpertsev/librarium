@@ -120,3 +120,23 @@ test('the librarian counts the shelves', async ({ page, request }) => {
   await expect(page.getByText('Count finished; 0 copies marked not available')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Start counting' })).toBeVisible();
 });
+
+// A 2×3 orange PNG.
+const PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAIAAAADCAIAAAA2iEnWAAAAFElEQVR4nGN8ViHHwMDAxMDAgKAAHVABgnMd1VcAAAAASUVORK5CYII=',
+  'base64',
+);
+
+test('the librarian uploads a cover for a book', async ({ page, request }) => {
+  const title = `Cover ${unique()}`;
+  await createBook(request, { title });
+  await signIn(page, ADMIN);
+  await page.goto('/admin');
+  await page.getByRole('row').filter({ hasText: title }).getByRole('button', { name: `Edit “${title}”` }).click();
+  const form = page.getByRole('dialog');
+  await form.locator('#cover-file').setInputFiles({ name: 'cover.png', mimeType: 'image/png', buffer: PNG });
+  await expect(page.getByText('Cover uploaded')).toBeVisible();
+  const preview = form.locator('img[src*="/media/covers/"]').first();
+  await expect(preview).toBeVisible();
+  await expect.poll(() => preview.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
+});

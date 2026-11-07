@@ -75,7 +75,12 @@ async def share_book(
         _page(
             title=f"{book.title} — {book.author}",
             description=description,
-            image=book.cover_url,
+            # Uploaded covers are stored as paths; previews need a full address.
+            image=(
+                f"{settings.app_base_url}{book.cover_url}"
+                if book.cover_url and book.cover_url.startswith("/")
+                else book.cover_url
+            ),
             url=url,
         )
     )

@@ -205,6 +205,11 @@ export const adminApi = {
     apiRequest<BookDto[]>(`/admin/books/${id(bookId)}/copies`, { method: 'POST', body: { count } }),
   createBook: (body: BookCreateDto) =>
     apiRequest<BookDto>('/admin/books', { method: 'POST', body }),
+  uploadCover: (bookId: string, file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    return apiRequest<BookDto>(`/admin/books/${id(bookId)}/cover`, { method: 'POST', body: form });
+  },
   bulkUpdateBooks: (body: BulkBookUpdateDto) =>
     apiRequest<BulkResultDto>('/admin/books/bulk', { method: 'POST', body }),
   updateBook: (bookId: string, body: BookUpdateDto) =>

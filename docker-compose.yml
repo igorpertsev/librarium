@@ -70,6 +70,8 @@ services:
       context: ./backend
       target: runtime
     environment: *backend-env
+    volumes:
+      - media:/app/media
     ports:
       - "127.0.0.1:${BACKEND_PORT:-8000}:8000"
     depends_on:
@@ -116,3 +118,4 @@ services:
 
 volumes:
   pgdata:
+  media:

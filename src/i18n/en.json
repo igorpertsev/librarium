@@ -392,7 +392,9 @@
     "invalidFinishedOn": "The day you finished a book cannot be in the future.",
     "stocktakeOpen": "A count is already open. Finish it first.",
     "stocktakeFinished": "This count is already finished.",
-    "invalidIsbn": "That is not an ISBN."
+    "invalidIsbn": "That is not an ISBN.",
+    "invalidImage": "That file is not a JPEG, PNG or WebP image.",
+    "imageTooLarge": "The image is too large (at most 5 MB)."
   },
   "checkout": {
     "title": "Confirm Order",
@@ -983,5 +985,10 @@
     "finishKeep": "The catalogue stays as it is; the report is kept.",
     "finished_one": "Count finished; {{count}} copy marked not available",
     "finished_other": "Count finished; {{count}} copies marked not available"
+  },
+  "cover": {
+    "upload": "Upload cover",
+    "hint": "JPEG, PNG or WebP, up to 5 MB. It is used for every copy of the title right away.",
+    "uploaded": "Cover uploaded"
   }
 }

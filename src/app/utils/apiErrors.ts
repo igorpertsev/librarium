@@ -53,6 +53,8 @@ const MESSAGE_KEYS: Record<string, string> = {
   STOCKTAKE_FINISHED: 'errors.stocktakeFinished',
   STOCKTAKE_NOT_FOUND: 'errors.notFound',
   INVALID_ISBN: 'errors.invalidIsbn',
+  INVALID_IMAGE: 'errors.invalidImage',
+  IMAGE_TOO_LARGE: 'errors.imageTooLarge',
 };
 
 /** Translated, user-facing message for an API error. */

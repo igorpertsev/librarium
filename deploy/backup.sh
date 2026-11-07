@@ -48,7 +48,14 @@ target="$BACKUP_DIR/librarium-$timestamp.dump"
 mv "$target.partial" "$target"
 chmod 600 "$target"
 
+# Uploaded book covers (the "media" volume), next to the database dump.
+media="$BACKUP_DIR/librarium-media-$timestamp.tar.gz"
+"${COMPOSE[@]}" exec -T backend tar -czf - -C /app media > "$media.partial"
+mv "$media.partial" "$media"
+chmod 600 "$media"
+
 find "$BACKUP_DIR" -name 'librarium-*.dump' -mtime +"$KEEP_DAYS" -delete
+find "$BACKUP_DIR" -name 'librarium-media-*.tar.gz' -mtime +"$KEEP_DAYS" -delete
 echo "$(date -u +%FT%TZ) backup written: $target ($(du -h "$target" | cut -f1))"
 
 if [[ -n "$RCLONE_REMOTE" ]]; then
@@ -58,6 +65,7 @@ if [[ -n "$RCLONE_REMOTE" ]]; then
       "$RCLONE_IMAGE" "$@"
   }
   rclone copy "/data/$(basename "$target")" "$RCLONE_REMOTE" --no-traverse
+  rclone copy "/data/$(basename "$media")" "$RCLONE_REMOTE" --no-traverse
   # Only old dumps written by this script are removed from the destination.
   rclone delete "$RCLONE_REMOTE" --include 'librarium-*.dump' --min-age "${REMOTE_KEEP_DAYS}d"
   echo "$(date -u +%FT%TZ) copied off-site to $RCLONE_REMOTE"
