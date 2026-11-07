@@ -18,6 +18,11 @@ import { coverOfSize } from '../utils/covers';
 import { useConfirm } from '../components/ConfirmDialog';
 import { useCatalog } from '../contexts/CatalogContext';
 import type { ActionResult } from '../../api/errors';
+import { PickupChooser } from '../components/PickupChooser';
+import { usePickupPoints } from '../utils/pickup';
+import type { PickupChoiceDto } from '../../api/types';
+
+const PICKUP_ERRORS = new Set(['PICKUP_REQUIRED', 'INVALID_PICKUP_SLOT', 'PICKUP_SLOT_FULL', 'PICKUP_POINT_NOT_FOUND']);
 
 export default function Cart() {
   const { t } = useTranslation();
@@ -41,6 +46,10 @@ export default function Cart() {
   const [showCheckoutDialog, setShowCheckoutDialog] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const pickupPoints = usePickupPoints();
+  const [pickupChoice, setPickupChoice] = useState<PickupChoiceDto | null>(null);
+  const [slotsVersion, setSlotsVersion] = useState(0);
+  const pickupRequired = (pickupPoints?.length ?? 0) > 0;
   const navigate = useNavigate();
 
   const reportFailure = (result: ActionResult) => {
@@ -68,8 +77,15 @@ export default function Cart() {
     if (!user || submitting) return;
     setSubmitting(true);
     // The server builds the order from its copy of the cart and computes the total.
-    const result = await placeOrder();
+    const result = await placeOrder(pickupRequired && pickupChoice ? pickupChoice : undefined);
     setSubmitting(false);
+    if (!result.ok && PICKUP_ERRORS.has(result.error.code)) {
+      // The slot filled up or went away: keep the dialog open and show fresh slots.
+      toast.error(errorMessage(t, result.error));
+      setPickupChoice(null);
+      setSlotsVersion((v) => v + 1);
+      return;
+    }
     if (!result.ok) {
       // 409 BOOK_UNAVAILABLE: nothing was created; show which books and resync.
       setShowCheckoutDialog(false);
@@ -85,6 +101,7 @@ export default function Cart() {
       refreshCart();
       setShowCheckoutDialog(false);
       setOrderComplete(false);
+      setPickupChoice(null);
       toast.success(t('cart.checkoutSuccess'));
       navigate('/');
     }, 2000);
@@ -314,7 +331,7 @@ export default function Cart() {
       </div>
 
       <Dialog open={showCheckoutDialog} onOpenChange={setShowCheckoutDialog}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           {!orderComplete ? (
             <>
               <DialogHeader>
@@ -339,12 +356,25 @@ export default function Cart() {
                     <span>{money(totalPrice, currency)}</span>
                   </div>
                 </div>
+                {pickupPoints === null ? (
+                  <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
+                ) : pickupRequired ? (
+                  <PickupChooser
+                    points={pickupPoints}
+                    value={pickupChoice}
+                    onChange={setPickupChoice}
+                    reloadKey={slotsVersion}
+                  />
+                ) : null}
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setShowCheckoutDialog(false)}>
                   {t('common.cancel')}
                 </Button>
-                <Button onClick={confirmCheckout} disabled={submitting}>
+                <Button
+                  onClick={confirmCheckout}
+                  disabled={submitting || pickupPoints === null || (pickupRequired && !pickupChoice)}
+                >
                   {t('checkout.placeOrder')}
                 </Button>
               </DialogFooter>

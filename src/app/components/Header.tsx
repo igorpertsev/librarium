@@ -3,7 +3,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { ShoppingCart, User, LogOut, LayoutDashboard, Settings, Menu } from 'lucide-react';
+import { NotificationBell } from './NotificationBell';
+import { ShoppingCart, User, LogOut, LogIn, UserPlus, LayoutDashboard, Settings, Menu } from 'lucide-react';
 import dragonLogo from '../../imports/dragon.webp';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
@@ -32,8 +33,15 @@ export function Header() {
   };
   const mobileItems = [
     ...(user?.role === 'admin' ? [{ label: t('nav.admin'), icon: LayoutDashboard, onClick: () => go('/admin') }] : []),
-    { label: t('nav.myBooks'), icon: User, onClick: () => go('/profile') },
-    { label: t('nav.cart'), icon: ShoppingCart, onClick: () => go('/cart'), badge: totalBooks },
+    ...(user
+      ? [
+          { label: t('nav.myBooks'), icon: User, onClick: () => go('/profile') },
+          { label: t('nav.cart'), icon: ShoppingCart, onClick: () => go('/cart'), badge: totalBooks },
+        ]
+      : [
+          { label: t('nav.signIn'), icon: LogIn, onClick: () => go('/login') },
+          { label: t('nav.register'), icon: UserPlus, onClick: () => go('/register') },
+        ]),
     {
       label: t('userMenu.settings'),
       icon: Settings,
@@ -65,46 +73,67 @@ export function Header() {
               </Button>
             )}
 
-            <Button variant="ghost" onClick={() => navigate('/profile')}>
-              <User className="w-4 h-4 mr-2" />
-              {t('nav.myBooks')}
-            </Button>
+            {user && (
+              <>
+                <Button variant="ghost" onClick={() => navigate('/profile')}>
+                  <User className="w-4 h-4 mr-2" />
+                  {t('nav.myBooks')}
+                </Button>
 
-            <Button variant="ghost" onClick={() => navigate('/cart')} className="relative">
-              <ShoppingCart className="w-4 h-4 mr-2" />
-              {t('nav.cart')}
-              {totalBooks > 0 && (
-                <Badge className="ml-2 px-2 py-0.5 text-xs">
-                  {totalBooks}
-                </Badge>
-              )}
-            </Button>
+                <Button variant="ghost" onClick={() => navigate('/cart')} className="relative">
+                  <ShoppingCart className="w-4 h-4 mr-2" />
+                  {t('nav.cart')}
+                  {totalBooks > 0 && (
+                    <Badge className="ml-2 px-2 py-0.5 text-xs">
+                      {totalBooks}
+                    </Badge>
+                  )}
+                </Button>
+                <NotificationBell />
+              </>
+            )}
 
             <Button variant="ghost" onClick={() => setSettingsOpen(true)}>
               <Settings className="w-4 h-4 mr-2" />
               {t('userMenu.settings')}
             </Button>
 
-            <Button variant="outline" onClick={handleLogout}>
-              <LogOut className="w-4 h-4 mr-2" />
-              {t('nav.logout')}
-            </Button>
+            {user ? (
+              <Button variant="outline" onClick={handleLogout}>
+                <LogOut className="w-4 h-4 mr-2" />
+                {t('nav.logout')}
+              </Button>
+            ) : (
+              <>
+                <Button variant="outline" onClick={() => navigate('/register')}>
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  {t('nav.register')}
+                </Button>
+                <Button onClick={() => navigate('/login')}>
+                  <LogIn className="w-4 h-4 mr-2" />
+                  {t('nav.signIn')}
+                </Button>
+              </>
+            )}
           </nav>
 
           {/* Small screens: cart shortcut + menu */}
           <div className="flex md:hidden items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => go('/cart')}
-              aria-label={t('nav.cart')}
-              className="relative"
-            >
-              <ShoppingCart className="w-5 h-5" />
-              {totalBooks > 0 && (
-                <Badge className="absolute -top-1 -right-1 px-1.5 py-0 text-[10px]">{totalBooks}</Badge>
-              )}
-            </Button>
+            {user && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => go('/cart')}
+                aria-label={t('nav.cart')}
+                className="relative"
+              >
+                <ShoppingCart className="w-5 h-5" />
+                {totalBooks > 0 && (
+                  <Badge className="absolute -top-1 -right-1 px-1.5 py-0 text-[10px]">{totalBooks}</Badge>
+                )}
+              </Button>
+            )}
+            {user && <NotificationBell compact />}
             <Button variant="ghost" size="icon" onClick={() => setMenuOpen(true)} aria-label={t('nav.openMenu')}>
               <Menu className="w-5 h-5" />
             </Button>
@@ -126,17 +155,19 @@ export function Header() {
                 {badge ? <Badge className="ml-auto px-2 py-0.5 text-xs">{badge}</Badge> : null}
               </Button>
             ))}
-            <Button
-              variant="outline"
-              className="justify-start mt-4"
-              onClick={() => {
-                setMenuOpen(false);
-                handleLogout();
-              }}
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              {t('nav.logout')}
-            </Button>
+            {user && (
+              <Button
+                variant="outline"
+                className="justify-start mt-4"
+                onClick={() => {
+                  setMenuOpen(false);
+                  handleLogout();
+                }}
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                {t('nav.logout')}
+              </Button>
+            )}
           </nav>
         </SheetContent>
       </Sheet>

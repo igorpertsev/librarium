@@ -29,6 +29,30 @@ export function daysUntil(value: string | Date): number {
   return Math.round((target.getTime() - start.getTime()) / DAY_MS);
 }
 
+function zonedFormat(locale: string, timeZone: string) {
+  const make = (options: Intl.DateTimeFormatOptions, inLocale = locale) => {
+    try {
+      return new Intl.DateTimeFormat(inLocale, { ...options, timeZone });
+    } catch {
+      return new Intl.DateTimeFormat(inLocale, options); // unknown time zone
+    }
+  };
+  const day = make({ weekday: 'short', day: 'numeric', month: 'short' });
+  const time = make({ hour: 'numeric', minute: '2-digit' });
+  const key = make({ year: 'numeric', month: '2-digit', day: '2-digit' }, 'en-CA');
+  const at = (value: string) => new Date(value);
+  return {
+    /** "Mon, 9 Nov" */
+    day: (value: string) => day.format(at(value)),
+    /** "10:00" */
+    time: (value: string) => time.format(at(value)),
+    /** "2026-11-09": groups moments by calendar day in that zone. */
+    dayKey: (value: string) => key.format(at(value)),
+    /** "Mon, 9 Nov, 10:00" */
+    dateTime: (value: string) => `${day.format(at(value))}, ${time.format(at(value))}`,
+  };
+}
+
 /** Money and date formatters for the current UI language. */
 export function useFormat() {
   const { i18n } = useTranslation();
@@ -37,6 +61,7 @@ export function useFormat() {
 
   return useMemo(() => {
     const dateFormat = new Intl.DateTimeFormat(locale, { dateStyle: 'medium' });
+    const dateTimeFormat = new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' });
     const moneyFormat = (currency: string, extra: Intl.NumberFormatOptions = {}) => {
       try {
         return new Intl.NumberFormat(locale, { style: 'currency', currency, ...extra });
@@ -56,6 +81,10 @@ export function useFormat() {
         const date = value ? parseDate(value) : null;
         return date ? dateFormat.format(date) : '—';
       },
+      /** Formatters for moments in another time zone (the library's), e.g. pickup slots. */
+      zoned: (timeZone: string) => zonedFormat(locale, timeZone),
+      /** A moment (ISO timestamp) in the reader's time zone, e.g. "8 Nov 2026, 14:30". */
+      dateTime: (value: string | Date) => dateTimeFormat.format(typeof value === 'string' ? new Date(value) : value),
     };
   }, [locale]);
 }

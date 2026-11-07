@@ -28,6 +28,8 @@ const MESSAGE_KEYS: Record<string, string> = {
   NOT_FOUND: 'errors.notFound',
   TAG_NOT_FOUND: 'errors.tagNotFound',
   ACTIVE_ORDERS: 'errors.activeOrders',
+  NOT_BORROWED: 'errors.notBorrowed',
+  REVIEW_NOT_FOUND: 'errors.notFound',
   ADMIN_ACCOUNT: 'errors.adminAccount',
   TAG_EXISTS: 'errors.tagExists',
   TAG_SLUG: 'errors.tagSlug',
@@ -35,6 +37,18 @@ const MESSAGE_KEYS: Record<string, string> = {
   SERIES_NOT_FOUND: 'errors.seriesNotFound',
   SERIES_EXISTS: 'errors.seriesExists',
   SAME_SERIES: 'errors.sameMergeTarget',
+  NO_LATE_FEE: 'errors.noLateFee',
+  PICKUP_REQUIRED: 'errors.pickupRequired',
+  INVALID_PICKUP_SLOT: 'errors.invalidPickupSlot',
+  PICKUP_SLOT_FULL: 'errors.pickupSlotFull',
+  PICKUP_POINT_NOT_FOUND: 'errors.pickupPointNotFound',
+  PICKUP_POINT_IN_USE: 'errors.pickupPointInUse',
+  NO_COPY_FOR_DATE: 'errors.noCopyForDate',
+  ALREADY_RESERVED: 'errors.alreadyReserved',
+  TOO_MANY_RESERVATIONS: 'errors.tooManyReservations',
+  INVALID_RESERVATION_DATE: 'errors.invalidReservationDate',
+  RESERVATION_NOT_FOUND: 'errors.notFound',
+  INVALID_FINISHED_ON: 'errors.invalidFinishedOn',
 };
 
 /** Translated, user-facing message for an API error. */
@@ -62,6 +76,10 @@ export function errorMessage(t: TFunction, error: ApiError): string {
   if (error.code === 'INCOMPLETE_BATCH') {
     const count = Number(error.details?.books_per_batch ?? 0);
     return t('errors.incompleteBatch', { count });
+  }
+  if (error.code === 'OVERDUE_LOANS') {
+    const orders = Array.isArray(error.details?.orders) ? error.details.orders.map((n) => `#${n}`).join(', ') : '';
+    return t('errors.overdueLoans', { orders });
   }
   if (error.code === 'UNKNOWN_TAGS') {
     const tags = Array.isArray(error.details?.tags) ? error.details.tags.join(', ') : '';

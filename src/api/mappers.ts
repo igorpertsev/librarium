@@ -274,6 +274,10 @@ export function orderFromDto(dto: OrderDto): Order {
     confirmedAt: dto.confirmed_at ?? undefined,
     returnedAt: dto.returned_at ?? undefined,
     cancelledAt: dto.cancelled_at ?? undefined,
+    lateFee: dto.late_fee != null ? toMoney(dto.late_fee) : undefined,
+    lateFeeSettledAt: dto.late_fee_settled_at ?? undefined,
+    pickup: dto.pickup_point ?? undefined,
+    pickupAt: dto.pickup_at ?? undefined,
     contacts: {
       whatsapp: dto.contact_whatsapp ?? undefined,
       telegram: dto.contact_telegram ?? undefined,

@@ -41,7 +41,7 @@ export function hasAccessToken(): boolean {
 type QueryValue = string | number | boolean | null | undefined;
 
 export interface RequestOptions {
-  method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   body?: unknown;
   query?: Record<string, QueryValue> | object;
   /** Attach the bearer token and refresh on 401 (default true). */

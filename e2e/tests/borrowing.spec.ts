@@ -35,6 +35,13 @@ test('a reader borrows a batch; the library hands it over and takes it back', as
   const orderNumber = `#${(await placed.json()).number}`;
   await expect(page.getByText('Order Placed!')).toBeVisible();
 
+  // The bell has the news; opening it marks it read.
+  const bell = page.getByRole('button', { name: 'Notifications: 1 new' });
+  await bell.click();
+  await expect(page.getByRole('dialog', { name: 'Notifications' })).toContainText(`We received your request ${orderNumber}`);
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: 'Notifications', exact: true })).toBeVisible();
+
   await page.getByRole('button', { name: 'My Books' }).click();
   await expect(page.getByText(orderNumber)).toBeVisible();
 

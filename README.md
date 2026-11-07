@@ -383,6 +383,9 @@ two copies of the same title are two records (ISBN is not unique).
   Anthropic's recommended model). `python -m app.cli translate-books --to ru [--no-machine] [--limit 50]` does the
   same for titles without a translation (pausing 1 s between titles); review the results in the admin portal.
   Fantlab is not used: its API documentation states no terms for reusing its user-written texts.
+- **Open catalogue**: the catalogue and book pages (`/books/<id>`, opening the book over the catalogue) need no
+  account; the cart, profile and admin portal do. A visitor's "Sign in to borrow" comes back to the same page after
+  signing in. Link-preview bots get a page with the book's title, description and cover (`/share/books/{id}`).
 - The cart is not a reservation: the same book can sit in several users' carts; adding it checks
   availability, but the decisive check happens at checkout.
 - Pricing is per **batch**: `price_per_batch` for every complete set of `books_per_batch` books (library
@@ -399,6 +402,45 @@ two copies of the same title are two records (ISBN is not unique).
   `book_available` email (through the notification outbox) and their entries are removed; the first to order
   gets it. The email is dropped if the book is taken again before it is sent. While someone waits for a book,
   its borrower cannot extend the loan (`details.reason = requested_by_others`).
+- **Holds**: with `hold_hours` > 0 (library setting, default 48) a returned copy is not announced to everybody: it is
+  held for the reader who has waited longest, who gets a `book_held` email and sees it under "Held for you" on the
+  profile. Only they can add that copy to the cart until the hold ends; ordering it ends the hold. A hold that runs
+  out (the notifier checks every cycle) or that the reader gives up (`DELETE /users/me/holds/{book_id}`) passes to
+  the next reader in line. `hold_hours = 0` keeps the old behaviour: everybody waiting is emailed.
+- **Late returns**: with `block_overdue` (library setting, default on) a reader with an overdue loan cannot place a
+  new order (`409 OVERDUE_LOANS`, `details.orders` lists the order numbers); the profile says so. With
+  `late_fee_per_day` > 0 (default 0: no fees), marking an overdue order returned stores `late_fee` = fee × days
+  late on the order. The librarian records it as paid or waives it (`PATCH /admin/orders/{id}/late-fee` with
+  `{"action": "paid" | "waived"}`; waiving sets the fee to 0; `409 NO_LATE_FEE` if nothing is owed), which sets
+  `late_fee_settled_at`. The app does not take payments: the fee is paid at the library.
+- **Pickup points**: the library can list where orders are collected (admin tab *Pickup*): name, address, a note,
+  weekly opening hours in the library's time zone (`library_settings.timezone`, IANA name, default `UTC`), slot
+  length (15–240 minutes) and optionally how many orders fit in a slot. While at least one point is active, checkout
+  asks for a point and a slot (`GET /library/pickup-points`, `GET /library/pickup-points/{id}/slots`: the next two
+  weeks, from an hour ahead, with `left` places) and `POST /orders` needs `{"pickup_point_id", "pickup_at"}`
+  (`400 PICKUP_REQUIRED` / `INVALID_PICKUP_SLOT`, `409 PICKUP_SLOT_FULL`; the point's row is locked so two readers
+  cannot take the last place). Cancelled orders free their place. Without active points nothing changes. The
+  "order received" email, the profile and the admin order list show the place and time. A point used by orders
+  cannot be deleted (`409 PICKUP_POINT_IN_USE`); switch it off instead.
+- **Reserve ahead**: a reader can reserve a title for a day from tomorrow to 90 days ahead (book dialog, `POST
+  /users/me/reservations` `{book_id, starts_on}`; at most 5 at a time, one per title). A copy is set aside that can
+  be free then: no other reservation within a loan period of the day, and not out on a loan due on or after it
+  (`409 NO_COPY_FOR_DATE` otherwise). From one loan period before the day nobody else can borrow that copy (the
+  catalogue shows it back one loan after the day) and loans of it cannot be extended past the day
+  (`requested_by_others`). On the day, or as soon as a late copy is back, the notifier holds it for the reader for
+  at least 48 hours (`hold_hours` if longer) and emails them (`reservation_ready`); from there it works like any
+  hold. Cancelling (`DELETE /users/me/reservations/{id}`) gives a set-aside copy to the readers waiting for it.
+  Librarians see upcoming reservations above the order list (`GET /admin/reservations`). Deleting an account
+  drops its holds and reservations and passes those copies on.
+- **Notification bell**: the header shows the reader's news — the same events as the emails (`notifications`), even
+  when an email could not be sent, except news that went stale before delivery. Opening the list marks it read
+  (`read_at`); it refreshes every minute while the tab is visible. Notifications from before the bell existed
+  count as read.
+- **Reading log and badges**: readers mark titles they finished ("I've read it" in the book dialog or for borrowed
+  titles on the profile; `PUT /users/me/reading-log/{book_id}` `{finished_on}`, default today, never in the future;
+  per title). The profile shows how many this year and in total, the finished books, and eight badges worked out
+  from the log each time (1, 5, 10, 25 books; 3 categories; 2 languages; every title of a series; a book in each
+  of the last 3 months), with progress towards the ones not earned yet.
 
 `POST /api/v1/orders` runs in a single transaction (`app/services/orders.py`):
 
@@ -425,11 +467,15 @@ Concurrency is covered by tests in which both requests are held at a barrier rig
 | `tags`, `book_tags` | tag `slug` (unique, CHECK format), `name_en`, `name_ru`; book ↔ tag link table |
 | `series` | `name` (unique), `name_en` / `name_ru` (names in each interface language, optional), `description`, `openlibrary_key` (unique, from ISBN lookups) |
 | `book_translations` | per book and language (`en`/`ru`): `title`, `author`, `description`, `title_source`/`description_source` (`manual/wikidata/wikipedia/machine`), `source_url` (Wikipedia attribution) |
-| `library_settings` | single row: `books_per_batch`, `price_per_batch NUMERIC(10,2)`, `currency`, `loan_period_days`, `max_renewals` |
+| `library_settings` | single row: `books_per_batch`, `price_per_batch NUMERIC(10,2)`, `currency`, `loan_period_days`, `max_renewals`, `hold_hours`, `block_overdue`, `late_fee_per_day NUMERIC(10,2)`, `timezone` |
+| `reading_log_entries` | reader, copy, `finished_on`, `UNIQUE(user_id, book_id)` (one per title in the service) |
+| `advance_reservations` | reader, copy, `starts_on`, `status` (`active/fulfilled/cancelled`) |
+| `pickup_points` | `name`, `address`, `notes`, `hours JSONB` (`[{weekday, opens, closes}]`), `slot_minutes`, `slot_capacity` (NULL: no limit), `active` |
 | `carts`, `cart_items` | one cart per user, `UNIQUE(cart_id, book_id)` |
 | `waitlist_entries` | customer waiting for a book, `UNIQUE(user_id, book_id)` |
 | `reading_list_entries` | “want to read”, one per reader and title, `UNIQUE(user_id, book_id)` |
-| `orders` | status, total/currency, batch price and contact snapshot, `due_date`, `renewal_count`, `confirmed_at/returned_at/cancelled_at`, CHECK `total = price × batches` |
+| `reviews` | rating 1–5 (CHECK), text, `status` (`pending/published/rejected`), one per reader and title |
+| `orders` | status, total/currency, batch price and contact snapshot, `due_date`, `renewal_count`, `confirmed_at/returned_at/cancelled_at`, `late_fee`/`late_fee_settled_at`, `pickup_point_id`/`pickup_at`, CHECK `total = price × batches` |
 | `order_items` | book snapshot and `unit_price`, `reservation_active` + partial unique index |
 | `refresh_tokens` | `token_hash`, `family_id`, `expires_at`, `revoked_at`, `replaced_by_token_id`, user agent/IP |
 
@@ -454,13 +500,21 @@ Differences (adapters in `src/api/mappers.ts`):
 | GET | `/auth/me`, `/users/me` · PATCH `/users/me` · POST `/auth/change-password` | signed-in user |
 | GET | `/users/me/next-in-series` (the next volume of each series the reader borrowed from) | signed-in user |
 | GET | `/users/me/export` (everything stored about the reader, JSON) · DELETE `/users/me` (`{password}`; orders are kept without name and contacts; 409 `ACTIVE_ORDERS` / `ADMIN_ACCOUNT`) | signed-in user |
-| GET | `/books?q&category&age_range&available&tags&series&language&author&sort&page&page_size`, `/books/age-ranges`, `/books/languages`, `/books/{id}`, `/books/{id}/series-neighbours` | everyone |
+| GET | `/books?q&category&age_range&available&tags&series&language&author&sort&page&page_size`, `/books/age-ranges`, `/books/languages`, `/books/{id}`, `/books/{id}/series-neighbours`, `/books/{id}/also-borrowed` (titles borrowed by at least two of the same readers) | everyone |
 | GET | `/tags` (with title counts), `/series?q`, `/series/{id}` | everyone |
 | GET/DELETE | `/cart` · POST `/cart/items` · DELETE `/cart/items/{book_id}` | signed-in user |
 | POST/GET | `/orders` · GET `/orders/{id}` · POST `/orders/{id}/cancel`, `/orders/{id}/renew` | signed-in user (own orders only) |
-| GET | `/library/rules` (batch size and price, loan period, extensions per loan) | everyone |
+| GET | `/library/rules` (batch size and price, loan period, extensions per loan, time zone) · `/library/pickup-points`, `/library/pickup-points/{id}/slots` | everyone |
+| GET | `/share/books/{id}` (Open Graph page for link previews; Caddy sends bots on `/books/<id>` here) | everyone |
 | GET `/waitlist` · POST/DELETE `/waitlist/{book_id}` | “email me when this book is back” | signed-in user |
 | GET `/reading-list` · POST/DELETE `/reading-list/{book_id}` | “want to read”: titles kept for later, separate from the cart | signed-in user |
+| GET `/books/{id}/reviews` (average and published reviews) · GET/PUT/DELETE `/books/{id}/my-review` (`{rating 1-5, text}`; only after borrowing, 403 `NOT_BORROWED`) | ratings and reviews; text waits for moderation | everyone / signed-in user |
+| GET `/admin/reviews?status` · PATCH/DELETE `/admin/reviews/{id}` | moderation (publish, reject) | admin |
+| GET `/users/me/recommendations` (titles ranked by the tags of borrowed and saved ones) | “For you” shelf | signed-in user |
+| GET `/users/me/holds` · DELETE `/users/me/holds/{book_id}` | books held for the reader; give one up | signed-in user |
+| GET/POST `/users/me/reservations` · DELETE `/users/me/reservations/{id}` | reserve a title for a date; cancel | signed-in user |
+| GET `/users/me/reading-log` · PUT/DELETE `/users/me/reading-log/{book_id}` | finished titles, counts, badges, borrowed titles to log | signed-in user |
+| GET `/users/me/notifications` · POST `/users/me/notifications/read` (`{ids}` or nothing for all) | the bell: latest 30 news items of the last 60 days and the unread count | signed-in user |
 | GET/POST | `/admin/books`, GET `/admin/books/stats`, GET/PATCH/DELETE `/admin/books/{id}` | admin |
 | POST | `/admin/books/import` (CSV, all or nothing, `dry_run`; `warnings` for rows that look like books already there), GET `/admin/isbn/{isbn}` (details from Open Library) | admin |
 | GET | `/admin/books/duplicates?isbn&title&author` (titles with the same ISBN, or the same title and author) | admin |
@@ -470,7 +524,9 @@ Differences (adapters in `src/api/mappers.ts`):
 | POST/PATCH/DELETE | `/admin/tags`, `/admin/tags/{id}` · POST `/admin/tags/{id}/merge`; the same for `/admin/series` | admin |
 | POST | `/admin/translations/suggest` (title, author and description in another language; saves nothing) | admin |
 | GET | `/admin/users` · PATCH `/admin/users/{id}` (role, disable) | admin |
-| GET | `/admin/orders`, `/admin/orders/{id}` · PATCH `/admin/orders/{id}/status`, `/admin/orders/{id}/due-date` | admin |
+| GET/POST | `/admin/pickup-points` · PATCH/DELETE `/admin/pickup-points/{id}` | admin |
+| GET | `/admin/reservations` (titles reserved for a date, soonest first) | admin |
+| GET | `/admin/orders`, `/admin/orders/{id}` · PATCH `/admin/orders/{id}/status`, `/admin/orders/{id}/due-date`, `/admin/orders/{id}/late-fee` | admin |
 | GET/PATCH | `/admin/settings` (batch size, price, currency, loan period) | admin |
 
 Public catalogue responses (`/books…`, `/tags`, `/series…`, `/library/rules`) carry a weak `ETag` with

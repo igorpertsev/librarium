@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Textarea } from '../components/ui/textarea';
 import { Badge } from '../components/ui/badge';
-import { Plus, Pencil, Trash2, Users, BookOpen as BookOpenIcon, ClipboardList, CheckCircle2, RotateCcw, Clock, Star, ImageDown, BellRing, BarChart3, CopyPlus, Tags, ListChecks } from 'lucide-react';
+import { Plus, Pencil, Trash2, Users, BookOpen as BookOpenIcon, ClipboardList, CheckCircle2, RotateCcw, Clock, Star, ImageDown, BellRing, BarChart3, CopyPlus, Tags, ListChecks, MapPin, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -16,11 +16,15 @@ import { useOrders } from '../contexts/OrdersContext';
 import { BookDetailsModal } from '../components/BookDetailsModal';
 import { useConfirm } from '../components/ConfirmDialog';
 import { LoanRulesSettings } from '../components/LoanRulesSettings';
+import { PickupLine } from '../components/PickupLine';
+import { PickupPointsTab } from '../components/PickupPointsTab';
+import { UpcomingReservations } from '../components/UpcomingReservations';
 import { ReportsTab } from '../components/ReportsTab';
 import { BookCatalogFields } from '../components/BookCatalogFields';
 import { BookTranslationFields } from '../components/BookTranslationFields';
 import { DuplicateWarning } from '../components/DuplicateWarning';
 import { DataQualityTab } from '../components/DataQualityTab';
+import { ReviewsTab } from '../components/ReviewsTab';
 import { TagsSeriesTab } from '../components/TagsSeriesTab';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
@@ -52,7 +56,7 @@ export default function AdminPortal() {
   const fmt = useFormat();
   const [batchDraft, setBatchDraft] = useState<BatchConfig>(batchConfig);
   const { users, updateUserRole, refreshUsers } = useAuth();
-  const { orders, isLoading: ordersLoading, confirmOrder, markReturned, cancelOrder, updateDueDate } = useOrders();
+  const { orders, isLoading: ordersLoading, confirmOrder, markReturned, cancelOrder, updateDueDate, settleLateFee } = useOrders();
   const overdueCount = orders.filter(isOverdueOrder).length;
   const { invalidateCatalog } = useCatalog();
   const { confirm, confirmDialog } = useConfirm();
@@ -344,7 +348,7 @@ export default function AdminPortal() {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="books" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 h-auto mb-6">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 h-auto mb-6">
               <TabsTrigger value="books" className="flex items-center gap-2">
                 <BookOpenIcon className="w-4 h-4" />
                 {t('admin.booksTab')}
@@ -366,6 +370,10 @@ export default function AdminPortal() {
                 <Tags className="w-4 h-4" />
                 {t('catalogAdmin.tab')}
               </TabsTrigger>
+              <TabsTrigger value="reviews" className="flex items-center gap-2">
+                <MessageSquare className="w-4 h-4" />
+                {t('moderation.tab')}
+              </TabsTrigger>
               <TabsTrigger value="quality" className="flex items-center gap-2">
                 <ListChecks className="w-4 h-4" />
                 {t('quality.tab')}
@@ -373,6 +381,10 @@ export default function AdminPortal() {
               <TabsTrigger value="reports" className="flex items-center gap-2">
                 <BarChart3 className="w-4 h-4" />
                 {t('reports.tab')}
+              </TabsTrigger>
+              <TabsTrigger value="pickup" className="flex items-center gap-2">
+                <MapPin className="w-4 h-4" />
+                {t('pickup.tab')}
               </TabsTrigger>
             </TabsList>
 
@@ -605,6 +617,7 @@ export default function AdminPortal() {
                 onMarkReturned={markReturned}
                 onCancel={cancelOrder}
                 onUpdateDueDate={updateDueDate}
+                onSettleLateFee={settleLateFee}
                 onChanged={() => {
                   refreshUsers().catch(() => undefined);
                   loadBooks(currentPage);
@@ -617,12 +630,20 @@ export default function AdminPortal() {
               <TagsSeriesTab onChanged={() => loadBooks(currentPage)} />
             </TabsContent>
 
+            <TabsContent value="reviews">
+              <ReviewsTab />
+            </TabsContent>
+
             <TabsContent value="quality">
               <DataQualityTab onEdit={openEditDialog} />
             </TabsContent>
 
             <TabsContent value="reports">
               <ReportsTab />
+            </TabsContent>
+
+            <TabsContent value="pickup">
+              <PickupPointsTab />
             </TabsContent>
           </Tabs>
         </CardContent>
@@ -977,6 +998,7 @@ function OrdersTab({
   onMarkReturned,
   onCancel,
   onUpdateDueDate,
+  onSettleLateFee,
   onChanged,
   t,
 }: {
@@ -985,6 +1007,7 @@ function OrdersTab({
   onMarkReturned: (id: string) => Promise<ActionResult>;
   onCancel: (id: string) => Promise<ActionResult>;
   onUpdateDueDate: (id: string, date: string) => Promise<ActionResult>;
+  onSettleLateFee: (id: string, action: 'paid' | 'waived') => Promise<ActionResult>;
   onChanged: () => void;
   t: TFunction;
 }) {
@@ -1040,6 +1063,7 @@ function OrdersTab({
 
   return (
     <div className="space-y-4">
+      <UpcomingReservations />
       <Input
         type="search"
         value={search}
@@ -1136,7 +1160,12 @@ function OrdersTab({
                     </div>
                   </TableCell>
                   <TableCell>{orderStatusBadge(order.status, t)}</TableCell>
-                  <TableCell className="text-sm">{fmt.date(order.orderedAt)}</TableCell>
+                  <TableCell className="text-sm">
+                    {fmt.date(order.orderedAt)}
+                    {order.status === 'pending' && (
+                      <PickupLine order={order} className="flex items-start gap-1 text-xs text-muted-foreground mt-1 max-w-[220px]" />
+                    )}
+                  </TableCell>
                   <TableCell onClick={e => e.stopPropagation()}>
                     {order.status === 'returned' || order.status === 'cancelled' ? (
                       <span className="text-sm text-muted-foreground">—</span>
@@ -1224,6 +1253,36 @@ function OrdersTab({
                         <span className="text-xs text-muted-foreground">
                           {t('admin.returnedOn')} {fmt.date(order.returnedAt)}
                         </span>
+                      )}
+                      {order.status === 'returned' && order.lateFeeSettledAt && (
+                        <span className="text-xs text-muted-foreground">
+                          {(order.lateFee ?? 0) > 0
+                            ? t('admin.lateFeePaid', { amount: fmt.money(order.lateFee ?? 0, order.currency) })
+                            : t('admin.lateFeeWaived')}
+                        </span>
+                      )}
+                      {order.status === 'returned' && (order.lateFee ?? 0) > 0 && !order.lateFeeSettledAt && (
+                        <div className="flex flex-wrap items-center gap-2 w-full">
+                          <Badge variant="destructive">
+                            {t('admin.lateFeeOwed', { amount: fmt.money(order.lateFee ?? 0, order.currency) })}
+                          </Badge>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={busyOrderId === order.id}
+                            onClick={() => runOrderAction(order.id, () => onSettleLateFee(order.id, 'paid'), 'admin.lateFeePaidMsg')}
+                          >
+                            {t('admin.markFeePaid')}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            disabled={busyOrderId === order.id}
+                            onClick={() => runOrderAction(order.id, () => onSettleLateFee(order.id, 'waived'), 'admin.lateFeeWaivedMsg')}
+                          >
+                            {t('admin.waiveFee')}
+                          </Button>
+                        </div>
                       )}
                       {order.status === 'cancelled' && (
                         <span className="text-xs text-muted-foreground">{t('admin.orderCancelled')}</span>

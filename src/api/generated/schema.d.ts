@@ -231,6 +231,185 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/users/me/recommendations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My Recommendations
+         * @description Up to 8 titles the reader has not borrowed or saved, ranked by the tags of the titles they borrowed and saved.
+         */
+        get: operations["my_recommendations_api_v1_users_me_recommendations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/me/holds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My Holds
+         * @description Books held for the reader after they waited for them, until held_until. The reader can add the held copy to the cart; nobody else can.
+         */
+        get: operations["my_holds_api_v1_users_me_holds_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/me/holds/{book_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Release Hold
+         * @description Give up a held book: it goes to the next reader in line.
+         */
+        delete: operations["release_hold_api_v1_users_me_holds__book_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/me/reading-log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My Reading Log
+         * @description Titles the reader has finished (newest first), counts, badges and borrowed titles not logged yet.
+         */
+        get: operations["my_reading_log_api_v1_users_me_reading_log_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/me/reading-log/{book_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Mark Finished
+         * @description Log the title as finished (finished_on defaults to today; not in the future).
+         */
+        put: operations["mark_finished_api_v1_users_me_reading_log__book_id__put"];
+        post?: never;
+        /** Unmark Finished */
+        delete: operations["unmark_finished_api_v1_users_me_reading_log__book_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/me/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My Notifications
+         * @description The reader's latest news (up to 30 from the last 60 days), newest first, and how many are unread. The same events as the emails, even when an email could not be sent.
+         */
+        get: operations["my_notifications_api_v1_users_me_notifications_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/me/notifications/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark Notifications Read */
+        post: operations["mark_notifications_read_api_v1_users_me_notifications_read_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/me/reservations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My Reservations
+         * @description Books the reader reserved for a date, soonest first.
+         */
+        get: operations["my_reservations_api_v1_users_me_reservations_get"];
+        put?: never;
+        /**
+         * Reserve Ahead
+         * @description Reserve a title for a day from tomorrow to 90 days ahead. A copy that can be free then is set aside; on the day it is held for the reader, who gets an email. 409 NO_COPY_FOR_DATE, ALREADY_RESERVED or TOO_MANY_RESERVATIONS (5 at a time).
+         */
+        post: operations["reserve_ahead_api_v1_users_me_reservations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/me/reservations/{reservation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Cancel Reservation */
+        delete: operations["cancel_reservation_api_v1_users_me_reservations__reservation_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users/me/export": {
         parameters: {
             query?: never;
@@ -317,6 +496,46 @@ export interface paths {
          * @description The numbered volumes just before and after this book in its series.
          */
         get: operations["get_series_neighbours_api_v1_books__book_id__series_neighbours_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/books/{book_id}/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Reviews
+         * @description Average rating and published reviews of the title (copies count as one).
+         */
+        get: operations["get_reviews_api_v1_books__book_id__reviews_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/books/{book_id}/also-borrowed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Also Borrowed
+         * @description Titles most often borrowed by readers who borrowed this one (each borrowed by at least two of them, so no single reader's borrowing shows).
+         */
+        get: operations["get_also_borrowed_api_v1_books__book_id__also_borrowed_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -466,7 +685,7 @@ export interface paths {
         put?: never;
         /**
          * Place Order
-         * @description Places an order for every complete batch in the cart. Books of an incomplete trailing batch stay in the cart. Prices are computed by the server. Responds 409 BOOK_UNAVAILABLE (details.book_ids) when any copy is no longer available; in that case nothing is created.
+         * @description Places an order for every complete batch in the cart. Books of an incomplete trailing batch stay in the cart. Prices are computed by the server. Responds 409 BOOK_UNAVAILABLE (details.book_ids) when any copy is no longer available; in that case nothing is created. While the library has active pickup points the body must name one and one of its slots (400 PICKUP_REQUIRED / INVALID_PICKUP_SLOT, 409 PICKUP_SLOT_FULL).
          */
         post: operations["place_order_api_v1_orders_post"];
         delete?: never;
@@ -541,6 +760,47 @@ export interface paths {
          * @description Batch size and price, loan period and how often a loan can be extended.
          */
         get: operations["library_rules_api_v1_library_rules_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/library/pickup-points": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Pickup Points
+         * @description Where readers can collect their orders (active points only). An empty list means
+         *     orders need no pickup point.
+         */
+        get: operations["pickup_points_api_v1_library_pickup_points_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/library/pickup-points/{point_id}/slots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Pickup Slots
+         * @description Pickup times for the next two weeks, starting at least an hour from now.
+         */
+        get: operations["pickup_slots_api_v1_library_pickup_points__point_id__slots_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -626,6 +886,48 @@ export interface paths {
          * @description Remove the title of this copy. Idempotent.
          */
         delete: operations["remove_from_reading_list_api_v1_reading_list__book_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/share/books/{book_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Share Book
+         * @description Open Graph page for a book, for link previews; people are redirected to the book in the app.
+         */
+        get: operations["share_book_api_v1_share_books__book_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/books/{book_id}/my-review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My Review */
+        get: operations["my_review_api_v1_books__book_id__my_review_get"];
+        /**
+         * Save My Review
+         * @description Rate (and optionally review) a title the reader borrowed; replaces their earlier review. A rating alone is published at once, text waits for a librarian. 403 NOT_BORROWED otherwise.
+         */
+        put: operations["save_my_review_api_v1_books__book_id__my_review_put"];
+        post?: never;
+        /** Delete My Review */
+        delete: operations["delete_my_review_api_v1_books__book_id__my_review_delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -913,6 +1215,26 @@ export interface paths {
         patch: operations["admin_change_order_due_date_api_v1_admin_orders__order_id__due_date_patch"];
         trace?: never;
     };
+    "/api/v1/admin/orders/{order_id}/late-fee": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Admin Settle Late Fee
+         * @description Record that the late fee was paid, or waive it (409 NO_LATE_FEE without one).
+         */
+        patch: operations["admin_settle_late_fee_api_v1_admin_orders__order_id__late_fee_patch"];
+        trace?: never;
+    };
     "/api/v1/admin/orders/{order_id}/remind": {
         parameters: {
             query?: never;
@@ -1127,6 +1449,109 @@ export interface paths {
         patch: operations["admin_update_settings_api_v1_admin_settings_patch"];
         trace?: never;
     };
+    "/api/v1/admin/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin List Reviews
+         * @description Reviews by status (default: waiting for moderation), oldest first.
+         */
+        get: operations["admin_list_reviews_api_v1_admin_reviews_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/reviews/{review_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Admin Delete Review */
+        delete: operations["admin_delete_review_api_v1_admin_reviews__review_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Admin Moderate Review
+         * @description Publish or reject a review.
+         */
+        patch: operations["admin_moderate_review_api_v1_admin_reviews__review_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/pickup-points": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin List Pickup Points
+         * @description Every pickup point, active ones first.
+         */
+        get: operations["admin_list_pickup_points_api_v1_admin_pickup_points_get"];
+        put?: never;
+        /** Admin Create Pickup Point */
+        post: operations["admin_create_pickup_point_api_v1_admin_pickup_points_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pickup-points/{point_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Admin Delete Pickup Point
+         * @description Only points no order used; switch the others off (active = false).
+         */
+        delete: operations["admin_delete_pickup_point_api_v1_admin_pickup_points__point_id__delete"];
+        options?: never;
+        head?: never;
+        /** Admin Update Pickup Point */
+        patch: operations["admin_update_pickup_point_api_v1_admin_pickup_points__point_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/reservations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin Upcoming Reservations
+         * @description Titles readers reserved for a date that has not come yet (or whose copy is late).
+         */
+        get: operations["admin_upcoming_reservations_api_v1_admin_reservations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1221,6 +1646,20 @@ export interface components {
             role?: components["schemas"]["UserRole"] | null;
             /** Is Active */
             is_active?: boolean | null;
+        };
+        /** BadgeRead */
+        BadgeRead: {
+            /**
+             * Key
+             * @description first_book, five_books, ten_books, twenty_five_books, explorer (3 categories), two_languages, series_finisher, three_months (a book in each of the last three months)
+             */
+            key: string;
+            /** Earned */
+            earned: boolean;
+            /** Progress */
+            progress: number;
+            /** Goal */
+            goal: number;
         };
         /**
          * BookBrief
@@ -1717,6 +2156,52 @@ export interface components {
             /** Database */
             database?: string | null;
         };
+        /** HeldBookRead */
+        HeldBookRead: {
+            book: components["schemas"]["BookRead"];
+            /**
+             * Held Until
+             * Format: date-time
+             */
+            held_until: string;
+        };
+        /** Inbox */
+        Inbox: {
+            /** Items */
+            items: components["schemas"]["InboxItem"][];
+            /** Unread */
+            unread: number;
+        };
+        /** InboxItem */
+        InboxItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            kind: components["schemas"]["NotificationKind"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Read */
+            read: boolean;
+            /** Order Id */
+            order_id: string | null;
+            /** Order Number */
+            order_number: number | null;
+            /** @description For news about a book (back, held, ready) */
+            book: components["schemas"]["BookBrief"] | null;
+        };
+        /** LateFeeSettlement */
+        LateFeeSettlement: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "paid" | "waived";
+        };
         /**
          * LibraryRules
          * @description Lending rules every reader may know (GET /library/rules).
@@ -1732,6 +2217,26 @@ export interface components {
             loan_period_days: number;
             /** Max Renewals */
             max_renewals: number;
+            /**
+             * Hold Hours
+             * @description How long a returned book is held for the next reader
+             */
+            hold_hours: number;
+            /**
+             * Block Overdue
+             * @description No new orders while one of the reader's loans is overdue
+             */
+            block_overdue: boolean;
+            /**
+             * Late Fee Per Day
+             * @description Charged per day late when books come back (0: none)
+             */
+            late_fee_per_day: string;
+            /**
+             * Timezone
+             * @description IANA time zone of opening hours and pickup slots
+             */
+            timezone: string;
         };
         /** LibrarySettingsRead */
         LibrarySettingsRead: {
@@ -1745,6 +2250,26 @@ export interface components {
             loan_period_days: number;
             /** Max Renewals */
             max_renewals: number;
+            /**
+             * Hold Hours
+             * @description How long a returned book is held for the next reader
+             */
+            hold_hours: number;
+            /**
+             * Block Overdue
+             * @description No new orders while one of the reader's loans is overdue
+             */
+            block_overdue: boolean;
+            /**
+             * Late Fee Per Day
+             * @description Charged per day late when books come back (0: none)
+             */
+            late_fee_per_day: string;
+            /**
+             * Timezone
+             * @description IANA time zone of opening hours and pickup slots
+             */
+            timezone: string;
             /**
              * Updated At
              * Format: date-time
@@ -1763,6 +2288,23 @@ export interface components {
             loan_period_days?: number | null;
             /** Max Renewals */
             max_renewals?: number | null;
+            /** Hold Hours */
+            hold_hours?: number | null;
+            /** Block Overdue */
+            block_overdue?: boolean | null;
+            /** Late Fee Per Day */
+            late_fee_per_day?: number | string | null;
+            /** Timezone */
+            timezone?: string | null;
+        };
+        /** LoggedBookRead */
+        LoggedBookRead: {
+            book: components["schemas"]["BookRead"];
+            /**
+             * Finished On
+             * Format: date
+             */
+            finished_on: string;
         };
         /** LoginRequest */
         LoginRequest: {
@@ -1785,6 +2327,19 @@ export interface components {
             /** Position */
             position: number | null;
         };
+        /** MarkFinished */
+        MarkFinished: {
+            /** Finished On */
+            finished_on?: string | null;
+        };
+        /** MarkRead */
+        MarkRead: {
+            /**
+             * Ids
+             * @description Leave out to mark everything read
+             */
+            ids?: string[] | null;
+        };
         /** MergeInto */
         MergeInto: {
             /**
@@ -1794,11 +2349,91 @@ export interface components {
              */
             into_id: string;
         };
+        /** ModerateReview */
+        ModerateReview: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "published" | "rejected";
+        };
+        /** ModerationReviewPage */
+        ModerationReviewPage: {
+            /** Items */
+            items: components["schemas"]["ModerationReviewRead"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
+        /** ModerationReviewRead */
+        ModerationReviewRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Rating */
+            rating: number;
+            /** Text */
+            text: string;
+            status: components["schemas"]["ReviewStatus"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /**
+             * Book Id
+             * Format: uuid
+             */
+            book_id: string;
+            /** Book Title */
+            book_title: string;
+            /** Reader Name */
+            reader_name: string;
+            /** Reader Email */
+            reader_email: string;
+        };
+        /** MyReviewRead */
+        MyReviewRead: {
+            /**
+             * Can Review
+             * @description The reader has borrowed this title
+             */
+            can_review: boolean;
+            review: components["schemas"]["ReviewRead"] | null;
+        };
         /**
          * NotificationKind
          * @enum {string}
          */
-        NotificationKind: "order_received" | "order_confirmed" | "order_cancelled" | "due_soon" | "overdue" | "book_available";
+        NotificationKind: "order_received" | "order_confirmed" | "order_cancelled" | "due_soon" | "overdue" | "book_available" | "book_held" | "reservation_ready";
+        /**
+         * OpeningHours
+         * @description One opening period on a weekday (0 = Monday), in the library's time zone.
+         */
+        OpeningHours: {
+            /** Weekday */
+            weekday: number;
+            /**
+             * Opens
+             * Format: time
+             */
+            opens: string;
+            /**
+             * Closes
+             * Format: time
+             */
+            closes: string;
+        };
         /** OrderDueDateUpdate */
         OrderDueDateUpdate: {
             /**
@@ -1896,6 +2531,19 @@ export interface components {
             due_date: string;
             /** Renewal Count */
             renewal_count: number;
+            /**
+             * Late Fee
+             * @description Charged for returning the books late
+             */
+            late_fee: string | null;
+            /**
+             * Late Fee Settled At
+             * @description When it was paid or waived
+             */
+            late_fee_settled_at: string | null;
+            pickup_point: components["schemas"]["PickupPointBrief"] | null;
+            /** Pickup At */
+            pickup_at: string | null;
             /** Confirmed At */
             confirmed_at: string | null;
             /** Returned At */
@@ -1923,6 +2571,133 @@ export interface components {
         /** OrderStatusUpdate */
         OrderStatusUpdate: {
             status: components["schemas"]["OrderStatus"];
+        };
+        /**
+         * PickupChoice
+         * @description Optional body of POST /orders: where and when the reader collects the books.
+         */
+        PickupChoice: {
+            /** Pickup Point Id */
+            pickup_point_id?: string | null;
+            /** Pickup At */
+            pickup_at?: string | null;
+        };
+        /** PickupPointBrief */
+        PickupPointBrief: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Address */
+            address: string;
+        };
+        /** PickupPointCreate */
+        PickupPointCreate: {
+            /** Name */
+            name: string;
+            /** Address */
+            address: string;
+            /** Notes */
+            notes?: string | null;
+            /** Hours */
+            hours: components["schemas"]["OpeningHours"][];
+            /**
+             * Slot Minutes
+             * @default 60
+             */
+            slot_minutes: number;
+            /** Slot Capacity */
+            slot_capacity?: number | null;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+        };
+        /** PickupPointRead */
+        PickupPointRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Address */
+            address: string;
+            /** Notes */
+            notes: string | null;
+            /** Hours */
+            hours: components["schemas"]["OpeningHours"][];
+            /** Slot Minutes */
+            slot_minutes: number;
+            /**
+             * Slot Capacity
+             * @description Orders per slot (null: no limit)
+             */
+            slot_capacity: number | null;
+            /** Active */
+            active: boolean;
+        };
+        /** PickupPointUpdate */
+        PickupPointUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Address */
+            address?: string | null;
+            /** Notes */
+            notes?: string | null;
+            /** Hours */
+            hours?: components["schemas"]["OpeningHours"][] | null;
+            /** Slot Minutes */
+            slot_minutes?: number | null;
+            /** Slot Capacity */
+            slot_capacity?: number | null;
+            /** Active */
+            active?: boolean | null;
+        };
+        /** PickupSlot */
+        PickupSlot: {
+            /**
+             * Starts At
+             * Format: date-time
+             */
+            starts_at: string;
+            /**
+             * Ends At
+             * Format: date-time
+             */
+            ends_at: string;
+            /**
+             * Left
+             * @description Orders that still fit (null: no limit; 0: full)
+             */
+            left: number | null;
+        };
+        /** PublicReviewRead */
+        PublicReviewRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Author Name
+             * @description First name and initial, e.g. "Dana R."
+             */
+            author_name: string;
+            /** Rating */
+            rating: number;
+            /** Text */
+            text: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
         /**
          * QualityIssue
@@ -1953,6 +2728,22 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+        };
+        /** ReadingLogRead */
+        ReadingLogRead: {
+            /** Entries */
+            entries: components["schemas"]["LoggedBookRead"][];
+            /** Total */
+            total: number;
+            /** This Year */
+            this_year: number;
+            /** Badges */
+            badges: components["schemas"]["BadgeRead"][];
+            /**
+             * To Log
+             * @description Borrowed titles that are not in the log yet
+             */
+            to_log: components["schemas"]["BookRead"][];
         };
         /** RegisterRequest */
         RegisterRequest: {
@@ -2016,12 +2807,103 @@ export interface components {
             /** Top Books */
             top_books: components["schemas"]["TopBookRead"][];
         };
+        /** ReservationCreate */
+        ReservationCreate: {
+            /**
+             * Book Id
+             * Format: uuid
+             */
+            book_id: string;
+            /**
+             * Starts On
+             * Format: date
+             */
+            starts_on: string;
+        };
+        /** ReservationRead */
+        ReservationRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            book: components["schemas"]["BookRead"];
+            /**
+             * Starts On
+             * Format: date
+             */
+            starts_on: string;
+            status: components["schemas"]["ReservationStatus"];
+        };
+        /**
+         * ReservationStatus
+         * @description A reader's reservation of a title for a date (see ``app.services.reservations``).
+         * @enum {string}
+         */
+        ReservationStatus: "active" | "fulfilled" | "cancelled";
         /** ResetPasswordRequest */
         ResetPasswordRequest: {
             /** Token */
             token: string;
             /** New Password */
             new_password: string;
+        };
+        /** ReviewRead */
+        ReviewRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Rating */
+            rating: number;
+            /** Text */
+            text: string;
+            status: components["schemas"]["ReviewStatus"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * ReviewStatus
+         * @description Ratings without text are published at once; written reviews wait for a librarian.
+         * @enum {string}
+         */
+        ReviewStatus: "pending" | "published" | "rejected";
+        /** ReviewSummaryRead */
+        ReviewSummaryRead: {
+            /**
+             * Average
+             * @description Average published rating, one decimal
+             */
+            average: number | null;
+            /**
+             * Count
+             * @description Published ratings
+             */
+            count: number;
+            /**
+             * Reviews
+             * @description Published reviews with text, newest first
+             */
+            reviews: components["schemas"]["PublicReviewRead"][];
+        };
+        /** ReviewWrite */
+        ReviewWrite: {
+            /** Rating */
+            rating: number;
+            /**
+             * Text
+             * @default
+             */
+            text: string;
         };
         /** SeriesBrief */
         SeriesBrief: {
@@ -2264,6 +3146,32 @@ export interface components {
          * @enum {string}
          */
         UiLanguage: "en" | "ru";
+        /** UpcomingReservationRead */
+        UpcomingReservationRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Starts On
+             * Format: date
+             */
+            starts_on: string;
+            /**
+             * Book Id
+             * Format: uuid
+             */
+            book_id: string;
+            /** Title */
+            title: string;
+            /** Author */
+            author: string;
+            /** Reader Name */
+            reader_name: string;
+            /** Reader Email */
+            reader_email: string;
+        };
         /** UserRead */
         UserRead: {
             /**
@@ -2974,6 +3882,443 @@ export interface operations {
             };
         };
     };
+    my_recommendations_api_v1_users_me_recommendations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookRead"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    my_holds_api_v1_users_me_holds_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HeldBookRead"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    release_hold_api_v1_users_me_holds__book_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    my_reading_log_api_v1_users_me_reading_log_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReadingLogRead"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    mark_finished_api_v1_users_me_reading_log__book_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["MarkFinished"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    unmark_finished_api_v1_users_me_reading_log__book_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    my_notifications_api_v1_users_me_notifications_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Inbox"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    mark_notifications_read_api_v1_users_me_notifications_read_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["MarkRead"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    my_reservations_api_v1_users_me_reservations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReservationRead"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    reserve_ahead_api_v1_users_me_reservations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReservationCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReservationRead"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    cancel_reservation_api_v1_users_me_reservations__reservation_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reservation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     export_my_data_api_v1_users_me_export_get: {
         parameters: {
             query?: never;
@@ -3108,6 +4453,86 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SeriesNeighbours"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_reviews_api_v1_books__book_id__reviews_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewSummaryRead"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_also_borrowed_api_v1_books__book_id__also_borrowed_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookRead"][];
                 };
             };
             /** @description Not Found */
@@ -3469,7 +4894,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PickupChoice"] | null;
+            };
+        };
         responses: {
             /** @description Successful Response */
             201: {
@@ -3505,6 +4934,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -3690,6 +5128,66 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LibraryRules"];
+                };
+            };
+        };
+    };
+    pickup_points_api_v1_library_pickup_points_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PickupPointRead"][];
+                };
+            };
+        };
+    };
+    pickup_slots_api_v1_library_pickup_points__point_id__slots_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                point_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PickupSlot"][];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
         };
@@ -3924,6 +5422,202 @@ export interface operations {
             };
             /** @description Unauthorized */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    share_book_api_v1_share_books__book_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+            /** @description No such book */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    my_review_api_v1_books__book_id__my_review_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyReviewRead"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    save_my_review_api_v1_books__book_id__my_review_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewWrite"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewRead"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    delete_my_review_api_v1_books__book_id__my_review_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4975,6 +6669,77 @@ export interface operations {
             };
         };
     };
+    admin_settle_late_fee_api_v1_admin_orders__order_id__late_fee_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LateFeeSettlement"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderRead"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     admin_remind_customer_api_v1_admin_orders__order_id__remind_post: {
         parameters: {
             query?: never;
@@ -5820,6 +7585,429 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_list_reviews_api_v1_admin_reviews_get: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["ReviewStatus"];
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModerationReviewPage"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_delete_review_api_v1_admin_reviews__review_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                review_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_moderate_review_api_v1_admin_reviews__review_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                review_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModerateReview"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewRead"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_list_pickup_points_api_v1_admin_pickup_points_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PickupPointRead"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_create_pickup_point_api_v1_admin_pickup_points_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PickupPointCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PickupPointRead"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_delete_pickup_point_api_v1_admin_pickup_points__point_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                point_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_update_pickup_point_api_v1_admin_pickup_points__point_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                point_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PickupPointUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PickupPointRead"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_upcoming_reservations_api_v1_admin_reservations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpcomingReservationRead"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

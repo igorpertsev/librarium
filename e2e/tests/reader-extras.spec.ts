@@ -42,3 +42,47 @@ test('a reader filters by language, saves a book, follows an author and a series
   await page.getByRole('button', { name: `Remove “${id} two” from Want to read` }).click();
   await expect(saved).toHaveCount(0);
 });
+
+test('a reader reserves a book for a date and cancels the reservation', async ({ page, request }) => {
+  const title = `Holiday ${unique()}`;
+  await createBook(request, { title });
+  await registerCustomer(page);
+  await page.goto(`/?q=${encodeURIComponent(title)}`);
+  await page.getByRole('button', { name: title, exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: 'Reserve for a date' }).click();
+  const day = new Date();
+  day.setDate(day.getDate() + 14);
+  const iso = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
+  await dialog.getByLabel('I want it from').fill(iso);
+  await dialog.getByRole('button', { name: 'Reserve', exact: true }).click();
+  await expect(dialog.getByText('Reserved for you from')).toBeVisible();
+  // Kept for the reader: nobody else can borrow it any more.
+  await expect(dialog.getByRole('button', { name: 'Not Available' })).toBeDisabled();
+  await page.keyboard.press('Escape');
+
+  await page.goto('/profile');
+  await expect(page.getByRole('heading', { name: 'Reserved for later' })).toBeVisible();
+  await page.getByRole('button', { name: 'Cancel reservation' }).click();
+  await expect(page.getByText(`Reservation of “${title}” cancelled`)).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Reserved for later' })).toHaveCount(0);
+});
+
+test('a reader logs a finished book and earns the first badge', async ({ page, request }) => {
+  const title = `Finished ${unique()}`;
+  await createBook(request, { title });
+  await registerCustomer(page);
+  await page.goto(`/?q=${encodeURIComponent(title)}`);
+  await page.getByRole('button', { name: title, exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: "I've read it" }).click();
+  await expect(page.getByText(`“${title}” added to your reading log`)).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Read', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await page.keyboard.press('Escape');
+
+  await page.goto('/profile');
+  const log = page.getByTestId('reading-log');
+  await expect(log).toContainText('1 this year · 1 in total · 1 badge');
+  await expect(log.getByRole('listitem').filter({ hasText: 'First book' })).toContainText('Earned!');
+  await expect(log).toContainText(title);
+});

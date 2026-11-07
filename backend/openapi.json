@@ -723,6 +723,595 @@
         ]
       }
     },
+    "/api/v1/users/me/recommendations": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "My Recommendations",
+        "description": "Up to 8 titles the reader has not borrowed or saved, ranked by the tags of the titles they borrowed and saved.",
+        "operationId": "my_recommendations_api_v1_users_me_recommendations_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/BookRead"
+                  },
+                  "type": "array",
+                  "title": "Response My Recommendations Api V1 Users Me Recommendations Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/me/holds": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "My Holds",
+        "description": "Books held for the reader after they waited for them, until held_until. The reader can add the held copy to the cart; nobody else can.",
+        "operationId": "my_holds_api_v1_users_me_holds_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/HeldBookRead"
+                  },
+                  "type": "array",
+                  "title": "Response My Holds Api V1 Users Me Holds Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/me/holds/{book_id}": {
+      "delete": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Release Hold",
+        "description": "Give up a held book: it goes to the next reader in line.",
+        "operationId": "release_hold_api_v1_users_me_holds__book_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/users/me/reading-log": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "My Reading Log",
+        "description": "Titles the reader has finished (newest first), counts, badges and borrowed titles not logged yet.",
+        "operationId": "my_reading_log_api_v1_users_me_reading_log_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadingLogRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/me/reading-log/{book_id}": {
+      "put": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Mark Finished",
+        "description": "Log the title as finished (finished_on defaults to today; not in the future).",
+        "operationId": "mark_finished_api_v1_users_me_reading_log__book_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/MarkFinished"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Unmark Finished",
+        "operationId": "unmark_finished_api_v1_users_me_reading_log__book_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/users/me/notifications": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "My Notifications",
+        "description": "The reader's latest news (up to 30 from the last 60 days), newest first, and how many are unread. The same events as the emails, even when an email could not be sent.",
+        "operationId": "my_notifications_api_v1_users_me_notifications_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Inbox"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/me/notifications/read": {
+      "post": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Mark Notifications Read",
+        "operationId": "mark_notifications_read_api_v1_users_me_notifications_read_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/MarkRead"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/me/reservations": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "My Reservations",
+        "description": "Books the reader reserved for a date, soonest first.",
+        "operationId": "my_reservations_api_v1_users_me_reservations_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ReservationRead"
+                  },
+                  "type": "array",
+                  "title": "Response My Reservations Api V1 Users Me Reservations Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Reserve Ahead",
+        "description": "Reserve a title for a day from tomorrow to 90 days ahead. A copy that can be free then is set aside; on the day it is held for the reader, who gets an email. 409 NO_COPY_FOR_DATE, ALREADY_RESERVED or TOO_MANY_RESERVATIONS (5 at a time).",
+        "operationId": "reserve_ahead_api_v1_users_me_reservations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReservationCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservationRead"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/me/reservations/{reservation_id}": {
+      "delete": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Cancel Reservation",
+        "operationId": "cancel_reservation_api_v1_users_me_reservations__reservation_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "reservation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Reservation Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
     "/api/v1/users/me/export": {
       "get": {
         "tags": [
@@ -1049,6 +1638,118 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SeriesNeighbours"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/books/{book_id}/reviews": {
+      "get": {
+        "tags": [
+          "books"
+        ],
+        "summary": "Get Reviews",
+        "description": "Average rating and published reviews of the title (copies count as one).",
+        "operationId": "get_reviews_api_v1_books__book_id__reviews_get",
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewSummaryRead"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/books/{book_id}/also-borrowed": {
+      "get": {
+        "tags": [
+          "books"
+        ],
+        "summary": "Get Also Borrowed",
+        "description": "Titles most often borrowed by readers who borrowed this one (each borrowed by at least two of them, so no single reader's borrowing shows).",
+        "operationId": "get_also_borrowed_api_v1_books__book_id__also_borrowed_get",
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BookRead"
+                  },
+                  "title": "Response Get Also Borrowed Api V1 Books  Book Id  Also Borrowed Get"
                 }
               }
             }
@@ -1476,13 +2177,30 @@
           "orders"
         ],
         "summary": "Place Order",
-        "description": "Places an order for every complete batch in the cart. Books of an incomplete trailing batch stay in the cart. Prices are computed by the server. Responds 409 BOOK_UNAVAILABLE (details.book_ids) when any copy is no longer available; in that case nothing is created.",
+        "description": "Places an order for every complete batch in the cart. Books of an incomplete trailing batch stay in the cart. Prices are computed by the server. Responds 409 BOOK_UNAVAILABLE (details.book_ids) when any copy is no longer available; in that case nothing is created. While the library has active pickup points the body must name one and one of its slots (400 PICKUP_REQUIRED / INVALID_PICKUP_SLOT, 409 PICKUP_SLOT_FULL).",
         "operationId": "place_order_api_v1_orders_post",
         "security": [
           {
             "HTTPBearer": []
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/PickupChoice"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": "Successful Response",
@@ -1523,6 +2241,16 @@
               }
             },
             "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       },
@@ -1860,6 +2588,90 @@
         }
       }
     },
+    "/api/v1/library/pickup-points": {
+      "get": {
+        "tags": [
+          "library"
+        ],
+        "summary": "Pickup Points",
+        "description": "Where readers can collect their orders (active points only). An empty list means\norders need no pickup point.",
+        "operationId": "pickup_points_api_v1_library_pickup_points_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PickupPointRead"
+                  },
+                  "type": "array",
+                  "title": "Response Pickup Points Api V1 Library Pickup Points Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/library/pickup-points/{point_id}/slots": {
+      "get": {
+        "tags": [
+          "library"
+        ],
+        "summary": "Pickup Slots",
+        "description": "Pickup times for the next two weeks, starting at least an hour from now.",
+        "operationId": "pickup_slots_api_v1_library_pickup_points__point_id__slots_get",
+        "parameters": [
+          {
+            "name": "point_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Point Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PickupSlot"
+                  },
+                  "title": "Response Pickup Slots Api V1 Library Pickup Points  Point Id  Slots Get"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
     "/api/v1/waitlist": {
       "get": {
         "tags": [
@@ -2177,6 +2989,267 @@
               }
             },
             "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/share/books/{book_id}": {
+      "get": {
+        "tags": [
+          "share"
+        ],
+        "summary": "Share Book",
+        "description": "Open Graph page for a book, for link previews; people are redirected to the book in the app.",
+        "operationId": "share_book_api_v1_share_books__book_id__get",
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such book"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/books/{book_id}/my-review": {
+      "get": {
+        "tags": [
+          "reviews"
+        ],
+        "summary": "My Review",
+        "operationId": "my_review_api_v1_books__book_id__my_review_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyReviewRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "reviews"
+        ],
+        "summary": "Save My Review",
+        "description": "Rate (and optionally review) a title the reader borrowed; replaces their earlier review. A rating alone is published at once, text waits for a librarian. 403 NOT_BORROWED otherwise.",
+        "operationId": "save_my_review_api_v1_books__book_id__my_review_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "reviews"
+        ],
+        "summary": "Delete My Review",
+        "operationId": "delete_my_review_api_v1_books__book_id__my_review_delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
           },
           "422": {
             "content": {
@@ -3860,6 +4933,105 @@
         }
       }
     },
+    "/api/v1/admin/orders/{order_id}/late-fee": {
+      "patch": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Settle Late Fee",
+        "description": "Record that the late fee was paid, or waive it (409 NO_LATE_FEE without one).",
+        "operationId": "admin_settle_late_fee_api_v1_admin_orders__order_id__late_fee_patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LateFeeSettlement"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
     "/api/v1/admin/orders/{order_id}/remind": {
       "post": {
         "tags": [
@@ -5045,6 +6217,590 @@
           }
         ]
       }
+    },
+    "/api/v1/admin/reviews": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin List Reviews",
+        "description": "Reviews by status (default: waiting for moderation), oldest first.",
+        "operationId": "admin_list_reviews_api_v1_admin_reviews_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ReviewStatus",
+              "default": "pending"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100000,
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModerationReviewPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/reviews/{review_id}": {
+      "patch": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Moderate Review",
+        "description": "Publish or reject a review.",
+        "operationId": "admin_moderate_review_api_v1_admin_reviews__review_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "review_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Review Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModerateReview"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Delete Review",
+        "operationId": "admin_delete_review_api_v1_admin_reviews__review_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "review_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Review Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/pickup-points": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin List Pickup Points",
+        "description": "Every pickup point, active ones first.",
+        "operationId": "admin_list_pickup_points_api_v1_admin_pickup_points_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PickupPointRead"
+                  },
+                  "type": "array",
+                  "title": "Response Admin List Pickup Points Api V1 Admin Pickup Points Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Create Pickup Point",
+        "operationId": "admin_create_pickup_point_api_v1_admin_pickup_points_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PickupPointCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PickupPointRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/pickup-points/{point_id}": {
+      "patch": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Update Pickup Point",
+        "operationId": "admin_update_pickup_point_api_v1_admin_pickup_points__point_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "point_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Point Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PickupPointUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PickupPointRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Delete Pickup Point",
+        "description": "Only points no order used; switch the others off (active = false).",
+        "operationId": "admin_delete_pickup_point_api_v1_admin_pickup_points__point_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "point_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Point Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/reservations": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Upcoming Reservations",
+        "description": "Titles readers reserved for a date that has not come yet (or whose copy is late).",
+        "operationId": "admin_upcoming_reservations_api_v1_admin_reservations_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/UpcomingReservationRead"
+                  },
+                  "type": "array",
+                  "title": "Response Admin Upcoming Reservations Api V1 Admin Reservations Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -5306,6 +7062,35 @@
         "additionalProperties": false,
         "type": "object",
         "title": "AdminUserUpdate"
+      },
+      "BadgeRead": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key",
+            "description": "first_book, five_books, ten_books, twenty_five_books, explorer (3 categories), two_languages, series_finisher, three_months (a book in each of the last three months)"
+          },
+          "earned": {
+            "type": "boolean",
+            "title": "Earned"
+          },
+          "progress": {
+            "type": "integer",
+            "title": "Progress"
+          },
+          "goal": {
+            "type": "integer",
+            "title": "Goal"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "earned",
+          "progress",
+          "goal"
+        ],
+        "title": "BadgeRead"
       },
       "BookBrief": {
         "properties": {
@@ -6755,6 +8540,129 @@
         ],
         "title": "HealthResponse"
       },
+      "HeldBookRead": {
+        "properties": {
+          "book": {
+            "$ref": "#/components/schemas/BookRead"
+          },
+          "held_until": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Held Until"
+          }
+        },
+        "type": "object",
+        "required": [
+          "book",
+          "held_until"
+        ],
+        "title": "HeldBookRead"
+      },
+      "Inbox": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/InboxItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "unread": {
+            "type": "integer",
+            "title": "Unread"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "unread"
+        ],
+        "title": "Inbox"
+      },
+      "InboxItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/NotificationKind"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "read": {
+            "type": "boolean",
+            "title": "Read"
+          },
+          "order_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order Id"
+          },
+          "order_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order Number"
+          },
+          "book": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BookBrief"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "For news about a book (back, held, ready)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "created_at",
+          "read",
+          "order_id",
+          "order_number",
+          "book"
+        ],
+        "title": "InboxItem"
+      },
+      "LateFeeSettlement": {
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "paid",
+              "waived"
+            ],
+            "title": "Action"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "action"
+        ],
+        "title": "LateFeeSettlement"
+      },
       "LibraryRules": {
         "properties": {
           "books_per_batch": {
@@ -6776,6 +8684,26 @@
           "max_renewals": {
             "type": "integer",
             "title": "Max Renewals"
+          },
+          "hold_hours": {
+            "type": "integer",
+            "title": "Hold Hours",
+            "description": "How long a returned book is held for the next reader"
+          },
+          "block_overdue": {
+            "type": "boolean",
+            "title": "Block Overdue",
+            "description": "No new orders while one of the reader's loans is overdue"
+          },
+          "late_fee_per_day": {
+            "type": "string",
+            "title": "Late Fee Per Day",
+            "description": "Charged per day late when books come back (0: none)"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone",
+            "description": "IANA time zone of opening hours and pickup slots"
           }
         },
         "type": "object",
@@ -6784,7 +8712,11 @@
           "price_per_batch",
           "currency",
           "loan_period_days",
-          "max_renewals"
+          "max_renewals",
+          "hold_hours",
+          "block_overdue",
+          "late_fee_per_day",
+          "timezone"
         ],
         "title": "LibraryRules",
         "description": "Lending rules every reader may know (GET /library/rules)."
@@ -6811,6 +8743,26 @@
             "type": "integer",
             "title": "Max Renewals"
           },
+          "hold_hours": {
+            "type": "integer",
+            "title": "Hold Hours",
+            "description": "How long a returned book is held for the next reader"
+          },
+          "block_overdue": {
+            "type": "boolean",
+            "title": "Block Overdue",
+            "description": "No new orders while one of the reader's loans is overdue"
+          },
+          "late_fee_per_day": {
+            "type": "string",
+            "title": "Late Fee Per Day",
+            "description": "Charged per day late when books come back (0: none)"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone",
+            "description": "IANA time zone of opening hours and pickup slots"
+          },
           "updated_at": {
             "type": "string",
             "format": "date-time",
@@ -6824,6 +8776,10 @@
           "currency",
           "loan_period_days",
           "max_renewals",
+          "hold_hours",
+          "block_overdue",
+          "late_fee_per_day",
+          "timezone",
           "updated_at"
         ],
         "title": "LibrarySettingsRead"
@@ -6895,11 +8851,80 @@
               }
             ],
             "title": "Max Renewals"
+          },
+          "hold_hours": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 336.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hold Hours"
+          },
+          "block_overdue": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Block Overdue"
+          },
+          "late_fee_per_day": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Late Fee Per Day"
+          },
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone"
           }
         },
         "additionalProperties": false,
         "type": "object",
         "title": "LibrarySettingsUpdate"
+      },
+      "LoggedBookRead": {
+        "properties": {
+          "book": {
+            "$ref": "#/components/schemas/BookRead"
+          },
+          "finished_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Finished On"
+          }
+        },
+        "type": "object",
+        "required": [
+          "book",
+          "finished_on"
+        ],
+        "title": "LoggedBookRead"
       },
       "LoginRequest": {
         "properties": {
@@ -6974,6 +8999,49 @@
         ],
         "title": "LookupSeries"
       },
+      "MarkFinished": {
+        "properties": {
+          "finished_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished On"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "MarkFinished"
+      },
+      "MarkRead": {
+        "properties": {
+          "ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array",
+                "maxItems": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ids",
+            "description": "Leave out to mark everything read"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "MarkRead"
+      },
       "MergeInto": {
         "properties": {
           "into_id": {
@@ -6990,6 +9058,141 @@
         ],
         "title": "MergeInto"
       },
+      "ModerateReview": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "published",
+              "rejected"
+            ],
+            "title": "Status"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "ModerateReview"
+      },
+      "ModerationReviewPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ModerationReviewRead"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "ModerationReviewPage"
+      },
+      "ModerationReviewRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "rating": {
+            "type": "integer",
+            "title": "Rating"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReviewStatus"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "book_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Book Id"
+          },
+          "book_title": {
+            "type": "string",
+            "title": "Book Title"
+          },
+          "reader_name": {
+            "type": "string",
+            "title": "Reader Name"
+          },
+          "reader_email": {
+            "type": "string",
+            "title": "Reader Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "rating",
+          "text",
+          "status",
+          "created_at",
+          "updated_at",
+          "book_id",
+          "book_title",
+          "reader_name",
+          "reader_email"
+        ],
+        "title": "ModerationReviewRead"
+      },
+      "MyReviewRead": {
+        "properties": {
+          "can_review": {
+            "type": "boolean",
+            "title": "Can Review",
+            "description": "The reader has borrowed this title"
+          },
+          "review": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReviewRead"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "can_review",
+          "review"
+        ],
+        "title": "MyReviewRead"
+      },
       "NotificationKind": {
         "type": "string",
         "enum": [
@@ -6998,9 +9201,39 @@
           "order_cancelled",
           "due_soon",
           "overdue",
-          "book_available"
+          "book_available",
+          "book_held",
+          "reservation_ready"
         ],
         "title": "NotificationKind"
+      },
+      "OpeningHours": {
+        "properties": {
+          "weekday": {
+            "type": "integer",
+            "maximum": 6.0,
+            "minimum": 0.0,
+            "title": "Weekday"
+          },
+          "opens": {
+            "type": "string",
+            "format": "time",
+            "title": "Opens"
+          },
+          "closes": {
+            "type": "string",
+            "format": "time",
+            "title": "Closes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "weekday",
+          "opens",
+          "closes"
+        ],
+        "title": "OpeningHours",
+        "description": "One opening period on a weekday (0 = Monday), in the library's time zone."
       },
       "OrderDueDateUpdate": {
         "properties": {
@@ -7245,6 +9478,53 @@
             "type": "integer",
             "title": "Renewal Count"
           },
+          "late_fee": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Late Fee",
+            "description": "Charged for returning the books late"
+          },
+          "late_fee_settled_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Late Fee Settled At",
+            "description": "When it was paid or waived"
+          },
+          "pickup_point": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PickupPointBrief"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "pickup_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pickup At"
+          },
           "confirmed_at": {
             "anyOf": [
               {
@@ -7319,6 +9599,10 @@
           "contact_preferred_method",
           "due_date",
           "renewal_count",
+          "late_fee",
+          "late_fee_settled_at",
+          "pickup_point",
+          "pickup_at",
           "confirmed_at",
           "returned_at",
           "cancelled_at",
@@ -7350,6 +9634,364 @@
           "status"
         ],
         "title": "OrderStatusUpdate"
+      },
+      "PickupChoice": {
+        "properties": {
+          "pickup_point_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pickup Point Id"
+          },
+          "pickup_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pickup At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "PickupChoice",
+        "description": "Optional body of POST /orders: where and when the reader collects the books."
+      },
+      "PickupPointBrief": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "address": {
+            "type": "string",
+            "title": "Address"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "address"
+        ],
+        "title": "PickupPointBrief"
+      },
+      "PickupPointCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "address": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Address"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "hours": {
+            "items": {
+              "$ref": "#/components/schemas/OpeningHours"
+            },
+            "type": "array",
+            "maxItems": 28,
+            "title": "Hours"
+          },
+          "slot_minutes": {
+            "type": "integer",
+            "maximum": 240.0,
+            "minimum": 15.0,
+            "title": "Slot Minutes",
+            "default": 60
+          },
+          "slot_capacity": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slot Capacity"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active",
+            "default": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "address",
+          "hours"
+        ],
+        "title": "PickupPointCreate"
+      },
+      "PickupPointRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "address": {
+            "type": "string",
+            "title": "Address"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "hours": {
+            "items": {
+              "$ref": "#/components/schemas/OpeningHours"
+            },
+            "type": "array",
+            "title": "Hours"
+          },
+          "slot_minutes": {
+            "type": "integer",
+            "title": "Slot Minutes"
+          },
+          "slot_capacity": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slot Capacity",
+            "description": "Orders per slot (null: no limit)"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "address",
+          "notes",
+          "hours",
+          "slot_minutes",
+          "slot_capacity",
+          "active"
+        ],
+        "title": "PickupPointRead"
+      },
+      "PickupPointUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "hours": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/OpeningHours"
+                },
+                "type": "array",
+                "maxItems": 28
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hours"
+          },
+          "slot_minutes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 240.0,
+                "minimum": 15.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slot Minutes"
+          },
+          "slot_capacity": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slot Capacity"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "PickupPointUpdate"
+      },
+      "PickupSlot": {
+        "properties": {
+          "starts_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Starts At"
+          },
+          "ends_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Ends At"
+          },
+          "left": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Left",
+            "description": "Orders that still fit (null: no limit; 0: full)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "starts_at",
+          "ends_at",
+          "left"
+        ],
+        "title": "PickupSlot"
+      },
+      "PublicReviewRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "author_name": {
+            "type": "string",
+            "title": "Author Name",
+            "description": "First name and initial, e.g. \"Dana R.\""
+          },
+          "rating": {
+            "type": "integer",
+            "title": "Rating"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "author_name",
+          "rating",
+          "text",
+          "created_at"
+        ],
+        "title": "PublicReviewRead"
       },
       "QualityIssue": {
         "type": "string",
@@ -7407,6 +10049,49 @@
           "created_at"
         ],
         "title": "ReadingListItemRead"
+      },
+      "ReadingLogRead": {
+        "properties": {
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/LoggedBookRead"
+            },
+            "type": "array",
+            "title": "Entries"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "this_year": {
+            "type": "integer",
+            "title": "This Year"
+          },
+          "badges": {
+            "items": {
+              "$ref": "#/components/schemas/BadgeRead"
+            },
+            "type": "array",
+            "title": "Badges"
+          },
+          "to_log": {
+            "items": {
+              "$ref": "#/components/schemas/BookRead"
+            },
+            "type": "array",
+            "title": "To Log",
+            "description": "Borrowed titles that are not in the log yet"
+          }
+        },
+        "type": "object",
+        "required": [
+          "entries",
+          "total",
+          "this_year",
+          "badges",
+          "to_log"
+        ],
+        "title": "ReadingLogRead"
       },
       "RegisterRequest": {
         "properties": {
@@ -7599,6 +10284,65 @@
         ],
         "title": "ReportSummaryRead"
       },
+      "ReservationCreate": {
+        "properties": {
+          "book_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Book Id"
+          },
+          "starts_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Starts On"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "book_id",
+          "starts_on"
+        ],
+        "title": "ReservationCreate"
+      },
+      "ReservationRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "book": {
+            "$ref": "#/components/schemas/BookRead"
+          },
+          "starts_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Starts On"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReservationStatus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "book",
+          "starts_on",
+          "status"
+        ],
+        "title": "ReservationRead"
+      },
+      "ReservationStatus": {
+        "type": "string",
+        "enum": [
+          "active",
+          "fulfilled",
+          "cancelled"
+        ],
+        "title": "ReservationStatus",
+        "description": "A reader's reservation of a title for a date (see ``app.services.reservations``)."
+      },
       "ResetPasswordRequest": {
         "properties": {
           "token": {
@@ -7621,6 +10365,114 @@
           "new_password"
         ],
         "title": "ResetPasswordRequest"
+      },
+      "ReviewRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "rating": {
+            "type": "integer",
+            "title": "Rating"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReviewStatus"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "rating",
+          "text",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ReviewRead"
+      },
+      "ReviewStatus": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "published",
+          "rejected"
+        ],
+        "title": "ReviewStatus",
+        "description": "Ratings without text are published at once; written reviews wait for a librarian."
+      },
+      "ReviewSummaryRead": {
+        "properties": {
+          "average": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average",
+            "description": "Average published rating, one decimal"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count",
+            "description": "Published ratings"
+          },
+          "reviews": {
+            "items": {
+              "$ref": "#/components/schemas/PublicReviewRead"
+            },
+            "type": "array",
+            "title": "Reviews",
+            "description": "Published reviews with text, newest first"
+          }
+        },
+        "type": "object",
+        "required": [
+          "average",
+          "count",
+          "reviews"
+        ],
+        "title": "ReviewSummaryRead"
+      },
+      "ReviewWrite": {
+        "properties": {
+          "rating": {
+            "type": "integer",
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Rating"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Text",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "rating"
+        ],
+        "title": "ReviewWrite"
       },
       "SeriesBrief": {
         "properties": {
@@ -8279,6 +11131,52 @@
         ],
         "title": "UiLanguage",
         "description": "Languages of the web interface and of customer emails."
+      },
+      "UpcomingReservationRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "starts_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Starts On"
+          },
+          "book_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Book Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "author": {
+            "type": "string",
+            "title": "Author"
+          },
+          "reader_name": {
+            "type": "string",
+            "title": "Reader Name"
+          },
+          "reader_email": {
+            "type": "string",
+            "title": "Reader Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "starts_on",
+          "book_id",
+          "title",
+          "author",
+          "reader_name",
+          "reader_email"
+        ],
+        "title": "UpcomingReservationRead"
       },
       "UserRead": {
         "properties": {

@@ -3,7 +3,7 @@ import { Order, OrderStatus } from '../types';
 import { adminApi, fetchAllPages, ordersApi } from '../../api/endpoints';
 import { ActionResult, ApiError, runAction, toApiError } from '../../api/errors';
 import { orderFromDto } from '../../api/mappers';
-import type { OrderDto } from '../../api/types';
+import type { OrderDto, PickupChoiceDto } from '../../api/types';
 import { useAuth } from './AuthContext';
 import { useCatalog } from './CatalogContext';
 
@@ -15,13 +15,15 @@ interface OrdersContextType {
   isLoading: boolean;
   error: ApiError | null;
   /** Creates an order from the server-side cart; price and books are decided by the server. */
-  placeOrder: () => Promise<ActionResult<Order>>;
+  placeOrder: (pickup?: PickupChoiceDto) => Promise<ActionResult<Order>>;
   confirmOrder: (orderId: string) => Promise<ActionResult>;
   markReturned: (orderId: string) => Promise<ActionResult>;
   cancelOrder: (orderId: string) => Promise<ActionResult>;
   /** Customers: extend a borrowed order by one loan period. */
   renewOrder: (orderId: string) => Promise<ActionResult<Order>>;
   updateDueDate: (orderId: string, dueDate: string) => Promise<ActionResult>;
+  /** Admins: the reader paid a late fee, or the library waived it. */
+  settleLateFee: (orderId: string, action: 'paid' | 'waived') => Promise<ActionResult>;
   /**
    * UX hint only: true if the copy is in an active order we know about. The server makes
    * the final decision when adding to the cart and when the order is placed.
@@ -79,8 +81,8 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
     setKnownReserved((prev) => new Set([...prev, ...bookIds]));
   }, []);
 
-  const placeOrder = async (): Promise<ActionResult<Order>> => {
-    const result = await runAction(() => ordersApi.place());
+  const placeOrder = async (pickup?: PickupChoiceDto): Promise<ActionResult<Order>> => {
+    const result = await runAction(() => ordersApi.place(pickup));
     if (!result.ok) {
       if (result.error.code === 'BOOK_UNAVAILABLE') {
         markBooksUnavailable(result.error.unavailableBookIds);
@@ -119,6 +121,11 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
       replaceOrder(await adminApi.setOrderDueDate(orderId, dueDate));
     });
 
+  const settleLateFee = (orderId: string, action: 'paid' | 'waived') =>
+    runAction(async () => {
+      replaceOrder(await adminApi.settleLateFee(orderId, action));
+    });
+
   const isBookUnavailable = (bookId: string): boolean =>
     knownReserved.has(bookId) ||
     orders.some((o) => ACTIVE_STATUSES.has(o.status) && o.books.some((b) => b.id === bookId));
@@ -138,6 +145,7 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
         cancelOrder,
         renewOrder,
         updateDueDate,
+        settleLateFee,
         isBookUnavailable,
         markBooksUnavailable,
         getOrdersForUser,

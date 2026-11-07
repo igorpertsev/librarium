@@ -17,6 +17,9 @@ import type {
   DemandDto,
   ChangePasswordDto,
   ForgotPasswordDto,
+  HeldBookDto,
+  InboxDto,
+  ReadingLogDto,
   LibraryRulesDto,
   LibrarySettingsDto,
   LibrarySettingsUpdateDto,
@@ -25,9 +28,21 @@ import type {
   OrderListQuery,
   OrderPageDto,
   OrderStatusDto,
+  PickupChoiceDto,
+  PickupPointCreateDto,
+  PickupPointDto,
+  PickupPointUpdateDto,
+  PickupSlotDto,
+  ReservationDto,
+  UpcomingReservationDto,
   Paged,
+  ModerationReviewPageDto,
+  MyReviewDto,
   QualitySummaryDto,
   ReadingListItemDto,
+  ReviewDto,
+  ReviewStatusDto,
+  ReviewSummaryDto,
   SeriesNeighboursDto,
   RegisterDto,
   ReminderQueuedDto,
@@ -72,6 +87,29 @@ export const authApi = {
 export const usersApi = {
   updateMe: (body: UserUpdateDto) => apiRequest<UserDto>('/users/me', { method: 'PATCH', body }),
   nextInSeries: () => apiRequest<BookDto[]>('/users/me/next-in-series'),
+  recommendations: () => apiRequest<BookDto[]>('/users/me/recommendations'),
+  holds: () => apiRequest<HeldBookDto[]>('/users/me/holds'),
+  releaseHold: (bookId: string) =>
+    apiRequest<void>(`/users/me/holds/${id(bookId)}`, { method: 'DELETE' }),
+  reservations: () => apiRequest<ReservationDto[]>('/users/me/reservations'),
+  notifications: () => apiRequest<InboxDto>('/users/me/notifications'),
+  readingLog: () => apiRequest<ReadingLogDto>('/users/me/reading-log'),
+  markFinished: (bookId: string, finishedOn?: string) =>
+    apiRequest<void>(`/users/me/reading-log/${id(bookId)}`, {
+      method: 'PUT',
+      body: finishedOn ? { finished_on: finishedOn } : undefined,
+    }),
+  unmarkFinished: (bookId: string) =>
+    apiRequest<void>(`/users/me/reading-log/${id(bookId)}`, { method: 'DELETE' }),
+  markNotificationsRead: (ids?: string[]) =>
+    apiRequest<void>('/users/me/notifications/read', { method: 'POST', body: ids ? { ids } : undefined }),
+  reserve: (bookId: string, startsOn: string) =>
+    apiRequest<ReservationDto>('/users/me/reservations', {
+      method: 'POST',
+      body: { book_id: bookId, starts_on: startsOn },
+    }),
+  cancelReservation: (reservationId: string) =>
+    apiRequest<void>(`/users/me/reservations/${id(reservationId)}`, { method: 'DELETE' }),
   exportData: () => apiDownload('/users/me/export'),
   deleteMe: (password: string) =>
     apiRequest<void>('/users/me', { method: 'DELETE', body: { password } }),
@@ -83,6 +121,10 @@ export const booksApi = {
   get: (bookId: string) => apiRequest<BookDto>(`/books/${id(bookId)}`, { auth: false }),
   ageRanges: () => apiRequest<string[]>('/books/age-ranges', { auth: false }),
   languages: () => apiRequest<string[]>('/books/languages', { auth: false }),
+  reviews: (bookId: string) =>
+    apiRequest<ReviewSummaryDto>(`/books/${id(bookId)}/reviews`, { auth: false }),
+  alsoBorrowed: (bookId: string) =>
+    apiRequest<BookDto[]>(`/books/${id(bookId)}/also-borrowed`, { auth: false }),
   seriesNeighbours: (bookId: string) =>
     apiRequest<SeriesNeighboursDto>(`/books/${id(bookId)}/series-neighbours`, { auth: false }),
 };
@@ -103,7 +145,8 @@ export const cartApi = {
 };
 
 export const ordersApi = {
-  place: () => apiRequest<OrderDto>('/orders', { method: 'POST' }),
+  place: (pickup?: PickupChoiceDto) =>
+    apiRequest<OrderDto>('/orders', { method: 'POST', body: pickup }),
   list: (query: OrderListQuery) => apiRequest<OrderPageDto>('/orders', { query }),
   get: (orderId: string) => apiRequest<OrderDto>(`/orders/${id(orderId)}`),
   cancel: (orderId: string) =>
@@ -119,6 +162,13 @@ export const waitlistApi = {
   leave: (bookId: string) => apiRequest<void>(`/waitlist/${id(bookId)}`, { method: 'DELETE' }),
 };
 
+export const reviewsApi = {
+  mine: (bookId: string) => apiRequest<MyReviewDto>(`/books/${id(bookId)}/my-review`),
+  save: (bookId: string, body: { rating: number; text: string }) =>
+    apiRequest<ReviewDto>(`/books/${id(bookId)}/my-review`, { method: 'PUT', body }),
+  remove: (bookId: string) => apiRequest<void>(`/books/${id(bookId)}/my-review`, { method: 'DELETE' }),
+};
+
 export const readingListApi = {
   list: () => apiRequest<ReadingListItemDto[]>('/reading-list'),
   add: (bookId: string) => apiRequest<void>(`/reading-list/${id(bookId)}`, { method: 'POST' }),
@@ -127,6 +177,9 @@ export const readingListApi = {
 
 export const libraryApi = {
   rules: () => apiRequest<LibraryRulesDto>('/library/rules', { auth: false }),
+  pickupPoints: () => apiRequest<PickupPointDto[]>('/library/pickup-points', { auth: false }),
+  pickupSlots: (pointId: string) =>
+    apiRequest<PickupSlotDto[]>(`/library/pickup-points/${id(pointId)}/slots`, { auth: false }),
 };
 
 export const adminApi = {
@@ -150,6 +203,12 @@ export const adminApi = {
     apiRequest<BookDto>(`/admin/books/${id(bookId)}`, { method: 'PATCH', body }),
   deleteBook: (bookId: string) =>
     apiRequest<void>(`/admin/books/${id(bookId)}`, { method: 'DELETE' }),
+  listReviews: (status: ReviewStatusDto, page = 1) =>
+    apiRequest<ModerationReviewPageDto>('/admin/reviews', { query: { status, page, page_size: 20 } }),
+  moderateReview: (reviewId: string, status: 'published' | 'rejected') =>
+    apiRequest<ReviewDto>(`/admin/reviews/${id(reviewId)}`, { method: 'PATCH', body: { status } }),
+  deleteReview: (reviewId: string) =>
+    apiRequest<void>(`/admin/reviews/${id(reviewId)}`, { method: 'DELETE' }),
   suggestTranslation: (body: TranslationSuggestRequestDto) =>
     apiRequest<TranslationSuggestionDto>('/admin/translations/suggest', { method: 'POST', body }),
   createTag: (body: TagCreateDto) => apiRequest<TagDto>('/admin/tags', { method: 'POST', body }),
@@ -185,6 +244,19 @@ export const adminApi = {
       method: 'PATCH',
       body: { due_date: dueDate },
     }),
+  settleLateFee: (orderId: string, action: 'paid' | 'waived') =>
+    apiRequest<OrderDto>(`/admin/orders/${id(orderId)}/late-fee`, {
+      method: 'PATCH',
+      body: { action },
+    }),
+  upcomingReservations: () => apiRequest<UpcomingReservationDto[]>('/admin/reservations'),
+  listPickupPoints: () => apiRequest<PickupPointDto[]>('/admin/pickup-points'),
+  createPickupPoint: (body: PickupPointCreateDto) =>
+    apiRequest<PickupPointDto>('/admin/pickup-points', { method: 'POST', body }),
+  updatePickupPoint: (pointId: string, body: PickupPointUpdateDto) =>
+    apiRequest<PickupPointDto>(`/admin/pickup-points/${id(pointId)}`, { method: 'PATCH', body }),
+  deletePickupPoint: (pointId: string) =>
+    apiRequest<void>(`/admin/pickup-points/${id(pointId)}`, { method: 'DELETE' }),
   getSettings: () => apiRequest<LibrarySettingsDto>('/admin/settings'),
   reportSummary: (period: ReportPeriod) =>
     apiRequest<ReportSummaryDto>('/admin/reports/summary', { query: period }),

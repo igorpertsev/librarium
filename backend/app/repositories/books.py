@@ -11,10 +11,12 @@ from typing import Any
 
 from sqlalchemy import (
     ColumnElement,
+    Date,
     Exists,
     ScalarSelect,
     and_,
     case,
+    cast,
     exists,
     func,
     literal,
@@ -24,8 +26,26 @@ from sqlalchemy import (
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import InstrumentedAttribute
 
-from app.models import Book, BookTranslation, Order, OrderItem, Series, Tag, book_tags
-from app.models.enums import ACTIVE_ORDER_STATUSES, BookCategory, BookStatus, TranslationSource
+from app.models import (
+    AdvanceReservation,
+    Book,
+    BookHold,
+    BookTranslation,
+    LibrarySettings,
+    Order,
+    OrderItem,
+    Series,
+    Tag,
+    book_tags,
+)
+from app.models.enums import (
+    ACTIVE_ORDER_STATUSES,
+    BookCategory,
+    BookStatus,
+    ReservationStatus,
+    TranslationSource,
+)
+from app.models.library_settings import SETTINGS_ROW_ID
 from app.schemas.book import BookSort, QualityIssue
 
 
@@ -55,6 +75,69 @@ def active_reservation_due_date(book_id: InstrumentedAttribute[uuid.UUID]) -> Sc
         .order_by(Order.due_date.desc())
         .limit(1)
         .scalar_subquery()
+    )
+
+
+def active_hold_until(book_id: InstrumentedAttribute[uuid.UUID]) -> ScalarSelect[date]:
+    """Last day of an unexpired hold on this copy for the next reader; NULL when none."""
+    return (
+        select(cast(BookHold.held_until, Date))
+        .where(BookHold.book_id == book_id, BookHold.held_until > func.now())
+        .scalar_subquery()
+    )
+
+
+def active_hold_exists(book_id: InstrumentedAttribute[uuid.UUID]) -> Exists:
+    return exists().where(BookHold.book_id == book_id, BookHold.held_until > func.now())
+
+
+def _loan_days() -> ScalarSelect[int]:
+    return (
+        select(LibrarySettings.loan_period_days)
+        .where(LibrarySettings.id == SETTINGS_ROW_ID)
+        .scalar_subquery()
+    )
+
+
+def _kept_for_reservation(book_id: InstrumentedAttribute[uuid.UUID]) -> list[ColumnElement[bool]]:
+    """An active reservation of this copy whose date is less than a loan period away: from
+    then on nobody else may borrow the copy (it would not be back in time)."""
+    return [
+        AdvanceReservation.book_id == book_id,
+        AdvanceReservation.status == ReservationStatus.ACTIVE,
+        AdvanceReservation.starts_on - _loan_days() <= func.current_date(),
+    ]
+
+
+def reserved_ahead_exists(book_id: InstrumentedAttribute[uuid.UUID]) -> Exists:
+    return exists().where(*_kept_for_reservation(book_id))
+
+
+def reserved_ahead_until(book_id: InstrumentedAttribute[uuid.UUID]) -> ScalarSelect[date]:
+    """A copy kept for a reservation is expected back one loan period after its date."""
+    return (
+        select(func.min(AdvanceReservation.starts_on + _loan_days()))
+        .where(*_kept_for_reservation(book_id))
+        .scalar_subquery()
+    )
+
+
+def copy_taken(book_id: InstrumentedAttribute[uuid.UUID]) -> ColumnElement[bool]:
+    """In an active order, held for a reader, or kept for a reader's reservation."""
+    return (
+        active_reservation_exists(book_id)
+        | active_hold_exists(book_id)
+        | reserved_ahead_exists(book_id)
+    )
+
+
+def unavailable_until(book_id: InstrumentedAttribute[uuid.UUID]) -> ColumnElement[date]:
+    """When the copy is expected to be free again: the due date of the order holding it, the
+    end of a hold for another reader, or after a reservation; NULL when it is free."""
+    return func.coalesce(
+        active_reservation_due_date(book_id),
+        active_hold_until(book_id),
+        reserved_ahead_until(book_id),
     )
 
 
@@ -252,7 +335,7 @@ def _conditions(
     if filters.quality is not None:
         conditions.append(quality_condition(filters.quality))
     if filters.available is not None and per_copy_availability:
-        reserved = active_reservation_exists(Book.id)
+        reserved = copy_taken(Book.id)
         is_available = Book.is_active.is_(True) & (Book.status == BookStatus.AVAILABLE) & ~reserved
         conditions.append(is_available if filters.available else ~is_available)
     return conditions
@@ -286,7 +369,7 @@ async def list_books(
         select(
             Book.id.label("id"),
             group.label("grp"),
-            active_reservation_due_date(Book.id).label("reserved_until"),
+            unavailable_until(Book.id).label("reserved_until"),
             (Book.is_active.is_(True) & (Book.status == BookStatus.AVAILABLE)).label("lendable"),
         )
         .where(*_conditions(filters, per_copy_availability=not group_copies))
@@ -342,7 +425,7 @@ async def copy_counts(session: AsyncSession, book: Book) -> tuple[int, int]:
     """(active copies, copies available now) of the book's title."""
     group = copy_group_key()
     key = book.copy_group_id or book.id
-    reserved = active_reservation_exists(Book.id)
+    reserved = copy_taken(Book.id)
     available = Book.status == BookStatus.AVAILABLE
     row = (
         await session.execute(
@@ -358,7 +441,7 @@ async def get_book_with_reservation(
     session: AsyncSession, book_id: uuid.UUID
 ) -> tuple[Book, date | None] | None:
     """The book and the due date of the order reserving it (None when free)."""
-    stmt = select(Book, active_reservation_due_date(Book.id).label("reserved_until")).where(
+    stmt = select(Book, unavailable_until(Book.id).label("reserved_until")).where(
         Book.id == book_id
     )
     row = (await session.execute(stmt)).first()

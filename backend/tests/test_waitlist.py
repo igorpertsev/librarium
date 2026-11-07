@@ -4,10 +4,11 @@ import uuid
 from email.message import EmailMessage
 from typing import Any
 
+import pytest
 from fastapi import FastAPI
-from sqlalchemy import select
+from sqlalchemy import select, update
 
-from app.models import Notification
+from app.models import LibrarySettings, Notification
 from app.models.enums import BookStatus, NotificationKind, NotificationStatus
 from app.services.notifications import deliver_pending
 from tests.conftest import (
@@ -19,6 +20,15 @@ from tests.conftest import (
     fill_cart,
     place_order,
 )
+
+
+@pytest.fixture(autouse=True)
+async def _email_everyone(app: FastAPI) -> None:
+    """These tests describe the mode without holds (hold_hours = 0): everybody waiting is
+    emailed and the first to order gets the book. Holds are tested in test_holds.py."""
+    async with app.state.db.sessionmaker() as session:
+        await session.execute(update(LibrarySettings).values(hold_hours=0))
+        await session.commit()
 
 
 class FakeSender:

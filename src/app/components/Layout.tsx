@@ -13,20 +13,11 @@ function SessionLoading() {
 }
 
 export function Layout() {
-  const { isAuthenticated, isLoading, signedOut } = useAuth();
-  const location = useLocation();
+  const { isLoading } = useAuth();
   const { t } = useTranslation();
 
   if (isLoading) {
     return <SessionLoading />;
-  }
-
-  if (!isAuthenticated) {
-    // Back to this page after signing in (e.g. a link from an email), unless the reader has
-    // just signed out on purpose: the next person to sign in starts on the catalogue.
-    return (
-      <Navigate to="/login" replace state={signedOut ? undefined : { from: location.pathname + location.search }} />
-    );
   }
 
   return (
@@ -43,6 +34,20 @@ export function Layout() {
       </main>
     </div>
   );
+}
+
+/** Pages that need an account (profile, cart, admin): visitors are sent to sign in. */
+export function RequireAuth() {
+  const { isAuthenticated, signedOut } = useAuth();
+  const location = useLocation();
+  if (!isAuthenticated) {
+    // Back to this page after signing in (e.g. a link from an email), unless the reader has
+    // just signed out on purpose: the next person to sign in starts on the catalogue.
+    return (
+      <Navigate to="/login" replace state={signedOut ? undefined : { from: location.pathname + location.search }} />
+    );
+  }
+  return <Outlet />;
 }
 
 export function AdminLayout() {

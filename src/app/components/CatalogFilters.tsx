@@ -18,6 +18,8 @@ import { bookFromDto } from '../../api/mappers';
 import { ApiError, toApiError } from '../../api/errors';
 import type { SeriesDto } from '../../api/types';
 import { useCart } from '../contexts/CartContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useSignInFirst } from '../utils/useSignInFirst';
 import { useCatalog } from '../contexts/CatalogContext';
 import type { Book } from '../types';
 import { errorMessage } from '../utils/apiErrors';
@@ -221,6 +223,8 @@ export function SeriesBanner({ seriesId, onClear }: { seriesId: string; onClear:
   const { t } = useTranslation();
   const { version } = useCatalog();
   const { addBookToCart, isBookInCart } = useCart();
+  const { user } = useAuth();
+  const signInFirst = useSignInFirst();
   const seriesName = useSeriesName();
   const [series, setSeries] = useState<SeriesDto | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
@@ -242,6 +246,10 @@ export function SeriesBanner({ seriesId, onClear }: { seriesId: string; onClear:
   }, [seriesId, version]);
 
   const takeAll = async () => {
+    if (!user) {
+      signInFirst();
+      return;
+    }
     setBusy(true);
     try {
       // One entry per title, represented by a copy that can be borrowed now.

@@ -10,8 +10,9 @@ from app.models.enums import BookCategory
 from app.repositories.books import BookFilters
 from app.schemas.book import BookPage, BookRead, BookSort, SeriesNeighbours
 from app.schemas.common import error_responses
+from app.schemas.review import ReviewSummaryRead
 from app.services import books as books_service
-from app.services import series_reading
+from app.services import recommendations, reviews, series_reading
 
 router = APIRouter(prefix="/books", tags=["books"])
 
@@ -100,6 +101,28 @@ async def list_languages(session: SessionDep) -> list[str]:
 async def get_series_neighbours(book_id: uuid.UUID, session: SessionDep) -> SeriesNeighbours:
     found = await series_reading.neighbours(session, book_id)
     return SeriesNeighbours(previous=found.previous, next=found.next)
+
+
+@router.get(
+    "/{book_id}/reviews",
+    response_model=ReviewSummaryRead,
+    responses=error_responses(404, 422),
+    description="Average rating and published reviews of the title (copies count as one).",
+)
+async def get_reviews(book_id: uuid.UUID, session: SessionDep) -> ReviewSummaryRead:
+    found = await reviews.summary(session, book_id)
+    return ReviewSummaryRead.model_validate(found, from_attributes=True)
+
+
+@router.get(
+    "/{book_id}/also-borrowed",
+    response_model=list[BookRead],
+    responses=error_responses(404, 422),
+    description="Titles most often borrowed by readers who borrowed this one (each borrowed "
+    "by at least two of them, so no single reader's borrowing shows).",
+)
+async def get_also_borrowed(book_id: uuid.UUID, session: SessionDep) -> list[BookRead]:
+    return await recommendations.also_borrowed(session, book_id)
 
 
 @router.get("/{book_id}", response_model=BookRead, responses=error_responses(404, 422))

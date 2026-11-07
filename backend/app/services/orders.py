@@ -34,7 +34,8 @@ from app.models.enums import (
 )
 from app.repositories import orders as orders_repo
 from app.repositories.books import reserved_book_ids
-from app.services import notifications, waitlist
+from app.schemas.pickup import PickupChoice
+from app.services import holds, notifications, pickup, reservations, waitlist
 from app.services.library_settings import get_library_settings
 
 ACTIVE_BOOK_INDEX = "uq_order_items_active_book"
@@ -59,7 +60,9 @@ def _today() -> date:
     return datetime.now(UTC).date()
 
 
-async def place_order(session: AsyncSession, user: User) -> Order:
+async def place_order(
+    session: AsyncSession, user: User, pickup_choice: PickupChoice | None = None
+) -> Order:
     """Create an order from the complete batches of the user's cart, in one transaction."""
     # 1. Serialise checkouts of the same cart (double click, two tabs).
     cart = await session.scalar(select(Cart).where(Cart.user_id == user.id).with_for_update())
@@ -81,6 +84,22 @@ async def place_order(session: AsyncSession, user: User) -> Order:
         raise BadRequestError("Your cart is empty", code="CART_EMPTY")
 
     library = await get_library_settings(session, lock="share")
+    if library.block_overdue:
+        overdue = (
+            await session.scalars(
+                select(Order.number).where(
+                    Order.user_id == user.id,
+                    Order.status == OrderStatus.CONFIRMED,
+                    Order.due_date < datetime.now(UTC).date(),
+                )
+            )
+        ).all()
+        if overdue:
+            raise ConflictError(
+                "Return your overdue books before ordering new ones",
+                code="OVERDUE_LOANS",
+                details={"orders": sorted(overdue)},
+            )
     per_batch = library.books_per_batch
     batch_count = len(items) // per_batch
     if batch_count == 0:
@@ -91,6 +110,7 @@ async def place_order(session: AsyncSession, user: User) -> Order:
         )
     selected = items[: batch_count * per_batch]
     book_ids = [item.book_id for item in selected]
+    pickup_point, pickup_at = await pickup.choose(session, pickup_choice)
 
     # 3. Lock the copies (deterministic order prevents deadlocks).
     locked = (
@@ -103,6 +123,8 @@ async def place_order(session: AsyncSession, user: User) -> Order:
     # 4-6. Re-check availability under the lock. Any active order blocks a copy, including
     # the customer's own: the UI never lets a reserved copy be added again.
     reserved = await reserved_book_ids(session, book_ids)
+    reserved |= await holds.held_by_others(session, book_ids, user.id, datetime.now(UTC))
+    reserved |= await reservations.kept_copies(session, book_ids)
     unavailable = [
         (book_id, books[book_id].title if book_id in books else "")
         for book_id in book_ids
@@ -134,6 +156,8 @@ async def place_order(session: AsyncSession, user: User) -> Order:
         contact_phone=user.phone,
         contact_preferred_method=user.preferred_contact_method,
         due_date=_today() + timedelta(days=library.loan_period_days),
+        pickup_point_id=pickup_point.id if pickup_point else None,
+        pickup_at=pickup_at,
     )
     # 10-11. Items keep a snapshot of title, author and price at the time of the order.
     order.items = [
@@ -158,6 +182,7 @@ async def place_order(session: AsyncSession, user: User) -> Order:
 
     # 12. Remove the ordered books from the cart. Books of an incomplete trailing batch stay.
     await session.execute(delete(CartItem).where(CartItem.id.in_([i.id for i in selected])))
+    await holds.consume(session, user.id, book_ids)  # held copies the reader now borrows
 
     # Captured now: after a failed flush the ORM objects are expired and unusable.
     requested = [(book_id, books[book_id].title) for book_id in book_ids]
@@ -196,6 +221,12 @@ async def _apply_status(session: AsyncSession, order: Order, new_status: OrderSt
         order.confirmed_at = now
     elif new_status is OrderStatus.RETURNED:
         order.returned_at = now
+        # Late: the library's fee per day for every day after the due date.
+        days_late = (now.date() - order.due_date).days
+        if days_late > 0:
+            fee_per_day = (await get_library_settings(session)).late_fee_per_day
+            if fee_per_day > 0:
+                order.late_fee = fee_per_day * days_late
     elif new_status is OrderStatus.CANCELLED:
         order.cancelled_at = now
     # Keep the indexed reservation flag in sync with ACTIVE_ORDER_STATUSES.
@@ -284,9 +315,11 @@ async def renew_own_order(session: AsyncSession, user: User, order_id: uuid.UUID
     if order is None:
         raise order_not_found()
     library = await get_library_settings(session, lock="share")
+    book_ids = await _book_ids(session, order.id)
+    new_due = order.due_date + timedelta(days=library.loan_period_days)
     others_waiting = await waitlist.has_waiting_readers(
-        session, await _book_ids(session, order.id), except_user=user.id
-    )
+        session, book_ids, except_user=user.id
+    ) or await reservations.blocks_renewal(session, book_ids, new_due)
     reason = renewal_refusal(order, library, _today(), others_waiting=others_waiting)
     if reason is not None:
         raise ConflictError(
@@ -332,5 +365,17 @@ async def change_due_date(session: AsyncSession, order_id: uuid.UUID, due_date: 
             "The due date cannot be before the order date", code="INVALID_DUE_DATE"
         )
     order.due_date = due_date
+    await session.commit()
+    return await get_order(session, order_id)
+
+
+async def settle_late_fee(session: AsyncSession, order_id: uuid.UUID, *, waive: bool) -> Order:
+    """The reader paid the late fee, or the library waived it."""
+    order = await get_order(session, order_id)
+    if not order.late_fee or order.late_fee_settled_at is not None:
+        raise ConflictError("This order has no unpaid late fee", code="NO_LATE_FEE")
+    if waive:
+        order.late_fee = Decimal("0.00")
+    order.late_fee_settled_at = datetime.now(UTC)
     await session.commit()
     return await get_order(session, order_id)

@@ -3,10 +3,15 @@ import { Book } from '../types';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { ChevronLeft, ChevronRight, ShoppingCart, Calendar, Hash, BookOpen, ZoomIn, ZoomOut, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ShoppingCart, Calendar, Hash, BookOpen, ZoomIn, ZoomOut, X, LogIn, Link2 } from 'lucide-react';
 import { Separator } from './ui/separator';
 import useEmblaCarousel from 'embla-carousel-react';
 import { useCart } from '../contexts/CartContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useSignInFirst } from '../utils/useSignInFirst';
+import { ReserveAhead } from './ReserveAhead';
+import { FinishedButton } from './FinishedButton';
+import { useLibraryRules } from '../utils/useLibraryRules';
 import { useOrders } from '../contexts/OrdersContext';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
@@ -19,6 +24,8 @@ import { AuthorLink, SeriesLink, TagChips } from './CatalogFilters';
 import { useBookLanguageName, useBookText } from '../utils/bookText';
 import { booksApi } from '../../api/endpoints';
 import { bookFromDto } from '../../api/mappers';
+import { coverOfSize } from '../utils/covers';
+import { BookReviews } from './BookReviews';
 
 interface BookDetailsModalProps {
   book: Book | null;
@@ -28,6 +35,18 @@ interface BookDetailsModalProps {
 
 export function BookDetailsModal({ book: initialBook, open, onOpenChange }: BookDetailsModalProps) {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const rules = useLibraryRules();
+  const signInFirst = useSignInFirst();
+  const copyLink = async (bookId: string) => {
+    const url = `${window.location.origin}/books/${bookId}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success(t('share.copied'));
+    } catch {
+      toast.info(url); // no clipboard access: show the link to copy by hand
+    }
+  };
   // "Previous / next volume" shows another book in the same dialog.
   const [shown, setShown] = useState<Book | null>(null);
   const book = shown ?? initialBook;
@@ -73,6 +92,23 @@ export function BookDetailsModal({ book: initialBook, open, onOpenChange }: Book
       current = false;
     };
   }, [open, bookId, inNumberedSeries]);
+
+  // "Readers who borrowed this also borrowed".
+  const [alsoBorrowed, setAlsoBorrowed] = useState<Book[]>([]);
+  useEffect(() => {
+    if (!open || !bookId) {
+      setAlsoBorrowed([]);
+      return;
+    }
+    let current = true;
+    booksApi
+      .alsoBorrowed(bookId)
+      .then((found) => current && setAlsoBorrowed(found.map(bookFromDto)))
+      .catch(() => current && setAlsoBorrowed([]));
+    return () => {
+      current = false;
+    };
+  }, [open, bookId]);
 
   const showVolume = (volume: Book) => {
     setShown(volume);
@@ -347,6 +383,32 @@ export function BookDetailsModal({ book: initialBook, open, onOpenChange }: Book
               )}
             </div>
 
+            <BookReviews bookId={book.id} />
+
+            {alsoBorrowed.length > 0 && (
+              <section aria-labelledby="also-borrowed-title">
+                <h3 id="also-borrowed-title" className="mb-2 text-base sm:text-xl">{t('alsoBorrowed.title')}</h3>
+                <ul className="flex gap-3 overflow-x-auto pb-1">
+                  {alsoBorrowed.map((other) => (
+                    <li key={other.id} className="shrink-0 w-20">
+                      <button
+                        type="button"
+                        onClick={() => showVolume(other)}
+                        className="w-full text-left rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <div className="aspect-[3/4] overflow-hidden rounded bg-muted border border-border">
+                          {other.coverImage && (
+                            <img src={coverOfSize(other.coverImage, 'S')} alt="" loading="lazy" className="w-full h-full object-cover" />
+                          )}
+                        </div>
+                        <span className="mt-1 block text-xs leading-snug line-clamp-2">{textOf(other).title}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
             <Separator />
 
             <div className="space-y-3 sm:space-y-5">
@@ -379,23 +441,46 @@ export function BookDetailsModal({ book: initialBook, open, onOpenChange }: Book
 
             <Separator />
 
-            <Button
-              onClick={handleAddToCart}
-              disabled={book.status !== 'available' || isPending || isOrderedByOther || adding}
-              className="w-full text-sm sm:text-lg py-5 sm:py-7"
-              size="lg"
-            >
-              <ShoppingCart className="w-4 h-4 sm:w-6 sm:h-6 mr-2 sm:mr-3" />
-              {getCartButtonLabel(t, { status: book.status, inCart: isPending, reserved: isOrderedByOther })}
-            </Button>
-            {(isOrderedByOther || book.status !== 'available') && !isPending && (
-              <div className="flex flex-col items-center gap-2 text-center">
-                <p className="text-sm text-muted-foreground">{t('waitlist.explain')}</p>
-                <WaitlistButton bookId={book.id} groupId={book.groupId} title={text.title} withLabel />
+            {user ? (
+              <>
+                <Button
+                  onClick={handleAddToCart}
+                  disabled={book.status !== 'available' || isPending || isOrderedByOther || adding}
+                  className="w-full text-sm sm:text-lg py-5 sm:py-7"
+                  size="lg"
+                >
+                  <ShoppingCart className="w-4 h-4 sm:w-6 sm:h-6 mr-2 sm:mr-3" />
+                  {getCartButtonLabel(t, { status: book.status, inCart: isPending, reserved: isOrderedByOther })}
+                </Button>
+                {(isOrderedByOther || book.status !== 'available') && !isPending && (
+                  <div className="flex flex-col items-center gap-2 text-center">
+                    <p className="text-sm text-muted-foreground">{t('waitlist.explain')}</p>
+                    {rules && rules.holdHours > 0 && (
+                      <p className="text-xs text-muted-foreground">{t('waitlist.holdExplain', { count: rules.holdHours })}</p>
+                    )}
+                    <WaitlistButton bookId={book.id} groupId={book.groupId} title={text.title} withLabel />
+                  </div>
+                )}
+                <div className="flex flex-wrap justify-center gap-2">
+                  <ReadingListButton bookId={book.id} groupId={book.groupId} title={text.title} withLabel />
+                  <FinishedButton bookId={book.id} groupId={book.groupId} title={text.title} />
+                </div>
+                <ReserveAhead bookId={book.id} groupId={book.groupId} title={text.title} />
+              </>
+            ) : (
+              <div className="space-y-2 text-center">
+                <Button onClick={signInFirst} className="w-full text-sm sm:text-lg py-5 sm:py-7" size="lg">
+                  <LogIn className="w-4 h-4 sm:w-6 sm:h-6 mr-2 sm:mr-3" aria-hidden="true" />
+                  {t('guest.signInToBorrow')}
+                </Button>
+                <p className="text-sm text-muted-foreground">{t('guest.explain')}</p>
               </div>
             )}
             <div className="flex justify-center">
-              <ReadingListButton bookId={book.id} groupId={book.groupId} title={text.title} withLabel />
+              <Button variant="ghost" size="sm" onClick={() => void copyLink(book.id)}>
+                <Link2 className="w-4 h-4 mr-2" aria-hidden="true" />
+                {t('share.copyLink')}
+              </Button>
             </div>
           </div>
         </div>

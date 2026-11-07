@@ -95,12 +95,15 @@ export default function Login() {
             </Button>
           </form>
         </CardContent>
-        <CardFooter className="flex justify-center">
+        <CardFooter className="flex flex-col items-center gap-2">
           <p className="text-sm text-muted-foreground">
             {t('auth.noAccount')}{' '}
             <Link to="/register" className="text-primary underline underline-offset-4">
               {t('auth.signUp')}
             </Link>
+          </p>
+          <p className="text-sm text-muted-foreground text-center">
+            <Link to="/" className="text-primary underline underline-offset-4">{t('auth.browseCatalogue')}</Link>
           </p>
         </CardFooter>
       </Card>

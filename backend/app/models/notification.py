@@ -23,6 +23,7 @@ class Notification(Base):
     __table_args__ = (
         sa.UniqueConstraint("order_id", "kind"),
         sa.Index("ix_notifications_status_next_attempt", "status", "next_attempt_at"),
+        sa.Index("ix_notifications_user_created", "user_id", "created_at"),
     )
 
     id: Mapped[uuid.UUID] = uuid_pk()
@@ -52,3 +53,5 @@ class Notification(Base):
         sa.DateTime(timezone=True), default=utc_now, server_default=sa.func.now()
     )
     sent_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True))
+    # When the reader saw it in the app's notification list (NULL: unread).
+    read_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True))

@@ -32,7 +32,7 @@ from app.models.enums import UiLanguage, UserRole
 from app.repositories.books import copy_group_key
 from app.schemas.book import BookCreate
 from app.schemas.types import NormalizedEmail
-from app.services import catalog
+from app.services import catalog, holds, reservations
 from app.services.books import new_book, translation_rows
 from app.services.library_settings import ensure_library_settings
 from app.services.notifications import deliver_pending, make_smtp_sender, queue_reminders
@@ -181,6 +181,16 @@ async def _notifications(settings: Settings, *, loop_seconds: int | None) -> Non
     warned = False
     try:
         while True:
+            async with db.sessionmaker() as session:
+                # Holds that ran out go to the next reader in line (and queue their emails).
+                expired = await holds.expire(session, datetime.now(UTC))
+            if expired:
+                print(f"{expired} hold(s) expired.")
+            async with db.sessionmaker() as session:
+                # Reservations whose day has come: hold the copy and email the reader.
+                ready = await reservations.activate(session)
+            if ready:
+                print(f"{ready} reservation(s) ready.")
             async with db.sessionmaker() as session:
                 queued = await queue_reminders(
                     session, today=datetime.now(UTC).date(), due_soon_days=settings.due_soon_days

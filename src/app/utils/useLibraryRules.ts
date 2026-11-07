@@ -1,11 +1,21 @@
 import { useEffect, useState } from 'react';
 import { libraryApi } from '../../api/endpoints';
+import { toMoney } from '../../api/mappers';
 import type { LibraryRulesDto } from '../../api/types';
 
 export interface LibraryRules {
   booksPerBatch: number;
   loanPeriodDays: number;
   maxRenewals: number;
+  /** How long a returned book is held for the next reader (0: no holds). */
+  holdHours: number;
+  /** Readers with overdue loans cannot place new orders. */
+  blockOverdue: boolean;
+  /** Fee per day for late returns (0: no fees). */
+  lateFeePerDay: number;
+  currency: string;
+  /** IANA time zone of opening hours and pickup slots. */
+  timezone: string;
 }
 
 let cached: Promise<LibraryRules> | null = null;
@@ -17,6 +27,11 @@ function loadRules(): Promise<LibraryRules> {
       booksPerBatch: dto.books_per_batch,
       loanPeriodDays: dto.loan_period_days,
       maxRenewals: dto.max_renewals,
+      holdHours: dto.hold_hours,
+      blockOverdue: dto.block_overdue,
+      lateFeePerDay: toMoney(dto.late_fee_per_day),
+      currency: dto.currency,
+      timezone: dto.timezone,
     }))
     .catch((error: unknown) => {
       cached = null; // try again next time

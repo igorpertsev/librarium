@@ -1,19 +1,27 @@
 import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Sparkles } from 'lucide-react';
-import { booksApi } from '../../api/endpoints';
-import { bookFromDto } from '../../api/mappers';
+import type { LucideIcon } from 'lucide-react';
 import { useCatalog } from '../contexts/CatalogContext';
 import type { Book } from '../types';
 import { useBookText } from '../utils/bookText';
-import { BookDetailsModal } from './BookDetailsModal';
 import { coverOfSize } from '../utils/covers';
+import { BookDetailsModal } from './BookDetailsModal';
 
-const SHELF_SIZE = 8;
-
-/** The newest titles, above the catalogue while nothing is searched or filtered. */
-export function NewArrivalsShelf() {
-  const { t } = useTranslation();
+/** A row of covers above the catalogue (new arrivals, suggestions); each opens the book. */
+export function BookShelf({
+  id,
+  title,
+  icon: Icon,
+  load,
+  minimum = 3,
+}: {
+  id: string;
+  title: string;
+  icon: LucideIcon;
+  /** Must be stable (module-level or memoised): it is reloaded when it changes. */
+  load: () => Promise<Book[]>;
+  /** Fewer books than this and the shelf is not shown (a shelf of one looks broken). */
+  minimum?: number;
+}) {
   const { version } = useCatalog();
   const textOf = useBookText();
   const [books, setBooks] = useState<Book[]>([]);
@@ -21,21 +29,20 @@ export function NewArrivalsShelf() {
 
   useEffect(() => {
     let current = true;
-    booksApi
-      .list({ sort: '-created_at', page: 1, page_size: SHELF_SIZE })
-      .then((page) => current && setBooks(page.items.map(bookFromDto)))
+    load()
+      .then((found) => current && setBooks(found))
       .catch(() => current && setBooks([]));
     return () => {
       current = false;
     };
-  }, [version]);
+  }, [load, version]);
 
-  if (books.length < 3) return null; // a shelf of one or two looks broken
+  if (books.length < minimum) return null;
   return (
-    <section aria-labelledby="new-arrivals-title" className="mb-6">
-      <h2 id="new-arrivals-title" className="flex items-center gap-2 text-lg mb-3">
-        <Sparkles className="w-5 h-5 text-primary" aria-hidden="true" />
-        {t('newArrivals.title')}
+    <section aria-labelledby={id} className="mb-6">
+      <h2 id={id} className="flex items-center gap-2 text-lg mb-3">
+        <Icon className="w-5 h-5 text-primary" aria-hidden="true" />
+        {title}
       </h2>
       <ul className="flex gap-4 overflow-x-auto pb-2 snap-x">
         {books.map((book) => {

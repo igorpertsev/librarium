@@ -16,10 +16,15 @@ import { daysUntil, useFormat } from '../utils/format';
 import { useConfirm } from '../components/ConfirmDialog';
 import { orderLabel } from '../utils/translations';
 import { useLibraryRules } from '../utils/useLibraryRules';
+import { LateReturnsCard } from '../components/LateReturnsCard';
+import { PickupLine } from '../components/PickupLine';
+import { ReservationsCard } from '../components/ReservationsCard';
+import { ReadingLogCard } from '../components/ReadingLogCard';
 import { useWaitlist } from '../contexts/WaitlistContext';
 import { WaitlistButton } from '../components/WaitlistButton';
 import { ReadingListCard } from '../components/ReadingListCard';
 import { NextInSeriesCard } from '../components/NextInSeriesCard';
+import { HeldForYouCard } from '../components/HeldForYouCard';
 import { ExtendFromLink } from '../components/ExtendFromLink';
 import { AccountDataCard } from '../components/AccountDataCard';
 import { useBookText } from '../utils/bookText';
@@ -261,10 +266,14 @@ export default function Profile() {
         </Card>
       </div>
 
+      <LateReturnsCard orders={userOrders} />
       <ExtendFromLink orders={userOrders} confirm={confirm} renew={handleRenew} />
+      <HeldForYouCard />
+      <ReservationsCard />
       <NextInSeriesCard />
 
       <ReadingListCard />
+      <ReadingLogCard />
 
       {waitlist.length > 0 && (
         <Card>
@@ -328,6 +337,7 @@ export default function Profile() {
                     {t('profile.cancelRequest')}
                   </Button>
                 </div>
+                <PickupLine order={order} />
                 <div className="flex gap-2 flex-wrap">
                   {order.books.map(book => (
                     <div key={book.id} className="w-10 h-14 overflow-hidden rounded bg-muted" title={book.title}>

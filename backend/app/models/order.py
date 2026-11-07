@@ -10,6 +10,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base, TimestampMixin, str_enum, uuid_pk
 from app.models.book import Book
 from app.models.enums import BookCategory, ContactMethod, OrderStatus
+from app.models.pickup import PickupPoint
 
 MONEY = sa.Numeric(10, 2)
 
@@ -26,6 +27,7 @@ class Order(TimestampMixin, Base):
         sa.CheckConstraint("currency ~ '^[A-Z]{3}$'", name="currency_iso4217"),
         sa.CheckConstraint("renewal_count >= 0", name="renewal_count_non_negative"),
         sa.Index("ix_orders_user_created", "user_id", "created_at"),
+        sa.Index("ix_orders_pickup", "pickup_point_id", "pickup_at"),
     )
 
     id: Mapped[uuid.UUID] = uuid_pk()
@@ -60,10 +62,20 @@ class Order(TimestampMixin, Base):
     due_date: Mapped[date] = mapped_column(sa.Date)
     # How often the customer has extended the loan (limited by library_settings.max_renewals).
     renewal_count: Mapped[int] = mapped_column(sa.SmallInteger, default=0, server_default="0")
+    # Charged when the books came back late (days late x the library's fee per day); NULL when
+    # returned on time or no fee applied. Settled when paid or waived by the library.
+    late_fee: Mapped[Decimal | None] = mapped_column(MONEY)
+    late_fee_settled_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True))
+    # Where and when the reader collects the books (when the library has pickup points).
+    pickup_point_id: Mapped[uuid.UUID | None] = mapped_column(
+        sa.ForeignKey("pickup_points.id", ondelete="RESTRICT")
+    )
+    pickup_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True))
     confirmed_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True))
     returned_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True))
     cancelled_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True))
 
+    pickup_point: Mapped[PickupPoint | None] = relationship(lazy="selectin")
     items: Mapped[list[OrderItem]] = relationship(
         back_populates="order",
         lazy="raise",

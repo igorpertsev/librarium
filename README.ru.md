@@ -354,6 +354,10 @@ refresh (нет цикла); при неудаче auth-состояние оч�
   библиотеки, админ-карточка «Batch Configuration»). В заказ попадают полные партии в порядке
   добавления; книги неполной последней партии остаются в корзине.
 
+**Открытый каталог**: каталог и страницы книг (`/books/<id>`, книга открывается поверх каталога) доступны без
+аккаунта; корзина, профиль и админ-панель — нет. Кнопка «Войдите, чтобы взять» после входа возвращает на ту же
+страницу. Боты превью ссылок получают страницу с названием, описанием и обложкой (`/share/books/{id}`).
+
 **Поиск** (`GET /books?q=`): полнотекстовый поиск PostgreSQL по названию, автору и описанию (генерируемый
 `search_vector`, конфигурация `simple` — английский и русский обрабатываются одинаково; синтаксис веб-поиска:
 `"фраза"`, `-слово`), поиск подстроки в названии, авторе и ISBN (дефисы не важны) и устойчивость к опечаткам через
@@ -398,6 +402,54 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 Письмо не отправляется, если книгу успели снова заказать. Пока кто-то ждёт книгу, её текущий читатель не может
 продлить выдачу (`details.reason = requested_by_others`).
 
+**Удержание книг**: при `hold_hours` > 0 (настройка библиотеки, по умолчанию 48) о вернувшемся экземпляре не
+сообщают всем: его держат для того, кто ждёт дольше всех; он получает письмо `book_held` и видит книгу в профиле в
+разделе «Отложено для вас». Только он может положить этот экземпляр в корзину, пока удержание не закончится; заказ
+его завершает. Истёкшее удержание (notifier проверяет каждый цикл) или отказ (`DELETE /users/me/holds/{book_id}`)
+передаёт книгу следующему в очереди. `hold_hours = 0` — прежнее поведение: письмо получают все ждущие.
+
+**Просрочка**: при `block_overdue` (настройка библиотеки, по умолчанию включена) читатель с просроченной выдачей
+не может оформить новый заказ (`409 OVERDUE_LOANS`, в `details.orders` — номера заказов); профиль об этом
+сообщает. При `late_fee_per_day` > 0 (по умолчанию 0 — без штрафов) отметка «возвращён» для просроченного заказа
+записывает в заказ `late_fee` = штраф × дни просрочки. Библиотекарь отмечает штраф оплаченным или отменяет его
+(`PATCH /admin/orders/{id}/late-fee` с `{"action": "paid" | "waived"}`; отмена обнуляет штраф; `409 NO_LATE_FEE`,
+если платить нечего) — это заполняет `late_fee_settled_at`. Приложение не принимает платежи: штраф платят в
+библиотеке.
+
+**Пункты выдачи**: библиотека может указать, где забирают заказы (вкладка администратора *Выдача*): название,
+адрес, подсказку, часы работы по дням недели в часовом поясе библиотеки (`library_settings.timezone`, имя IANA,
+по умолчанию `UTC`), длину интервала (15–240 минут) и, при желании, сколько заказов помещается в интервал. Пока
+включён хотя бы один пункт, при оформлении нужно выбрать пункт и интервал (`GET /library/pickup-points`,
+`GET /library/pickup-points/{id}/slots` — ближайшие две недели, не раньше чем через час, с числом мест `left`), а
+`POST /orders` требует `{"pickup_point_id", "pickup_at"}` (`400 PICKUP_REQUIRED` / `INVALID_PICKUP_SLOT`,
+`409 PICKUP_SLOT_FULL`; строка пункта блокируется, чтобы двое не заняли последнее место). Отменённые заказы
+освобождают место. Без включённых пунктов всё работает как раньше. Место и время видны в письме «заявка получена»,
+в профиле и в списке заказов администратора. Пункт, который есть в заказах, удалить нельзя
+(`409 PICKUP_POINT_IN_USE`) — его отключают.
+
+**Бронь на дату**: читатель может забронировать книгу на день — с завтрашнего и не дальше чем через 90 дней
+(диалог книги, `POST /users/me/reservations` `{book_id, starts_on}`; до 5 броней сразу, одна на книгу).
+Откладывается экземпляр, который к этому дню будет свободен: нет другой брони ближе чем за срок выдачи и он не
+выдан со сроком возврата в этот день или позже (иначе `409 NO_COPY_FOR_DATE`). За один срок выдачи до этого дня
+экземпляр больше никому не выдают (каталог показывает, что он вернётся через срок выдачи после дня брони), а
+выдачи этого экземпляра нельзя продлить дальше этого дня (`requested_by_others`). В этот день — или как только
+опоздавший экземпляр вернут — notifier откладывает его для читателя минимум на 48 часов (или на `hold_hours`, если
+больше) и присылает письмо (`reservation_ready`); дальше всё как с обычным удержанием. Отмена брони
+(`DELETE /users/me/reservations/{id}`) отдаёт отложенный экземпляр ждущим читателям. Библиотекарь видит
+ближайшие брони над списком заказов (`GET /admin/reservations`). Удаление аккаунта снимает его удержания и брони,
+а экземпляры переходят дальше.
+
+**Колокольчик уведомлений**: в шапке видны новости читателя — те же события, что и письма (`notifications`), даже
+если письмо не удалось отправить, кроме новостей, устаревших до отправки. Открытие списка отмечает их прочитанными
+(`read_at`); список обновляется раз в минуту, пока вкладка видна. Уведомления, появившиеся до колокольчика,
+считаются прочитанными.
+
+**Дневник чтения и значки**: читатель отмечает прочитанные книги («Прочитал(а)» в диалоге книги или у взятых книг
+в профиле; `PUT /users/me/reading-log/{book_id}` `{finished_on}`, по умолчанию сегодня и не в будущем; одна запись
+на книгу). В профиле видно, сколько прочитано в этом году и всего, список книг и восемь значков, которые каждый раз
+считаются по дневнику (1, 5, 10, 25 книг; 3 категории; 2 языка; все книги серии; по книге в каждом из последних
+трёх месяцев), с прогрессом к ещё не полученным.
+
 `POST /api/v1/orders` выполняется в одной транзакции (`app/services/orders.py`):
 
 1. `SELECT … FOR UPDATE` строки корзины (защита от двойного клика/двух вкладок);
@@ -423,10 +475,14 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 | `tags`, `book_tags` | `slug` тега (уникальный, CHECK формата), `name_en`, `name_ru`; связь книга ↔ тег |
 | `series` | `name` (уникальное), `name_en` / `name_ru` (названия на языках интерфейса, необязательно), `description`, `openlibrary_key` (уникальный, из поиска по ISBN) |
 | `book_translations` | на книгу и язык (`en`/`ru`): `title`, `author`, `description`, `title_source`/`description_source` (`manual/wikidata/wikipedia/machine`), `source_url` (ссылка на Википедию) |
-| `library_settings` | одна строка: `books_per_batch`, `price_per_batch NUMERIC(10,2)`, `currency`, `loan_period_days` |
+| `library_settings` | одна строка: `books_per_batch`, `price_per_batch NUMERIC(10,2)`, `currency`, `loan_period_days`, `max_renewals`, `hold_hours`, `block_overdue`, `late_fee_per_day NUMERIC(10,2)`, `timezone` |
+| `reading_log_entries` | читатель, экземпляр, `finished_on`, `UNIQUE(user_id, book_id)` (одна запись на книгу в сервисе) |
+| `advance_reservations` | читатель, экземпляр, `starts_on`, `status` (`active/fulfilled/cancelled`) |
+| `pickup_points` | `name`, `address`, `notes`, `hours JSONB` (`[{weekday, opens, closes}]`), `slot_minutes`, `slot_capacity` (NULL — без ограничений), `active` |
 | `carts`, `cart_items` | одна корзина на пользователя, `UNIQUE(cart_id, book_id)` |
 | `reading_list_entries` | «хочу прочитать», одна запись на читателя и издание, `UNIQUE(user_id, book_id)` |
-| `orders` | статус, сумма/валюта, снимок цены партии и контактов, `due_date`, `confirmed_at/returned_at/cancelled_at`, CHECK `total = price × batches` |
+| `reviews` | оценка 1–5 (CHECK), текст, `status` (`pending/published/rejected`), одна на читателя и издание |
+| `orders` | статус, сумма/валюта, снимок цены партии и контактов, `due_date`, `renewal_count`, `confirmed_at/returned_at/cancelled_at`, `late_fee`/`late_fee_settled_at`, `pickup_point_id`/`pickup_at`, CHECK `total = price × batches` |
 | `order_items` | снимок книги и `unit_price`, `reservation_active` + частичный уникальный индекс |
 | `refresh_tokens` | `token_hash`, `family_id`, `expires_at`, `revoked_at`, `replaced_by_token_id`, user-agent/IP |
 
@@ -451,13 +507,21 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 | GET | `/auth/me`, `/users/me` · PATCH `/users/me` · POST `/auth/change-password` | пользователь |
 | GET | `/users/me/next-in-series` (следующая книга каждой серии, которую читатель брал) | пользователь |
 | GET | `/users/me/export` (всё, что хранится о читателе, JSON) · DELETE `/users/me` (`{password}`; заказы остаются без имени и контактов; 409 `ACTIVE_ORDERS` / `ADMIN_ACCOUNT`) | пользователь |
-| GET | `/books?q&category&age_range&available&tags&series&language&author&sort&page&page_size`, `/books/age-ranges`, `/books/languages`, `/books/{id}`, `/books/{id}/series-neighbours` | все |
+| GET | `/books?q&category&age_range&available&tags&series&language&author&sort&page&page_size`, `/books/age-ranges`, `/books/languages`, `/books/{id}`, `/books/{id}/series-neighbours`, `/books/{id}/also-borrowed` (книги, которые брали минимум двое тех же читателей) | все |
 | GET | `/tags` (с числом изданий), `/series?q`, `/series/{id}` | все |
 | GET/DELETE | `/cart` · POST `/cart/items` · DELETE `/cart/items/{book_id}` | пользователь |
 | POST/GET | `/orders` · GET `/orders/{id}` · POST `/orders/{id}/cancel`, `/orders/{id}/renew` | пользователь (только свои) |
-| GET | `/library/rules` (размер и цена партии, срок выдачи, число продлений) | все |
+| GET | `/library/rules` (размер и цена партии, срок выдачи, число продлений, часовой пояс) · `/library/pickup-points`, `/library/pickup-points/{id}/slots` | все |
+| GET | `/share/books/{id}` (страница Open Graph для превью ссылок; Caddy отправляет сюда ботов с `/books/<id>`) | все |
 | GET `/waitlist` · POST/DELETE `/waitlist/{book_id}` | «сообщите, когда книга вернётся» | пользователь |
 | GET `/reading-list` · POST/DELETE `/reading-list/{book_id}` | «хочу прочитать»: книги на потом, отдельно от корзины | пользователь |
+| GET `/books/{id}/reviews` (средняя оценка и опубликованные отзывы) · GET/PUT/DELETE `/books/{id}/my-review` (`{rating 1-5, text}`; только после выдачи, 403 `NOT_BORROWED`) | оценки и отзывы; текст проходит модерацию | все / пользователь |
+| GET `/admin/reviews?status` · PATCH/DELETE `/admin/reviews/{id}` | модерация (опубликовать, отклонить) | admin |
+| GET `/users/me/recommendations` (книги по тегам взятых и отложенных) | полка «Вам может понравиться» | пользователь |
+| GET `/users/me/holds` · DELETE `/users/me/holds/{book_id}` | книги, отложенные для читателя; отказ | пользователь |
+| GET/POST `/users/me/reservations` · DELETE `/users/me/reservations/{id}` | бронь книги на дату; отмена | пользователь |
+| GET `/users/me/reading-log` · PUT/DELETE `/users/me/reading-log/{book_id}` | прочитанные книги, счётчики, значки, взятые книги без отметки | пользователь |
+| GET `/users/me/notifications` · POST `/users/me/notifications/read` (`{ids}` или пусто — все) | колокольчик: последние 30 новостей за 60 дней и число непрочитанных | пользователь |
 | GET/POST | `/admin/books`, GET `/admin/books/stats`, GET/PATCH/DELETE `/admin/books/{id}` | admin |
 | POST | `/admin/books/import` (CSV, всё или ничего, `dry_run`; `warnings` — строки, похожие на уже имеющиеся книги), GET `/admin/isbn/{isbn}` (данные из Open Library) | admin |
 | GET | `/admin/books/duplicates?isbn&title&author` (издания с тем же ISBN или с тем же названием и автором) | admin |
@@ -467,7 +531,9 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 | POST/PATCH/DELETE | `/admin/tags`, `/admin/tags/{id}` · POST `/admin/tags/{id}/merge`; то же для `/admin/series` | admin |
 | POST | `/admin/translations/suggest` (название, автор и описание на другом языке; ничего не сохраняет) | admin |
 | GET | `/admin/users` · PATCH `/admin/users/{id}` (роль, блокировка) | admin |
-| GET | `/admin/orders`, `/admin/orders/{id}` · PATCH `/admin/orders/{id}/status`, `/admin/orders/{id}/due-date` | admin |
+| GET/POST | `/admin/pickup-points` · PATCH/DELETE `/admin/pickup-points/{id}` | admin |
+| GET | `/admin/reservations` (брони на дату, ближайшие первыми) | admin |
+| GET | `/admin/orders`, `/admin/orders/{id}` · PATCH `/admin/orders/{id}/status`, `/admin/orders/{id}/due-date`, `/admin/orders/{id}/late-fee` | admin |
 | GET/PATCH | `/admin/settings` (партия, цена, валюта, срок выдачи) | admin |
 
 Ответы публичного каталога (`/books…`, `/tags`, `/series…`, `/library/rules`) содержат слабый `ETag` и

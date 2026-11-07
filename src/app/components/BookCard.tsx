@@ -4,8 +4,11 @@ import { Button } from './ui/button';
 import { Card, CardContent, CardFooter } from './ui/card';
 import { Badge } from './ui/badge';
 import { useCart } from '../contexts/CartContext';
+import { useHolds } from '../contexts/HoldsContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useSignInFirst } from '../utils/useSignInFirst';
 import { useOrders } from '../contexts/OrdersContext';
-import { ShoppingCart, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ShoppingCart, ChevronLeft, ChevronRight, LogIn } from 'lucide-react';
 import { toast } from 'sonner';
 import useEmblaCarousel from 'embla-carousel-react';
 import { BookDetailsModal } from './BookDetailsModal';
@@ -26,13 +29,18 @@ interface BookCardProps {
 export function BookCard({ book }: BookCardProps) {
   const { t } = useTranslation();
   const fmt = useFormat();
+  const { user } = useAuth();
+  const signInFirst = useSignInFirst();
   const text = useBookText()(book);
   const languageName = useBookLanguageName()(book.language);
   const { addBookToCart, isBookInCart } = useCart();
   const { isBookUnavailable } = useOrders();
-  const inCart = isBookInCart(book.id);
+  // A copy of this title held for the reader (after they waited) is theirs to add.
+  const hold = useHolds().holdFor(book);
+  const cartBook = hold?.book ?? book;
+  const inCart = isBookInCart(cartBook.id) || isBookInCart(book.id);
   // Client-side hint only; the server re-checks availability on add and on checkout.
-  const inActiveOrder = Boolean(book.isReserved) || isBookUnavailable(book.id);
+  const inActiveOrder = !hold && (Boolean(book.isReserved) || isBookUnavailable(book.id));
   const isPending = book.status === 'pending' || inCart;
   const isOrderedByOther = inActiveOrder && !inCart;
   const images = book.images || [book.coverImage];
@@ -43,9 +51,9 @@ export function BookCard({ book }: BookCardProps) {
   const [adding, setAdding] = useState(false);
 
   const handleAddToCart = async () => {
-    if (book.status === 'available' && !inCart && !inActiveOrder && !adding) {
+    if ((hold || book.status === 'available') && !inCart && !inActiveOrder && !adding) {
       setAdding(true);
-      const result = await addBookToCart(book);
+      const result = await addBookToCart(cartBook);
       setAdding(false);
       if (result.ok) {
         toast.success(`${text.title}: ${t('cart.bookAdded')}`);
@@ -189,6 +197,11 @@ export function BookCard({ book }: BookCardProps) {
             )}
           </div>
           <TagChips tags={book.tags} limit={3} />
+          {hold && !inCart && (
+            <p className="text-xs font-medium text-primary">
+              {t('holds.cardNote', { date: fmt.dateTime(hold.heldUntil) })}
+            </p>
+          )}
           {isOrderedByOther && book.availableFrom && (
             <p className="text-xs text-muted-foreground">
               {t('availability.expectedBack', { date: fmt.date(book.availableFrom) })}
@@ -204,18 +217,28 @@ export function BookCard({ book }: BookCardProps) {
         </div>
       </CardContent>
       <CardFooter className="p-4 pt-0 gap-2">
-        <Button
-          onClick={handleAddToCart}
-          disabled={book.status !== 'available' || isPending || isOrderedByOther || adding}
-          className="flex-1"
-        >
-          <ShoppingCart className="w-4 h-4 mr-2" />
-          {getCartButtonLabel(t, { status: book.status, inCart: isPending, reserved: isOrderedByOther })}
-        </Button>
-        {(isOrderedByOther || book.status !== 'available') && !isPending && (
-          <WaitlistButton bookId={book.id} groupId={book.groupId} title={text.title} />
+        {user ? (
+          <>
+            <Button
+              onClick={handleAddToCart}
+              disabled={(!hold && book.status !== 'available') || isPending || isOrderedByOther || adding}
+              className="flex-1"
+            >
+              <ShoppingCart className="w-4 h-4 mr-2" />
+              {getCartButtonLabel(t, { status: book.status, inCart: isPending, reserved: isOrderedByOther })}
+            </Button>
+            {!hold && (isOrderedByOther || book.status !== 'available') && !isPending && (
+              <WaitlistButton bookId={book.id} groupId={book.groupId} title={text.title} />
+            )}
+            <ReadingListButton bookId={book.id} groupId={book.groupId} title={text.title} />
+          </>
+        ) : (
+          // Visitors browse freely; borrowing needs an account.
+          <Button variant="outline" onClick={signInFirst} className="flex-1">
+            <LogIn className="w-4 h-4 mr-2" aria-hidden="true" />
+            {t('guest.signInToBorrow')}
+          </Button>
         )}
-        <ReadingListButton bookId={book.id} groupId={book.groupId} title={text.title} />
       </CardFooter>
     </Card>
 

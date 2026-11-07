@@ -10,6 +10,8 @@ from app.api.routes import (
     library,
     orders,
     reading_list,
+    reviews,
+    share,
     users,
     waitlist,
 )
@@ -27,4 +29,6 @@ api_router.include_router(orders.router)
 api_router.include_router(library.router)
 api_router.include_router(waitlist.router)
 api_router.include_router(reading_list.router)
+api_router.include_router(share.router)
+api_router.include_router(reviews.router)
 api_router.include_router(admin.router)

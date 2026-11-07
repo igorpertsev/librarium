@@ -8,12 +8,17 @@ import { invalidateLibraryRules } from '../utils/useLibraryRules';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+import { Switch } from './ui/switch';
 
 /** Admin: loan period and how often customers may extend a loan. */
 export function LoanRulesSettings() {
   const { t } = useTranslation();
   const [loanPeriodDays, setLoanPeriodDays] = useState('');
   const [maxRenewals, setMaxRenewals] = useState('');
+  const [holdHours, setHoldHours] = useState('');
+  const [blockOverdue, setBlockOverdue] = useState(true);
+  const [lateFee, setLateFee] = useState('');
+  const [currency, setCurrency] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -21,6 +26,10 @@ export function LoanRulesSettings() {
       (settings) => {
         setLoanPeriodDays(String(settings.loan_period_days));
         setMaxRenewals(String(settings.max_renewals));
+        setHoldHours(String(settings.hold_hours));
+        setBlockOverdue(settings.block_overdue);
+        setLateFee(settings.late_fee_per_day);
+        setCurrency(settings.currency);
       },
       () => undefined,
     );
@@ -32,6 +41,9 @@ export function LoanRulesSettings() {
       adminApi.updateSettings({
         loan_period_days: Number.parseInt(loanPeriodDays, 10),
         max_renewals: Number.parseInt(maxRenewals, 10),
+        hold_hours: Number.parseInt(holdHours, 10),
+        block_overdue: blockOverdue,
+        late_fee_per_day: lateFee,
       }),
     );
     setSaving(false);
@@ -68,9 +80,40 @@ export function LoanRulesSettings() {
             onChange={(e) => setMaxRenewals(e.target.value)}
           />
         </div>
+        <div className="space-y-2 col-span-2 sm:col-span-1">
+          <Label htmlFor="holdHours">{t('admin.holdHours')}</Label>
+          <Input
+            id="holdHours"
+            type="number"
+            min="0"
+            max="336"
+            value={holdHours}
+            onChange={(e) => setHoldHours(e.target.value)}
+          />
+        </div>
       </div>
       <p className="text-xs text-muted-foreground">{t('admin.loanRulesHint')}</p>
-      <Button variant="outline" onClick={handleSave} disabled={saving || !loanPeriodDays || !maxRenewals}>
+      <p className="text-xs text-muted-foreground">{t('admin.holdHoursHint')}</p>
+      <div className="grid grid-cols-2 gap-4 items-end">
+        <div className="flex items-center gap-2 col-span-2 sm:col-span-1">
+          <Switch id="blockOverdue" checked={blockOverdue} onCheckedChange={setBlockOverdue} />
+          <Label htmlFor="blockOverdue">{t('admin.blockOverdue')}</Label>
+        </div>
+        <div className="space-y-2 col-span-2 sm:col-span-1">
+          <Label htmlFor="lateFeePerDay">{t('admin.lateFeePerDay', { currency })}</Label>
+          <Input
+            id="lateFeePerDay"
+            type="number"
+            min="0"
+            step="0.01"
+            inputMode="decimal"
+            value={lateFee}
+            onChange={(e) => setLateFee(e.target.value)}
+          />
+        </div>
+      </div>
+      <p className="text-xs text-muted-foreground">{t('admin.lateRulesHint')}</p>
+      <Button variant="outline" onClick={handleSave} disabled={saving || !loanPeriodDays || !maxRenewals || !holdHours || !lateFee}>
         {t('admin.saveLoanRules')}
       </Button>
     </div>

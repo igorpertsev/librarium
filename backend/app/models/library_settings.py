@@ -24,6 +24,8 @@ class LibrarySettings(TimestampMixin, Base):
         sa.CheckConstraint("price_per_batch >= 0", name="price_per_batch_non_negative"),
         sa.CheckConstraint("loan_period_days BETWEEN 1 AND 365", name="loan_period_range"),
         sa.CheckConstraint("max_renewals BETWEEN 0 AND 10", name="max_renewals_range"),
+        sa.CheckConstraint("hold_hours BETWEEN 0 AND 336", name="hold_hours_range"),
+        sa.CheckConstraint("late_fee_per_day >= 0", name="late_fee_non_negative"),
         sa.CheckConstraint("currency ~ '^[A-Z]{3}$'", name="currency_iso4217"),
     )
 
@@ -34,6 +36,17 @@ class LibrarySettings(TimestampMixin, Base):
     loan_period_days: Mapped[int] = mapped_column(sa.Integer)
     # How many times a customer may extend a loan by another loan period (0 = never).
     max_renewals: Mapped[int] = mapped_column(sa.SmallInteger, default=1, server_default="1")
+    # A returned book is held this long for the reader who has waited longest (0: everybody
+    # waiting is emailed at once and the first to order gets it).
+    hold_hours: Mapped[int] = mapped_column(sa.SmallInteger, default=48, server_default="48")
+    # Late returns: no new orders while a loan is overdue, and an optional fee per day late
+    # (0: no fee), charged when the books come back.
+    block_overdue: Mapped[bool] = mapped_column(default=True, server_default=sa.true())
+    late_fee_per_day: Mapped[Decimal] = mapped_column(
+        sa.Numeric(10, 2), default=Decimal("0.00"), server_default="0"
+    )
+    # IANA time zone of the library: opening hours, pickup slots and times in emails.
+    timezone: Mapped[str] = mapped_column(sa.String(64), default="UTC", server_default="UTC")
 
 
 DEFAULT_LIBRARY_SETTINGS = {
@@ -43,4 +56,8 @@ DEFAULT_LIBRARY_SETTINGS = {
     "currency": "USD",
     "loan_period_days": 30,
     "max_renewals": 1,
+    "hold_hours": 48,
+    "block_overdue": True,
+    "late_fee_per_day": Decimal("0.00"),
+    "timezone": "UTC",
 }
