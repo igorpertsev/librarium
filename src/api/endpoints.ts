@@ -38,6 +38,10 @@ import type {
   PickupChoiceDto,
   PickupPointCreateDto,
   PickupPointDto,
+  ChallengeCreateDto,
+  ChallengeDto,
+  ChallengeParticipantDto,
+  ChallengeUpdateDto,
   PickupPointUpdateDto,
   PickupSlotDto,
   PurchaseRequestDto,
@@ -226,7 +230,22 @@ export const libraryApi = {
     apiRequest<PickupSlotDto[]>(`/library/pickup-points/${id(pointId)}/slots`, { auth: false }),
 };
 
+export const challengesApi = {
+  list: () => apiRequest<ChallengeDto[]>('/challenges'),
+  join: (challengeId: string, child?: string | null) =>
+    apiRequest<void>(`/challenges/${challengeId}/entry${child ? `?child=${encodeURIComponent(child)}` : ''}`, { method: 'PUT' }),
+  leave: (challengeId: string, child?: string | null) =>
+    apiRequest<void>(`/challenges/${challengeId}/entry${child ? `?child=${encodeURIComponent(child)}` : ''}`, { method: 'DELETE' }),
+};
+
 export const adminApi = {
+  listChallenges: () => apiRequest<ChallengeDto[]>('/admin/challenges'),
+  createChallenge: (body: ChallengeCreateDto) => apiRequest<ChallengeDto>('/admin/challenges', { method: 'POST', body }),
+  updateChallenge: (challengeId: string, body: ChallengeUpdateDto) =>
+    apiRequest<ChallengeDto>(`/admin/challenges/${challengeId}`, { method: 'PATCH', body }),
+  deleteChallenge: (challengeId: string) => apiRequest<void>(`/admin/challenges/${challengeId}`, { method: 'DELETE' }),
+  challengeParticipants: (challengeId: string) =>
+    apiRequest<ChallengeParticipantDto[]>(`/admin/challenges/${challengeId}/participants`),
   listBooks: (query: AdminBookListQuery) => apiRequest<BookPageDto>('/admin/books', { query }),
   bookStats: () => apiRequest<BookStatsDto>('/admin/books/stats'),
   bookQuality: () => apiRequest<QualitySummaryDto>('/admin/books/quality'),

@@ -625,6 +625,12 @@ two copies of the same title are two records (ISBN is not unique).
   appointments at their point and time, the last day to collect a held book and reservation dates, in the reader's
   language. Only a SHA-256 of the token is stored: a new link replaces the old one and `DELETE /users/me/calendar`
   turns it off (both then answer 404). Links use `API_PUBLIC_URL`.
+- **Reading challenges**: staff set challenges in the *Challenges* tab (`/admin/challenges`: name and description in
+  English and optionally Russian, dates, a goal of 1–100 books, optionally one category). Readers join on their profile
+  for themselves or a child (`PUT/DELETE /challenges/{id}/entry?child=`; 409 `CHALLENGE_OVER` after the end), and
+  every title marked *I've read it* within the dates (and in the category) counts once; progress is computed from the
+  reading log, so it never disagrees with it. `GET /challenges` lists the current and coming ones with the reader's
+  own progress; `GET /admin/challenges/{id}/participants` lists who takes part, most books first.
 - **Notification bell**: the header shows the reader's news — the same events as the emails (`notifications`), even
   when an email could not be sent, except news that went stale before delivery. Opening the list marks it read
   (`read_at`); it refreshes every minute while the tab is visible. Notifications from before the bell existed
