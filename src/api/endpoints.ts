@@ -107,6 +107,8 @@ export const usersApi = {
   telegramLink: () =>
     apiRequest<{ url: string; expires_at: string }>('/users/me/telegram/link', { method: 'POST' }),
   telegramUnlink: () => apiRequest<void>('/users/me/telegram', { method: 'DELETE' }),
+  calendarLink: () => apiRequest<{ url: string }>('/users/me/calendar', { method: 'POST' }),
+  calendarRemove: () => apiRequest<void>('/users/me/calendar', { method: 'DELETE' }),
   pushSubscribe: (subscription: { endpoint: string; keys: { p256dh: string; auth: string } }) =>
     apiRequest<void>('/users/me/push-subscriptions', { method: 'POST', body: subscription }),
   pushUnsubscribe: (endpoint: string) =>

@@ -1440,6 +1440,71 @@
         }
       }
     },
+    "/api/v1/users/me/calendar": {
+      "post": {
+        "tags": [
+          "users"
+        ],
+        "summary": "New Calendar Link",
+        "description": "A new secret link to the reader's calendar feed (due dates, pickups, holds, reservations); an earlier link stops working.",
+        "operationId": "new_calendar_link_api_v1_users_me_calendar_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarLink"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Remove Calendar Link",
+        "description": "Turn the calendar feed off (its link stops working).",
+        "operationId": "remove_calendar_link_api_v1_users_me_calendar_delete",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/users/me/children": {
       "get": {
         "tags": [
@@ -2240,6 +2305,55 @@
             "HTTPBearer": []
           }
         ]
+      }
+    },
+    "/api/v1/calendar/{token}.ics": {
+      "get": {
+        "tags": [
+          "calendar"
+        ],
+        "summary": "Calendar Feed",
+        "description": "Due dates, pickup appointments, held books and reservations of the reader whose link this is (see POST /users/me/calendar). 404 for an unknown or replaced link.",
+        "operationId": "calendar_feed_api_v1_calendar__token__ics_get",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "An iCalendar feed",
+            "content": {
+              "text/calendar": {}
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/telegram/webhook": {
@@ -9235,6 +9349,11 @@
             "title": "Telegram Connected",
             "description": "Notifications also go to a Telegram chat"
           },
+          "calendar_feed": {
+            "type": "boolean",
+            "title": "Calendar Feed",
+            "description": "A calendar feed link exists (see /users/me/calendar)"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -9268,6 +9387,7 @@
           "preferred_language",
           "mfa_enabled",
           "telegram_connected",
+          "calendar_feed",
           "created_at",
           "updated_at",
           "active_loans"
@@ -10798,6 +10918,20 @@
           "copies"
         ],
         "title": "BulkResult"
+      },
+      "CalendarLink": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url",
+            "description": "Secret iCalendar feed URL; keep it private"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "title": "CalendarLink"
       },
       "CartItemCreate": {
         "properties": {
@@ -14694,6 +14828,11 @@
             "title": "Telegram Connected",
             "description": "Notifications also go to a Telegram chat"
           },
+          "calendar_feed": {
+            "type": "boolean",
+            "title": "Calendar Feed",
+            "description": "A calendar feed link exists (see /users/me/calendar)"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -14720,6 +14859,7 @@
           "preferred_language",
           "mfa_enabled",
           "telegram_connected",
+          "calendar_feed",
           "created_at",
           "updated_at"
         ],

@@ -6,6 +6,7 @@ from app.api.routes import (
     admin,
     auth,
     books,
+    calendar,
     cart,
     catalog,
     health,
@@ -26,6 +27,7 @@ api_router = APIRouter(prefix=API_PREFIX, dependencies=[Depends(storable_paramet
 api_router.include_router(health.router)
 api_router.include_router(auth.router)
 api_router.include_router(users.router)
+api_router.include_router(calendar.router)
 api_router.include_router(telegram.router)
 api_router.include_router(books.router)
 api_router.include_router(catalog.router)

@@ -1118,5 +1118,21 @@
     "notAllowed": "Notifications were not allowed",
     "blocked": "Notifications are blocked for this site; allow them in the browser settings to turn them on.",
     "failed": "Could not change notifications on this device"
+  },
+  "calendar": {
+    "title": "Calendar",
+    "description": "Due dates, pickup times, books held for you and reservations, in your calendar app (with a reminder the day before a return).",
+    "makeLink": "Get calendar link",
+    "newLink": "New link",
+    "turnOff": "Turn off",
+    "link": "Your calendar link",
+    "copy": "Copy link",
+    "copied": "Link copied",
+    "copyFailed": "Could not copy; select the link and copy it",
+    "howTo": "Google Calendar: Other calendars → From URL. Apple Calendar or Outlook: open it with the button below.",
+    "subscribe": "Open in calendar app",
+    "exists": "Your calendar is connected. A new link replaces the old one (copy it again into your calendar app).",
+    "removed": "Calendar link turned off",
+    "private": "Keep the link private: anyone who has it can see these dates."
   }
 }
