@@ -121,6 +121,8 @@ Docker Compose and Vite read the root `.env` (template: `.env.example`). Filled-
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `APPLE_CLIENT_ID`, `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY`, `API_PUBLIC_URL` | empty | optional Google / Apple sign-in; callback base URL (default `APP_BASE_URL/api/v1`) |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME` | empty | optional Telegram bot for notifications |
 | `MEDIA_DIR`, `MAX_COVER_BYTES` | `media`, `5242880` | where uploaded covers are kept (the `media` volume, `/app/media`, in Docker); upload limit |
+| `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_PREFIX` | — | with `S3_BUCKET` set, covers go to that S3-compatible bucket instead of `MEDIA_DIR` |
+| `MEDIA_PUBLIC_URL` | — | public address of the bucket or a CDN: `/media/...` redirects there (301); empty: the backend streams covers from a private bucket |
 | `PASSWORD_RESET_EXPIRE_MINUTES` | `60` | lifetime of password reset links (5–1440) |
 | `ANTHROPIC_API_KEY`, `TRANSLATION_MODEL` | —, `claude-opus-5-5` | optional machine translation of book titles and descriptions when Wikidata and Wikipedia have none; without a key only those two are used |
 
@@ -547,7 +549,11 @@ two copies of the same title are two records (ISBN is not unique).
   and stores WebP renditions L/M/S (800/400/160 px high) as `media/covers/<random>-<size>.webp`; every copy of the
   title gets `cover_url = /media/covers/<random>-L.webp`, and the previous upload is deleted. The backend serves
   `/media` with long-lived cache headers (Caddy passes `/media/*` to it); the frontend loads the size it needs (S
-  in lists, M on cards, L in the dialog). Share previews use the full address (`APP_BASE_URL` + path).
+  in lists, M on cards, L in the dialog). Share previews use the full address (`APP_BASE_URL` + path). With
+  `S3_BUCKET` set the files go to that bucket (`<S3_PREFIX>/covers/...`) and the stored URLs stay the same:
+  `/media/covers/...` redirects to `MEDIA_PUBLIC_URL` or is streamed from the bucket. `python -m app.cli
+  media-to-s3` copies existing covers when switching. The storage tests run against RustFS (the `s3` service of
+  the dev compose file, started by `docker compose --profile dev`).
 - **Stocktaking** (admin tab, staff): start a count, scan every book on the shelves (the ISBN scanner keeps
   scanning; typed ISBNs work too) or count books without an ISBN by hand (+1/−1). Copies are counted per title. A
   title is expected on the shelf with every active copy that is not out on loan and not marked *not available*.

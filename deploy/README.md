@@ -318,6 +318,35 @@ notification there as well as by email; it works even without SMTP. Messages go 
 servers. To turn it off, empty both values and run the same `up -d`; linked chats stop getting
 messages.
 
+## Covers in S3-compatible storage (optional)
+
+Uploaded covers live in the `media` volume by default. To keep them in a bucket instead (AWS S3,
+Cloudflare R2, Backblaze B2, a MinIO or RustFS server…), create the bucket and a key that may read,
+write and delete in it, then set in `.env`:
+
+```text
+S3_ENDPOINT=https://s3.eu-central-1.amazonaws.com
+S3_REGION=eu-central-1
+S3_BUCKET=little-dragon-covers
+S3_ACCESS_KEY_ID=…
+S3_SECRET_ACCESS_KEY=…
+```
+
+If the bucket (or a CDN in front of it) is public, put its address in `MEDIA_PUBLIC_URL`: browsers
+are then redirected there and load covers straight from it. Otherwise the backend streams them from
+the private bucket. Restart and copy the covers you already have:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d
+```
+
+```bash
+docker compose -f docker-compose.prod.yml exec backend python -m app.cli media-to-s3
+```
+
+Cover URLs do not change (`/media/covers/…`), so nothing else needs updating. `deploy/backup.sh` no
+longer archives covers then; keep the bucket safe with the provider's versioning or replication.
+
 ## Sign in with Google or Apple (optional)
 
 **Google.** In Google Cloud Console → APIs & Services → Credentials, create an *OAuth client ID*
