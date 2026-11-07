@@ -19,6 +19,7 @@ from app.api.dependencies import (
     require_admin,
 )
 from app.api.routes.books import LanguageQuery, TagsQuery, tag_slugs
+from app.api.routes.challenges import challenge_read
 from app.core.exceptions import BadRequestError, ConflictError
 from app.models.enums import (
     BookCategory,
@@ -54,6 +55,12 @@ from app.schemas.catalog import (
     TagCreate,
     TagRead,
     TagUpdate,
+)
+from app.schemas.challenge import (
+    ChallengeCreate,
+    ChallengeParticipant,
+    ChallengeRead,
+    ChallengeUpdate,
 )
 from app.schemas.common import error_responses
 from app.schemas.library_settings import LibrarySettingsRead, LibrarySettingsUpdate
@@ -92,6 +99,7 @@ from app.services import (
     audit,
     book_import,
     catalog,
+    challenges,
     covers,
     duplicates,
     pickup,
@@ -890,3 +898,62 @@ async def admin_update_purchase_request(
         note_given="librarian_note" in body.model_fields_set,
     )
     return PurchaseRequestRead.model_validate(view, from_attributes=True)
+
+
+# --- Reading challenges ------------------------------------------------------------------
+
+
+@router.get("/challenges", response_model=list[ChallengeRead])
+async def admin_list_challenges(_: StaffUser, session: SessionDep) -> list[ChallengeRead]:
+    """Every challenge, newest first, with how many take part and reached the goal."""
+    return [challenge_read(v) for v in await challenges.everything(session)]
+
+
+@router.post(
+    "/challenges",
+    response_model=ChallengeRead,
+    status_code=201,
+    responses=error_responses(422),
+)
+async def admin_create_challenge(
+    body: ChallengeCreate, _: StaffUser, session: SessionDep
+) -> ChallengeRead:
+    return challenge_read(await challenges.create(session, body.model_dump()))
+
+
+@router.patch(
+    "/challenges/{challenge_id}",
+    response_model=ChallengeRead,
+    responses=error_responses(404, 409, 422),
+)
+async def admin_update_challenge(
+    challenge_id: uuid.UUID, body: ChallengeUpdate, _: StaffUser, session: SessionDep
+) -> ChallengeRead:
+    return challenge_read(await challenges.update(session, challenge_id, body.changes()))
+
+
+@router.delete(
+    "/challenges/{challenge_id}",
+    status_code=204,
+    response_class=Response,
+    responses=error_responses(404),
+)
+async def admin_delete_challenge(
+    challenge_id: uuid.UUID, _: StaffUser, session: SessionDep
+) -> Response:
+    """Remove a challenge and who took part (the reading logs stay)."""
+    await challenges.remove(session, challenge_id)
+    return Response(status_code=204)
+
+
+@router.get(
+    "/challenges/{challenge_id}/participants",
+    response_model=list[ChallengeParticipant],
+    responses=error_responses(404),
+)
+async def admin_challenge_participants(
+    challenge_id: uuid.UUID, _: StaffUser, session: SessionDep
+) -> list[ChallengeParticipant]:
+    """Who takes part and how far they are, most books first (to hand out prizes)."""
+    found = await challenges.participants(session, challenge_id)
+    return [ChallengeParticipant.model_validate(p, from_attributes=True) for p in found]
