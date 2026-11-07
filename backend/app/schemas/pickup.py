@@ -4,15 +4,25 @@ import uuid
 from datetime import datetime, time
 from typing import Annotated, ClassVar, Self
 
-from pydantic import BaseModel, Field, WithJsonSchema, model_validator
+from pydantic import AfterValidator, BaseModel, Field, WithJsonSchema, model_validator
 
 from app.schemas.common import ApiModel, PatchModel, RequestModel
 from app.schemas.types import Address, OptionalNote, PlaceName
 
+
 # A wall-clock time in the library's time zone, without an offset. JSON Schema's "time" format
 # (RFC 3339) requires an offset, so the schema says what is really sent: "HH:MM" or "HH:MM:SS".
+def _no_offset(value: time) -> time:
+    # A number (seconds) or "09:30+02:00" parse to a time with an offset, which cannot be compared
+    # with local times (that used to be a 500).
+    if value.tzinfo is not None:
+        raise ValueError("Give a local time such as 09:30, without a time zone")
+    return value
+
+
 LocalTime = Annotated[
     time,
+    AfterValidator(_no_offset),
     WithJsonSchema(
         {
             "type": "string",
