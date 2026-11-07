@@ -15,6 +15,7 @@ from app.models.refresh_token import RefreshToken
 from app.models.reservation import AdvanceReservation
 from app.models.review import Review
 from app.models.series import Series
+from app.models.stocktake import Stocktake, StocktakeCount
 from app.models.tag import Tag, book_tags
 from app.models.translation import BookTranslation
 from app.models.user import User
@@ -39,6 +40,8 @@ __all__ = [
     "RefreshToken",
     "Review",
     "Series",
+    "Stocktake",
+    "StocktakeCount",
     "Tag",
     "User",
     "WaitlistEntry",

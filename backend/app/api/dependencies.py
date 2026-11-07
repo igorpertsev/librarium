@@ -111,8 +111,10 @@ async def require_staff(user: CurrentUser) -> User:
 StaffUser = Annotated[User, Depends(require_staff)]
 
 AUDITED_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
-# POST endpoints that change nothing.
-NOT_AUDITED = frozenset({"admin_suggest_translation"})
+# POST endpoints that change nothing, or only a stocktake's counts (one per scanned book).
+NOT_AUDITED = frozenset(
+    {"admin_suggest_translation", "admin_stocktake_scan", "admin_stocktake_count"}
+)
 
 
 async def audit_trail(

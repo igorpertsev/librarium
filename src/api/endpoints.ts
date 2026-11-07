@@ -5,6 +5,9 @@ import type {
   AdminUserListQuery,
   AdminUserPageDto,
   AuditPageDto,
+  ScanResultDto,
+  StocktakeBriefDto,
+  StocktakeReportDto,
   AdminUserUpdateDto,
   BookCreateDto,
   BookImportResultDto,
@@ -255,6 +258,21 @@ export const adminApi = {
       body: { action },
     }),
   upcomingReservations: () => apiRequest<UpcomingReservationDto[]>('/admin/reservations'),
+  stocktakes: () => apiRequest<StocktakeBriefDto[]>('/admin/stocktakes'),
+  startStocktake: () => apiRequest<StocktakeBriefDto>('/admin/stocktakes', { method: 'POST' }),
+  stocktakeReport: (takeId: string) => apiRequest<StocktakeReportDto>(`/admin/stocktakes/${id(takeId)}`),
+  stocktakeScan: (takeId: string, isbn: string) =>
+    apiRequest<ScanResultDto>(`/admin/stocktakes/${id(takeId)}/scan`, { method: 'POST', body: { isbn } }),
+  stocktakeCount: (takeId: string, bookId: string, delta: 1 | -1) =>
+    apiRequest<{ counted: number }>(`/admin/stocktakes/${id(takeId)}/count`, {
+      method: 'POST',
+      body: { book_id: bookId, delta },
+    }),
+  finishStocktake: (takeId: string, markMissing: boolean) =>
+    apiRequest<StocktakeReportDto>(`/admin/stocktakes/${id(takeId)}/finish`, {
+      method: 'POST',
+      body: { mark_missing: markMissing },
+    }),
   auditLog: (page: number, pageSize = 50) =>
     apiRequest<AuditPageDto>('/admin/audit', { query: { page, page_size: pageSize } }),
   listPickupPoints: () => apiRequest<PickupPointDto[]>('/admin/pickup-points'),

@@ -49,6 +49,10 @@ const MESSAGE_KEYS: Record<string, string> = {
   INVALID_RESERVATION_DATE: 'errors.invalidReservationDate',
   RESERVATION_NOT_FOUND: 'errors.notFound',
   INVALID_FINISHED_ON: 'errors.invalidFinishedOn',
+  STOCKTAKE_OPEN: 'errors.stocktakeOpen',
+  STOCKTAKE_FINISHED: 'errors.stocktakeFinished',
+  STOCKTAKE_NOT_FOUND: 'errors.notFound',
+  INVALID_ISBN: 'errors.invalidIsbn',
 };
 
 /** Translated, user-facing message for an API error. */

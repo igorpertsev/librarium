@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Textarea } from '../components/ui/textarea';
 import { Badge } from '../components/ui/badge';
-import { Plus, Pencil, Trash2, Users, BookOpen as BookOpenIcon, ClipboardList, CheckCircle2, RotateCcw, Clock, Star, ImageDown, BellRing, BarChart3, CopyPlus, Tags, History, ListChecks, MapPin, MessageSquare, ScanBarcode } from 'lucide-react';
+import { Plus, Pencil, Trash2, Users, BookOpen as BookOpenIcon, ClipboardList, CheckCircle2, RotateCcw, Clock, Star, ImageDown, BellRing, BarChart3, CopyPlus, Tags, ClipboardCheck, History, ListChecks, MapPin, MessageSquare, ScanBarcode } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -25,6 +25,7 @@ import { ActivityTab } from '../components/ActivityTab';
 import { ReturnDialog } from '../components/ReturnDialog';
 import { BulkBookActions } from '../components/BulkBookActions';
 import { IsbnScanner } from '../components/IsbnScanner';
+import { StocktakingTab } from '../components/StocktakingTab';
 import { Checkbox } from '../components/ui/checkbox';
 import { isAdmin, type Role } from '../utils/roles';
 import { ReportsTab } from '../components/ReportsTab';
@@ -368,7 +369,7 @@ export default function AdminPortal() {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="books" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-9 h-auto mb-6">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 h-auto mb-6">
               <TabsTrigger value="books" className="flex items-center gap-2">
                 <BookOpenIcon className="w-4 h-4" />
                 {t('admin.booksTab')}
@@ -401,6 +402,10 @@ export default function AdminPortal() {
               <TabsTrigger value="reports" className="flex items-center gap-2">
                 <BarChart3 className="w-4 h-4" />
                 {t('reports.tab')}
+              </TabsTrigger>
+              <TabsTrigger value="stock" className="flex items-center gap-2">
+                <ClipboardCheck className="w-4 h-4" />
+                {t('stock.tab')}
               </TabsTrigger>
               {canAdminister && (
                 <TabsTrigger value="pickup" className="flex items-center gap-2">
@@ -718,6 +723,9 @@ export default function AdminPortal() {
               <ReportsTab />
             </TabsContent>
 
+            <TabsContent value="stock">
+              <StocktakingTab />
+            </TabsContent>
             {canAdminister && (
               <TabsContent value="pickup">
                 <PickupPointsTab />

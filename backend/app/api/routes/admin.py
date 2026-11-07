@@ -11,6 +11,7 @@ from app.api.dependencies import (
     OpenLibraryDep,
     PaginationDep,
     SessionDep,
+    StaffUser,
     TranslationLookupDep,
     audit_trail,
     require_admin,
@@ -65,6 +66,17 @@ from app.schemas.review import (
     ModerationReviewRead,
     ReviewRead,
 )
+from app.schemas.stocktake import (
+    Counted,
+    CountIn,
+    FinishIn,
+    ScanIn,
+    ScanResultRead,
+    StocktakeBrief,
+    StocktakeLine,
+    StocktakeReportRead,
+    UnknownIsbn,
+)
 from app.schemas.translation import TranslationSuggestion, TranslationSuggestRequest
 from app.schemas.user import AdminUserPage, AdminUserUpdate, UserRead
 from app.services import (
@@ -76,6 +88,7 @@ from app.services import (
     reports,
     reservations,
     reviews,
+    stocktaking,
 )
 from app.services import books as books_service
 from app.services import library_settings as settings_service
@@ -720,3 +733,84 @@ async def admin_audit_log(
         page=pagination.page,
         page_size=pagination.page_size,
     )
+
+
+# --- Stocktaking -------------------------------------------------------------------------
+
+
+def _report(report: stocktaking.StocktakeReport) -> StocktakeReportRead:
+    return StocktakeReportRead(
+        id=report.id,
+        started_at=report.started_at,
+        finished_at=report.finished_at,
+        marked_missing=report.marked_missing,
+        expected=report.expected,
+        counted=report.counted,
+        lines=[StocktakeLine.model_validate(line, from_attributes=True) for line in report.lines],
+        unknown_isbns=[UnknownIsbn(isbn=i, counted=c) for i, c in report.unknown_isbns],
+    )
+
+
+@router.get("/stocktakes", response_model=list[StocktakeBrief])
+async def admin_list_stocktakes(session: SessionDep) -> list[StocktakeBrief]:
+    """The latest counts, newest first (an open one has no finished_at)."""
+    return [StocktakeBrief.model_validate(s) for s in await stocktaking.latest(session)]
+
+
+@router.post(
+    "/stocktakes",
+    status_code=status.HTTP_201_CREATED,
+    response_model=StocktakeBrief,
+    responses=error_responses(409),
+)
+async def admin_start_stocktake(user: StaffUser, session: SessionDep) -> StocktakeBrief:
+    """Start counting the shelves (409 STOCKTAKE_OPEN while another count is open)."""
+    return StocktakeBrief.model_validate(await stocktaking.start(session, user))
+
+
+@router.get(
+    "/stocktakes/{stocktake_id}",
+    response_model=StocktakeReportRead,
+    responses=error_responses(404, 422),
+)
+async def admin_stocktake_report(
+    stocktake_id: uuid.UUID, session: SessionDep
+) -> StocktakeReportRead:
+    return _report(await stocktaking.report(session, stocktake_id))
+
+
+@router.post(
+    "/stocktakes/{stocktake_id}/scan",
+    response_model=ScanResultRead,
+    responses=error_responses(400, 404, 409, 422),
+)
+async def admin_stocktake_scan(
+    stocktake_id: uuid.UUID, body: ScanIn, session: SessionDep
+) -> ScanResultRead:
+    """Count one copy by its ISBN; unknown ISBNs are listed in the report."""
+    result = await stocktaking.scan(session, stocktake_id, body.isbn)
+    return ScanResultRead.model_validate(result, from_attributes=True)
+
+
+@router.post(
+    "/stocktakes/{stocktake_id}/count",
+    response_model=Counted,
+    responses=error_responses(404, 409, 422),
+)
+async def admin_stocktake_count(
+    stocktake_id: uuid.UUID, body: CountIn, session: SessionDep
+) -> Counted:
+    """Count a title by hand (+1), or take one back (-1)."""
+    return Counted(counted=await stocktaking.count(session, stocktake_id, body.book_id, body.delta))
+
+
+@router.post(
+    "/stocktakes/{stocktake_id}/finish",
+    response_model=StocktakeReportRead,
+    responses=error_responses(404, 409, 422),
+)
+async def admin_finish_stocktake(
+    stocktake_id: uuid.UUID, body: FinishIn, session: SessionDep
+) -> StocktakeReportRead:
+    """Close the count; mark_missing makes copies that were not found "not available"."""
+    return _report(await stocktaking.finish(session, stocktake_id, mark_missing=body.mark_missing))

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { ADMIN, createBooks, registerCustomer, signIn, signOut, unique } from '../helpers';
+import { ADMIN, createBook, createBooks, registerCustomer, signIn, signOut, unique } from '../helpers';
 
 test('the librarian adds, edits and deletes a book', async ({ page }) => {
   const title = `Admin ${unique()}`;
@@ -96,4 +96,27 @@ test('without a camera the librarian types the ISBN in the scanner', async ({ pa
   await scanner.getByRole('button', { name: 'Use' }).click();
   await expect(scanner).toHaveCount(0);
   await expect(page.getByRole('dialog').getByLabel('ISBN', { exact: true })).toHaveValue('9780547928227');
+});
+
+test('the librarian counts the shelves', async ({ page, request }) => {
+  const isbn = '9780547928227';
+  await createBook(request, { title: `Shelf ${unique()}`, isbn });
+  await signIn(page, ADMIN);
+  await page.goto('/admin');
+  await page.getByRole('tab', { name: 'Stocktaking' }).click();
+  await page.getByRole('button', { name: 'Start counting' }).click();
+  await page.getByRole('button', { name: 'Scan books' }).click();
+  const scanner = page.getByRole('dialog', { name: 'Scan a barcode' });
+  await scanner.getByLabel('Or type the ISBN').fill(isbn);
+  await scanner.getByRole('button', { name: 'Use' }).click();
+  await expect(scanner.getByRole('status')).toContainText(`Found ISBN ${isbn}`);
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('list', { name: 'Last scans' })).toBeVisible();
+
+  // Finish without touching the catalogue (other tests share it).
+  await page.getByLabel('Mark copies not found as not available').click();
+  await page.getByRole('button', { name: 'Finish counting' }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Finish counting' }).click();
+  await expect(page.getByText('Count finished; 0 copies marked not available')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Start counting' })).toBeVisible();
 });

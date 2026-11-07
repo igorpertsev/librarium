@@ -79,6 +79,7 @@ export async function createBook(
     title: string;
     author?: string;
     description?: string;
+    isbn?: string;
     language?: string;
     tags?: string[];
     series_name?: string;

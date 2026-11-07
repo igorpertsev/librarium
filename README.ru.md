@@ -448,6 +448,13 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 ближайшие брони над списком заказов (`GET /admin/reservations`). Удаление аккаунта снимает его удержания и брони,
 а экземпляры переходят дальше.
 
+**Инвентаризация** (вкладка админ-панели, сотрудники): начните пересчёт, сканируйте каждую книгу на полке (сканер
+продолжает работать; можно вводить ISBN вручную) или считайте книги без ISBN кнопками +1/−1. Экземпляры считаются по
+книгам. На полке ожидаются все активные экземпляры, которые не выданы и не отмечены *недоступными*. В отчёте сначала
+книги, где экземпляров не хватает или есть лишние, и ISBN, которых нет в каталоге. При завершении можно отметить
+ненайденные экземпляры *недоступными* с заметкой (выданные — никогда). Одновременно открыт только один пересчёт
+(`409 STOCKTAKE_OPEN`); сканы не пишутся в журнал действий, начало и завершение — пишутся.
+
 **Сканер ISBN**: кнопка с камерой рядом с полем ISBN в форме книги считывает штрихкод на обороте книги и
 запускает поиск в Open Library. Используется встроенный в браузер `BarcodeDetector`, если он есть (Chrome, Edge,
 Android), иначе ZXing (`@zxing/browser`, загружается только при сканировании). Принимаются только штрихкоды ISBN
@@ -502,6 +509,7 @@ localhost) и `Permissions-Policy: camera=(self)`, который отправл
 | `book_translations` | на книгу и язык (`en`/`ru`): `title`, `author`, `description`, `title_source`/`description_source` (`manual/wikidata/wikipedia/machine`), `source_url` (ссылка на Википедию) |
 | `library_settings` | одна строка: `books_per_batch`, `price_per_batch NUMERIC(10,2)`, `currency`, `loan_period_days`, `max_renewals`, `hold_hours`, `block_overdue`, `late_fee_per_day NUMERIC(10,2)`, `timezone` |
 | `reading_log_entries` | читатель, экземпляр, `finished_on`, `UNIQUE(user_id, book_id)` (одна запись на книгу в сервисе) |
+| `stocktakes`, `stocktake_counts` | пересчёты полок (один открытый: частичный уникальный индекс); счёт по книге (`group_id`) или неизвестному `isbn` |
 | `audit_events` | автор (`SET NULL`) и снимок email, `action`, `method`, `path`, `entity_type`, `entity_id`, `details JSONB` |
 | `advance_reservations` | читатель, экземпляр, `starts_on`, `status` (`active/fulfilled/cancelled`) |
 | `pickup_points` | `name`, `address`, `notes`, `hours JSONB` (`[{weekday, opens, closes}]`), `slot_minutes`, `slot_capacity` (NULL — без ограничений), `active` |
@@ -559,6 +567,7 @@ localhost) и `Permissions-Policy: camera=(self)`, который отправл
 | POST | `/admin/translations/suggest` (название, автор и описание на другом языке; ничего не сохраняет) | admin |
 | GET | `/admin/users` (сотрудники) · PATCH `/admin/users/{id}` (роль, блокировка) | admin |
 | GET | `/admin/audit` (журнал действий, новые сверху) | admin |
+| GET/POST | `/admin/stocktakes` · GET `/admin/stocktakes/{id}` (отчёт) · POST `/admin/stocktakes/{id}/scan` `{isbn}`, `/count` `{book_id, delta}`, `/finish` `{mark_missing}` | сотрудники |
 | GET/POST | `/admin/pickup-points` · PATCH/DELETE `/admin/pickup-points/{id}` | admin |
 | GET | `/admin/reservations` (брони на дату, ближайшие первыми) | admin |
 | GET | `/admin/orders`, `/admin/orders/{id}` · PATCH `/admin/orders/{id}/status`, `/admin/orders/{id}/due-date`, `/admin/orders/{id}/late-fee` | admin |

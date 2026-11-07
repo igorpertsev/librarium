@@ -6988,6 +6988,497 @@
           }
         }
       }
+    },
+    "/api/v1/admin/stocktakes": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin List Stocktakes",
+        "description": "The latest counts, newest first (an open one has no finished_at).",
+        "operationId": "admin_list_stocktakes_api_v1_admin_stocktakes_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/StocktakeBrief"
+                  },
+                  "type": "array",
+                  "title": "Response Admin List Stocktakes Api V1 Admin Stocktakes Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Start Stocktake",
+        "description": "Start counting the shelves (409 STOCKTAKE_OPEN while another count is open).",
+        "operationId": "admin_start_stocktake_api_v1_admin_stocktakes_post",
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StocktakeBrief"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/stocktakes/{stocktake_id}": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Stocktake Report",
+        "operationId": "admin_stocktake_report_api_v1_admin_stocktakes__stocktake_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "stocktake_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Stocktake Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StocktakeReportRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/stocktakes/{stocktake_id}/scan": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Stocktake Scan",
+        "description": "Count one copy by its ISBN; unknown ISBNs are listed in the report.",
+        "operationId": "admin_stocktake_scan_api_v1_admin_stocktakes__stocktake_id__scan_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "stocktake_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Stocktake Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScanIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScanResultRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/stocktakes/{stocktake_id}/count": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Stocktake Count",
+        "description": "Count a title by hand (+1), or take one back (-1).",
+        "operationId": "admin_stocktake_count_api_v1_admin_stocktakes__stocktake_id__count_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "stocktake_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Stocktake Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CountIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Counted"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/stocktakes/{stocktake_id}/finish": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Finish Stocktake",
+        "description": "Close the count; mark_missing makes copies that were not found \"not available\".",
+        "operationId": "admin_finish_stocktake_api_v1_admin_stocktakes__stocktake_id__finish_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "stocktake_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Stocktake Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FinishIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StocktakeReportRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -8866,6 +9357,43 @@
         "title": "CopyCondition",
         "description": "Physical state of a copy, noted by librarians (per copy, not per title)."
       },
+      "CountIn": {
+        "properties": {
+          "book_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Book Id"
+          },
+          "delta": {
+            "type": "integer",
+            "enum": [
+              1,
+              -1
+            ],
+            "title": "Delta",
+            "default": 1
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "book_id"
+        ],
+        "title": "CountIn"
+      },
+      "Counted": {
+        "properties": {
+          "counted": {
+            "type": "integer",
+            "title": "Counted"
+          }
+        },
+        "type": "object",
+        "required": [
+          "counted"
+        ],
+        "title": "Counted"
+      },
       "DeleteAccountRequest": {
         "properties": {
           "password": {
@@ -8969,6 +9497,18 @@
           "error"
         ],
         "title": "ErrorResponse"
+      },
+      "FinishIn": {
+        "properties": {
+          "mark_missing": {
+            "type": "boolean",
+            "title": "Mark Missing",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "FinishIn"
       },
       "ForgotPasswordRequest": {
         "properties": {
@@ -10958,6 +11498,69 @@
         ],
         "title": "ReviewWrite"
       },
+      "ScanIn": {
+        "properties": {
+          "isbn": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 10,
+            "title": "Isbn"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "isbn"
+        ],
+        "title": "ScanIn"
+      },
+      "ScanResultRead": {
+        "properties": {
+          "found": {
+            "type": "boolean",
+            "title": "Found"
+          },
+          "isbn": {
+            "type": "string",
+            "title": "Isbn"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "counted": {
+            "type": "integer",
+            "title": "Counted"
+          },
+          "expected": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected"
+          }
+        },
+        "type": "object",
+        "required": [
+          "found",
+          "isbn",
+          "title",
+          "counted",
+          "expected"
+        ],
+        "title": "ScanResultRead"
+      },
       "SeriesBrief": {
         "properties": {
           "id": {
@@ -11205,6 +11808,161 @@
         "additionalProperties": false,
         "type": "object",
         "title": "SeriesUpdate"
+      },
+      "StocktakeBrief": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Started At"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "marked_missing": {
+            "type": "integer",
+            "title": "Marked Missing"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "started_at",
+          "finished_at",
+          "marked_missing"
+        ],
+        "title": "StocktakeBrief"
+      },
+      "StocktakeLine": {
+        "properties": {
+          "book_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Book Id",
+            "description": "A copy of the title (for counting by hand)"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "author": {
+            "type": "string",
+            "title": "Author"
+          },
+          "isbn": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Isbn"
+          },
+          "expected": {
+            "type": "integer",
+            "title": "Expected",
+            "description": "Active copies not on loan and not marked not available"
+          },
+          "counted": {
+            "type": "integer",
+            "title": "Counted"
+          },
+          "on_loan": {
+            "type": "integer",
+            "title": "On Loan"
+          }
+        },
+        "type": "object",
+        "required": [
+          "book_id",
+          "title",
+          "author",
+          "isbn",
+          "expected",
+          "counted",
+          "on_loan"
+        ],
+        "title": "StocktakeLine"
+      },
+      "StocktakeReportRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Started At"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "marked_missing": {
+            "type": "integer",
+            "title": "Marked Missing"
+          },
+          "expected": {
+            "type": "integer",
+            "title": "Expected"
+          },
+          "counted": {
+            "type": "integer",
+            "title": "Counted"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/StocktakeLine"
+            },
+            "type": "array",
+            "title": "Lines"
+          },
+          "unknown_isbns": {
+            "items": {
+              "$ref": "#/components/schemas/UnknownIsbn"
+            },
+            "type": "array",
+            "title": "Unknown Isbns"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "started_at",
+          "finished_at",
+          "marked_missing",
+          "expected",
+          "counted",
+          "lines",
+          "unknown_isbns"
+        ],
+        "title": "StocktakeReportRead"
       },
       "TagBrief": {
         "properties": {
@@ -11615,6 +12373,24 @@
         ],
         "title": "UiLanguage",
         "description": "Languages of the web interface and of customer emails."
+      },
+      "UnknownIsbn": {
+        "properties": {
+          "isbn": {
+            "type": "string",
+            "title": "Isbn"
+          },
+          "counted": {
+            "type": "integer",
+            "title": "Counted"
+          }
+        },
+        "type": "object",
+        "required": [
+          "isbn",
+          "counted"
+        ],
+        "title": "UnknownIsbn"
       },
       "UpcomingReservationRead": {
         "properties": {

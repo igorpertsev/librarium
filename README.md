@@ -441,6 +441,12 @@ two copies of the same title are two records (ISBN is not unique).
   hold. Cancelling (`DELETE /users/me/reservations/{id}`) gives a set-aside copy to the readers waiting for it.
   Librarians see upcoming reservations above the order list (`GET /admin/reservations`). Deleting an account
   drops its holds and reservations and passes those copies on.
+- **Stocktaking** (admin tab, staff): start a count, scan every book on the shelves (the ISBN scanner keeps
+  scanning; typed ISBNs work too) or count books without an ISBN by hand (+1/−1). Copies are counted per title. A
+  title is expected on the shelf with every active copy that is not out on loan and not marked *not available*.
+  The report lists titles with missing or extra copies first, and ISBNs that are not in the catalogue. Finishing
+  can mark the copies that were not found *not available* with a note (never copies on loan). One count is open at
+  a time (`409 STOCKTAKE_OPEN`); scans are not written to the activity log, starting and finishing are.
 - **ISBN scanner**: the camera button next to the ISBN field in the book form reads the barcode on the back of a
   book and runs the Open Library lookup. It uses the browser's `BarcodeDetector` where there is one (Chrome, Edge,
   Android) and otherwise ZXing (`@zxing/browser`, loaded only when scanning). Only ISBN barcodes (EAN-13 978/979
@@ -490,6 +496,7 @@ Concurrency is covered by tests in which both requests are held at a barrier rig
 | `book_translations` | per book and language (`en`/`ru`): `title`, `author`, `description`, `title_source`/`description_source` (`manual/wikidata/wikipedia/machine`), `source_url` (Wikipedia attribution) |
 | `library_settings` | single row: `books_per_batch`, `price_per_batch NUMERIC(10,2)`, `currency`, `loan_period_days`, `max_renewals`, `hold_hours`, `block_overdue`, `late_fee_per_day NUMERIC(10,2)`, `timezone` |
 | `reading_log_entries` | reader, copy, `finished_on`, `UNIQUE(user_id, book_id)` (one per title in the service) |
+| `stocktakes`, `stocktake_counts` | counts of the shelves (one open at a time: partial unique index); counts per title (`group_id`) or unknown `isbn` |
 | `audit_events` | actor (`SET NULL`) and email snapshot, `action`, `method`, `path`, `entity_type`, `entity_id`, `details JSONB` |
 | `advance_reservations` | reader, copy, `starts_on`, `status` (`active/fulfilled/cancelled`) |
 | `pickup_points` | `name`, `address`, `notes`, `hours JSONB` (`[{weekday, opens, closes}]`), `slot_minutes`, `slot_capacity` (NULL: no limit), `active` |
@@ -548,6 +555,7 @@ Differences (adapters in `src/api/mappers.ts`):
 | POST | `/admin/translations/suggest` (title, author and description in another language; saves nothing) | admin |
 | GET | `/admin/users` (staff) · PATCH `/admin/users/{id}` (role, disable) | admin |
 | GET | `/admin/audit` (activity log, newest first) | admin |
+| GET/POST | `/admin/stocktakes` · GET `/admin/stocktakes/{id}` (report) · POST `/admin/stocktakes/{id}/scan` `{isbn}`, `/count` `{book_id, delta}`, `/finish` `{mark_missing}` | staff |
 | GET/POST | `/admin/pickup-points` · PATCH/DELETE `/admin/pickup-points/{id}` | admin |
 | GET | `/admin/reservations` (titles reserved for a date, soonest first) | admin |
 | GET | `/admin/orders`, `/admin/orders/{id}` · PATCH `/admin/orders/{id}/status`, `/admin/orders/{id}/due-date`, `/admin/orders/{id}/late-fee` | admin |

@@ -389,7 +389,10 @@
     "alreadyReserved": "You have already reserved this book.",
     "tooManyReservations": "You can reserve up to 5 books ahead.",
     "invalidReservationDate": "Choose a day from tomorrow up to 90 days ahead.",
-    "invalidFinishedOn": "The day you finished a book cannot be in the future."
+    "invalidFinishedOn": "The day you finished a book cannot be in the future.",
+    "stocktakeOpen": "A count is already open. Finish it first.",
+    "stocktakeFinished": "This count is already finished.",
+    "invalidIsbn": "That is not an ISBN."
   },
   "checkout": {
     "title": "Confirm Order",
@@ -945,5 +948,40 @@
     "found": "Found ISBN {{isbn}}",
     "type": "Or type the ISBN",
     "use": "Use"
+  },
+  "stock": {
+    "tab": "Stocktaking",
+    "title": "Stocktaking",
+    "description": "Count the books on the shelves: scan each book's ISBN, or count books without one by hand. Books out on loan are not expected on the shelf.",
+    "start": "Start counting",
+    "last_one": "Last count: {{date}}, {{count}} copy marked not available",
+    "last_other": "Last count: {{date}}, {{count}} copies marked not available",
+    "scan": "Scan books",
+    "progress": "{{counted}} of {{expected}} copies counted",
+    "missing_one": "{{count}} missing",
+    "missing_other": "{{count}} missing",
+    "extra_one": "{{count}} extra",
+    "extra_other": "{{count}} extra",
+    "recent": "Last scans",
+    "counted": "{{title}}: {{counted}} of {{expected}}",
+    "unknown": "ISBN {{isbn}} is not in the catalogue",
+    "unknownTitle": "ISBNs not in the catalogue",
+    "show": "Show",
+    "filter": {"differences": "Differences", "all": "All titles"},
+    "noDifferences": "Every title counted matches the catalogue.",
+    "expected": "Expected",
+    "countedHead": "Counted",
+    "onLoan": "On loan",
+    "byHand": "Count by hand",
+    "less": "One copy fewer of “{{title}}”",
+    "more": "One more copy of “{{title}}”",
+    "markMissing": "Mark copies not found as not available",
+    "finish": "Finish counting",
+    "finishTitle": "Finish this count?",
+    "finishMark_one": "{{count}} copy that was not found will be marked not available, with a note.",
+    "finishMark_other": "{{count}} copies that were not found will be marked not available, with a note.",
+    "finishKeep": "The catalogue stays as it is; the report is kept.",
+    "finished_one": "Count finished; {{count}} copy marked not available",
+    "finished_other": "Count finished; {{count}} copies marked not available"
   }
 }
