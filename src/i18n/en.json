@@ -406,7 +406,9 @@
     "mfaRequiredByLibrary": "The library requires two-step sign-in for staff.",
     "mfaSetupRequired": "Turn on two-step sign-in on your profile to use the admin portal.",
     "mfaSetupRequiredFirst": "Turn on two-step sign-in for yourself first.",
-    "telegramNotConfigured": "Telegram is not set up for this library."
+    "telegramNotConfigured": "Telegram is not set up for this library.",
+    "childNotFound": "That child profile was not found.",
+    "tooManyChildren": "A family can have up to 6 children."
   },
   "checkout": {
     "title": "Confirm Order",
@@ -908,7 +910,11 @@
     "unmarked": "“{{title}}” taken off your reading log",
     "showAll": "Show all {{count}}",
     "showLess": "Show fewer",
-    "badge": {"first_book": {"name": "First book", "hint": "Finish a book"}, "five_books": {"name": "Bookworm", "hint": "Finish 5 books"}, "ten_books": {"name": "Book champion", "hint": "Finish 10 books"}, "twenty_five_books": {"name": "Reading royalty", "hint": "Finish 25 books"}, "explorer": {"name": "Explorer", "hint": "Books from 3 categories"}, "two_languages": {"name": "Two languages", "hint": "Read in 2 languages"}, "series_finisher": {"name": "Series finisher", "hint": "Every book of a series"}, "three_months": {"name": "Steady reader", "hint": "A book in each of 3 months"}}
+    "badge": {"first_book": {"name": "First book", "hint": "Finish a book"}, "five_books": {"name": "Bookworm", "hint": "Finish 5 books"}, "ten_books": {"name": "Book champion", "hint": "Finish 10 books"}, "twenty_five_books": {"name": "Reading royalty", "hint": "Finish 25 books"}, "explorer": {"name": "Explorer", "hint": "Books from 3 categories"}, "two_languages": {"name": "Two languages", "hint": "Read in 2 languages"}, "series_finisher": {"name": "Series finisher", "hint": "Every book of a series"}, "three_months": {"name": "Steady reader", "hint": "A book in each of 3 months"}},
+    "whose": "Whose reading log",
+    "me": "Me",
+    "markFor": "{{name}} read it",
+    "finishedBy": "Read by {{name}}"
   },
   "audit": {
     "tab": "Activity",
@@ -1087,5 +1093,18 @@
     "install": "Install the app",
     "installHint": "Add Little Dragon to your home screen or dock. It opens like an app and starts even without a connection.",
     "offline": "You are offline. The catalogue and your loans need a connection; they come back as soon as you are online."
+  },
+  "family": {
+    "title": "Family",
+    "description": "Add your children: each gets their own reading log and badges, and orders can say who they are for. Loans stay on your account.",
+    "name": "Child's name",
+    "birthYear": "Year of birth",
+    "add": "Add child",
+    "added": "{{name}} was added",
+    "remove": "Remove {{name}}",
+    "removeTitle": "Remove {{name}}?",
+    "removeDesc": "Their reading log and badges are removed too. Orders keep their name.",
+    "orderFor": "Who are the books for?",
+    "forChild": "For {{name}}"
   }
 }

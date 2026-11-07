@@ -66,6 +66,8 @@ class Order(TimestampMixin, Base):
     # returned on time or no fee applied. Settled when paid or waived by the library.
     late_fee: Mapped[Decimal | None] = mapped_column(MONEY)
     late_fee_settled_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True))
+    # Who the books are for, when a parent orders for a child (a snapshot of the name).
+    child_name: Mapped[str | None] = mapped_column(sa.String(100))
     # Where and when the reader collects the books (when the library has pickup points).
     pickup_point_id: Mapped[uuid.UUID | None] = mapped_column(
         sa.ForeignKey("pickup_points.id", ondelete="RESTRICT")

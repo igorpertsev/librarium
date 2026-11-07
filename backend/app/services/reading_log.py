@@ -10,7 +10,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 
-from sqlalchemy import String, cast, delete, func, select
+from sqlalchemy import ColumnElement, String, cast, delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import BadRequestError, NotFoundError
@@ -19,6 +19,7 @@ from app.models.enums import OrderStatus
 from app.repositories.books import BookFilters, copy_group_key
 from app.schemas.book import BookRead, BookSort
 from app.services import books as books_service
+from app.services import family
 
 MAX_ENTRIES = 1000
 MAX_SUGGESTIONS = 6
@@ -61,7 +62,15 @@ def _today() -> date:
     return datetime.now(UTC).date()
 
 
-async def _read(session: AsyncSession, user: User) -> list[_Read]:
+def _profile(child_id: uuid.UUID | None) -> ColumnElement[bool]:
+    return (
+        ReadingLogEntry.child_id.is_(None)
+        if child_id is None
+        else ReadingLogEntry.child_id == child_id
+    )
+
+
+async def _read(session: AsyncSession, user: User, child_id: uuid.UUID | None) -> list[_Read]:
     rows = (
         await session.execute(
             select(
@@ -72,7 +81,7 @@ async def _read(session: AsyncSession, user: User) -> list[_Read]:
                 func.min(cast(Book.series_id, String)),
             )
             .join(Book, Book.id == ReadingLogEntry.book_id)
-            .where(ReadingLogEntry.user_id == user.id)
+            .where(ReadingLogEntry.user_id == user.id, _profile(child_id))
             .group_by(copy_group_key())
             .limit(MAX_ENTRIES)
         )
@@ -169,9 +178,16 @@ async def _borrowed_not_logged(
     return [group for group, _ in rows if group not in logged][:MAX_SUGGESTIONS]
 
 
-async def reading_log(session: AsyncSession, user: User) -> ReadingLog:
+async def reading_log(
+    session: AsyncSession, user: User, child_id: uuid.UUID | None = None
+) -> ReadingLog:
+    """The log of the reader, or of one of their children."""
+    if child_id is not None:
+        await family.child_of(session, user, child_id)
     today = _today()
-    read = sorted(await _read(session, user), key=lambda item: item.finished_on, reverse=True)
+    read = sorted(
+        await _read(session, user, child_id), key=lambda item: item.finished_on, reverse=True
+    )
     logged = {item.group for item in read}
     suggested = await _borrowed_not_logged(session, user, logged)
     books = await _books(session, [item.group for item in read] + suggested)
@@ -187,32 +203,50 @@ async def reading_log(session: AsyncSession, user: User) -> ReadingLog:
 
 
 async def mark_read(
-    session: AsyncSession, user: User, book_id: uuid.UUID, finished_on: date | None = None
+    session: AsyncSession,
+    user: User,
+    book_id: uuid.UUID,
+    finished_on: date | None = None,
+    child_id: uuid.UUID | None = None,
 ) -> None:
     """Log the title of this copy as finished (on ``finished_on``, default today); logging
     it again changes the day."""
     day = finished_on or _today()
     if not EARLIEST <= day <= _today():
         raise BadRequestError("The day must not be in the future", code="INVALID_FINISHED_ON")
+    if child_id is not None:
+        await family.child_of(session, user, child_id)
     book = await session.get(Book, book_id)
     if book is None:
         raise NotFoundError("Book not found", code="BOOK_NOT_FOUND")
     existing = await session.scalar(
         select(ReadingLogEntry)
         .join(Book, Book.id == ReadingLogEntry.book_id)
-        .where(ReadingLogEntry.user_id == user.id, copy_group_key() == book.group_id)
+        .where(
+            ReadingLogEntry.user_id == user.id,
+            _profile(child_id),
+            copy_group_key() == book.group_id,
+        )
         .limit(1)
     )
     if existing is not None:
         existing.finished_on = day
     else:
         session.add(
-            ReadingLogEntry(id=uuid.uuid4(), user_id=user.id, book_id=book_id, finished_on=day)
+            ReadingLogEntry(
+                id=uuid.uuid4(),
+                user_id=user.id,
+                child_id=child_id,
+                book_id=book_id,
+                finished_on=day,
+            )
         )
     await session.commit()
 
 
-async def unmark(session: AsyncSession, user: User, book_id: uuid.UUID) -> None:
+async def unmark(
+    session: AsyncSession, user: User, book_id: uuid.UUID, child_id: uuid.UUID | None = None
+) -> None:
     """Take the title of this copy (every copy of it) off the log."""
     book = await session.get(Book, book_id)
     if book is None:
@@ -220,7 +254,11 @@ async def unmark(session: AsyncSession, user: User, book_id: uuid.UUID) -> None:
     ids = (
         select(ReadingLogEntry.id)
         .join(Book, Book.id == ReadingLogEntry.book_id)
-        .where(ReadingLogEntry.user_id == user.id, copy_group_key() == book.group_id)
+        .where(
+            ReadingLogEntry.user_id == user.id,
+            _profile(child_id),
+            copy_group_key() == book.group_id,
+        )
     )
     await session.execute(delete(ReadingLogEntry).where(ReadingLogEntry.id.in_(ids)))
     await session.commit()

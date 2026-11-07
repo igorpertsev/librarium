@@ -451,6 +451,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/users/me/children": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My Children */
+        get: operations["my_children_api_v1_users_me_children_get"];
+        put?: never;
+        /**
+         * Add Child
+         * @description Add a child profile (up to 6): they get their own reading log and badges, and orders can say they are for them.
+         */
+        post: operations["add_child_api_v1_users_me_children_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/me/children/{child_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove Child
+         * @description Their reading log goes too; orders keep the name they were placed for.
+         */
+        delete: operations["remove_child_api_v1_users_me_children__child_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Child */
+        patch: operations["update_child_api_v1_users_me_children__child_id__patch"];
+        trace?: never;
+    };
     "/api/v1/users/me/reading-log": {
         parameters: {
             query?: never;
@@ -2606,6 +2648,32 @@ export interface components {
             /** New Password */
             new_password: string;
         };
+        /** ChildCreate */
+        ChildCreate: {
+            /** Name */
+            name: string;
+            /** Birth Year */
+            birth_year?: number | null;
+        };
+        /** ChildRead */
+        ChildRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Birth Year */
+            birth_year: number | null;
+        };
+        /** ChildUpdate */
+        ChildUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Birth Year */
+            birth_year?: number | null;
+        };
         /**
          * ContactMethod
          * @enum {string}
@@ -3158,6 +3226,11 @@ export interface components {
              */
             late_fee_settled_at: string | null;
             pickup_point: components["schemas"]["PickupPointBrief"] | null;
+            /**
+             * Child Name
+             * @description The child of the account the books are for
+             */
+            child_name: string | null;
             /** Pickup At */
             pickup_at: string | null;
             /** Confirmed At */
@@ -3190,13 +3263,16 @@ export interface components {
         };
         /**
          * PickupChoice
-         * @description Optional body of POST /orders: where and when the reader collects the books.
+         * @description Optional body of POST /orders: where and when the reader collects the books, and which
+         *     child of the account they are for.
          */
         PickupChoice: {
             /** Pickup Point Id */
             pickup_point_id?: string | null;
             /** Pickup At */
             pickup_at?: string | null;
+            /** Child Id */
+            child_id?: string | null;
         };
         /** PickupPointBrief */
         PickupPointBrief: {
@@ -5153,9 +5229,192 @@ export interface operations {
             };
         };
     };
-    my_reading_log_api_v1_users_me_reading_log_get: {
+    my_children_api_v1_users_me_children_get: {
         parameters: {
             query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChildRead"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    add_child_api_v1_users_me_children_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChildCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChildRead"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    remove_child_api_v1_users_me_children__child_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                child_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    update_child_api_v1_users_me_children__child_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                child_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChildUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChildRead"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    my_reading_log_api_v1_users_me_reading_log_get: {
+        parameters: {
+            query?: {
+                /** @description A child profile of the account */
+                child?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -5180,11 +5439,23 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     mark_finished_api_v1_users_me_reading_log__book_id__put: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description A child profile of the account */
+                child?: string | null;
+            };
             header?: never;
             path: {
                 book_id: string;
@@ -5244,7 +5515,10 @@ export interface operations {
     };
     unmark_finished_api_v1_users_me_reading_log__book_id__delete: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description A child profile of the account */
+                child?: string | null;
+            };
             header?: never;
             path: {
                 book_id: string;

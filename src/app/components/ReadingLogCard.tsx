@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useReadingLog } from '../contexts/ReadingLogContext';
+import { useFamily } from '../contexts/FamilyContext';
 import { errorMessage } from '../utils/apiErrors';
 import { useBookText } from '../utils/bookText';
 import { coverOfSize } from '../utils/covers';
@@ -40,7 +41,8 @@ export function ReadingLogCard() {
   const { t } = useTranslation();
   const fmt = useFormat();
   const textOf = useBookText();
-  const { log, unmark } = useReadingLog();
+  const { log, unmark, profile, setProfile } = useReadingLog();
+  const { children: kids } = useFamily();
   const [showAll, setShowAll] = useState(false);
 
   if (!log) return null;
@@ -56,6 +58,23 @@ export function ReadingLogCard() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {kids.length > 0 && (
+          <div role="group" aria-label={t('readingLog.whose')} className="flex flex-wrap gap-2">
+            {[{ id: null as string | null, name: t('readingLog.me') }, ...kids.map((kid) => ({ id: kid.id as string | null, name: kid.name }))].map(
+              (option) => (
+                <Button
+                  key={option.id ?? 'me'}
+                  size="sm"
+                  variant={profile === option.id ? 'default' : 'outline'}
+                  aria-pressed={profile === option.id}
+                  onClick={() => setProfile(option.id)}
+                >
+                  {option.name}
+                </Button>
+              ),
+            )}
+          </div>
+        )}
         <ul className="grid grid-cols-2 sm:grid-cols-4 gap-3" aria-label={t('readingLog.badges')}>
           {log.badges.map((badge) => {
             const Icon = BADGE_ICONS[badge.key] ?? Trophy;

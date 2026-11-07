@@ -38,6 +38,7 @@ export type LibraryRulesDto = Schemas['LibraryRules'];
 export type PickupPointDto = Schemas['PickupPointRead'];
 export type ReservationDto = Schemas['ReservationRead'];
 export type InboxDto = Schemas['Inbox'];
+export type ChildDto = Schemas['ChildRead'];
 export type PurchaseRequestDto = Schemas['PurchaseRequestRead'];
 export type PurchaseStatusDto = Schemas['PurchaseStatus'];
 export type AuditPageDto = Schemas['AuditPage'];

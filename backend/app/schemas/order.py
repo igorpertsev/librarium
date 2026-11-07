@@ -53,6 +53,7 @@ class OrderRead(ApiModel):
     late_fee: Decimal | None = Field(description="Charged for returning the books late")
     late_fee_settled_at: datetime | None = Field(description="When it was paid or waived")
     pickup_point: PickupPointBrief | None
+    child_name: str | None = Field(description="The child of the account the books are for")
     pickup_at: datetime | None
     confirmed_at: datetime | None
     returned_at: datetime | None

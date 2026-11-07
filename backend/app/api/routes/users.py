@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime
+from typing import Annotated
 
-from fastapi import APIRouter, Response, status
+from fastapi import APIRouter, Query, Response, status
 from fastapi.responses import JSONResponse
 
 from app.api.dependencies import CurrentUser, SessionDep, SettingsDep
@@ -11,6 +12,7 @@ from app.api.routes.auth import clear_refresh_cookie
 from app.schemas.auth import MfaEnableRequest, MfaRecoveryCodes, MfaSetup, MfaSetupRequest
 from app.schemas.book import BookRead
 from app.schemas.common import error_responses
+from app.schemas.family import ChildCreate, ChildRead, ChildUpdate
 from app.schemas.hold import HeldBookRead
 from app.schemas.inbox import Inbox, MarkRead
 from app.schemas.reading_log import MarkFinished, ReadingLogRead
@@ -18,6 +20,7 @@ from app.schemas.reservation import ReservationCreate, ReservationRead
 from app.schemas.user import DeleteAccountRequest, TelegramLink, UserRead, UserUpdate
 from app.services import (
     account,
+    family,
     holds,
     inbox,
     mfa,
@@ -153,6 +156,53 @@ async def unlink_telegram(user: CurrentUser, session: SessionDep) -> Response:
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
+# A child profile of the account ("?child=<id>"); without it, the reader themselves.
+ChildQuery = Annotated[uuid.UUID | None, Query(description="A child profile of the account")]
+
+
+@router.get("/me/children", response_model=list[ChildRead], responses=error_responses(401))
+async def my_children(user: CurrentUser, session: SessionDep) -> list[ChildRead]:
+    return [ChildRead.model_validate(c) for c in await family.list_children(session, user)]
+
+
+@router.post(
+    "/me/children",
+    status_code=status.HTTP_201_CREATED,
+    response_model=ChildRead,
+    responses=error_responses(401, 409, 422),
+    description="Add a child profile (up to 6): they get their own reading log and badges, and "
+    "orders can say they are for them.",
+)
+async def add_child(body: ChildCreate, user: CurrentUser, session: SessionDep) -> ChildRead:
+    child = await family.add_child(session, user, name=body.name, birth_year=body.birth_year)
+    return ChildRead.model_validate(child)
+
+
+@router.patch(
+    "/me/children/{child_id}",
+    response_model=ChildRead,
+    responses=error_responses(401, 404, 422),
+)
+async def update_child(
+    child_id: uuid.UUID, body: ChildUpdate, user: CurrentUser, session: SessionDep
+) -> ChildRead:
+    return ChildRead.model_validate(
+        await family.update_child(session, user, child_id, body.changes())
+    )
+
+
+@router.delete(
+    "/me/children/{child_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
+    responses=error_responses(401, 404, 422),
+)
+async def remove_child(child_id: uuid.UUID, user: CurrentUser, session: SessionDep) -> Response:
+    """Their reading log goes too; orders keep the name they were placed for."""
+    await family.remove_child(session, user, child_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
 @router.get(
     "/me/reading-log",
     response_model=ReadingLogRead,
@@ -160,8 +210,10 @@ async def unlink_telegram(user: CurrentUser, session: SessionDep) -> Response:
     description="Titles the reader has finished (newest first), counts, badges and borrowed "
     "titles not logged yet.",
 )
-async def my_reading_log(user: CurrentUser, session: SessionDep) -> ReadingLogRead:
-    log = await reading_log.reading_log(session, user)
+async def my_reading_log(
+    user: CurrentUser, session: SessionDep, child: ChildQuery = None
+) -> ReadingLogRead:
+    log = await reading_log.reading_log(session, user, child)
     return ReadingLogRead.model_validate(log, from_attributes=True)
 
 
@@ -173,9 +225,13 @@ async def my_reading_log(user: CurrentUser, session: SessionDep) -> ReadingLogRe
     description="Log the title as finished (finished_on defaults to today; not in the future).",
 )
 async def mark_finished(
-    book_id: uuid.UUID, user: CurrentUser, session: SessionDep, body: MarkFinished | None = None
+    book_id: uuid.UUID,
+    user: CurrentUser,
+    session: SessionDep,
+    body: MarkFinished | None = None,
+    child: ChildQuery = None,
 ) -> Response:
-    await reading_log.mark_read(session, user, book_id, body.finished_on if body else None)
+    await reading_log.mark_read(session, user, book_id, body.finished_on if body else None, child)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -185,8 +241,10 @@ async def mark_finished(
     response_class=Response,
     responses=error_responses(401, 422),
 )
-async def unmark_finished(book_id: uuid.UUID, user: CurrentUser, session: SessionDep) -> Response:
-    await reading_log.unmark(session, user, book_id)
+async def unmark_finished(
+    book_id: uuid.UUID, user: CurrentUser, session: SessionDep, child: ChildQuery = None
+) -> Response:
+    await reading_log.unmark(session, user, book_id, child)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

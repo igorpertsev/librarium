@@ -510,6 +510,11 @@ two copies of the same title are two records (ISBN is not unique).
   when an email could not be sent, except news that went stale before delivery. Opening the list marks it read
   (`read_at`); it refreshes every minute while the tab is visible. Notifications from before the bell existed
   count as read.
+- **Family accounts**: a reader adds up to six children on the profile (`GET/POST /users/me/children`,
+  `PATCH/DELETE /users/me/children/{id}`). Children borrow through the parent's account; each has their own reading
+  log and badges (`?child=<id>` on the reading-log endpoints; the profile and the book dialog follow the profile
+  chosen in the log, remembered on the device), and an order can say who it is for (`child_id` in `POST /orders`;
+  orders keep the name, `child_name`, also after the profile is removed). Removing a child removes their log.
 - **Reading log and badges**: readers mark titles they finished ("I've read it" in the book dialog or for borrowed
   titles on the profile; `PUT /users/me/reading-log/{book_id}` `{finished_on}`, default today, never in the future;
   per title). The profile shows how many this year and in total, the finished books, and eight badges worked out
@@ -545,6 +550,7 @@ Concurrency is covered by tests in which both requests are held at a barrier rig
 | `reading_log_entries` | reader, copy, `finished_on`, `UNIQUE(user_id, book_id)` (one per title in the service) |
 | `stocktakes`, `stocktake_counts` | counts of the shelves (one open at a time: partial unique index); counts per title (`group_id`) or unknown `isbn` |
 | `purchase_requests`, `purchase_votes` | readers' suggestions (`status` `open/ordered/added/declined`, `book_id` once added) and one vote per reader |
+| `child_profiles` | children of an account: `name`, `birth_year`; `reading_log_entries.child_id` (unique per profile and copy, NULLs not distinct), `orders.child_name` |
 | `audit_events` | actor (`SET NULL`) and email snapshot, `action`, `method`, `path`, `entity_type`, `entity_id`, `details JSONB` |
 | `advance_reservations` | reader, copy, `starts_on`, `status` (`active/fulfilled/cancelled`) |
 | `pickup_points` | `name`, `address`, `notes`, `hours JSONB` (`[{weekday, opens, closes}]`), `slot_minutes`, `slot_capacity` (NULL: no limit), `active` |
@@ -590,6 +596,7 @@ Differences (adapters in `src/api/mappers.ts`):
 | GET `/users/me/recommendations` (titles ranked by the tags of borrowed and saved ones) | “For you” shelf | signed-in user |
 | GET `/users/me/holds` · DELETE `/users/me/holds/{book_id}` | books held for the reader; give one up | signed-in user |
 | GET/POST `/users/me/reservations` · DELETE `/users/me/reservations/{id}` | reserve a title for a date; cancel | signed-in user |
+| GET/POST `/users/me/children` · PATCH/DELETE `/users/me/children/{id}` | child profiles of a family account | signed-in user |
 | GET/POST `/purchase-requests` · PUT/DELETE `/purchase-requests/{id}/vote` | suggest books to buy, vote | signed-in user |
 | GET `/users/me/reading-log` · PUT/DELETE `/users/me/reading-log/{book_id}` | finished titles, counts, badges, borrowed titles to log | signed-in user |
 | GET `/users/me/notifications` · POST `/users/me/notifications/read` (`{ids}` or nothing for all) | the bell: latest 30 news items of the last 60 days and the unread count | signed-in user |

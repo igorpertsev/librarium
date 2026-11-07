@@ -24,6 +24,7 @@ import type {
   ChangePasswordDto,
   ForgotPasswordDto,
   HeldBookDto,
+  ChildDto,
   InboxDto,
   ReadingLogDto,
   LibraryRulesDto,
@@ -113,14 +114,21 @@ export const usersApi = {
   mfaDisable: (password: string) =>
     apiRequest<void>('/users/me/mfa/disable', { method: 'POST', body: { password } }),
   notifications: () => apiRequest<InboxDto>('/users/me/notifications'),
-  readingLog: () => apiRequest<ReadingLogDto>('/users/me/reading-log'),
-  markFinished: (bookId: string, finishedOn?: string) =>
+  readingLog: (child?: string) =>
+    apiRequest<ReadingLogDto>('/users/me/reading-log', { query: { child } }),
+  markFinished: (bookId: string, finishedOn?: string, child?: string) =>
     apiRequest<void>(`/users/me/reading-log/${id(bookId)}`, {
       method: 'PUT',
       body: finishedOn ? { finished_on: finishedOn } : undefined,
+      query: { child },
     }),
-  unmarkFinished: (bookId: string) =>
-    apiRequest<void>(`/users/me/reading-log/${id(bookId)}`, { method: 'DELETE' }),
+  unmarkFinished: (bookId: string, child?: string) =>
+    apiRequest<void>(`/users/me/reading-log/${id(bookId)}`, { method: 'DELETE', query: { child } }),
+  children: () => apiRequest<ChildDto[]>('/users/me/children'),
+  addChild: (body: { name: string; birth_year?: number | null }) =>
+    apiRequest<ChildDto>('/users/me/children', { method: 'POST', body }),
+  removeChild: (childId: string) =>
+    apiRequest<void>(`/users/me/children/${id(childId)}`, { method: 'DELETE' }),
   markNotificationsRead: (ids?: string[]) =>
     apiRequest<void>('/users/me/notifications/read', { method: 'POST', body: ids ? { ids } : undefined }),
   reserve: (bookId: string, startsOn: string) =>

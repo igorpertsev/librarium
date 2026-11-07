@@ -4,6 +4,7 @@ from app.models.audit import AuditEvent
 from app.models.base import Base
 from app.models.book import Book
 from app.models.cart import Cart, CartItem
+from app.models.child import ChildProfile
 from app.models.hold import BookHold
 from app.models.identity import UserIdentity
 from app.models.library_settings import LibrarySettings
@@ -32,6 +33,7 @@ __all__ = [
     "BookTranslation",
     "Cart",
     "CartItem",
+    "ChildProfile",
     "LibrarySettings",
     "Notification",
     "Order",

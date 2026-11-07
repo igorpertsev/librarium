@@ -524,6 +524,12 @@ localhost) и `Permissions-Policy: camera=(self)`, который отправл
 (`read_at`); список обновляется раз в минуту, пока вкладка видна. Уведомления, появившиеся до колокольчика,
 считаются прочитанными.
 
+**Семейный аккаунт**: читатель добавляет в профиле до шести детей (`GET/POST /users/me/children`,
+`PATCH/DELETE /users/me/children/{id}`). Дети берут книги через аккаунт родителя; у каждого свой дневник чтения и
+значки (`?child=<id>` у эндпоинтов дневника; профиль и диалог книги работают с профилем, выбранным в дневнике, —
+выбор запоминается на устройстве), а в заказе можно указать, для кого он (`child_id` в `POST /orders`; заказ хранит
+имя `child_name` и после удаления профиля). Удаление ребёнка удаляет и его дневник.
+
 **Дневник чтения и значки**: читатель отмечает прочитанные книги («Прочитал(а)» в диалоге книги или у взятых книг
 в профиле; `PUT /users/me/reading-log/{book_id}` `{finished_on}`, по умолчанию сегодня и не в будущем; одна запись
 на книгу). В профиле видно, сколько прочитано в этом году и всего, список книг и восемь значков, которые каждый раз
@@ -559,6 +565,7 @@ localhost) и `Permissions-Policy: camera=(self)`, который отправл
 | `reading_log_entries` | читатель, экземпляр, `finished_on`, `UNIQUE(user_id, book_id)` (одна запись на книгу в сервисе) |
 | `stocktakes`, `stocktake_counts` | пересчёты полок (один открытый: частичный уникальный индекс); счёт по книге (`group_id`) или неизвестному `isbn` |
 | `purchase_requests`, `purchase_votes` | предложения читателей (`status` `open/ordered/added/declined`, `book_id` после добавления) и по одному голосу от читателя |
+| `child_profiles` | дети аккаунта: `name`, `birth_year`; `reading_log_entries.child_id` (уникально по профилю и экземпляру, NULLs not distinct), `orders.child_name` |
 | `audit_events` | автор (`SET NULL`) и снимок email, `action`, `method`, `path`, `entity_type`, `entity_id`, `details JSONB` |
 | `advance_reservations` | читатель, экземпляр, `starts_on`, `status` (`active/fulfilled/cancelled`) |
 | `pickup_points` | `name`, `address`, `notes`, `hours JSONB` (`[{weekday, opens, closes}]`), `slot_minutes`, `slot_capacity` (NULL — без ограничений), `active` |
@@ -603,6 +610,7 @@ localhost) и `Permissions-Policy: camera=(self)`, который отправл
 | GET `/users/me/recommendations` (книги по тегам взятых и отложенных) | полка «Вам может понравиться» | пользователь |
 | GET `/users/me/holds` · DELETE `/users/me/holds/{book_id}` | книги, отложенные для читателя; отказ | пользователь |
 | GET/POST `/users/me/reservations` · DELETE `/users/me/reservations/{id}` | бронь книги на дату; отмена | пользователь |
+| GET/POST `/users/me/children` · PATCH/DELETE `/users/me/children/{id}` | профили детей семейного аккаунта | пользователь |
 | GET/POST `/purchase-requests` · PUT/DELETE `/purchase-requests/{id}/vote` | предложить книгу, голосовать | пользователь |
 | GET `/users/me/reading-log` · PUT/DELETE `/users/me/reading-log/{book_id}` | прочитанные книги, счётчики, значки, взятые книги без отметки | пользователь |
 | GET `/users/me/notifications` · POST `/users/me/notifications/read` (`{ids}` или пусто — все) | колокольчик: последние 30 новостей за 60 дней и число непрочитанных | пользователь |

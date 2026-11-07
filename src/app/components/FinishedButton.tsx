@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { BookCheck, BookOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import { useReadingLog } from '../contexts/ReadingLogContext';
+import { useFamily } from '../contexts/FamilyContext';
 import { errorMessage } from '../utils/apiErrors';
 import { Button } from './ui/button';
 
@@ -19,7 +20,9 @@ export function FinishedButton({
   size?: 'default' | 'sm';
 }) {
   const { t } = useTranslation();
-  const { isFinished, markFinished, unmark } = useReadingLog();
+  const { isFinished, markFinished, unmark, profile } = useReadingLog();
+  const { children: kids } = useFamily();
+  const child = kids.find((kid) => kid.id === profile);
   const [busy, setBusy] = useState(false);
   const finished = isFinished({ id: bookId, groupId });
 
@@ -43,7 +46,13 @@ export function FinishedButton({
       title={finished ? t('readingLog.unmarkTitle', { title }) : t('readingLog.markTitle', { title })}
     >
       <Icon className="w-4 h-4 mr-2" aria-hidden="true" />
-      {finished ? t('readingLog.finished') : t('readingLog.markShort')}
+      {child
+        ? finished
+          ? t('readingLog.finishedBy', { name: child.name })
+          : t('readingLog.markFor', { name: child.name })
+        : finished
+          ? t('readingLog.finished')
+          : t('readingLog.markShort')}
     </Button>
   );
 }
