@@ -71,3 +71,4 @@ backend/media/
 /test-results-visual/
 /playwright-report-visual/
 /.pnpm-store/
+/.lighthouseci/
