@@ -107,6 +107,10 @@ export const usersApi = {
   telegramLink: () =>
     apiRequest<{ url: string; expires_at: string }>('/users/me/telegram/link', { method: 'POST' }),
   telegramUnlink: () => apiRequest<void>('/users/me/telegram', { method: 'DELETE' }),
+  pushSubscribe: (subscription: { endpoint: string; keys: { p256dh: string; auth: string } }) =>
+    apiRequest<void>('/users/me/push-subscriptions', { method: 'POST', body: subscription }),
+  pushUnsubscribe: (endpoint: string) =>
+    apiRequest<void>(`/users/me/push-subscriptions?endpoint=${encodeURIComponent(endpoint)}`, { method: 'DELETE' }),
   mfaSetup: (password: string) =>
     apiRequest<{ secret: string; otpauth_uri: string }>('/users/me/mfa/setup', { method: 'POST', body: { password } }),
   mfaEnable: (code: string) =>

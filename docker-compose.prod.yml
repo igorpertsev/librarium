@@ -44,6 +44,10 @@ x-backend-env: &backend-env
   # Telegram notifications (optional): a bot from @BotFather.
   TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
   TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-}
+  # Notifications on readers' devices (optional, see .env.example).
+  WEB_PUSH_PUBLIC_KEY: ${WEB_PUSH_PUBLIC_KEY:-}
+  WEB_PUSH_PRIVATE_KEY: ${WEB_PUSH_PRIVATE_KEY:-}
+  WEB_PUSH_CONTACT: ${WEB_PUSH_CONTACT:-}
   # Sign in with Google / Apple (optional).
   GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
   GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}

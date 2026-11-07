@@ -90,3 +90,40 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(image(request));
   }
 });
+
+// Web Push: the library's notifications on this device (see app/services/web_push.py). The
+// payload is {title, body, url}; a click opens that page of the app (never another site).
+self.addEventListener('push', (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = { body: event.data ? event.data.text() : '' };
+  }
+  event.waitUntil(
+    self.registration.showNotification(data.title || 'Little Dragon', {
+      body: data.body || '',
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      data: { url: typeof data.url === 'string' ? data.url : '/' },
+    }),
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  let target = new URL('/', self.location.origin);
+  try {
+    const wanted = new URL(event.notification.data?.url || '/', self.location.origin);
+    if (wanted.origin === self.location.origin) target = wanted;
+  } catch {
+    // keep the home page
+  }
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
+      const open = windows.find((client) => new URL(client.url).origin === target.origin);
+      if (open) return open.navigate(target.href).then((client) => (client || open).focus());
+      return self.clients.openWindow(target.href);
+    }),
+  );
+});

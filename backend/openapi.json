@@ -1325,6 +1325,118 @@
         ]
       }
     },
+    "/api/v1/users/me/push-subscriptions": {
+      "post": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Add Push Subscription",
+        "description": "Notifications on this device (Web Push): the browser's subscription. 409 PUSH_NOT_CONFIGURED when the library has no push keys.",
+        "operationId": "add_push_subscription_api_v1_users_me_push_subscriptions_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushSubscriptionCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Remove Push Subscription",
+        "description": "No more notifications on that device.",
+        "operationId": "remove_push_subscription_api_v1_users_me_push_subscriptions_delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "endpoint",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 2048,
+              "description": "The subscription's endpoint",
+              "title": "Endpoint"
+            },
+            "description": "The subscription's endpoint"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
     "/api/v1/users/me/children": {
       "get": {
         "tags": [
@@ -11221,6 +11333,18 @@
             ],
             "title": "Telegram Bot",
             "description": "Username of the library's Telegram bot, when notifications can go there"
+          },
+          "web_push_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Web Push Key",
+            "description": "VAPID public key for Web Push subscriptions (null: push is not set up)"
           }
         },
         "type": "object",
@@ -11234,7 +11358,8 @@
           "block_overdue",
           "late_fee_per_day",
           "timezone",
-          "telegram_bot"
+          "telegram_bot",
+          "web_push_key"
         ],
         "title": "LibraryRules",
         "description": "Lending rules every reader may know (GET /library/rules)."
@@ -11293,6 +11418,18 @@
             "title": "Telegram Bot",
             "description": "Username of the library's Telegram bot, when notifications can go there"
           },
+          "web_push_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Web Push Key",
+            "description": "VAPID public key for Web Push subscriptions (null: push is not set up)"
+          },
           "updated_at": {
             "type": "string",
             "format": "date-time",
@@ -11316,6 +11453,7 @@
           "late_fee_per_day",
           "timezone",
           "telegram_bot",
+          "web_push_key",
           "updated_at",
           "require_staff_mfa"
         ],
@@ -12890,6 +13028,47 @@
         ],
         "title": "PurchaseStatus",
         "description": "A reader's suggestion for the library to buy a book."
+      },
+      "PushKeys": {
+        "properties": {
+          "p256dh": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "P256Dh"
+          },
+          "auth": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Auth"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "p256dh",
+          "auth"
+        ],
+        "title": "PushKeys"
+      },
+      "PushSubscriptionCreate": {
+        "properties": {
+          "endpoint": {
+            "type": "string",
+            "maxLength": 2048,
+            "title": "Endpoint"
+          },
+          "keys": {
+            "$ref": "#/components/schemas/PushKeys"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "endpoint",
+          "keys"
+        ],
+        "title": "PushSubscriptionCreate",
+        "description": "``PushSubscription.toJSON()`` of the browser, without ``expirationTime``."
       },
       "QualityIssue": {
         "type": "string",

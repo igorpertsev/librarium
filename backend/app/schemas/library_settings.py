@@ -37,6 +37,10 @@ class LibraryRules(ApiModel):
     telegram_bot: str | None = Field(
         None, description="Username of the library's Telegram bot, when notifications can go there"
     )
+    web_push_key: str | None = Field(
+        default=None,
+        description="VAPID public key for Web Push subscriptions (null: push is not set up)",
+    )
 
 
 class LibrarySettingsRead(LibraryRules):

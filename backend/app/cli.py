@@ -32,7 +32,7 @@ from app.models.enums import UiLanguage, UserRole
 from app.repositories.books import copy_group_key
 from app.schemas.book import BookCreate
 from app.schemas.types import NormalizedEmail
-from app.services import catalog, holds, mfa, reservations, telegram
+from app.services import catalog, holds, mfa, reservations, telegram, web_push
 from app.services.books import new_book, translation_rows
 from app.services.library_settings import ensure_library_settings
 from app.services.notifications import deliver_pending, make_smtp_sender, queue_reminders
@@ -197,6 +197,7 @@ async def _notifications(settings: Settings, *, loop_seconds: int | None) -> Non
     send = make_smtp_sender(settings)
     http = make_http_client(settings)
     bot = telegram.make_bot(settings, http)
+    push = web_push.make_push_sender(settings, http)
     warned = False
     try:
         while True:
@@ -224,9 +225,9 @@ async def _notifications(settings: Settings, *, loop_seconds: int | None) -> Non
             if send is None and not warned:
                 print("SMTP_HOST is not set: emails stay queued (Telegram still works if set up).")
                 warned = True
-            if send is not None or bot is not None:
+            if send is not None or bot is not None or push is not None:
                 async with db.sessionmaker() as session:
-                    report = await deliver_pending(session, settings, send, telegram=bot)
+                    report = await deliver_pending(session, settings, send, telegram=bot, push=push)
                 if report.total:
                     print(
                         f"Emails: {report.sent} sent, {report.retried} to retry, "
@@ -303,6 +304,9 @@ def main(argv: list[str] | None = None) -> None:
     )
 
     commands.add_parser(
+        "generate-vapid-keys", help="Print a new key pair for Web Push (WEB_PUSH_*_KEY)"
+    )
+    commands.add_parser(
         "rotate-mfa-keys",
         help="Re-encrypt two-step sign-in secrets with the first MFA_ENCRYPTION_KEYS key",
     )
@@ -330,6 +334,10 @@ def main(argv: list[str] | None = None) -> None:
         asyncio.run(_purge_tokens(get_settings(), older_than_days=args.older_than_days))
     elif args.command == "notifications":
         asyncio.run(_notifications(get_settings(), loop_seconds=args.loop))
+    elif args.command == "generate-vapid-keys":
+        public, private = web_push.generate_keys()
+        print(f"WEB_PUSH_PUBLIC_KEY={public}")
+        print(f"WEB_PUSH_PRIVATE_KEY={private}")
     elif args.command == "rotate-mfa-keys":
         asyncio.run(_rotate_mfa_keys(get_settings()))
     elif args.command == "translate-books":

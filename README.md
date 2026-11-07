@@ -120,6 +120,7 @@ Docker Compose and Vite read the root `.env` (template: `.env.example`). Filled-
 | `APP_BASE_URL`, `DUE_SOON_DAYS` | `http://localhost:5173`, `3` | links in emails; reminder lead time in days |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `APPLE_CLIENT_ID`, `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY`, `API_PUBLIC_URL` | empty | optional Google / Apple sign-in; callback base URL (default `APP_BASE_URL/api/v1`) |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME` | empty | optional Telegram bot for notifications |
+| `WEB_PUSH_PUBLIC_KEY`, `WEB_PUSH_PRIVATE_KEY`, `WEB_PUSH_CONTACT` | empty | optional notifications on readers' devices (Web Push); keys from `python -m app.cli generate-vapid-keys` |
 | `MEDIA_DIR`, `MAX_COVER_BYTES` | `media`, `5242880` | where uploaded covers are kept (the `media` volume, `/app/media`, in Docker); upload limit |
 | `PASSWORD_RESET_EXPIRE_MINUTES` | `60` | lifetime of password reset links (5–1440) |
 | `ANTHROPIC_API_KEY`, `TRANSLATION_MODEL` | —, `claude-opus-5-5` | optional machine translation of book titles and descriptions when Wikidata and Wikipedia have none; without a key only those two are used |
@@ -580,6 +581,15 @@ two copies of the same title are two records (ISBN is not unique).
   messages each cycle (`getUpdates`, confirmed by offset) and sends every notification to linked chats as well as by
   email — once (`telegram_sent_at`), even when the email is retried; without SMTP it still serves readers with
   Telegram. `GET /library/rules` returns `telegram_bot` so the profile only offers it when it is set up.
+- **Notifications on this device** (optional, `WEB_PUSH_*`): the profile offers *Turn on* where the app runs with
+  its service worker (installed app or production site). The browser subscribes with the library's VAPID public key
+  (`GET /library/rules` → `web_push_key`) and `POST /users/me/push-subscriptions` stores its endpoint and keys
+  (`DELETE ...?endpoint=` removes it). Only the browsers' own push services are accepted as endpoints (FCM, Mozilla,
+  Apple, Windows), so a subscription cannot make the server call other addresses. The notifier sends every
+  notification to the reader's devices too, once (`push_sent_at`): encrypted for each browser (RFC 8291,
+  `aes128gcm`) and signed with the VAPID key (RFC 8292); a device the push service reports gone (404/410) is
+  forgotten, and the news counts as delivered when one device has it. `public/sw.js` shows it and opens the page
+  it is about.
 - **Notification bell**: the header shows the reader's news — the same events as the emails (`notifications`), even
   when an email could not be sent, except news that went stale before delivery. Opening the list marks it read
   (`read_at`); it refreshes every minute while the tab is visible. Notifications from before the bell existed

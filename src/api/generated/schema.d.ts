@@ -451,6 +451,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/users/me/push-subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Push Subscription
+         * @description Notifications on this device (Web Push): the browser's subscription. 409 PUSH_NOT_CONFIGURED when the library has no push keys.
+         */
+        post: operations["add_push_subscription_api_v1_users_me_push_subscriptions_post"];
+        /**
+         * Remove Push Subscription
+         * @description No more notifications on that device.
+         */
+        delete: operations["remove_push_subscription_api_v1_users_me_push_subscriptions_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users/me/children": {
         parameters: {
             query?: never;
@@ -2863,6 +2887,11 @@ export interface components {
              * @description Username of the library's Telegram bot, when notifications can go there
              */
             telegram_bot: string | null;
+            /**
+             * Web Push Key
+             * @description VAPID public key for Web Push subscriptions (null: push is not set up)
+             */
+            web_push_key: string | null;
         };
         /** LibrarySettingsRead */
         LibrarySettingsRead: {
@@ -2901,6 +2930,11 @@ export interface components {
              * @description Username of the library's Telegram bot, when notifications can go there
              */
             telegram_bot: string | null;
+            /**
+             * Web Push Key
+             * @description VAPID public key for Web Push subscriptions (null: push is not set up)
+             */
+            web_push_key: string | null;
             /**
              * Updated At
              * Format: date-time
@@ -3469,6 +3503,22 @@ export interface components {
          * @enum {string}
          */
         PurchaseStatus: "open" | "ordered" | "added" | "declined";
+        /** PushKeys */
+        PushKeys: {
+            /** P256Dh */
+            p256dh: string;
+            /** Auth */
+            auth: string;
+        };
+        /**
+         * PushSubscriptionCreate
+         * @description ``PushSubscription.toJSON()`` of the browser, without ``expirationTime``.
+         */
+        PushSubscriptionCreate: {
+            /** Endpoint */
+            endpoint: string;
+            keys: components["schemas"]["PushKeys"];
+        };
         /**
          * QualityIssue
          * @description Gaps in a title's catalogue data, for the admin data-quality page.
@@ -5225,6 +5275,94 @@ export interface operations {
             };
             /** @description Unauthorized */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    add_push_subscription_api_v1_users_me_push_subscriptions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PushSubscriptionCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    remove_push_subscription_api_v1_users_me_push_subscriptions_delete: {
+        parameters: {
+            query: {
+                /** @description The subscription's endpoint */
+                endpoint: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

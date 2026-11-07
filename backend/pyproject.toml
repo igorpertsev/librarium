@@ -20,6 +20,8 @@ dependencies = [
     "pillow>=12",
     "python-multipart>=0.0.20",
     "cryptography>=46",
+    "http-ece==1.2.1",
+    "py-vapid==1.9.6",
 ]
 
 [dependency-groups]
@@ -67,7 +69,7 @@ plugins = ["pydantic.mypy"]
 files = ["app", "tests"]
 
 [[tool.mypy.overrides]]
-module = ["asyncpg.*"]
+module = ["asyncpg.*", "http_ece", "py_vapid"]  # untyped
 ignore_missing_imports = true
 
 [tool.pydantic-mypy]

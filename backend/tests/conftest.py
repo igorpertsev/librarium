@@ -13,7 +13,7 @@ import os
 import tempfile
 import uuid
 from argparse import Namespace
-from collections.abc import AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from dataclasses import dataclass, field
 from decimal import Decimal
 from pathlib import Path
@@ -312,3 +312,18 @@ async def fill_cart(user: ApiUser, book_ids: list[str]) -> dict[str, Any]:
 
 async def place_order(user: ApiUser) -> Response:
     return await user.post(f"{API}/orders")
+
+
+SwapSettings = Callable[[Settings], None]
+
+
+@pytest.fixture
+def swap_settings(app: FastAPI) -> Iterator[SwapSettings]:
+    """Replace the app's settings for one test (monkeypatch would delete them from State)."""
+    original = app.state.settings
+
+    def swap(settings: Settings) -> None:
+        app.state.settings = settings
+
+    yield swap
+    app.state.settings = original

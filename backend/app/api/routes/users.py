@@ -4,7 +4,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Query, Response, status
+from fastapi import APIRouter, Query, Request, Response, status
 from fastapi.responses import JSONResponse
 
 from app.api.dependencies import CurrentUser, SessionDep, SettingsDep
@@ -15,6 +15,7 @@ from app.schemas.common import error_responses
 from app.schemas.family import ChildCreate, ChildRead, ChildUpdate
 from app.schemas.hold import HeldBookRead
 from app.schemas.inbox import Inbox, MarkRead
+from app.schemas.push import PushSubscriptionCreate
 from app.schemas.reading_log import MarkFinished, ReadingLogRead
 from app.schemas.reservation import ReservationCreate, ReservationRead
 from app.schemas.user import DeleteAccountRequest, TelegramLink, UserRead, UserUpdate
@@ -29,6 +30,7 @@ from app.services import (
     reservations,
     series_reading,
     telegram,
+    web_push,
 )
 from app.services import users as users_service
 
@@ -153,6 +155,49 @@ async def link_telegram(
 async def unlink_telegram(user: CurrentUser, session: SessionDep) -> Response:
     """Stop sending notifications to Telegram."""
     await telegram.unlink(session, user)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post(
+    "/me/push-subscriptions",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
+    responses=error_responses(401, 409, 422),
+    description="Notifications on this device (Web Push): the browser's subscription. "
+    "409 PUSH_NOT_CONFIGURED when the library has no push keys.",
+)
+async def add_push_subscription(
+    body: PushSubscriptionCreate,
+    request: Request,
+    user: CurrentUser,
+    session: SessionDep,
+    settings: SettingsDep,
+) -> Response:
+    await web_push.subscribe(
+        session,
+        settings,
+        user,
+        endpoint=body.endpoint,
+        p256dh=body.keys.p256dh,
+        auth=body.keys.auth,
+        user_agent=request.headers.get("user-agent"),
+    )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.delete(
+    "/me/push-subscriptions",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
+    responses=error_responses(401, 422),
+)
+async def remove_push_subscription(
+    user: CurrentUser,
+    session: SessionDep,
+    endpoint: Annotated[str, Query(max_length=2048, description="The subscription's endpoint")],
+) -> Response:
+    """No more notifications on that device."""
+    await web_push.unsubscribe(session, user, endpoint)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
