@@ -93,6 +93,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.rate_limiter = RateLimiter(enabled=settings.rate_limit_enabled)
     # Emails sent directly by the API (password reset); None when SMTP_HOST is not set.
     app.state.mail_sender = make_smtp_sender(settings)
+    app.state.http = http  # shared outgoing HTTP client (sign-in providers use it too)
     app.state.openlibrary = OpenLibraryClient(http)
     app.state.translation_lookup = TranslationLookup(
         app.state.openlibrary, WikimediaClient(http), machine

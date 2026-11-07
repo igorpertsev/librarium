@@ -20,8 +20,8 @@ export function Header() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/login');
   };
 
@@ -162,7 +162,7 @@ export function Header() {
                 className="justify-start mt-4"
                 onClick={() => {
                   setMenuOpen(false);
-                  handleLogout();
+                  void handleLogout();
                 }}
               >
                 <LogOut className="w-4 h-4 mr-2" />

@@ -5,6 +5,7 @@ from app.models.base import Base
 from app.models.book import Book
 from app.models.cart import Cart, CartItem
 from app.models.hold import BookHold
+from app.models.identity import UserIdentity
 from app.models.library_settings import LibrarySettings
 from app.models.notification import Notification
 from app.models.order import Order, OrderItem
@@ -47,6 +48,7 @@ __all__ = [
     "StocktakeCount",
     "Tag",
     "User",
+    "UserIdentity",
     "WaitlistEntry",
     "book_tags",
 ]

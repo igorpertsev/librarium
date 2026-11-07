@@ -264,6 +264,8 @@ async def delete_account(session: AsyncSession, user: User, password: str) -> No
     user.email = anonymous_email
     user.full_name = DELETED_NAME
     user.whatsapp = user.telegram = user.instagram = user.phone = None
+    user.telegram_chat_id = None
+    user.telegram_link_code = None
     user.preferred_contact_method = None
     user.preferred_language = None
     user.password_hash = await hash_password(secrets.token_urlsafe(32))  # nobody knows it

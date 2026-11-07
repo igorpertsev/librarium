@@ -27,6 +27,8 @@ import { NextInSeriesCard } from '../components/NextInSeriesCard';
 import { HeldForYouCard } from '../components/HeldForYouCard';
 import { ExtendFromLink } from '../components/ExtendFromLink';
 import { AccountDataCard } from '../components/AccountDataCard';
+import { TwoStepCard } from '../components/TwoStepCard';
+import { TelegramCard } from '../components/TelegramCard';
 import { useBookText } from '../utils/bookText';
 import { coverOfSize } from '../utils/covers';
 import type { Order } from '../types';
@@ -487,7 +489,7 @@ export default function Profile() {
                 ));
               })()}
             </div>
-            {error && <div role="alert" className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">{error}</div>}
+            {error && <div role="alert" className="text-sm text-destructive dark:text-red-300 bg-destructive/10 p-3 rounded-md">{error}</div>}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>{t('admin.cancel')}</Button>
@@ -516,7 +518,7 @@ export default function Profile() {
               <Label htmlFor="confirm-password">{t('profile.confirmPassword')}</Label>
               <Input id="confirm-password" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder={t('profile.repeatPassword')} />
             </div>
-            {passwordError && <div role="alert" className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">{passwordError}</div>}
+            {passwordError && <div role="alert" className="text-sm text-destructive dark:text-red-300 bg-destructive/10 p-3 rounded-md">{passwordError}</div>}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsPasswordDialogOpen(false)}>{t('admin.cancel')}</Button>
@@ -524,6 +526,8 @@ export default function Profile() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <TelegramCard />
+      <TwoStepCard />
       <AccountDataCard />
       {confirmDialog}
     </div>

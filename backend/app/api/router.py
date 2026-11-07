@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from app.api.prefix import API_PREFIX
 from app.api.routes import (
     admin,
     auth,
@@ -17,7 +18,7 @@ from app.api.routes import (
     waitlist,
 )
 
-API_PREFIX = "/api/v1"
+__all__ = ["API_PREFIX", "api_router"]
 
 api_router = APIRouter(prefix=API_PREFIX)
 api_router.include_router(health.router)

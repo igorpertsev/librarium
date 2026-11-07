@@ -397,7 +397,16 @@
     "imageTooLarge": "The image is too large (at most 5 MB).",
     "alreadyInCatalogue": "This book is already in the catalogue.",
     "tooManySuggestions": "You can have up to 10 open suggestions.",
-    "bookNotInCatalogue": "Add the book to the catalogue first (same ISBN, or the same title and author)."
+    "bookNotInCatalogue": "Add the book to the catalogue first (same ISBN, or the same title and author).",
+    "mfaRequired": "Enter the code from your authenticator app.",
+    "mfaTokenInvalid": "That took too long. Sign in again.",
+    "invalidMfaCode": "That code is not right.",
+    "mfaAlreadyEnabled": "Two-step sign-in is already on.",
+    "mfaSetupNotStarted": "Start setting up two-step sign-in again.",
+    "mfaRequiredByLibrary": "The library requires two-step sign-in for staff.",
+    "mfaSetupRequired": "Turn on two-step sign-in on your profile to use the admin portal.",
+    "mfaSetupRequiredFirst": "Turn on two-step sign-in for yourself first.",
+    "telegramNotConfigured": "Telegram is not set up for this library."
   },
   "checkout": {
     "title": "Confirm Order",
@@ -1025,5 +1034,53 @@
     "saveNote": "Save note",
     "saved": "Suggestion updated",
     "addedToast": "“{{title}}” marked as added; voters will be emailed"
+  },
+  "mfa": {
+    "title": "Two-step sign-in",
+    "on": "On: after your password you also enter a code from your authenticator app.",
+    "off": "Off. Turn it on to protect your account with a code from an authenticator app (Google Authenticator, 1Password, Authy…).",
+    "turnOn": "Turn on",
+    "turnOff": "Turn off",
+    "password": "Your password",
+    "continue": "Continue",
+    "scan": "Scan this QR code with your authenticator app.",
+    "qrAlt": "QR code for the authenticator app",
+    "manual": "Or type this key into the app:",
+    "firstCode": "Code from the app",
+    "enabled": "Two-step sign-in is on.",
+    "codesHint": "Keep these recovery codes somewhere safe. Each works once if you lose your phone. They are not shown again.",
+    "codesLabel": "Recovery codes",
+    "codesFileTitle": "Little Dragon recovery codes (each works once)",
+    "download": "Download codes",
+    "done": "Done",
+    "disabled": "Two-step sign-in is off",
+    "codeLabel": "Code from your authenticator app",
+    "codeHint": "Or one of your recovery codes.",
+    "verify": "Verify",
+    "back": "Back",
+    "requireStaff": "Require two-step sign-in for staff",
+    "requireStaffHint": "Librarians and administrators without it cannot open the admin portal until they turn it on in their profile. Turn it on for yourself first.",
+    "requiredOn": "Staff now need two-step sign-in",
+    "requiredOff": "Two-step sign-in is optional for staff",
+    "reset": "Reset two-step sign-in",
+    "resetTitle": "Reset two-step sign-in?",
+    "resetDesc": "{{name}} will sign in with the password only until they turn it on again. Do this only when you are sure who asked.",
+    "resetDone": "Two-step sign-in was reset"
+  },
+  "telegram": {
+    "title": "Telegram",
+    "description": "Get the same news as the emails in Telegram: orders, due dates, books that are back.",
+    "connected": "Connected: news also comes from @{{bot}}.",
+    "connect": "Connect Telegram",
+    "waiting": "Press Start in the Telegram chat that opened. This page updates by itself.",
+    "disconnect": "Disconnect",
+    "disconnected": "Telegram disconnected"
+  },
+  "social": {
+    "or": "or",
+    "google": "Continue with Google",
+    "apple": "Continue with Apple",
+    "other": "Continue with {{provider}}",
+    "errors": {"OAUTH_STATE": "That took too long or came from another tab. Please try again.", "OAUTH_FAILED": "Signing in with that account did not work. Please try again.", "OAUTH_NO_EMAIL": "That account has no confirmed email address, so it cannot be used here.", "OAUTH_CANCELLED": "Signing in was cancelled.", "OAUTH_NOT_CONFIGURED": "That way of signing in is not set up.", "ACCOUNT_DISABLED": "This account has been disabled."}
   }
 }

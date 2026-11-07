@@ -35,6 +35,8 @@ class UserRead(ApiModel):
     phone: str | None
     preferred_contact_method: ContactMethod | None
     preferred_language: UiLanguage | None
+    mfa_enabled: bool = Field(description="Two-step sign-in is on")
+    telegram_connected: bool = Field(description="Notifications also go to a Telegram chat")
     created_at: datetime
     updated_at: datetime
 
@@ -75,11 +77,14 @@ class AdminUserUpdate(PatchModel):
 
     role: UserRole | None = None
     is_active: bool | None = None
+    reset_mfa: bool | None = Field(
+        None, description="true turns off two-step sign-in (lost device and recovery codes)"
+    )
 
     @model_validator(mode="after")
     def _not_empty(self) -> AdminUserUpdate:
         if not self.model_fields_set:
-            raise ValueError("Provide at least one of: role, is_active")
+            raise ValueError("Provide at least one of: role, is_active, reset_mfa")
         return self
 
 
@@ -89,3 +94,8 @@ class AdminUserPage(Page[AdminUserRead]):
 
 class DeleteAccountRequest(RequestModel):
     password: str = Field(min_length=1, max_length=128, description="The current password")
+
+
+class TelegramLink(ApiModel):
+    url: str = Field(description="Opens the bot with a one-time start code")
+    expires_at: datetime

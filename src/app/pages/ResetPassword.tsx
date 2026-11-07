@@ -61,7 +61,7 @@ export default function ResetPassword() {
     return (
       <AuthCard title={t('auth.resetTitle')} footer={backToSignIn}>
         <div role="alert" className="space-y-4 text-center">
-          <p className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">{t('auth.invalidResetLink')}</p>
+          <p className="text-sm text-destructive dark:text-red-300 bg-destructive/10 p-3 rounded-md">{t('auth.invalidResetLink')}</p>
           <Button asChild className="w-full">
             <Link to="/forgot-password">{t('auth.requestNewLink')}</Link>
           </Button>
@@ -98,7 +98,7 @@ export default function ResetPassword() {
           />
         </div>
         {error && (
-          <div role="alert" className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
+          <div role="alert" className="text-sm text-destructive dark:text-red-300 bg-destructive/10 p-3 rounded-md">
             {error}
           </div>
         )}

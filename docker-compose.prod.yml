@@ -40,6 +40,17 @@ x-backend-env: &backend-env
   SENTRY_DSN: ${SENTRY_DSN:-}
   # Book translations (optional): without ANTHROPIC_API_KEY only Wikidata and Wikipedia are used.
   ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+  # Telegram notifications (optional): a bot from @BotFather.
+  TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+  TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-}
+  # Sign in with Google / Apple (optional).
+  GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+  GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+  APPLE_CLIENT_ID: ${APPLE_CLIENT_ID:-}
+  APPLE_TEAM_ID: ${APPLE_TEAM_ID:-}
+  APPLE_KEY_ID: ${APPLE_KEY_ID:-}
+  APPLE_PRIVATE_KEY: ${APPLE_PRIVATE_KEY:-}
+  API_PUBLIC_URL: ${API_PUBLIC_URL:-}
   TRANSLATION_MODEL: ${TRANSLATION_MODEL:-claude-opus-5-5}
   # Uptime monitoring (optional): the notifier calls this URL every cycle (see deploy/README.md).
   NOTIFIER_PING_URL: ${NOTIFIER_PING_URL:-}

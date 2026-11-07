@@ -75,6 +75,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/login/mfa": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Login Mfa
+         * @description Second step of signing in with two-step sign-in on: the mfa_token from the 403 MFA_REQUIRED answer of /auth/login and a code from the authenticator app (or a recovery code).
+         */
+        post: operations["login_mfa_api_v1_auth_login_mfa_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/refresh": {
         parameters: {
             query?: never;
@@ -189,6 +209,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/oauth/providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Oauth Providers
+         * @description The outside sign-in methods this library has set up (shown on the sign-in page).
+         */
+        get: operations["oauth_providers_api_v1_auth_oauth_providers_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/oauth/{provider}/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Oauth Start
+         * @description Send the browser to the provider; it comes back to the callback.
+         */
+        get: operations["oauth_start_api_v1_auth_oauth__provider__start_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users/me": {
         parameters: {
             query?: never;
@@ -286,6 +346,106 @@ export interface paths {
          * @description Give up a held book: it goes to the next reader in line.
          */
         delete: operations["release_hold_api_v1_users_me_holds__book_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/me/mfa/setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Mfa Setup
+         * @description Start two-step sign-in: confirm the password, then scan the otpauth link (as a QR code) with an authenticator app and confirm with /me/mfa/enable.
+         */
+        post: operations["start_mfa_setup_api_v1_users_me_mfa_setup_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/me/mfa/enable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Enable Mfa
+         * @description Turn it on with a first code from the app; returns ten recovery codes, shown once.
+         */
+        post: operations["enable_mfa_api_v1_users_me_mfa_enable_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/me/mfa/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Disable Mfa
+         * @description Turn it off (password needed; 409 MFA_REQUIRED_BY_LIBRARY for staff when required).
+         */
+        post: operations["disable_mfa_api_v1_users_me_mfa_disable_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/me/telegram/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Link Telegram
+         * @description A one-time link that opens the library's Telegram bot; pressing Start there connects the chat (15 minutes). 409 TELEGRAM_NOT_CONFIGURED without a bot.
+         */
+        post: operations["link_telegram_api_v1_users_me_telegram_link_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/me/telegram": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Unlink Telegram
+         * @description Stop sending notifications to Telegram.
+         */
+        delete: operations["unlink_telegram_api_v1_users_me_telegram_delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1872,6 +2032,16 @@ export interface components {
             preferred_contact_method: components["schemas"]["ContactMethod"] | null;
             preferred_language: components["schemas"]["UiLanguage"] | null;
             /**
+             * Mfa Enabled
+             * @description Two-step sign-in is on
+             */
+            mfa_enabled: boolean;
+            /**
+             * Telegram Connected
+             * @description Notifications also go to a Telegram chat
+             */
+            telegram_connected: boolean;
+            /**
              * Created At
              * Format: date-time
              */
@@ -1889,6 +2059,11 @@ export interface components {
             role?: components["schemas"]["UserRole"] | null;
             /** Is Active */
             is_active?: boolean | null;
+            /**
+             * Reset Mfa
+             * @description true turns off two-step sign-in (lost device and recovery codes)
+             */
+            reset_mfa?: boolean | null;
         };
         /** AuditEventRead */
         AuditEventRead: {
@@ -2615,6 +2790,11 @@ export interface components {
              * @description IANA time zone of opening hours and pickup slots
              */
             timezone: string;
+            /**
+             * Telegram Bot
+             * @description Username of the library's Telegram bot, when notifications can go there
+             */
+            telegram_bot: string | null;
         };
         /** LibrarySettingsRead */
         LibrarySettingsRead: {
@@ -2649,10 +2829,20 @@ export interface components {
              */
             timezone: string;
             /**
+             * Telegram Bot
+             * @description Username of the library's Telegram bot, when notifications can go there
+             */
+            telegram_bot: string | null;
+            /**
              * Updated At
              * Format: date-time
              */
             updated_at: string;
+            /**
+             * Require Staff Mfa
+             * @description Staff must use two-step sign-in
+             */
+            require_staff_mfa: boolean;
         };
         /** LibrarySettingsUpdate */
         LibrarySettingsUpdate: {
@@ -2674,6 +2864,8 @@ export interface components {
             late_fee_per_day?: number | string | null;
             /** Timezone */
             timezone?: string | null;
+            /** Require Staff Mfa */
+            require_staff_mfa?: boolean | null;
         };
         /** LoggedBookRead */
         LoggedBookRead: {
@@ -2683,6 +2875,13 @@ export interface components {
              * Format: date
              */
             finished_on: string;
+        };
+        /** LoginMfaRequest */
+        LoginMfaRequest: {
+            /** Mfa Token */
+            mfa_token: string;
+            /** Code */
+            code: string;
         };
         /** LoginRequest */
         LoginRequest: {
@@ -2726,6 +2925,37 @@ export interface components {
              * @description Books move to this one; the merged one is deleted
              */
             into_id: string;
+        };
+        /** MfaEnableRequest */
+        MfaEnableRequest: {
+            /** Code */
+            code: string;
+        };
+        /** MfaRecoveryCodes */
+        MfaRecoveryCodes: {
+            /**
+             * Recovery Codes
+             * @description Each works once; shown only now
+             */
+            recovery_codes: string[];
+        };
+        /** MfaSetup */
+        MfaSetup: {
+            /**
+             * Secret
+             * @description For typing into the app when the QR code cannot be scanned
+             */
+            secret: string;
+            /**
+             * Otpauth Uri
+             * @description otpauth:// link to show as a QR code
+             */
+            otpauth_uri: string;
+        };
+        /** MfaSetupRequest */
+        MfaSetupRequest: {
+            /** Password */
+            password: string;
         };
         /** ModerateReview */
         ModerateReview: {
@@ -2794,6 +3024,14 @@ export interface components {
          * @enum {string}
          */
         NotificationKind: "order_received" | "order_confirmed" | "order_cancelled" | "due_soon" | "overdue" | "book_available" | "book_held" | "reservation_ready" | "purchase_added";
+        /** OAuthProviders */
+        OAuthProviders: {
+            /**
+             * Providers
+             * @description google and/or apple, when set up
+             */
+            providers: string[];
+        };
         /**
          * OpeningHours
          * @description One opening period on a weekday (0 = Monday), in the library's time zone.
@@ -3583,6 +3821,19 @@ export interface components {
             /** Name Ru */
             name_ru?: string | null;
         };
+        /** TelegramLink */
+        TelegramLink: {
+            /**
+             * Url
+             * @description Opens the bot with a one-time start code
+             */
+            url: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+        };
         /**
          * TokenResponse
          * @description The refresh token is never part of a JSON body: it travels in an HttpOnly cookie.
@@ -3738,6 +3989,16 @@ export interface components {
             phone: string | null;
             preferred_contact_method: components["schemas"]["ContactMethod"] | null;
             preferred_language: components["schemas"]["UiLanguage"] | null;
+            /**
+             * Mfa Enabled
+             * @description Two-step sign-in is on
+             */
+            mfa_enabled: boolean;
+            /**
+             * Telegram Connected
+             * @description Notifications also go to a Telegram chat
+             */
+            telegram_connected: boolean;
             /**
              * Created At
              * Format: date-time
@@ -3928,6 +4189,66 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["LoginRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    login_mfa_api_v1_auth_login_mfa_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginMfaRequest"];
             };
         };
         responses: {
@@ -4257,6 +4578,75 @@ export interface operations {
             };
         };
     };
+    oauth_providers_api_v1_auth_oauth_providers_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OAuthProviders"];
+                };
+            };
+        };
+    };
+    oauth_start_api_v1_auth_oauth__provider__start_get: {
+        parameters: {
+            query?: {
+                next?: string | null;
+            };
+            header?: never;
+            path: {
+                provider: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     read_me_api_v1_users_me_get: {
         parameters: {
             query?: never;
@@ -4511,6 +4901,249 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    start_mfa_setup_api_v1_users_me_mfa_setup_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MfaSetupRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MfaSetup"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    enable_mfa_api_v1_users_me_mfa_enable_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MfaEnableRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MfaRecoveryCodes"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    disable_mfa_api_v1_users_me_mfa_disable_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MfaSetupRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    link_telegram_api_v1_users_me_telegram_link_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelegramLink"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    unlink_telegram_api_v1_users_me_telegram_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -8456,6 +9089,15 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

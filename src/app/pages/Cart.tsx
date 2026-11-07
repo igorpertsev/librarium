@@ -305,7 +305,7 @@ export default function Cart() {
               )}
 
               {unavailableBookIds.size > 0 && (
-                <div role="alert" className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
+                <div role="alert" className="text-sm text-destructive dark:text-red-300 bg-destructive/10 p-3 rounded-md">
                   {t('cart.unavailableNote')}
                 </div>
               )}

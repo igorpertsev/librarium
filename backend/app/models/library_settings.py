@@ -47,6 +47,8 @@ class LibrarySettings(TimestampMixin, Base):
     )
     # IANA time zone of the library: opening hours, pickup slots and times in emails.
     timezone: Mapped[str] = mapped_column(sa.String(64), default="UTC", server_default="UTC")
+    # Librarians and administrators must use two-step sign-in to open the admin portal.
+    require_staff_mfa: Mapped[bool] = mapped_column(default=False, server_default=sa.false())
 
 
 DEFAULT_LIBRARY_SETTINGS = {
@@ -60,4 +62,5 @@ DEFAULT_LIBRARY_SETTINGS = {
     "block_overdue": True,
     "late_fee_per_day": Decimal("0.00"),
     "timezone": "UTC",
+    "require_staff_mfa": False,
 }

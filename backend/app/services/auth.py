@@ -31,6 +31,7 @@ from app.models import RefreshToken, User
 from app.models.enums import UserRole
 from app.repositories.users import get_user_by_email
 from app.schemas.auth import ChangePasswordRequest, LoginRequest, RegisterRequest
+from app.services import mfa
 
 logger = logging.getLogger(__name__)
 
@@ -147,12 +148,42 @@ async def login(
 
     if password_needs_rehash(user.password_hash):
         user.password_hash = await hash_password(data.password)
+    if user.mfa_enabled:
+        await session.commit()  # keep a rehashed password
+        raise mfa.MfaRequiredError(details={"mfa_token": mfa.challenge(settings, user)})
+    return await _signed_in(session, settings, user, meta)
 
+
+async def signed_in(
+    session: AsyncSession, settings: Settings, user: User, meta: ClientMeta
+) -> AuthResult:
+    """Issue a session for a user whose identity is already proven (e.g. by Google)."""
+    return await _signed_in(session, settings, user, meta)
+
+
+async def _signed_in(
+    session: AsyncSession, settings: Settings, user: User, meta: ClientMeta
+) -> AuthResult:
     raw, _ = await _issue_refresh_token(
         session, settings, user_id=user.id, family_id=uuid.uuid4(), meta=meta
     )
     await session.commit()
     return AuthResult(user=user, access_token=_access_token_for(user, settings), refresh_token=raw)
+
+
+async def login_second_step(
+    session: AsyncSession, settings: Settings, token: str, code: str, meta: ClientMeta
+) -> AuthResult:
+    """The code from the authenticator app (or a recovery code) after the password."""
+    user = await session.get(User, mfa.challenged_user_id(settings, token), with_for_update=True)
+    if user is None or not user.mfa_enabled:
+        raise AuthenticationError("Sign in again", code="MFA_TOKEN_INVALID")
+    if not user.is_active:
+        raise PermissionDeniedError("This account has been disabled", code="ACCOUNT_DISABLED")
+    if not mfa.verify(settings, user, code):
+        await session.rollback()
+        raise AuthenticationError("That code is not right", code="INVALID_MFA_CODE")
+    return await _signed_in(session, settings, user, meta)
 
 
 async def refresh(

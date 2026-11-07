@@ -4,7 +4,7 @@ import uuid
 
 from fastapi import APIRouter
 
-from app.api.dependencies import SessionDep
+from app.api.dependencies import SessionDep, SettingsDep
 from app.schemas.common import error_responses
 from app.schemas.library_settings import LibraryRules
 from app.schemas.pickup import PickupPointRead, PickupSlot
@@ -15,9 +15,11 @@ router = APIRouter(prefix="/library", tags=["library"])
 
 
 @router.get("/rules", response_model=LibraryRules)
-async def library_rules(session: SessionDep) -> LibraryRules:
+async def library_rules(session: SessionDep, settings: SettingsDep) -> LibraryRules:
     """Batch size and price, loan period and how often a loan can be extended."""
-    return LibraryRules.model_validate(await settings_service.get_library_settings(session))
+    rules = LibraryRules.model_validate(await settings_service.get_library_settings(session))
+    bot = settings.telegram_bot_username if settings.telegram_bot_token else None
+    return rules.model_copy(update={"telegram_bot": bot})
 
 
 @router.get("/pickup-points", response_model=list[PickupPointRead])

@@ -31,3 +31,13 @@ test('the session survives a page reload', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Logout' })).toBeVisible();
   await expect(page).toHaveURL('/');
 });
+
+test('reloading right after signing out keeps the reader signed out', async ({ page }) => {
+  await registerCustomer(page);
+  await page.getByRole('button', { name: 'Logout' }).click();
+  await expect(page).toHaveURL('/login');
+  await page.reload();
+  await page.goto('/profile');
+  await expect(page).toHaveURL('/login');
+  await expect(page.getByRole('button', { name: 'My Books' })).toHaveCount(0);
+});

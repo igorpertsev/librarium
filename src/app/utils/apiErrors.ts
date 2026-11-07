@@ -59,6 +59,15 @@ const MESSAGE_KEYS: Record<string, string> = {
   TOO_MANY_SUGGESTIONS: 'errors.tooManySuggestions',
   BOOK_NOT_IN_CATALOGUE: 'errors.bookNotInCatalogue',
   PURCHASE_REQUEST_NOT_FOUND: 'errors.notFound',
+  MFA_REQUIRED: 'errors.mfaRequired',
+  MFA_TOKEN_INVALID: 'errors.mfaTokenInvalid',
+  INVALID_MFA_CODE: 'errors.invalidMfaCode',
+  MFA_ALREADY_ENABLED: 'errors.mfaAlreadyEnabled',
+  MFA_SETUP_NOT_STARTED: 'errors.mfaSetupNotStarted',
+  MFA_REQUIRED_BY_LIBRARY: 'errors.mfaRequiredByLibrary',
+  MFA_SETUP_REQUIRED: 'errors.mfaSetupRequired',
+  MFA_SETUP_REQUIRED_FIRST: 'errors.mfaSetupRequiredFirst',
+  TELEGRAM_NOT_CONFIGURED: 'errors.telegramNotConfigured',
 };
 
 /** Translated, user-facing message for an API error. */

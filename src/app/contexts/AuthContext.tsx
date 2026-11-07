@@ -14,6 +14,10 @@ interface AuthContextType {
   /** True while the session is being restored from the refresh cookie on page load. */
   isLoading: boolean;
   login: (email: string, password: string) => Promise<ActionResult>;
+  /** Second step when two-step sign-in is on (after login answered MFA_REQUIRED). */
+  loginWithCode: (mfaToken: string, code: string) => Promise<ActionResult>;
+  /** Reload the signed-in user (e.g. after turning two-step sign-in on). */
+  reloadUser: () => Promise<void>;
   register: (name: string, email: string, password: string, contacts: UserContacts) => Promise<ActionResult>;
   updateUser: (name: string, email: string, contacts: UserContacts) => Promise<ActionResult>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<ActionResult>;
@@ -21,7 +25,7 @@ interface AuthContextType {
   refreshUsers: () => Promise<void>;
   /** Switch the interface language; saved on the account when signed in. */
   setLanguage: (language: UiLanguage) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   isAuthenticated: boolean;
   /** True after the reader signed out themselves (not when a session expired). */
   signedOut: boolean;
@@ -92,6 +96,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       applyTokens(await authApi.login({ email, password }));
     });
 
+  const loginWithCode = (mfaToken: string, code: string) =>
+    runAction(async () => {
+      applyTokens(await authApi.loginMfa({ mfa_token: mfaToken, code }));
+    });
+
   const register = (name: string, email: string, password: string, contacts: UserContacts) =>
     runAction(async () => {
       applyTokens(
@@ -104,6 +113,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }),
       );
     });
+
+  const reloadUser = async () => {
+    setUser(userFromDto(await authApi.me()));
+  };
 
   const updateUser = (name: string, email: string, contacts: UserContacts) =>
     runAction(async () => {
@@ -148,11 +161,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (user?.id === userId) setUser((prev) => (prev ? { ...prev, role } : prev));
     });
 
-  const logout = () => {
+  const logout = async () => {
     setSignedOut(true);
-    // Revoke the refresh token server-side; local state is cleared immediately either way.
-    authApi.logout().catch(() => undefined);
-    clearSession();
+    clearSession(); // the interface signs out at once
+    // Wait until the server has revoked the refresh token: otherwise a reload right after
+    // signing out could restore the session from the cookie.
+    await authApi.logout().catch(() => undefined);
   };
 
   return (
@@ -161,6 +175,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       users,
       isLoading,
       login,
+      loginWithCode,
+      reloadUser,
       register,
       updateUser,
       changePassword,

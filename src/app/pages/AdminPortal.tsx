@@ -23,6 +23,7 @@ import { PickupPointsTab } from '../components/PickupPointsTab';
 import { UpcomingReservations } from '../components/UpcomingReservations';
 import { ActivityTab } from '../components/ActivityTab';
 import { ReturnDialog } from '../components/ReturnDialog';
+import { StaffSecuritySetting } from '../components/StaffSecuritySetting';
 import { BulkBookActions } from '../components/BulkBookActions';
 import { IsbnScanner } from '../components/IsbnScanner';
 import { StocktakingTab } from '../components/StocktakingTab';
@@ -329,6 +330,7 @@ export default function AdminPortal() {
               {t('admin.saveConfig')}
             </Button>
             <LoanRulesSettings />
+            <StaffSecuritySetting />
           </CardContent>
         </Card>
         )}
@@ -428,7 +430,7 @@ export default function AdminPortal() {
 
             <TabsContent value="books">
           {booksError && (
-            <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md mb-4 flex items-center justify-between gap-2">
+            <div className="text-sm text-destructive dark:text-red-300 bg-destructive/10 p-3 rounded-md mb-4 flex items-center justify-between gap-2">
               <span>{errorMessage(t, booksError)}</span>
               <Button size="sm" variant="outline" onClick={() => loadBooks(currentPage)}>{t('common.retry')}</Button>
             </div>
@@ -653,6 +655,31 @@ export default function AdminPortal() {
                         </Select>
                       ) : (
                         <Badge variant="outline">{t(`admin.roles.${user.role}`)}</Badge>
+                      )}
+                      {canAdminister && user.mfaEnabled && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="mt-1"
+                          onClick={async () => {
+                            const ok = await confirm({
+                              title: t('mfa.resetTitle'),
+                              description: t('mfa.resetDesc', { name: user.name }),
+                              confirmLabel: t('mfa.reset'),
+                              destructive: true,
+                            });
+                            if (!ok) return;
+                            const result = await runAction(() => adminApi.updateUser(user.id, { reset_mfa: true }));
+                            if (result.ok) {
+                              toast.success(t('mfa.resetDone'));
+                              refreshUsers().catch(() => undefined);
+                            } else {
+                              toast.error(errorMessage(t, result.error));
+                            }
+                          }}
+                        >
+                          {t('mfa.reset')}
+                        </Button>
                       )}
                     </TableCell>
                     <TableCell>

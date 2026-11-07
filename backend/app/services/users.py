@@ -22,6 +22,7 @@ from app.schemas.user import (
     UserUpdate,
     ensure_preferred_contact_has_value,
 )
+from app.services import mfa
 from app.services.auth import email_taken_error, revoke_user_tokens
 
 
@@ -125,6 +126,8 @@ async def admin_update_user(
     if target is None:
         raise NotFoundError("User not found", code="USER_NOT_FOUND")
     changes = patch.changes()
+    if changes.pop("reset_mfa", False):
+        mfa.reset(target)
     if target.id == admin.id and (
         ("role" in changes and changes["role"] != admin.role)
         or ("is_active" in changes and changes["is_active"] is False)

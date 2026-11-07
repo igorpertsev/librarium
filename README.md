@@ -117,6 +117,8 @@ Docker Compose and Vite read the root `.env` (template: `.env.example`). Filled-
 | `VITE_API_URL` | `http://localhost:8000/api/v1` | API base URL for the frontend |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_STARTTLS`, `SMTP_SSL`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `MAIL_FROM` | empty / `587` / `true` / `false` | outgoing email; empty `SMTP_HOST` disables sending |
 | `APP_BASE_URL`, `DUE_SOON_DAYS` | `http://localhost:5173`, `3` | links in emails; reminder lead time in days |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `APPLE_CLIENT_ID`, `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY`, `API_PUBLIC_URL` | empty | optional Google / Apple sign-in; callback base URL (default `APP_BASE_URL/api/v1`) |
+| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME` | empty | optional Telegram bot for notifications |
 | `MEDIA_DIR`, `MAX_COVER_BYTES` | `media`, `5242880` | where uploaded covers are kept (the `media` volume, `/app/media`, in Docker); upload limit |
 | `PASSWORD_RESET_EXPIRE_MINUTES` | `60` | lifetime of password reset links (5–1440) |
 | `ANTHROPIC_API_KEY`, `TRANSLATION_MODEL` | —, `claude-opus-5-5` | optional machine translation of book titles and descriptions when Wikidata and Wikipedia have none; without a key only those two are used |
@@ -287,6 +289,26 @@ conversion to UI models in `src/api/mappers.ts`. After an API change: export the
 - **Access token** — JWT (HS256), 15 minutes, claims `sub`, `role`, `type`, `jti`, `iat`, `nbf`, `exp`, `iss`, `aud`.
   Sent as `Authorization: Bearer`. The frontend keeps it in memory only.
   Authorisation always uses the role stored in the database; the `role` claim is informational.
+- **Sign in with Google or Apple** (optional; shown only for providers with credentials, `GET
+  /auth/oauth/providers`) — OpenID Connect authorization code flow with PKCE (`/auth/oauth/{provider}/start` →
+  provider → `/auth/oauth/{provider}/callback`; Apple answers with a form POST). `state`, `nonce` and the PKCE
+  verifier travel in a signed HttpOnly cookie for 10 minutes; the ID token's signature (provider keys, cached for
+  an hour), issuer, audience, expiry and nonce are checked. Accounts are matched by the provider's subject id
+  (`user_identities`), then by the *verified* email (the identity is linked), else created as customers with a
+  random password ("Forgot password" sets a real one). Users with two-step sign-in finish on the sign-in page
+  (`/login#mfa=…`); errors come back as `/login?oauth_error=<code>`; after signing in, only paths on this site
+  are followed. Apple's client secret is a short-lived ES256 JWT signed with the team's key.
+- **Two-step sign-in** — optional for every account (profile → *Two-step sign-in*): confirm the password
+  (`POST /users/me/mfa/setup`), scan the `otpauth://` QR code with an authenticator app, confirm with a code
+  (`/users/me/mfa/enable`) and keep the ten recovery codes it returns (shown once, stored as SHA-256 hashes, each
+  works once). TOTP per RFC 6238 (SHA-1, 6 digits, 30 s, ±1 step); a code is never accepted twice. Secrets are
+  encrypted (Fernet, key derived from `JWT_SECRET_KEY` with HKDF), so changing `JWT_SECRET_KEY` turns every
+  user's two-step sign-in unusable — reset it for them or let them set it up again. With it on, `/auth/login`
+  answers `403 MFA_REQUIRED` with `details.mfa_token` (5 minutes) and `/auth/login/mfa` takes that token and a
+  code or recovery code (rate-limited like the password). Administrators can require it for staff (setting
+  `require_staff_mfa`; only after turning it on for themselves): staff without it get `403 MFA_SETUP_REQUIRED`
+  from the admin API until they set it up. Administrators reset it for a user who lost their phone and codes
+  (`PATCH /admin/users/{id}` `{"reset_mfa": true}`).
 - **Roles** — `customer`, `librarian`, `admin`. Librarians use the admin portal for books, copies, imports, orders,
   reviews, tags and series, data quality and reports. Changing users and roles, library settings and pickup points,
   and reading the activity log need an administrator (`ADMIN_ONLY` in `app/api/routes/admin.py`). Administrators
@@ -473,6 +495,12 @@ two copies of the same title are two records (ISBN is not unique).
   form and when an order comes back (*Mark Returned* asks how each copy came back; only changed copies are saved).
   It is not shared between copies of a title. Worn and damaged copies are marked in the admin book list, and
   damaged ones are listed under *Data quality* (`quality=damaged`).
+- **Telegram** (optional, `TELEGRAM_BOT_TOKEN` and `TELEGRAM_BOT_USERNAME`): *Connect Telegram* on the profile
+  (`POST /users/me/telegram/link`) opens the bot with a one-time code valid for 15 minutes; pressing Start links the
+  chat (`/stop` or `DELETE /users/me/telegram` unlinks it; one chat per account). The notifier reads the bot's
+  messages each cycle (`getUpdates`, confirmed by offset) and sends every notification to linked chats as well as by
+  email — once (`telegram_sent_at`), even when the email is retried; without SMTP it still serves readers with
+  Telegram. `GET /library/rules` returns `telegram_bot` so the profile only offers it when it is set up.
 - **Notification bell**: the header shows the reader's news — the same events as the emails (`notifications`), even
   when an email could not be sent, except news that went stale before delivery. Opening the list marks it read
   (`read_at`); it refreshes every minute while the tab is visible. Notifications from before the bell existed

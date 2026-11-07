@@ -195,6 +195,78 @@
         }
       }
     },
+    "/api/v1/auth/login/mfa": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Login Mfa",
+        "description": "Second step of signing in with two-step sign-in on: the mfa_token from the 403 MFA_REQUIRED answer of /auth/login and a code from the authenticator app (or a recovery code).",
+        "operationId": "login_mfa_api_v1_auth_login_mfa_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginMfaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/auth/refresh": {
       "post": {
         "tags": [
@@ -507,6 +579,101 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/oauth/providers": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Oauth Providers",
+        "description": "The outside sign-in methods this library has set up (shown on the sign-in page).",
+        "operationId": "oauth_providers_api_v1_auth_oauth_providers_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthProviders"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/oauth/{provider}/start": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Oauth Start",
+        "description": "Send the browser to the provider; it comes back to the callback.",
+        "operationId": "oauth_start_api_v1_auth_oauth__provider__start_get",
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Provider"
+            }
+          },
+          {
+            "name": "next",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Next"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -855,6 +1022,307 @@
             "description": "Unprocessable Entity"
           }
         }
+      }
+    },
+    "/api/v1/users/me/mfa/setup": {
+      "post": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Start Mfa Setup",
+        "description": "Start two-step sign-in: confirm the password, then scan the otpauth link (as a QR code) with an authenticator app and confirm with /me/mfa/enable.",
+        "operationId": "start_mfa_setup_api_v1_users_me_mfa_setup_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MfaSetupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MfaSetup"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/me/mfa/enable": {
+      "post": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Enable Mfa",
+        "description": "Turn it on with a first code from the app; returns ten recovery codes, shown once.",
+        "operationId": "enable_mfa_api_v1_users_me_mfa_enable_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MfaEnableRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MfaRecoveryCodes"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/me/mfa/disable": {
+      "post": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Disable Mfa",
+        "description": "Turn it off (password needed; 409 MFA_REQUIRED_BY_LIBRARY for staff when required).",
+        "operationId": "disable_mfa_api_v1_users_me_mfa_disable_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MfaSetupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/me/telegram/link": {
+      "post": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Link Telegram",
+        "description": "A one-time link that opens the library's Telegram bot; pressing Start there connects the chat (15 minutes). 409 TELEGRAM_NOT_CONFIGURED without a bot.",
+        "operationId": "link_telegram_api_v1_users_me_telegram_link_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramLink"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/me/telegram": {
+      "delete": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Unlink Telegram",
+        "description": "Stop sending notifications to Telegram.",
+        "operationId": "unlink_telegram_api_v1_users_me_telegram_delete",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/api/v1/users/me/reading-log": {
@@ -6667,6 +7135,16 @@
               }
             }
           },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "422": {
             "description": "Unprocessable Entity",
             "content": {
@@ -8237,6 +8715,16 @@
               }
             ]
           },
+          "mfa_enabled": {
+            "type": "boolean",
+            "title": "Mfa Enabled",
+            "description": "Two-step sign-in is on"
+          },
+          "telegram_connected": {
+            "type": "boolean",
+            "title": "Telegram Connected",
+            "description": "Notifications also go to a Telegram chat"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -8268,6 +8756,8 @@
           "phone",
           "preferred_contact_method",
           "preferred_language",
+          "mfa_enabled",
+          "telegram_connected",
           "created_at",
           "updated_at",
           "active_loans"
@@ -8296,6 +8786,18 @@
               }
             ],
             "title": "Is Active"
+          },
+          "reset_mfa": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reset Mfa",
+            "description": "true turns off two-step sign-in (lost device and recovery codes)"
           }
         },
         "additionalProperties": false,
@@ -10302,6 +10804,18 @@
             "type": "string",
             "title": "Timezone",
             "description": "IANA time zone of opening hours and pickup slots"
+          },
+          "telegram_bot": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telegram Bot",
+            "description": "Username of the library's Telegram bot, when notifications can go there"
           }
         },
         "type": "object",
@@ -10314,7 +10828,8 @@
           "hold_hours",
           "block_overdue",
           "late_fee_per_day",
-          "timezone"
+          "timezone",
+          "telegram_bot"
         ],
         "title": "LibraryRules",
         "description": "Lending rules every reader may know (GET /library/rules)."
@@ -10361,10 +10876,27 @@
             "title": "Timezone",
             "description": "IANA time zone of opening hours and pickup slots"
           },
+          "telegram_bot": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telegram Bot",
+            "description": "Username of the library's Telegram bot, when notifications can go there"
+          },
           "updated_at": {
             "type": "string",
             "format": "date-time",
             "title": "Updated At"
+          },
+          "require_staff_mfa": {
+            "type": "boolean",
+            "title": "Require Staff Mfa",
+            "description": "Staff must use two-step sign-in"
           }
         },
         "type": "object",
@@ -10378,7 +10910,9 @@
           "block_overdue",
           "late_fee_per_day",
           "timezone",
-          "updated_at"
+          "telegram_bot",
+          "updated_at",
+          "require_staff_mfa"
         ],
         "title": "LibrarySettingsRead"
       },
@@ -10500,6 +11034,17 @@
               }
             ],
             "title": "Timezone"
+          },
+          "require_staff_mfa": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Require Staff Mfa"
           }
         },
         "additionalProperties": false,
@@ -10523,6 +11068,29 @@
           "finished_on"
         ],
         "title": "LoggedBookRead"
+      },
+      "LoginMfaRequest": {
+        "properties": {
+          "mfa_token": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 20,
+            "title": "Mfa Token"
+          },
+          "code": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 6,
+            "title": "Code"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "mfa_token",
+          "code"
+        ],
+        "title": "LoginMfaRequest"
       },
       "LoginRequest": {
         "properties": {
@@ -10655,6 +11223,75 @@
           "into_id"
         ],
         "title": "MergeInto"
+      },
+      "MfaEnableRequest": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 8,
+            "minLength": 6,
+            "title": "Code"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code"
+        ],
+        "title": "MfaEnableRequest"
+      },
+      "MfaRecoveryCodes": {
+        "properties": {
+          "recovery_codes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Recovery Codes",
+            "description": "Each works once; shown only now"
+          }
+        },
+        "type": "object",
+        "required": [
+          "recovery_codes"
+        ],
+        "title": "MfaRecoveryCodes"
+      },
+      "MfaSetup": {
+        "properties": {
+          "secret": {
+            "type": "string",
+            "title": "Secret",
+            "description": "For typing into the app when the QR code cannot be scanned"
+          },
+          "otpauth_uri": {
+            "type": "string",
+            "title": "Otpauth Uri",
+            "description": "otpauth:// link to show as a QR code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "secret",
+          "otpauth_uri"
+        ],
+        "title": "MfaSetup"
+      },
+      "MfaSetupRequest": {
+        "properties": {
+          "password": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Password"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "password"
+        ],
+        "title": "MfaSetupRequest"
       },
       "ModerateReview": {
         "properties": {
@@ -10805,6 +11442,23 @@
           "purchase_added"
         ],
         "title": "NotificationKind"
+      },
+      "OAuthProviders": {
+        "properties": {
+          "providers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Providers",
+            "description": "google and/or apple, when set up"
+          }
+        },
+        "type": "object",
+        "required": [
+          "providers"
+        ],
+        "title": "OAuthProviders"
       },
       "OpeningHours": {
         "properties": {
@@ -12916,6 +13570,26 @@
         "type": "object",
         "title": "TagUpdate"
       },
+      "TelegramLink": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url",
+            "description": "Opens the bot with a one-time start code"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url",
+          "expires_at"
+        ],
+        "title": "TelegramLink"
+      },
       "TokenResponse": {
         "properties": {
           "access_token": {
@@ -13306,6 +13980,16 @@
               }
             ]
           },
+          "mfa_enabled": {
+            "type": "boolean",
+            "title": "Mfa Enabled",
+            "description": "Two-step sign-in is on"
+          },
+          "telegram_connected": {
+            "type": "boolean",
+            "title": "Telegram Connected",
+            "description": "Notifications also go to a Telegram chat"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -13330,6 +14014,8 @@
           "phone",
           "preferred_contact_method",
           "preferred_language",
+          "mfa_enabled",
+          "telegram_connected",
           "created_at",
           "updated_at"
         ],

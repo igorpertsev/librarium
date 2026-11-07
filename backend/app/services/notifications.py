@@ -39,6 +39,7 @@ from app.models.enums import (
 from app.repositories import orders as orders_repo
 from app.repositories.books import reserved_book_ids
 from app.services.library_settings import get_library_settings
+from app.services.telegram import Bot, TelegramError
 
 MAX_ATTEMPTS = 5
 MAX_AGE = timedelta(days=7)  # older queued messages are no longer useful
@@ -467,29 +468,61 @@ async def _compose(
     return _render(notification.kind, user, order, app_url, translations, zone)
 
 
+def _failed(notification: Notification, error: str, now: datetime, report: DeliveryReport) -> None:
+    """Count a failed attempt: try again later with a growing delay, or give up."""
+    notification.attempts += 1
+    notification.last_error = error[:500]
+    if notification.attempts >= MAX_ATTEMPTS:
+        notification.status = NotificationStatus.FAILED
+        report.failed += 1
+    else:
+        notification.next_attempt_at = now + BASE_RETRY_DELAY * 2 ** (notification.attempts - 1)
+        report.retried += 1
+
+
+async def _to_telegram(
+    telegram: Bot | None, notification: Notification, user: User, text: str, now: datetime
+) -> str | None:
+    """Send it to the reader's Telegram chat once; returns an error message, if any."""
+    if telegram is None or user.telegram_chat_id is None or notification.telegram_sent_at:
+        return None
+    try:
+        await telegram.send(user.telegram_chat_id, text)
+    except TelegramError as exc:
+        return f"Telegram: {exc}"
+    notification.telegram_sent_at = now
+    return None
+
+
 async def deliver_pending(
     session: AsyncSession,
     settings: Settings,
-    send: Sender,
+    send: Sender | None,
     *,
+    telegram: Bot | None = None,
     now: datetime | None = None,
     limit: int = 50,
 ) -> DeliveryReport:
-    """Send due notifications. SKIP LOCKED lets several workers run without double sends."""
+    """Send due notifications by email (and to linked Telegram chats). Without email
+    (``send`` is None) only readers with Telegram are served; the rest wait for SMTP.
+    SKIP LOCKED lets several workers run without double sends."""
     now = now or datetime.now(UTC)
     report = DeliveryReport()
-    batch = (
-        await session.scalars(
-            select(Notification)
-            .where(
-                Notification.status == NotificationStatus.PENDING,
-                Notification.next_attempt_at <= now,
-            )
-            .order_by(Notification.created_at)
-            .limit(limit)
-            .with_for_update(skip_locked=True)
+    stmt = (
+        select(Notification)
+        .where(
+            Notification.status == NotificationStatus.PENDING,
+            Notification.next_attempt_at <= now,
         )
-    ).all()
+        .order_by(Notification.created_at)
+        .limit(limit)
+        .with_for_update(skip_locked=True, of=Notification)
+    )
+    if send is None:
+        stmt = stmt.join(User, User.id == Notification.user_id).where(
+            User.telegram_chat_id.is_not(None)
+        )
+    batch = (await session.scalars(stmt)).all()
     zone = ZoneInfo((await get_library_settings(session)).timezone if batch else "UTC")
 
     for notification in batch:
@@ -506,19 +539,21 @@ async def deliver_pending(
         subject, body = composed
         notification.recipient = user.email
         notification.subject = subject[:300]
+        telegram_error = await _to_telegram(
+            telegram, notification, user, f"{subject}\n\n{body}", now
+        )
+        if send is None:
+            if telegram_error:
+                _failed(notification, telegram_error, now, report)
+            else:
+                notification.status = NotificationStatus.SENT
+                notification.sent_at = now
+                report.sent += 1
+            continue
         try:
             await send(build_message(settings, user=user, subject=subject, body=body))
         except (smtplib.SMTPException, OSError) as exc:
-            notification.attempts += 1
-            notification.last_error = f"{type(exc).__name__}: {exc}"[:500]
-            if notification.attempts >= MAX_ATTEMPTS:
-                notification.status = NotificationStatus.FAILED
-                report.failed += 1
-            else:
-                notification.next_attempt_at = now + BASE_RETRY_DELAY * 2 ** (
-                    notification.attempts - 1
-                )
-                report.retried += 1
+            _failed(notification, f"{type(exc).__name__}: {exc}", now, report)
         else:
             notification.status = NotificationStatus.SENT
             notification.sent_at = now

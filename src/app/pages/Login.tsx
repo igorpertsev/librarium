@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link, Navigate, useLocation } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
@@ -9,6 +9,7 @@ import dragonLogo from '../../imports/dragon.webp';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { errorMessage } from '../utils/apiErrors';
+import { SocialSignIn } from '../components/SocialSignIn';
 
 export default function Login() {
   const { t } = useTranslation();
@@ -16,7 +17,10 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const { login, isAuthenticated, isLoading } = useAuth();
+  // Two-step sign-in: the password was right; now a code from the app.
+  const [mfaToken, setMfaToken] = useState<string | null>(null);
+  const [code, setCode] = useState('');
+  const { login, loginWithCode, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   // Only paths on this site: never an absolute or protocol-relative address.
@@ -24,15 +28,33 @@ export default function Login() {
   const returnTo =
     typeof requested === 'string' && requested.startsWith('/') && !requested.startsWith('//') ? requested : '/';
 
+  // Back from Google / Apple: an error to show, or the code step of two-step sign-in.
+  useEffect(() => {
+    const oauthError = new URLSearchParams(location.search).get('oauth_error');
+    if (oauthError) setError(t(`social.errors.${oauthError}`, { defaultValue: t('social.errors.OAUTH_FAILED') }));
+    const fragment = new URLSearchParams(location.hash.replace(/^#/, ''));
+    const token = fragment.get('mfa');
+    if (token) {
+      setMfaToken(token);
+      window.history.replaceState(null, '', location.pathname + location.search);
+    }
+  }, [location.search, location.hash, location.pathname, t]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSubmitting(true);
-    const result = await login(email, password);
+    const result = mfaToken ? await loginWithCode(mfaToken, code) : await login(email, password);
     setSubmitting(false);
     if (result.ok) {
       toast.success(t('auth.loginSuccess'));
       navigate(returnTo, { replace: true });
+    } else if (result.error.code === 'MFA_REQUIRED' && typeof result.error.details?.mfa_token === 'string') {
+      setMfaToken(result.error.details.mfa_token);
+      setCode('');
+    } else if (result.error.code === 'MFA_TOKEN_INVALID') {
+      setMfaToken(null); // took too long: start again with the password
+      setError(errorMessage(t, result.error));
     } else {
       setError(errorMessage(t, result.error));
     }
@@ -58,6 +80,22 @@ export default function Login() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {mfaToken ? (
+              <div className="space-y-2">
+                <Label htmlFor="mfa-code">{t('mfa.codeLabel')}</Label>
+                <Input
+                  id="mfa-code"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  autoComplete="one-time-code"
+                  inputMode="text"
+                  autoFocus
+                  required
+                />
+                <p className="text-xs text-muted-foreground">{t('mfa.codeHint')}</p>
+              </div>
+            ) : (
+            <>
             <div className="space-y-2">
               <Label htmlFor="email">{t('auth.email')}</Label>
               <Input
@@ -85,15 +123,27 @@ export default function Login() {
                 required
               />
             </div>
+            </>
+            )}
             {error && (
-              <div role="alert" className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
+              <div role="alert" className="text-sm text-destructive dark:text-red-300 bg-destructive/10 p-3 rounded-md">
                 {error}
               </div>
             )}
             <Button type="submit" className="w-full" disabled={submitting}>
-              {t('auth.signIn')}
+              {mfaToken ? t('mfa.verify') : t('auth.signIn')}
             </Button>
+            {mfaToken && (
+              <Button type="button" variant="ghost" className="w-full" onClick={() => setMfaToken(null)}>
+                {t('mfa.back')}
+              </Button>
+            )}
           </form>
+          {!mfaToken && (
+            <div className="mt-4">
+              <SocialSignIn returnTo={returnTo} />
+            </div>
+          )}
         </CardContent>
         <CardFooter className="flex flex-col items-center gap-2">
           <p className="text-sm text-muted-foreground">

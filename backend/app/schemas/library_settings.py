@@ -34,10 +34,14 @@ class LibraryRules(ApiModel):
         description="Charged per day late when books come back (0: none)"
     )
     timezone: str = Field(description="IANA time zone of opening hours and pickup slots")
+    telegram_bot: str | None = Field(
+        None, description="Username of the library's Telegram bot, when notifications can go there"
+    )
 
 
 class LibrarySettingsRead(LibraryRules):
     updated_at: datetime
+    require_staff_mfa: bool = Field(description="Staff must use two-step sign-in")
 
 
 class LibrarySettingsUpdate(PatchModel):
@@ -52,6 +56,7 @@ class LibrarySettingsUpdate(PatchModel):
             "block_overdue",
             "late_fee_per_day",
             "timezone",
+            "require_staff_mfa",
         }
     )
 
@@ -64,3 +69,4 @@ class LibrarySettingsUpdate(PatchModel):
     block_overdue: bool | None = None
     late_fee_per_day: Money | None = None
     timezone: TimeZoneName | None = None
+    require_staff_mfa: bool | None = None
