@@ -1,12 +1,10 @@
 # syntax=docker/dockerfile:1.7
 
-ARG PYTHON_IMAGE=python:3.12-slim
-ARG UV_IMAGE=ghcr.io/astral-sh/uv:0.9
-
-FROM ${UV_IMAGE} AS uv
+# Base images are written out (not build args) so Dependabot can propose updates.
+FROM ghcr.io/astral-sh/uv:0.9 AS uv
 
 # ---- base: interpreter + uv -------------------------------------------------------------
-FROM ${PYTHON_IMAGE} AS base
+FROM python:3.12-slim AS base
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     UV_COMPILE_BYTECODE=1 \
@@ -30,7 +28,7 @@ COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv uv sync --frozen --no-dev --no-install-project
 
 # ---- runtime: slim image, non-root user ---------------------------------------------------
-FROM ${PYTHON_IMAGE} AS runtime
+FROM python:3.12-slim AS runtime
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PATH="/opt/venv/bin:${PATH}"

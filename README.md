@@ -104,6 +104,7 @@ Docker Compose and Vite read the root `.env` (template: `.env.example`). Filled-
 | `SENTRY_DSN` | — | optional: report unhandled errors to Sentry or a compatible service; no personal data is sent |
 | `DATABASE_URL` | `postgresql+asyncpg://postgres:postgres@localhost:5433/bookstore` | `postgres://` and `postgresql://` are normalised to asyncpg |
 | `JWT_SECRET_KEY` | — | **required in production**, ≥ 32 characters, not a known weak value; in development an ephemeral secret is generated if empty |
+| `MFA_ENCRYPTION_KEYS` | — | keys that encrypt two-step sign-in secrets, comma-separated, the encrypting one first (≥ 32 characters each); empty: derived from `JWT_SECRET_KEY`. Rotate with `python -m app.cli rotate-mfa-keys` |
 | `JWT_ALGORITHM` | `HS256` | HS256/384/512 |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `15` | 1–60 |
 | `REFRESH_TOKEN_EXPIRE_DAYS` | `30` | 1–180 |
@@ -187,6 +188,27 @@ The application never calls `metadata.create_all()`.
 
 ## Tests, lint, typecheck
 
+**Everything CI checks, in one command** (`scripts/check.sh`): backend format, lint, types, migrations (on a
+throwaway database), tests, the API schema and generated types, frontend lint, types, unit tests and build, and the
+secret and dependency scans. It prints which checks failed and exits non-zero if any did.
+
+```bash
+pnpm check
+```
+
+`pnpm check --fast` skips the slow parts (pytest, migrations, build, scans); `--e2e` adds the browser tests and API
+fuzzing; `--backend`
+or `--frontend` runs one half.
+
+**Git hooks** (`.githooks/`, opt-in): before a commit, gitleaks on the staged changes, ruff on the staged Python
+files and ESLint on the staged frontend files; before a push, `pnpm check`. `git commit --no-verify` / `git push --no-verify` skips them once.
+
+```bash
+pnpm hooks:install
+```
+
+The single steps:
+
 Backend (PostgreSQL from compose, separate `bookstore_test` database created by an init script/fixture):
 
 ```bash
@@ -241,26 +263,73 @@ pnpm e2e
 pnpm e2e:stack:down
 ```
 
+**API fuzzing** (Schemathesis, `e2e/api-fuzz.sh`) sends thousands of requests generated from the OpenAPI
+schema to the same e2e stack, as a visitor, a reader and the e2e administrator, and fails on any 5xx answer, a
+response that does not match its documented schema or a wrong content type. A failure prints a `curl` command
+that reproduces it. It changes data, so only ever run it against the e2e stack.
+
+```bash
+pnpm api:fuzz
+```
+
+`API_FUZZ_EXAMPLES=50 pnpm api:fuzz` digs deeper (default 10 examples per operation).
+
+**Visual tests** (`e2e/visual/`, `playwright.visual.config.ts`) take screenshots of the sign-in page, the
+catalogue, a book page, a reader's profile and cart and the librarian portal — desktop and phone, light and dark —
+and compare them with the reference images in `e2e/visual/__screenshots__` (at most 100 pixels may differ; rendering in the
+image is deterministic, so even a slightly wider heading fails).
+`e2e/visual.sh` restarts the e2e stack with fresh data and runs Playwright inside its Docker image
+(`mcr.microsoft.com/playwright`), so fonts and rendering are the same on every machine and in CI; covers from other
+sites are replaced by a grey image. When a page changes on purpose, write new reference images, look at them and
+commit them with the change:
+
+```bash
+pnpm e2e:visual
+```
+
+```bash
+pnpm e2e:visual --update-snapshots
+```
+
+On a difference, `test-results-visual/` has the expected, actual and diff image for each screenshot (CI uploads it
+as an artifact).
+
 Instead of downloading Chromium you can use an installed Google Chrome: `PLAYWRIGHT_CHANNEL=chrome pnpm e2e`.
 Failed tests leave screenshots and traces in `test-results/` (`pnpm exec playwright show-trace <file>`).
 
 The test session runs migrations `upgrade → downgrade base → upgrade`, truncates tables before each test and does
 not wrap tests in a transaction, so concurrent requests really go through separate database connections.
 
-**Continuous integration** (`.github/workflows/ci.yml`) runs on every pull request and on pushes to `main`:
+**Continuous integration** (`.github/workflows/ci.yml`) runs on every pull request, on pushes to `main` and every
+Monday (so newly published vulnerabilities show up; that run never deploys):
 
 - *Backend*: `ruff format --check`, `ruff check`, `mypy`, `alembic upgrade head` + `alembic check` + `downgrade base`,
   `pytest` against a PostgreSQL 16 service, and a check that `backend/openapi.json` matches the code.
 - *Frontend*: `pnpm install --frozen-lockfile`, a check that `src/api/generated/schema.d.ts` matches
   `backend/openapi.json`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`.
-- *Browser tests*: the e2e stack, Chromium and `pnpm e2e`; the Playwright report is uploaded when they fail.
-- *Production images*: `docker compose -f docker-compose.prod.yml build`.
+- *Browser tests*: the e2e stack, Chromium and `pnpm e2e`, then `pnpm api:fuzz` on the same stack; the Playwright
+  report is uploaded when they fail.
+- *Secrets and dependencies*: gitleaks over the whole git history (reviewed false positives are in
+  `.gitleaksignore`) and Trivy over `backend/uv.lock` and `pnpm-lock.yaml`; a secret or a HIGH/CRITICAL
+  vulnerability that has a fix fails the build.
+- *Visual tests*: `e2e/visual.sh` (screenshots compared with the reference images); differences are uploaded.
+- *Production images*: `docker compose -f docker-compose.prod.yml build --pull`, then a Trivy report of the backend,
+  web and PostgreSQL images in the job summary (report only: fixes in base images wait for upstream releases).
+
+The scanners (gitleaks v8.30.1, Trivy 0.76.1) are pinned in `ci.yml`, `scripts/check.sh` and `.githooks/pre-commit`;
+update all three together. The pre-commit hook also runs gitleaks on the staged changes.
 
 So after an API change, commit the exported `backend/openapi.json` and the regenerated types together.
 
 **Code splitting.** Pages other than sign-in are loaded when first opened (`lazy` routes in `src/app/routes.tsx`);
 React and i18next get their own long-cached files (`vite.config.ts`). If an open tab asks for page files that a new
 release has replaced, it reloads once to get the new version.
+
+### Dependency updates
+
+Dependabot (`.github/dependabot.yml`) opens pull requests every Monday for Python (uv), the frontend (pnpm),
+Docker base images, the compose images and GitHub Actions; minor and patch updates come grouped per ecosystem.
+New Python minor versions, PostgreSQL major versions and Node.js major versions are left to you.
 
 ## Generating TypeScript types from OpenAPI
 
@@ -302,8 +371,10 @@ conversion to UI models in `src/api/mappers.ts`. After an API change: export the
   (`POST /users/me/mfa/setup`), scan the `otpauth://` QR code with an authenticator app, confirm with a code
   (`/users/me/mfa/enable`) and keep the ten recovery codes it returns (shown once, stored as SHA-256 hashes, each
   works once). TOTP per RFC 6238 (SHA-1, 6 digits, 30 s, ±1 step); a code is never accepted twice. Secrets are
-  encrypted (Fernet, key derived from `JWT_SECRET_KEY` with HKDF), so changing `JWT_SECRET_KEY` turns every
-  user's two-step sign-in unusable — reset it for them or let them set it up again. With it on, `/auth/login`
+  encrypted (Fernet, keys derived with HKDF) with the first of `MFA_ENCRYPTION_KEYS`; every listed key and the
+  key derived from `JWT_SECRET_KEY` (used when the setting is empty) can decrypt. To rotate, put a new key first,
+  run `python -m app.cli rotate-mfa-keys` (re-encrypts every secret with it) and drop the old key. Without
+  `MFA_ENCRYPTION_KEYS`, changing `JWT_SECRET_KEY` turns every user's two-step sign-in unusable. With it on, `/auth/login`
   answers `403 MFA_REQUIRED` with `details.mfa_token` (5 minutes) and `/auth/login/mfa` takes that token and a
   code or recovery code (rate-limited like the password). Administrators can require it for staff (setting
   `require_staff_mfa`; only after turning it on for themselves): staff without it get `403 MFA_SETUP_REQUIRED`

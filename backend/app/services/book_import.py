@@ -104,7 +104,18 @@ def parse(
     text: str, tag_lookup: dict[str, str]
 ) -> tuple[list[tuple[int, BookCreate]], ImportResult]:
     result = ImportResult()
-    reader = csv.DictReader(io.StringIO(text.lstrip("﻿")))
+    # newline="": the csv module handles line ends itself (a lone "\r" used to raise).
+    reader = csv.DictReader(io.StringIO(text.lstrip("﻿"), newline=""))
+    try:
+        return _parse_rows(reader, tag_lookup, result)
+    except csv.Error as exc:  # e.g. a field longer than csv.field_size_limit()
+        result.errors.append(RowError(max(reader.line_num, 1), f"Not a readable CSV file: {exc}"))
+        return [], result
+
+
+def _parse_rows(
+    reader: csv.DictReader[str], tag_lookup: dict[str, str], result: ImportResult
+) -> tuple[list[tuple[int, BookCreate]], ImportResult]:
     if reader.fieldnames is None:
         result.errors.append(RowError(1, "The file is empty"))
         return [], result

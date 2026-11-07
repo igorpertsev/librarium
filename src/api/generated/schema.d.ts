@@ -3109,12 +3109,14 @@ export interface components {
             weekday: number;
             /**
              * Opens
-             * Format: time
+             * @example 09:30
+             * @example 18:00:00
              */
             opens: string;
             /**
              * Closes
-             * Format: time
+             * @example 09:30
+             * @example 18:00:00
              */
             closes: string;
         };
@@ -3397,7 +3399,10 @@ export interface components {
             title: string;
             /** Author */
             author: string;
-            /** Isbn */
+            /**
+             * Isbn
+             * @description ISBN-10 or ISBN-13; stored as its digits
+             */
             isbn?: string | null;
             /** Note */
             note?: string | null;

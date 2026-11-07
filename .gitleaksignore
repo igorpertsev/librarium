@@ -1,0 +1,6 @@
+# Reviewed gitleaks findings that are not secrets (one fingerprint per line: commit:file:rule:line).
+# RFC 6238 test vector ("12345678901234567890" in base32) used by the TOTP tests.
+f31772c07188fcd38dfa9d6f25630224a1d8d9a9:backend/tests/test_mfa.py:generic-api-key:35
+# Commented-out example key that the Devise generator wrote into the old Rails app (never used,
+# the file is long gone).
+bfd76f36814ffec1d181adae3600fee86d2b2562:config/initializers/devise.rb:generic-api-key:17

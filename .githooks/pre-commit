@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Quick checks on the files being committed: secrets (gitleaks), Python format and lint, ESLint
+# for the frontend.
+# The full set runs before a push (pre-push). Skip once with: git commit --no-verify
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+
+# (macOS ships bash 3.2: no mapfile.)
+py=() ts=()
+while IFS= read -r f; do py+=("${f#backend/}"); done < <(
+  git diff --cached --name-only --diff-filter=ACMR -- 'backend/*.py'
+)
+while IFS= read -r f; do ts+=("$f"); done < <(
+  git diff --cached --name-only --diff-filter=ACMR -- 'src/*.ts' 'src/*.tsx'
+)
+
+if ! git diff --cached --quiet; then
+  docker run --rm -v "$PWD:/repo:ro" ghcr.io/gitleaks/gitleaks:v8.30.1 \
+    git --pre-commit --staged --redact --no-banner --log-level warn /repo || {
+    echo "pre-commit: gitleaks found what looks like a secret in the staged changes." \
+      "Remove it (and rotate it if it is real); a false positive goes into .gitleaksignore." >&2
+    exit 1
+  }
+fi
+
+if ((${#py[@]})); then
+  docker compose --profile dev run --rm --no-deps -T backend-dev sh -ec \
+    'ruff format --check "$@" && ruff check "$@"' ruff "${py[@]}" || {
+    echo "pre-commit: fix the Python issues above (ruff format / ruff check --fix in backend/)." >&2
+    exit 1
+  }
+fi
+
+if ((${#ts[@]})); then
+  pnpm -s exec eslint --max-warnings 0 --no-warn-ignored "${ts[@]}" || {
+    echo "pre-commit: fix the ESLint issues above." >&2
+    exit 1
+  }
+fi

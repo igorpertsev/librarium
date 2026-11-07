@@ -4,11 +4,33 @@ import uuid
 from datetime import datetime, time
 from typing import Annotated, ClassVar, Self
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import AfterValidator, BaseModel, Field, WithJsonSchema, model_validator
 
 from app.schemas.common import ApiModel, PatchModel, RequestModel
 from app.schemas.types import Address, OptionalNote, PlaceName
 
+
+# A wall-clock time in the library's time zone, without an offset. JSON Schema's "time" format
+# (RFC 3339) requires an offset, so the schema says what is really sent: "HH:MM" or "HH:MM:SS".
+def _no_offset(value: time) -> time:
+    # A number (seconds) or "09:30+02:00" parse to a time with an offset, which cannot be compared
+    # with local times (that used to be a 500).
+    if value.tzinfo is not None:
+        raise ValueError("Give a local time such as 09:30, without a time zone")
+    return value
+
+
+LocalTime = Annotated[
+    time,
+    AfterValidator(_no_offset),
+    WithJsonSchema(
+        {
+            "type": "string",
+            "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9](\\.[0-9]+)?)?$",
+            "examples": ["09:30", "18:00:00"],
+        }
+    ),
+]
 SlotMinutes = Annotated[int, Field(ge=15, le=240)]
 SlotCapacity = Annotated[int, Field(ge=1, le=100)]
 
@@ -17,8 +39,8 @@ class OpeningHours(BaseModel):
     """One opening period on a weekday (0 = Monday), in the library's time zone."""
 
     weekday: int = Field(ge=0, le=6)
-    opens: time
-    closes: time
+    opens: LocalTime
+    closes: LocalTime
 
     @model_validator(mode="after")
     def _closes_after_opening(self) -> Self:

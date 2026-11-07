@@ -1,0 +1,55 @@
+# Weekly pull requests that keep dependencies up to date. Minor and patch updates are grouped per
+# ecosystem, so a week brings a handful of pull requests rather than dozens; CI checks each one.
+# Updates that need a human decision are left out: a new Python minor version, a new PostgreSQL
+# major version (the data has to be migrated) and new Node.js major versions.
+version: 2
+
+updates:
+  - package-ecosystem: uv
+    directory: /backend
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      backend:
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm # pnpm-lock.yaml
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      frontend:
+        update-types: [minor, patch]
+
+  - package-ecosystem: docker
+    directories: [/backend, /deploy/web]
+    schedule:
+      interval: weekly
+      day: monday
+    ignore:
+      - dependency-name: python
+        update-types: [version-update:semver-major, version-update:semver-minor]
+      - dependency-name: node
+        update-types: [version-update:semver-major]
+
+  - package-ecosystem: docker-compose
+    directories: [/, /e2e]
+    schedule:
+      interval: weekly
+      day: monday
+    ignore:
+      - dependency-name: postgres
+        update-types: [version-update:semver-major]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      actions:
+        patterns: ["*"]
