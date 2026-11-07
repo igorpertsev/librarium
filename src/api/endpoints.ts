@@ -40,6 +40,11 @@ import type {
   PickupPointDto,
   ChallengeCreateDto,
   ChallengeDto,
+  CategoryLoansDto,
+  MonthStatsDto,
+  DeskCopyDto,
+  PasskeyDto,
+  PasskeyOptionsDto,
   BookPickDto,
   CollectionCreateDto,
   CollectionDto,
@@ -95,6 +100,9 @@ export const authApi = {
   oauthProviders: () => apiRequest<{ providers: string[] }>('/auth/oauth/providers', { auth: false }),
   loginMfa: (body: { mfa_token: string; code: string }) =>
     apiRequest<TokenResponseDto>('/auth/login/mfa', { method: 'POST', body, auth: false }),
+  passkeyOptions: () => apiRequest<PasskeyOptionsDto>('/auth/passkey/options', { method: 'POST', auth: false }),
+  passkeySignIn: (body: { state: string; credential: unknown }) =>
+    apiRequest<TokenResponseDto>('/auth/passkey', { method: 'POST', body, auth: false }),
   logout: () => apiRequest<void>('/auth/logout', { method: 'POST', auth: false }),
   me: () => apiRequest<UserDto>('/auth/me'),
   changePassword: (body: ChangePasswordDto) =>
@@ -116,6 +124,12 @@ export const usersApi = {
   telegramLink: () =>
     apiRequest<{ url: string; expires_at: string }>('/users/me/telegram/link', { method: 'POST' }),
   telegramUnlink: () => apiRequest<void>('/users/me/telegram', { method: 'DELETE' }),
+  passkeyOptions: (password: string) =>
+    apiRequest<PasskeyOptionsDto>('/users/me/passkeys/options', { method: 'POST', body: { password } }),
+  addPasskey: (body: { state: string; credential: unknown; name: string }) =>
+    apiRequest<PasskeyDto>('/users/me/passkeys', { method: 'POST', body }),
+  listPasskeys: () => apiRequest<PasskeyDto[]>('/users/me/passkeys'),
+  removePasskey: (passkeyId: string) => apiRequest<void>(`/users/me/passkeys/${id(passkeyId)}`, { method: 'DELETE' }),
   calendarLink: () => apiRequest<{ url: string }>('/users/me/calendar', { method: 'POST' }),
   calendarRemove: () => apiRequest<void>('/users/me/calendar', { method: 'DELETE' }),
   pushSubscribe: (subscription: { endpoint: string; keys: { p256dh: string; auth: string } }) =>
@@ -268,6 +282,9 @@ export const adminApi = {
   challengeParticipants: (challengeId: string) =>
     apiRequest<ChallengeParticipantDto[]>(`/admin/challenges/${challengeId}/participants`),
   listBooks: (query: AdminBookListQuery) => apiRequest<BookPageDto>('/admin/books', { query }),
+  getBook: (bookId: string) => apiRequest<BookDto>(`/admin/books/${id(bookId)}`),
+  copyAtDesk: (bookId: string) => apiRequest<DeskCopyDto>(`/admin/copies/${id(bookId)}/desk`),
+  getOrder: (orderId: string) => apiRequest<OrderDto>(`/admin/orders/${id(orderId)}`),
   bookStats: () => apiRequest<BookStatsDto>('/admin/books/stats'),
   bookQuality: () => apiRequest<QualitySummaryDto>('/admin/books/quality'),
   findDuplicates: (query: { isbn?: string; title?: string; author?: string }) =>
@@ -374,6 +391,10 @@ export const adminApi = {
   reportDemand: (period: ReportPeriod) =>
     apiRequest<DemandDto>('/admin/reports/demand', { query: period }),
   ordersCsv: (period: ReportPeriod) => apiDownload('/admin/reports/orders.csv', { query: period }),
+  reportMonthly: (months: number) => apiRequest<MonthStatsDto[]>('/admin/reports/monthly', { query: { months } }),
+  monthlyCsv: (months: number) => apiDownload('/admin/reports/monthly.csv', { query: { months } }),
+  reportCategories: (period: ReportPeriod) =>
+    apiRequest<CategoryLoansDto[]>('/admin/reports/categories', { query: period }),
   updateSettings: (body: LibrarySettingsUpdateDto) =>
     apiRequest<LibrarySettingsDto>('/admin/settings', { method: 'PATCH', body }),
 };

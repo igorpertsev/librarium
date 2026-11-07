@@ -15,6 +15,7 @@ from app.schemas.common import error_responses
 from app.schemas.family import ChildCreate, ChildRead, ChildUpdate
 from app.schemas.hold import HeldBookRead
 from app.schemas.inbox import Inbox, MarkRead
+from app.schemas.passkey import PasskeyOptions, PasskeyOptionsRequest, PasskeyRead, PasskeyRegister
 from app.schemas.push import PushSubscriptionCreate
 from app.schemas.reading_log import MarkFinished, ReadingLogRead
 from app.schemas.reservation import ReservationCreate, ReservationRead
@@ -32,6 +33,7 @@ from app.services import (
     holds,
     inbox,
     mfa,
+    passkeys,
     reading_log,
     recommendations,
     reservations,
@@ -230,6 +232,52 @@ async def new_calendar_link(
 async def remove_calendar_link(user: CurrentUser, session: SessionDep) -> Response:
     """Turn the calendar feed off (its link stops working)."""
     await calendar.remove_link(session, user)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post(
+    "/me/passkeys/options",
+    response_model=PasskeyOptions,
+    responses=error_responses(400, 401, 422),
+    description="Start adding a passkey (password needed): options for "
+    "navigator.credentials.create() and a state to send back.",
+)
+async def passkey_registration_options(
+    body: PasskeyOptionsRequest, user: CurrentUser, session: SessionDep, settings: SettingsDep
+) -> PasskeyOptions:
+    options, state = await passkeys.registration_options(session, settings, user, body.password)
+    return PasskeyOptions(options=options, state=state)
+
+
+@router.post(
+    "/me/passkeys",
+    response_model=PasskeyRead,
+    status_code=status.HTTP_201_CREATED,
+    responses=error_responses(400, 401, 409, 422),
+)
+async def add_passkey(
+    body: PasskeyRegister, user: CurrentUser, session: SessionDep, settings: SettingsDep
+) -> PasskeyRead:
+    """Finish adding a passkey with the browser's answer."""
+    made = await passkeys.register(
+        session, settings, user, state=body.state, credential=body.credential, name=body.name
+    )
+    return PasskeyRead.model_validate(made)
+
+
+@router.get("/me/passkeys", response_model=list[PasskeyRead], responses=error_responses(401))
+async def list_passkeys(user: CurrentUser, session: SessionDep) -> list[PasskeyRead]:
+    return [PasskeyRead.model_validate(p) for p in await passkeys.list_passkeys(session, user)]
+
+
+@router.delete(
+    "/me/passkeys/{passkey_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
+    responses=error_responses(401, 404),
+)
+async def remove_passkey(passkey_id: uuid.UUID, user: CurrentUser, session: SessionDep) -> Response:
+    await passkeys.remove(session, user, passkey_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

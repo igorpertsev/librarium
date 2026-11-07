@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import ColumnElement, and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,10 +20,11 @@ from app.models import (
     OrderItem,
     ReadingListEntry,
     Tag,
+    User,
     WaitlistEntry,
     book_tags,
 )
-from app.models.enums import OrderStatus
+from app.models.enums import BookCategory, OrderStatus, UserRole
 from app.repositories.books import copy_group_key
 
 
@@ -243,3 +245,105 @@ async def demand(session: AsyncSession, date_from: date, date_to: date) -> Deman
     ).all()
     report.tags = [TagLoans(slug, en, ru, int(n)) for slug, en, ru, n in rows]
     return report
+
+
+# --- Statistics by month -----------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class MonthStats:
+    month: str  # YYYY-MM
+    loans: int  # books handed over
+    returns: int  # books brought back
+    active_readers: int  # readers with a loan handed over that month
+    new_readers: int  # reader accounts created that month
+
+
+def _month_starts(until: date, months: int) -> list[date]:
+    first = until.replace(day=1)
+    starts = []
+    year, month = first.year, first.month
+    for _ in range(months):
+        starts.append(date(year, month, 1))
+        year, month = (year, month - 1) if month > 1 else (year - 1, 12)
+    return starts[::-1]
+
+
+async def monthly(
+    session: AsyncSession, *, until: date, months: int, zone: ZoneInfo
+) -> list[MonthStats]:
+    """The last ``months`` calendar months up to ``until``, in the library's time zone."""
+    starts = _month_starts(until, months)
+    since = datetime.combine(starts[0], time.min, tzinfo=zone)
+
+    def month_of(column: Any) -> Any:
+        return func.to_char(func.timezone(str(zone), column), "YYYY-MM")
+
+    async def counted(stmt: Any) -> dict[str, int]:
+        return {month: int(n) for month, n in (await session.execute(stmt)).all()}
+
+    lent_month = month_of(Order.confirmed_at)
+    loans = await counted(
+        select(lent_month, func.count(OrderItem.id))
+        .join(Order, Order.id == OrderItem.order_id)
+        .where(Order.confirmed_at >= since)
+        .group_by(lent_month)
+    )
+    readers = await counted(
+        select(lent_month, func.count(func.distinct(Order.user_id)))
+        .where(Order.confirmed_at >= since)
+        .group_by(lent_month)
+    )
+    back_month = month_of(Order.returned_at)
+    returns = await counted(
+        select(back_month, func.count(OrderItem.id))
+        .join(Order, Order.id == OrderItem.order_id)
+        .where(Order.returned_at >= since)
+        .group_by(back_month)
+    )
+    joined_month = month_of(User.created_at)
+    joined = await counted(
+        select(joined_month, func.count(User.id))
+        .where(User.created_at >= since, User.role == UserRole.CUSTOMER)
+        .group_by(joined_month)
+    )
+    keys = [f"{start:%Y-%m}" for start in starts]
+    return [
+        MonthStats(
+            month=key,
+            loans=loans.get(key, 0),
+            returns=returns.get(key, 0),
+            active_readers=readers.get(key, 0),
+            new_readers=joined.get(key, 0),
+        )
+        for key in keys
+    ]
+
+
+def monthly_csv(stats: list[MonthStats]) -> str:
+    out = io.StringIO()
+    writer = csv.writer(out)
+    writer.writerow(["month", "loans", "returns", "active_readers", "new_readers"])
+    for row in stats:
+        writer.writerow([row.month, row.loans, row.returns, row.active_readers, row.new_readers])
+    return out.getvalue()
+
+
+@dataclass(frozen=True, slots=True)
+class CategoryLoans:
+    category: BookCategory
+    loans: int
+
+
+async def categories(session: AsyncSession, date_from: date, date_to: date) -> list[CategoryLoans]:
+    """Books handed over in the period, by category (most first)."""
+    start, end = _bounds(date_from, date_to)
+    loans = func.count(OrderItem.id).label("loans")
+    rows = await session.execute(
+        select(OrderItem.category, loans)
+        .join(Order, Order.id == OrderItem.order_id)
+        .where(_within(Order.confirmed_at, start, end))
+        .group_by(OrderItem.category)
+        .order_by(loans.desc(), OrderItem.category)
+    )
+    return [CategoryLoans(category, int(n)) for category, n in rows]

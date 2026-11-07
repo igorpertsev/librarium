@@ -95,6 +95,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/passkey/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Passkey Options
+         * @description Start signing in with a passkey: options for navigator.credentials.get() (any passkey of this site) and a state to send back.
+         */
+        post: operations["passkey_options_api_v1_auth_passkey_options_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/passkey": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Passkey Sign In
+         * @description Finish signing in with a passkey (no two-step code needed: the passkey is already two factors).
+         */
+        post: operations["passkey_sign_in_api_v1_auth_passkey_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/refresh": {
         parameters: {
             query?: never;
@@ -494,6 +534,64 @@ export interface paths {
          * @description Turn the calendar feed off (its link stops working).
          */
         delete: operations["remove_calendar_link_api_v1_users_me_calendar_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/me/passkeys/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Passkey Registration Options
+         * @description Start adding a passkey (password needed): options for navigator.credentials.create() and a state to send back.
+         */
+        post: operations["passkey_registration_options_api_v1_users_me_passkeys_options_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/me/passkeys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Passkeys */
+        get: operations["list_passkeys_api_v1_users_me_passkeys_get"];
+        put?: never;
+        /**
+         * Add Passkey
+         * @description Finish adding a passkey with the browser's answer.
+         */
+        post: operations["add_passkey_api_v1_users_me_passkeys_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/me/passkeys/{passkey_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove Passkey */
+        delete: operations["remove_passkey_api_v1_users_me_passkeys__passkey_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1631,6 +1729,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/copies/{book_id}/desk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin Copy At Desk
+         * @description For the scan desk: a copy and where it stands - the active order it is in (waiting to be handed over, or out on loan) and whom it is held for.
+         */
+        get: operations["admin_copy_at_desk_api_v1_admin_copies__book_id__desk_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/orders/{order_id}": {
         parameters: {
             query?: never;
@@ -1873,6 +1991,66 @@ export interface paths {
          * @description What readers want: the titles with the most readers waiting and the most "want to read" saves (right now, with the number of copies), and the tags of the books lent in the period. Default period: the last 30 days.
          */
         get: operations["admin_report_demand_api_v1_admin_reports_demand_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/reports/monthly": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin Report Monthly
+         * @description Loans, returns, active and new readers per calendar month, oldest first.
+         */
+        get: operations["admin_report_monthly_api_v1_admin_reports_monthly_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/reports/monthly.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin Report Monthly Csv
+         * @description The monthly figures as CSV (UTF-8 with BOM for spreadsheet apps).
+         */
+        get: operations["admin_report_monthly_csv_api_v1_admin_reports_monthly_csv_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/reports/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin Report Categories
+         * @description Books handed over in the period by category, most first (default: the last 30 days).
+         */
+        get: operations["admin_report_categories_api_v1_admin_reports_categories_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3002,6 +3180,12 @@ export interface components {
             /** Has Unavailable Items */
             has_unavailable_items: boolean;
         };
+        /** CategoryLoansRead */
+        CategoryLoansRead: {
+            category: components["schemas"]["BookCategory"];
+            /** Loans */
+            loans: number;
+        };
         /** ChallengeCreate */
         ChallengeCreate: {
             /** Name En */
@@ -3327,6 +3511,43 @@ export interface components {
             saved: components["schemas"]["WantedTitleRead"][];
             /** Tags */
             tags: components["schemas"]["TagLoansRead"][];
+        };
+        /** DeskCopyRead */
+        DeskCopyRead: {
+            book: components["schemas"]["BookRead"];
+            /** @description The active order with this copy, if any */
+            order: components["schemas"]["DeskOrderRead"] | null;
+            /**
+             * Held For
+             * @description The reader it is held for, if any
+             */
+            held_for: string | null;
+            /** Held Until */
+            held_until: string | null;
+        };
+        /** DeskOrderRead */
+        DeskOrderRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Number */
+            number: number;
+            status: components["schemas"]["OrderStatus"];
+            /** Reader Name */
+            reader_name: string;
+            /** Child Name */
+            child_name: string | null;
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+            /** Pickup At */
+            pickup_at: string | null;
+            /** Book Count */
+            book_count: number;
         };
         /** ErrorBody */
         ErrorBody: {
@@ -3707,6 +3928,34 @@ export interface components {
             /** Reader Email */
             reader_email: string;
         };
+        /** MonthStatsRead */
+        MonthStatsRead: {
+            /**
+             * Month
+             * @description YYYY-MM, in the library's time zone
+             */
+            month: string;
+            /**
+             * Loans
+             * @description Books handed over
+             */
+            loans: number;
+            /**
+             * Returns
+             * @description Books brought back
+             */
+            returns: number;
+            /**
+             * Active Readers
+             * @description Readers with a loan handed over that month
+             */
+            active_readers: number;
+            /**
+             * New Readers
+             * @description Reader accounts created that month
+             */
+            new_readers: number;
+        };
         /** MyReviewRead */
         MyReviewRead: {
             /**
@@ -3891,6 +4140,69 @@ export interface components {
         /** OrderStatusUpdate */
         OrderStatusUpdate: {
             status: components["schemas"]["OrderStatus"];
+        };
+        /** PasskeyOptions */
+        PasskeyOptions: {
+            /**
+             * Options
+             * @description PublicKeyCredentialCreationOptions / RequestOptions as JSON for the browser
+             */
+            options: {
+                [key: string]: unknown;
+            };
+            /**
+             * State
+             * @description Send it back with the browser's answer (5 minutes)
+             */
+            state: string;
+        };
+        /** PasskeyOptionsRequest */
+        PasskeyOptionsRequest: {
+            /** Password */
+            password: string;
+        };
+        /** PasskeyRead */
+        PasskeyRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Last Used At */
+            last_used_at: string | null;
+        };
+        /** PasskeyRegister */
+        PasskeyRegister: {
+            /** State */
+            state: string;
+            /**
+             * Credential
+             * @description navigator.credentials.create() as JSON
+             */
+            credential: {
+                [key: string]: unknown;
+            };
+            /** Name */
+            name: string;
+        };
+        /** PasskeySignIn */
+        PasskeySignIn: {
+            /** State */
+            state: string;
+            /**
+             * Credential
+             * @description navigator.credentials.get() as JSON
+             */
+            credential: {
+                [key: string]: unknown;
+            };
         };
         /**
          * PickupChoice
@@ -5035,6 +5347,104 @@ export interface operations {
             };
         };
     };
+    passkey_options_api_v1_auth_passkey_options_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasskeyOptions"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    passkey_sign_in_api_v1_auth_passkey_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasskeySignIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     refresh_api_v1_auth_refresh_post: {
         parameters: {
             query?: never;
@@ -6036,6 +6446,193 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    passkey_registration_options_api_v1_users_me_passkeys_options_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasskeyOptionsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasskeyOptions"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_passkeys_api_v1_users_me_passkeys_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasskeyRead"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    add_passkey_api_v1_users_me_passkeys_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasskeyRegister"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasskeyRead"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    remove_passkey_api_v1_users_me_passkeys__passkey_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                passkey_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -9376,6 +9973,64 @@ export interface operations {
             };
         };
     };
+    admin_copy_at_desk_api_v1_admin_copies__book_id__desk_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeskCopyRead"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     admin_get_order_api_v1_admin_orders__order_id__get: {
         parameters: {
             query?: never;
@@ -10322,6 +10977,165 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DemandRead"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_report_monthly_api_v1_admin_reports_monthly_get: {
+        parameters: {
+            query?: {
+                /** @description How many months, up to this one */
+                months?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonthStatsRead"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_report_monthly_csv_api_v1_admin_reports_monthly_csv_get: {
+        parameters: {
+            query?: {
+                /** @description How many months, up to this one */
+                months?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_report_categories_api_v1_admin_reports_categories_get: {
+        parameters: {
+            query?: {
+                date_from?: string | null;
+                date_to?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryLoansRead"][];
                 };
             };
             /** @description Bad Request */

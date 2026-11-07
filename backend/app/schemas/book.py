@@ -8,7 +8,7 @@ from typing import Annotated, Any, ClassVar
 from pydantic import Field, field_validator, model_validator
 
 from app.models.book import Book
-from app.models.enums import BookCategory, BookStatus, CopyCondition
+from app.models.enums import BookCategory, BookStatus, CopyCondition, OrderStatus
 from app.schemas.catalog import SeriesBrief, SeriesName, SeriesPosition, TagBrief, TagSlug
 from app.schemas.common import ApiModel, Page, PatchModel, RequestModel
 from app.schemas.translation import BookTranslationRead, Translations
@@ -269,3 +269,21 @@ class BulkBookUpdate(RequestModel):
 class BulkResult(ApiModel):
     titles: int
     copies: int
+
+
+class DeskOrderRead(ApiModel):
+    id: uuid.UUID
+    number: int
+    status: OrderStatus
+    reader_name: str
+    child_name: str | None
+    due_date: date
+    pickup_at: datetime | None
+    book_count: int
+
+
+class DeskCopyRead(ApiModel):
+    book: BookRead
+    order: DeskOrderRead | None = Field(description="The active order with this copy, if any")
+    held_for: str | None = Field(description="The reader it is held for, if any")
+    held_until: datetime | None

@@ -55,6 +55,7 @@
     "@radix-ui/react-toggle": "1.1.2",
     "@radix-ui/react-toggle-group": "1.1.2",
     "@radix-ui/react-tooltip": "1.1.8",
+    "@simplewebauthn/browser": "14.0.0",
     "@zxing/browser": "0.2.1",
     "@zxing/library": "0.23.0",
     "canvas-confetti": "1.9.4",

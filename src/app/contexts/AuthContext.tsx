@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useState, ReactNode 
 import { useTranslation } from 'react-i18next';
 import { UiLanguage, User, UserContacts } from '../types';
 import { refreshSession, setAccessToken, setAuthListeners } from '../../api/client';
+import { getPasskey } from '../utils/passkeys';
 import { adminApi, authApi, fetchAllPages, usersApi } from '../../api/endpoints';
 import { ActionResult, runAction } from '../../api/errors';
 import { contactsToDto, userFromDto } from '../../api/mappers';
@@ -16,6 +17,8 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<ActionResult>;
   /** Second step when two-step sign-in is on (after login answered MFA_REQUIRED). */
   loginWithCode: (mfaToken: string, code: string) => Promise<ActionResult>;
+  /** Sign in with a passkey of this device (no email or password). */
+  loginWithPasskey: () => Promise<ActionResult>;
   /** Reload the signed-in user (e.g. after turning two-step sign-in on). */
   reloadUser: () => Promise<void>;
   register: (name: string, email: string, password: string, contacts: UserContacts) => Promise<ActionResult>;
@@ -101,6 +104,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       applyTokens(await authApi.loginMfa({ mfa_token: mfaToken, code }));
     });
 
+  const loginWithPasskey = () =>
+    runAction(async () => {
+      const { options, state } = await authApi.passkeyOptions();
+      const credential = await getPasskey(options);
+      applyTokens(await authApi.passkeySignIn({ state, credential }));
+    });
+
   const register = (name: string, email: string, password: string, contacts: UserContacts) =>
     runAction(async () => {
       applyTokens(
@@ -176,6 +186,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading,
       login,
       loginWithCode,
+      loginWithPasskey,
       reloadUser,
       register,
       updateUser,

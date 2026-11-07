@@ -462,6 +462,32 @@ docker image prune -f
 The `migrate` service applies new Alembic migrations before the backend restarts. Expect a few
 seconds of downtime while the single backend container is replaced.
 
+## Checking a server (staging first)
+
+After filling in `.env` and starting the stack, let the server check every service it is
+configured for. It contacts each one for real but changes nothing visible: email is connected to
+and signed in to without sending, Telegram's bot and webhook are read, Google's and Apple's keys
+are fetched (and the Apple key signs), a small file is written to the S3 bucket, read back
+(through `MEDIA_PUBLIC_URL` too) and deleted, the Web Push key pair is compared, and the public
+addresses are fetched from the server itself. Anything not configured is skipped; the command
+fails if something configured does not work.
+
+```bash
+docker compose -f docker-compose.prod.yml exec backend python -m app.cli check-integrations
+```
+
+Then try what only a person can check, on staging, with a test account:
+
+1. Register, confirm the welcome email arrives (and is not in spam), sign out and in again.
+2. Borrow a batch; hand it over and take it back in the admin portal (or at the *Scan desk*);
+   check the emails, the bell and, if set up, Telegram and a push notification on a phone.
+3. Sign in with Google and with Apple (the callback addresses are printed by the check above).
+4. Add a passkey on a phone and on a computer, and sign in with each.
+5. Upload a cover and open it on the catalogue (it comes from the bucket when S3 is set up).
+6. Subscribe to the calendar link in Google Calendar or Apple Calendar.
+7. Push a small change to `main` and approve the production deploy in GitHub when the staging
+   smoke test has passed.
+
 ## Automatic deployment (staging, then production)
 
 `.github/workflows/deploy.yml` deploys every commit on `main` that passed CI: first to a staging

@@ -7,9 +7,11 @@ import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '../components/ui/card';
 import dragonLogo from '../../imports/dragon.webp';
 import { useTranslation } from 'react-i18next';
+import { KeyRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { errorMessage } from '../utils/apiErrors';
 import { SocialSignIn } from '../components/SocialSignIn';
+import { passkeysSupported } from '../utils/passkeys';
 
 export default function Login() {
   const { t } = useTranslation();
@@ -20,7 +22,7 @@ export default function Login() {
   // Two-step sign-in: the password was right; now a code from the app.
   const [mfaToken, setMfaToken] = useState<string | null>(null);
   const [code, setCode] = useState('');
-  const { login, loginWithCode, isAuthenticated, isLoading } = useAuth();
+  const { login, loginWithCode, loginWithPasskey, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   // Only paths on this site: never an absolute or protocol-relative address.
@@ -39,6 +41,19 @@ export default function Login() {
       window.history.replaceState(null, '', location.pathname + location.search);
     }
   }, [location.search, location.hash, location.pathname, t]);
+
+  const signInWithPasskey = async () => {
+    setError('');
+    setSubmitting(true);
+    const result = await loginWithPasskey();
+    setSubmitting(false);
+    if (result.ok) {
+      toast.success(t('auth.loginSuccess'));
+      navigate(returnTo, { replace: true });
+    } else if (result.error.code !== 'PASSKEY_CANCELLED') {
+      setError(errorMessage(t, result.error));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -139,6 +154,12 @@ export default function Login() {
               </Button>
             )}
           </form>
+          {!mfaToken && passkeysSupported() && (
+            <Button type="button" variant="outline" className="w-full mt-4" disabled={submitting} onClick={signInWithPasskey}>
+              <KeyRound className="w-4 h-4 mr-2" aria-hidden="true" />
+              {t('passkeys.signIn')}
+            </Button>
+          )}
           {!mfaToken && (
             <div className="mt-4">
               <SocialSignIn returnTo={returnTo} />

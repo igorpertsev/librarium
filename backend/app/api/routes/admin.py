@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, date, datetime, timedelta
 from typing import Annotated
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, Query, Response, UploadFile, status
 
@@ -43,6 +44,7 @@ from app.schemas.book import (
     BookUpdate,
     BulkBookUpdate,
     BulkResult,
+    DeskCopyRead,
     QualityIssue,
     QualitySummary,
 )
@@ -84,7 +86,7 @@ from app.schemas.order import (
 )
 from app.schemas.pickup import PickupPointCreate, PickupPointRead, PickupPointUpdate
 from app.schemas.purchase import PurchaseRequestRead, PurchaseRequestUpdate
-from app.schemas.report import DemandRead, ReportSummaryRead
+from app.schemas.report import CategoryLoansRead, DemandRead, MonthStatsRead, ReportSummaryRead
 from app.schemas.reservation import UpcomingReservationRead
 from app.schemas.review import (
     ModerateReview,
@@ -112,6 +114,7 @@ from app.services import (
     challenges,
     collections,
     covers,
+    desk,
     duplicates,
     pickup,
     purchases,
@@ -417,6 +420,19 @@ async def admin_list_orders(
     )
 
 
+@router.get(
+    "/copies/{book_id}/desk",
+    response_model=DeskCopyRead,
+    responses=error_responses(404, 422),
+    description="For the scan desk: a copy and where it stands - the active order it is in "
+    "(waiting to be handed over, or out on loan) and whom it is held for.",
+)
+async def admin_copy_at_desk(book_id: uuid.UUID, session: SessionDep) -> DeskCopyRead:
+    return DeskCopyRead.model_validate(
+        await desk.copy_at_desk(session, book_id), from_attributes=True
+    )
+
+
 @router.get("/orders/{order_id}", response_model=OrderRead, responses=error_responses(404, 422))
 async def admin_get_order(order_id: uuid.UUID, session: SessionDep) -> OrderRead:
     return OrderRead.model_validate(await orders_service.get_order(session, order_id))
@@ -606,6 +622,55 @@ async def admin_report_demand(
     return DemandRead.model_validate(
         await reports.demand(session, start, end), from_attributes=True
     )
+
+
+MonthsQuery = Annotated[int, Query(ge=1, le=36, description="How many months, up to this one")]
+
+
+async def _monthly(session: SessionDep, months: int) -> list[reports.MonthStats]:
+    zone = ZoneInfo((await settings_service.get_library_settings(session)).timezone)
+    today = datetime.now(UTC).astimezone(zone).date()
+    return await reports.monthly(session, until=today, months=months, zone=zone)
+
+
+@router.get("/reports/monthly", response_model=list[MonthStatsRead], responses=error_responses(422))
+async def admin_report_monthly(
+    session: SessionDep, months: MonthsQuery = 12
+) -> list[MonthStatsRead]:
+    """Loans, returns, active and new readers per calendar month, oldest first."""
+    return [
+        MonthStatsRead.model_validate(m, from_attributes=True)
+        for m in await _monthly(session, months)
+    ]
+
+
+@router.get(
+    "/reports/monthly.csv",
+    response_class=Response,
+    responses={200: {"content": {"text/csv": {}}}, **error_responses(422)},
+)
+async def admin_report_monthly_csv(session: SessionDep, months: MonthsQuery = 12) -> Response:
+    """The monthly figures as CSV (UTF-8 with BOM for spreadsheet apps)."""
+    content = "\ufeff" + reports.monthly_csv(await _monthly(session, months))
+    return Response(
+        content=content,
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="library-by-month-{months}.csv"'},
+    )
+
+
+@router.get(
+    "/reports/categories",
+    response_model=list[CategoryLoansRead],
+    responses=error_responses(400, 422),
+)
+async def admin_report_categories(
+    session: SessionDep, date_from: date | None = None, date_to: date | None = None
+) -> list[CategoryLoansRead]:
+    """Books handed over in the period by category, most first (default: the last 30 days)."""
+    start, end = _period(date_from, date_to)
+    found = await reports.categories(session, start, end)
+    return [CategoryLoansRead.model_validate(c, from_attributes=True) for c in found]
 
 
 @router.get(

@@ -644,6 +644,27 @@ two copies of the same title are two records (ISBN is not unique).
   `GET /collections/{slug}`; removed books are left out). The book of the month (`PUT/DELETE /admin/pick`, shown by
   `GET /library/pick`) is one title with a short note, at the top of the catalogue; `GET /library/rules` says whether
   there is one (`has_pick`), so its place is kept while it loads and the catalogue does not jump.
+- **Statistics**: the *Reports* tab charts books lent and returned and active and new readers per month (6, 12 or
+  24 months, in the library's time zone, with the figures as a table and a CSV) and lists the books lent in the
+  chosen period by category. The charts library loads only when the reports are opened.
+- **Labels and scan desk**: select books in the admin list and *Print labels*: a printable sheet
+  (`/admin/labels?ids=`) with one label per copy — a QR code of its book page (a phone camera opens the page), the
+  title, the author and the start of the copy id. The *Scan desk* tab reads a label (the camera, a USB barcode
+  scanner typing into its field, or a pasted link) and shows where the copy stands (`GET
+  /admin/copies/{id}/desk`): in an order waiting to be handed over (*Hand over order*), on loan (*Take back order*,
+  with the usual condition notes), held for a reader, or on the shelf.
+- **Passkeys**: *Add a passkey* on the profile (password needed; `POST /users/me/passkeys/options`, then
+  `POST /users/me/passkeys` with the browser's answer) stores a WebAuthn credential for this site (the host of
+  `APP_BASE_URL`; the frontend origins may use it), with user verification required (face, fingerprint or device
+  PIN). *Sign in with a passkey* on the sign-in page (`POST /auth/passkey/options`, then `POST /auth/passkey`) needs
+  no email, password or two-step code: the passkey is already two factors, and it also satisfies *require two-step
+  sign-in for staff*. The challenge travels in a signed state token valid for 5 minutes; the signature counter is
+  kept; up to 10 passkeys per user (`GET`/`DELETE /users/me/passkeys`). Checked by `py_webauthn`; the tests sign
+  with a software authenticator and the browser test with Chromium's virtual one.
+- **Integration check**: `python -m app.cli check-integrations` contacts every configured service (database and
+  migrations, the public addresses, SMTP without sending, the Telegram bot and webhook, Google's and Apple's keys and
+  the Apple key, an S3 write–read–delete, the Web Push key pair, Sentry's DSN) and prints OK, FAIL or a skip for
+  each; it exits non-zero when something configured fails. The deploy guide has a checklist for a staging server.
 - **Notification bell**: the header shows the reader's news — the same events as the emails (`notifications`), even
   when an email could not be sent, except news that went stale before delivery. Opening the list marks it read
   (`read_at`); it refreshes every minute while the tab is visible. Notifications from before the bell existed
@@ -742,7 +763,7 @@ Differences (adapters in `src/api/mappers.ts`):
 | POST | `/admin/books/import` (CSV, all or nothing, `dry_run`; `warnings` for rows that look like books already there), GET `/admin/isbn/{isbn}` (details from Open Library) | admin |
 | GET | `/admin/books/duplicates?isbn&title&author` (titles with the same ISBN, or the same title and author) | admin |
 | GET | `/admin/books/quality` (titles without cover, description, tags, ISBN or translation; unchecked machine translations) · `/admin/books?quality=<issue>` lists them | admin |
-| GET | `/admin/reports/summary`, `/admin/reports/demand` (longest waiting lists, most saved titles, most borrowed tags), `/admin/reports/orders.csv` (`date_from`, `date_to`; default last 30 days) | admin |
+| GET | `/admin/reports/summary`, `/admin/reports/demand` (longest waiting lists, most saved titles, most borrowed tags), `/admin/reports/orders.csv`, `/admin/reports/categories` (`date_from`, `date_to`; default last 30 days); `/admin/reports/monthly`, `/admin/reports/monthly.csv` (`months` 1–36, default 12: books lent and returned, active and new readers per month in the library's time zone) | admin |
 | POST | `/admin/books/{id}/copies` (`{count}`: more copies of a title) | admin |
 | POST | `/admin/books/bulk` (`book_ids` ≤ 200 and one or more of `status`, `category`, `condition`, `add_tags`, `remove_tags`, `deactivate`: every copy of each title, all or nothing) | staff |
 | POST/PATCH/DELETE | `/admin/tags`, `/admin/tags/{id}` · POST `/admin/tags/{id}/merge`; the same for `/admin/series` | admin |

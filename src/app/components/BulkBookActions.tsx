@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router';
+import { QrCode } from 'lucide-react';
 import { toast } from 'sonner';
 import { adminApi } from '../../api/endpoints';
 import { runAction } from '../../api/errors';
@@ -119,6 +121,12 @@ export function BulkBookActions({
         disabled={busy || (action !== 'deactivate' && !value)}
       >
         {t('bulk.apply')}
+      </Button>
+      <Button asChild size="sm" variant="outline">
+        <Link to={`/admin/labels?ids=${selected.join(',')}`}>
+          <QrCode className="w-4 h-4 mr-1" aria-hidden="true" />
+          {t('labels.printSelected')}
+        </Link>
       </Button>
       <Button size="sm" variant="ghost" onClick={onClear}>
         {t('bulk.clear')}

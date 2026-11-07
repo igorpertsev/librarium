@@ -54,7 +54,7 @@ export function Header() {
   ];
 
   return (
-    <header className="bg-card border-b border-border sticky top-0 z-50 shadow-sm">
+    <header className="bg-card border-b border-border sticky top-0 z-50 shadow-sm print:hidden">
       <div className="container mx-auto px-4 py-2 md:py-4">
         <div className="flex items-center justify-between gap-2">
           <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">

@@ -267,6 +267,120 @@
         }
       }
     },
+    "/api/v1/auth/passkey/options": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Passkey Options",
+        "description": "Start signing in with a passkey: options for navigator.credentials.get() (any passkey of this site) and a state to send back.",
+        "operationId": "passkey_options_api_v1_auth_passkey_options_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasskeyOptions"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/passkey": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Passkey Sign In",
+        "description": "Finish signing in with a passkey (no two-step code needed: the passkey is already two factors).",
+        "operationId": "passkey_sign_in_api_v1_auth_passkey_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasskeySignIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/auth/refresh": {
       "post": {
         "tags": [
@@ -1503,6 +1617,249 @@
             "HTTPBearer": []
           }
         ]
+      }
+    },
+    "/api/v1/users/me/passkeys/options": {
+      "post": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Passkey Registration Options",
+        "description": "Start adding a passkey (password needed): options for navigator.credentials.create() and a state to send back.",
+        "operationId": "passkey_registration_options_api_v1_users_me_passkeys_options_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasskeyOptionsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasskeyOptions"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/me/passkeys": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "List Passkeys",
+        "operationId": "list_passkeys_api_v1_users_me_passkeys_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PasskeyRead"
+                  },
+                  "type": "array",
+                  "title": "Response List Passkeys Api V1 Users Me Passkeys Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Add Passkey",
+        "description": "Finish adding a passkey with the browser's answer.",
+        "operationId": "add_passkey_api_v1_users_me_passkeys_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasskeyRegister"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasskeyRead"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/me/passkeys/{passkey_id}": {
+      "delete": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Remove Passkey",
+        "operationId": "remove_passkey_api_v1_users_me_passkeys__passkey_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "passkey_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Passkey Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/users/me/children": {
@@ -6560,6 +6917,85 @@
         }
       }
     },
+    "/api/v1/admin/copies/{book_id}/desk": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Copy At Desk",
+        "description": "For the scan desk: a copy and where it stands - the active order it is in (waiting to be handed over, or out on loan) and whom it is held for.",
+        "operationId": "admin_copy_at_desk_api_v1_admin_copies__book_id__desk_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeskCopyRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
     "/api/v1/admin/orders/{order_id}": {
       "get": {
         "tags": [
@@ -7874,6 +8310,259 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DemandRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/reports/monthly": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Report Monthly",
+        "description": "Loans, returns, active and new readers per calendar month, oldest first.",
+        "operationId": "admin_report_monthly_api_v1_admin_reports_monthly_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "months",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 36,
+              "minimum": 1,
+              "description": "How many months, up to this one",
+              "default": 12,
+              "title": "Months"
+            },
+            "description": "How many months, up to this one"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MonthStatsRead"
+                  },
+                  "title": "Response Admin Report Monthly Api V1 Admin Reports Monthly Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/reports/monthly.csv": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Report Monthly Csv",
+        "description": "The monthly figures as CSV (UTF-8 with BOM for spreadsheet apps).",
+        "operationId": "admin_report_monthly_csv_api_v1_admin_reports_monthly_csv_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "months",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 36,
+              "minimum": 1,
+              "description": "How many months, up to this one",
+              "default": 12,
+              "title": "Months"
+            },
+            "description": "How many months, up to this one"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/csv": {}
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/reports/categories": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Report Categories",
+        "description": "Books handed over in the period by category, most first (default: the last 30 days).",
+        "operationId": "admin_report_categories_api_v1_admin_reports_categories_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CategoryLoansRead"
+                  },
+                  "title": "Response Admin Report Categories Api V1 Admin Reports Categories Get"
                 }
               }
             }
@@ -12265,6 +12954,23 @@
         "title": "CartRead",
         "description": "The cart grouped into batches (in the order books were added).\n\n``total_amount`` is informational; the authoritative total is recomputed when the\norder is placed."
       },
+      "CategoryLoansRead": {
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/BookCategory"
+          },
+          "loans": {
+            "type": "integer",
+            "title": "Loans"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category",
+          "loans"
+        ],
+        "title": "CategoryLoansRead"
+      },
       "ChallengeCreate": {
         "properties": {
           "name_en": {
@@ -13191,6 +13897,120 @@
         ],
         "title": "DemandRead"
       },
+      "DeskCopyRead": {
+        "properties": {
+          "book": {
+            "$ref": "#/components/schemas/BookRead"
+          },
+          "order": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DeskOrderRead"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The active order with this copy, if any"
+          },
+          "held_for": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Held For",
+            "description": "The reader it is held for, if any"
+          },
+          "held_until": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Held Until"
+          }
+        },
+        "type": "object",
+        "required": [
+          "book",
+          "order",
+          "held_for",
+          "held_until"
+        ],
+        "title": "DeskCopyRead"
+      },
+      "DeskOrderRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "number": {
+            "type": "integer",
+            "title": "Number"
+          },
+          "status": {
+            "$ref": "#/components/schemas/OrderStatus"
+          },
+          "reader_name": {
+            "type": "string",
+            "title": "Reader Name"
+          },
+          "child_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Child Name"
+          },
+          "due_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Due Date"
+          },
+          "pickup_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pickup At"
+          },
+          "book_count": {
+            "type": "integer",
+            "title": "Book Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "number",
+          "status",
+          "reader_name",
+          "child_name",
+          "due_date",
+          "pickup_at",
+          "book_count"
+        ],
+        "title": "DeskOrderRead"
+      },
       "ErrorBody": {
         "properties": {
           "code": {
@@ -14114,6 +14934,44 @@
         ],
         "title": "ModerationReviewRead"
       },
+      "MonthStatsRead": {
+        "properties": {
+          "month": {
+            "type": "string",
+            "title": "Month",
+            "description": "YYYY-MM, in the library's time zone"
+          },
+          "loans": {
+            "type": "integer",
+            "title": "Loans",
+            "description": "Books handed over"
+          },
+          "returns": {
+            "type": "integer",
+            "title": "Returns",
+            "description": "Books brought back"
+          },
+          "active_readers": {
+            "type": "integer",
+            "title": "Active Readers",
+            "description": "Readers with a loan handed over that month"
+          },
+          "new_readers": {
+            "type": "integer",
+            "title": "New Readers",
+            "description": "Reader accounts created that month"
+          }
+        },
+        "type": "object",
+        "required": [
+          "month",
+          "loans",
+          "returns",
+          "active_readers",
+          "new_readers"
+        ],
+        "title": "MonthStatsRead"
+      },
       "MyReviewRead": {
         "properties": {
           "can_review": {
@@ -14619,6 +15477,134 @@
           "status"
         ],
         "title": "OrderStatusUpdate"
+      },
+      "PasskeyOptions": {
+        "properties": {
+          "options": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Options",
+            "description": "PublicKeyCredentialCreationOptions / RequestOptions as JSON for the browser"
+          },
+          "state": {
+            "type": "string",
+            "title": "State",
+            "description": "Send it back with the browser's answer (5 minutes)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "options",
+          "state"
+        ],
+        "title": "PasskeyOptions"
+      },
+      "PasskeyOptionsRequest": {
+        "properties": {
+          "password": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Password"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "password"
+        ],
+        "title": "PasskeyOptionsRequest"
+      },
+      "PasskeyRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "last_used_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Used At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "created_at",
+          "last_used_at"
+        ],
+        "title": "PasskeyRead"
+      },
+      "PasskeyRegister": {
+        "properties": {
+          "state": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "State"
+          },
+          "credential": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Credential",
+            "description": "navigator.credentials.create() as JSON"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "state",
+          "credential",
+          "name"
+        ],
+        "title": "PasskeyRegister"
+      },
+      "PasskeySignIn": {
+        "properties": {
+          "state": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "State"
+          },
+          "credential": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Credential",
+            "description": "navigator.credentials.get() as JSON"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "state",
+          "credential"
+        ],
+        "title": "PasskeySignIn"
       },
       "PickupChoice": {
         "properties": {

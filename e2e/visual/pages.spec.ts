@@ -86,6 +86,7 @@ test('reader profile and cart', async ({ page, request }) => {
   await expect(page.getByTestId('reading-log')).toContainText('0 badges');
   await expect(page.getByTestId('family')).toBeVisible();
   await expect(page.getByTestId('calendar')).toBeVisible();
+  await expect(page.getByTestId('passkeys')).toBeVisible();
   await expect(page.getByText(/haven't borrowed any books yet/)).toBeVisible();
   await settle(page);
   await expect(page).toHaveScreenshot('profile.png', { fullPage: true });

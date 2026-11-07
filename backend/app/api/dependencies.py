@@ -18,7 +18,7 @@ from app.core.text import MESSAGE as UNSTORABLE_TEXT
 from app.core.text import unstorable
 from app.models import User
 from app.models.enums import STAFF_ROLES, UserRole
-from app.services import audit
+from app.services import audit, passkeys
 from app.services.auth import ClientMeta
 from app.services.library_settings import get_library_settings
 from app.services.media_storage import MediaStorage
@@ -118,7 +118,12 @@ async def require_staff(user: CurrentUser, session: SessionDep) -> User:
     library requires it for staff."""
     if user.role not in STAFF_ROLES:
         raise PermissionDeniedError("Library staff privileges are required")
-    if not user.mfa_enabled and (await get_library_settings(session)).require_staff_mfa:
+    # A passkey counts: it is already two factors (the device and its unlock).
+    if (
+        not user.mfa_enabled
+        and (await get_library_settings(session)).require_staff_mfa
+        and not await passkeys.has_passkey(session, user.id)
+    ):
         raise PermissionDeniedError(
             "Turn on two-step sign-in on your profile to use the admin portal",
             code="MFA_SETUP_REQUIRED",
