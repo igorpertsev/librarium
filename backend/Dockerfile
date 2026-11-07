@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 # Base images are written out (not build args) so Dependabot can propose updates.
-FROM ghcr.io/astral-sh/uv:0.9 AS uv
+FROM ghcr.io/astral-sh/uv:0.13 AS uv
 
 # ---- base: interpreter + uv -------------------------------------------------------------
 FROM python:3.12-slim AS base
