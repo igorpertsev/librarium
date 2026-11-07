@@ -41,8 +41,18 @@ jobs:
       # Throwaway CI database; the tests refuse to run unless its name ends with _test.
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/bookstore_test
       TEST_DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/bookstore_test
+      # S3-compatible test server (RustFS, started below) for the S3 storage tests.
+      TEST_S3_ENDPOINT: http://localhost:9000
+      TEST_S3_ACCESS_KEY: ci-s3-access-key
+      TEST_S3_SECRET_KEY: ci-s3-secret-key-not-a-secret
     steps:
       - uses: actions/checkout@v4
+      # Service containers cannot take arguments or wait for this one, so it is started here.
+      - name: Start an S3 test server
+        run: >-
+          docker run -d --name s3 -p 9000:9000
+          -e RUSTFS_ACCESS_KEY="$TEST_S3_ACCESS_KEY" -e RUSTFS_SECRET_KEY="$TEST_S3_SECRET_KEY"
+          rustfs/rustfs:1.0.1
       - uses: astral-sh/setup-uv@v6
         with:
           python-version: "3.12"

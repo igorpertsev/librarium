@@ -79,7 +79,7 @@ generated_in_sync() {
 }
 
 if ((backend)); then
-  docker compose up -d --wait db > /dev/null
+  docker compose --profile dev up -d --wait db s3 > /dev/null  # s3: the S3 storage tests
   step "Backend format" compose_dev ruff format --check .
   step "Backend lint" compose_dev ruff check .
   step "Backend types (mypy)" compose_dev mypy

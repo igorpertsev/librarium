@@ -2,9 +2,10 @@
 
 The image is decoded with Pillow (JPEG, PNG or WebP; at most ``max_cover_bytes`` and 40
 megapixels), re-encoded as WebP without its metadata in three sizes — L (up to 800 px high),
-M (400) and S (160) — and stored as ``<media_dir>/covers/<random>-<size>.webp``. The book (and
-every copy of its title) gets ``cover_url = /media/covers/<random>-L.webp``; the frontend asks
-for the other sizes by changing the suffix.
+M (400) and S (160) — and stored as ``covers/<random>-<size>.webp`` in the media storage (local
+disk or S3, see ``media_storage``). The book (and every copy of its title) gets
+``cover_url = /media/covers/<random>-L.webp``; the frontend asks for the other sizes by changing
+the suffix.
 """
 
 from __future__ import annotations
@@ -13,7 +14,6 @@ import io
 import re
 import secrets
 import uuid
-from pathlib import Path
 
 from PIL import Image, ImageOps, UnidentifiedImageError
 from sqlalchemy import select, update
@@ -24,6 +24,7 @@ from app.models import Book
 from app.repositories.books import copy_group_key
 from app.schemas.book import BookRead
 from app.services.books import book_not_found, get_book
+from app.services.media_storage import MediaStorage
 
 SIZES = {"L": 800, "M": 400, "S": 160}
 FORMATS = {"JPEG", "PNG", "WEBP"}
@@ -37,12 +38,6 @@ class CoverTooLargeError(AppError):
     status_code = 413
     code = "IMAGE_TOO_LARGE"
     message = "The image is too large"
-
-
-def covers_dir(media_dir: str) -> Path:
-    path = Path(media_dir) / "covers"
-    path.mkdir(parents=True, exist_ok=True)
-    return path
 
 
 def _renditions(data: bytes) -> dict[str, bytes]:
@@ -67,16 +62,16 @@ def _renditions(data: bytes) -> dict[str, bytes]:
         ) from exc
 
 
-def _remove(media_dir: str, cover_url: str | None) -> None:
+async def _remove(storage: MediaStorage, cover_url: str | None) -> None:
     match = MEDIA_COVER.match(cover_url or "")
     if not match:
         return
     for size in SIZES:
-        (covers_dir(media_dir) / f"{match.group(1)}-{size}.webp").unlink(missing_ok=True)
+        await storage.delete(f"covers/{match.group(1)}-{size}.webp")
 
 
 async def upload(
-    session: AsyncSession, book_id: uuid.UUID, data: bytes, *, media_dir: str, max_bytes: int
+    session: AsyncSession, book_id: uuid.UUID, data: bytes, *, storage: MediaStorage, max_bytes: int
 ) -> BookRead:
     if len(data) > max_bytes:
         raise CoverTooLargeError(f"The image must be at most {max_bytes // (1024 * 1024)} MB")
@@ -85,9 +80,8 @@ async def upload(
         raise book_not_found()
     renditions = _renditions(data)
     name = secrets.token_hex(16)
-    folder = covers_dir(media_dir)
     for size, content in renditions.items():
-        (folder / f"{name}-{size}.webp").write_bytes(content)
+        await storage.put(f"covers/{name}-{size}.webp", content, "image/webp")
     url = f"/media/covers/{name}-L.webp"
     old = book.cover_url
     copies = select(Book.id).where(copy_group_key() == book.group_id).scalar_subquery()
@@ -101,5 +95,5 @@ async def upload(
     )
     await session.commit()
     if old != url:
-        _remove(media_dir, old)
+        await _remove(storage, old)
     return await get_book(session, book_id, include_inactive=True)

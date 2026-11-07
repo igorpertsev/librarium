@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, Query, Response, UploadFile, status
 
 from app.api.dependencies import (
     AdminUser,
+    MediaStorageDep,
     OpenLibraryDep,
     PaginationDep,
     SessionDep,
@@ -304,14 +305,18 @@ async def admin_bulk_update_books(body: BulkBookUpdate, session: SessionDep) -> 
     "It is stored as WebP in three sizes; cover_url becomes /media/covers/<name>-L.webp.",
 )
 async def admin_upload_cover(
-    book_id: uuid.UUID, file: UploadFile, session: SessionDep, settings: SettingsDep
+    book_id: uuid.UUID,
+    file: UploadFile,
+    session: SessionDep,
+    settings: SettingsDep,
+    storage: MediaStorageDep,
 ) -> BookRead:
     data = await file.read(settings.max_cover_bytes + 1)
     return await covers.upload(
         session,
         book_id,
         data,
-        media_dir=settings.media_dir,
+        storage=storage,
         max_bytes=settings.max_cover_bytes,
     )
 

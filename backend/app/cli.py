@@ -32,7 +32,7 @@ from app.models.enums import UiLanguage, UserRole
 from app.repositories.books import copy_group_key
 from app.schemas.book import BookCreate
 from app.schemas.types import NormalizedEmail
-from app.services import catalog, holds, mfa, reservations, telegram
+from app.services import catalog, holds, media_storage, mfa, reservations, telegram
 from app.services.books import new_book, translation_rows
 from app.services.library_settings import ensure_library_settings
 from app.services.notifications import deliver_pending, make_smtp_sender, queue_reminders
@@ -173,6 +173,15 @@ async def _purge_tokens(settings: Settings, *, older_than_days: int) -> None:
         await db.dispose()
 
 
+async def _media_to_s3(settings: Settings) -> None:
+    if not settings.s3_bucket:
+        print("Set S3_BUCKET (and S3_ENDPOINT and the keys) first; nothing was copied.")
+        sys.exit(1)
+    storage = media_storage.S3Storage(settings)
+    copied, present = await media_storage.copy_local_to_s3(settings.media_dir, storage)
+    print(f"Copied {copied} cover file(s) to the bucket; {present} were already there.")
+
+
 async def _rotate_mfa_keys(settings: Settings) -> None:
     if not settings.mfa_keys:
         print("Set MFA_ENCRYPTION_KEYS first (the new key first); nothing was changed.")
@@ -303,6 +312,9 @@ def main(argv: list[str] | None = None) -> None:
     )
 
     commands.add_parser(
+        "media-to-s3", help="Copy the covers in MEDIA_DIR to the S3 bucket (when switching)"
+    )
+    commands.add_parser(
         "rotate-mfa-keys",
         help="Re-encrypt two-step sign-in secrets with the first MFA_ENCRYPTION_KEYS key",
     )
@@ -330,6 +342,8 @@ def main(argv: list[str] | None = None) -> None:
         asyncio.run(_purge_tokens(get_settings(), older_than_days=args.older_than_days))
     elif args.command == "notifications":
         asyncio.run(_notifications(get_settings(), loop_seconds=args.loop))
+    elif args.command == "media-to-s3":
+        asyncio.run(_media_to_s3(get_settings()))
     elif args.command == "rotate-mfa-keys":
         asyncio.run(_rotate_mfa_keys(get_settings()))
     elif args.command == "translate-books":

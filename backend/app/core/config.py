@@ -89,6 +89,16 @@ class Settings(BaseSettings):
     app_base_url: str = "http://localhost:5173"
     # Uploaded book covers (served at /media); a volume in Docker.
     media_dir: str = "media"
+    # Uploaded covers go to S3-compatible storage instead of MEDIA_DIR when S3_BUCKET is set.
+    s3_endpoint: str | None = None  # e.g. https://s3.eu-central-1.amazonaws.com
+    s3_region: str | None = None
+    s3_bucket: str | None = None
+    s3_access_key_id: str | None = None
+    s3_secret_access_key: SecretStr | None = None
+    s3_prefix: str = ""  # optional folder inside the bucket
+    # Public address of the bucket (or a CDN in front of it): /media redirects there. Unset, the
+    # backend streams covers from the (private) bucket.
+    media_public_url: str | None = None
     # Sign in with Google / Apple (optional, see app.services.oauth). The backend's public URL
     # (for the callback address the providers send people back to) defaults to
     # APP_BASE_URL + /api/v1, which fits a single domain behind Caddy.
@@ -154,6 +164,11 @@ class Settings(BaseSettings):
         "smtp_host",
         "smtp_username",
         "notifier_ping_url",
+        "s3_endpoint",
+        "s3_region",
+        "s3_bucket",
+        "s3_access_key_id",
+        "media_public_url",
         mode="before",
     )
     @classmethod
@@ -165,6 +180,7 @@ class Settings(BaseSettings):
     @field_validator(
         "jwt_secret_key",
         "mfa_encryption_keys",
+        "s3_secret_access_key",
         "seed_admin_password",
         "smtp_password",
         "sentry_dsn",
@@ -213,6 +229,22 @@ class Settings(BaseSettings):
 
         if self.log_format is None:
             self.log_format = "json" if self.environment is Environment.PRODUCTION else "text"
+        return self
+
+    @model_validator(mode="after")
+    def _validate_s3(self) -> Settings:
+        if self.s3_bucket and not (
+            self.s3_endpoint and self.s3_access_key_id and self.s3_secret_access_key
+        ):
+            raise ValueError(
+                "S3_BUCKET needs S3_ENDPOINT, S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY"
+            )
+        for name in ("s3_endpoint", "media_public_url"):
+            value = getattr(self, name)
+            if value is not None:
+                if not value.startswith(("http://", "https://")):
+                    raise ValueError(f"{name.upper()} must start with http:// or https://")
+                setattr(self, name, value.rstrip("/"))
         return self
 
     @model_validator(mode="after")

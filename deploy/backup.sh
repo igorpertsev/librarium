@@ -49,11 +49,17 @@ target="$BACKUP_DIR/librarium-$timestamp.dump"
 mv "$target.partial" "$target"
 chmod 600 "$target"
 
-# Uploaded book covers (the "media" volume), next to the database dump.
-media="$BACKUP_DIR/librarium-media-$timestamp.tar.gz"
-"${COMPOSE[@]}" exec -T backend tar -czf - -C /app media > "$media.partial"
-mv "$media.partial" "$media"
-chmod 600 "$media"
+# Uploaded book covers (the "media" volume), next to the database dump. With S3_BUCKET set they
+# live in the bucket instead: keep it safe with the provider's versioning or replication.
+media=""
+if [[ -z "$("${COMPOSE[@]}" exec -T backend printenv S3_BUCKET || true)" ]]; then
+  media="$BACKUP_DIR/librarium-media-$timestamp.tar.gz"
+  "${COMPOSE[@]}" exec -T backend tar -czf - -C /app media > "$media.partial"
+  mv "$media.partial" "$media"
+  chmod 600 "$media"
+else
+  echo "$(date -u +%FT%TZ) covers are in the S3 bucket; not archived here"
+fi
 
 find "$BACKUP_DIR" -name 'librarium-*.dump' -mtime +"$KEEP_DAYS" -delete
 find "$BACKUP_DIR" -name 'librarium-media-*.tar.gz' -mtime +"$KEEP_DAYS" -delete
@@ -66,7 +72,9 @@ if [[ -n "$RCLONE_REMOTE" ]]; then
       "$RCLONE_IMAGE" "$@"
   }
   rclone copy "/data/$(basename "$target")" "$RCLONE_REMOTE" --no-traverse
-  rclone copy "/data/$(basename "$media")" "$RCLONE_REMOTE" --no-traverse
+  if [[ -n "$media" ]]; then
+    rclone copy "/data/$(basename "$media")" "$RCLONE_REMOTE" --no-traverse
+  fi
   # Only old dumps written by this script are removed from the destination.
   rclone delete "$RCLONE_REMOTE" --include 'librarium-*.dump' --min-age "${REMOTE_KEEP_DAYS}d"
   echo "$(date -u +%FT%TZ) copied off-site to $RCLONE_REMOTE"

@@ -20,6 +20,7 @@ dependencies = [
     "pillow>=12",
     "python-multipart>=0.0.20",
     "cryptography>=46",
+    "minio==7.2.20",
 ]
 
 [dependency-groups]

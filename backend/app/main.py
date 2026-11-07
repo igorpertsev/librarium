@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 import mimetypes
+import re
 import time
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
@@ -15,6 +16,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.types import Scope
 
@@ -26,6 +28,7 @@ from app.core.exceptions import register_exception_handlers
 from app.core.http import make_http_client
 from app.core.logging import configure_logging, init_sentry, new_request_id, request_id_var
 from app.core.rate_limit import RateLimiter
+from app.services.media_storage import IMMUTABLE, MediaStorage, make_storage
 from app.services.notifications import make_smtp_sender
 from app.services.openlibrary import OpenLibraryClient
 from app.services.translation_lookup import (
@@ -39,6 +42,7 @@ access_logger = logging.getLogger("app.request")
 
 # Health checks run every few seconds; their access lines are only logged at DEBUG.
 _QUIET_PATHS = frozenset({"/health", "/api/v1/health"})
+COVER_FILE = re.compile(r"[0-9a-f]{32}-[SML]\.webp")  # an uploaded cover in /media/covers
 
 
 def _add_cors_and_caching(app: FastAPI, settings: Settings) -> None:
@@ -94,6 +98,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # Emails sent directly by the API (password reset); None when SMTP_HOST is not set.
     app.state.mail_sender = make_smtp_sender(settings)
     app.state.http = http  # shared outgoing HTTP client (sign-in providers use it too)
+    app.state.media = make_storage(settings)  # uploaded covers: local disk or S3
     app.state.openlibrary = OpenLibraryClient(http)
     app.state.translation_lookup = TranslationLookup(
         app.state.openlibrary, WikimediaClient(http), machine
@@ -182,10 +187,26 @@ def _configure_observability(settings: Settings) -> None:
 
 
 def _mount_media(app: FastAPI, settings: Settings) -> None:
+    """Uploaded covers under /media (names are random and never reused: cached for good)."""
     mimetypes.add_type("image/webp", ".webp")  # not known to every Python build
-    """Uploaded covers. Names are random and never reused, so browsers may keep them."""
-    Path(settings.media_dir, "covers").mkdir(parents=True, exist_ok=True)
-    app.mount("/media", MediaFiles(directory=settings.media_dir), name="media")
+    if not settings.s3_bucket:
+        Path(settings.media_dir, "covers").mkdir(parents=True, exist_ok=True)
+        app.mount("/media", MediaFiles(directory=settings.media_dir), name="media")
+        return
+
+    @app.get("/media/covers/{name}", include_in_schema=False)
+    async def media_cover(name: str, request: Request) -> Response:
+        if not COVER_FILE.fullmatch(name):
+            return Response(status_code=404)
+        storage: MediaStorage = request.app.state.media
+        key = f"covers/{name}"
+        public = storage.public_url(key)
+        if public:  # a public bucket or CDN serves it
+            return RedirectResponse(public, status_code=301, headers={"Cache-Control": IMMUTABLE})
+        data = await storage.get(key)
+        if data is None:
+            return Response(status_code=404)
+        return Response(data, media_type="image/webp", headers={"Cache-Control": IMMUTABLE})
 
 
 class MediaFiles(StaticFiles):
