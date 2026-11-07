@@ -644,6 +644,12 @@ two copies of the same title are two records (ISBN is not unique).
   `GET /collections/{slug}`; removed books are left out). The book of the month (`PUT/DELETE /admin/pick`, shown by
   `GET /library/pick`) is one title with a short note, at the top of the catalogue; `GET /library/rules` says whether
   there is one (`has_pick`), so its place is kept while it loads and the catalogue does not jump.
+- **Labels and scan desk**: select books in the admin list and *Print labels*: a printable sheet
+  (`/admin/labels?ids=`) with one label per copy — a QR code of its book page (a phone camera opens the page), the
+  title, the author and the start of the copy id. The *Scan desk* tab reads a label (the camera, a USB barcode
+  scanner typing into its field, or a pasted link) and shows where the copy stands (`GET
+  /admin/copies/{id}/desk`): in an order waiting to be handed over (*Hand over order*), on loan (*Take back order*,
+  with the usual condition notes), held for a reader, or on the shelf.
 - **Notification bell**: the header shows the reader's news — the same events as the emails (`notifications`), even
   when an email could not be sent, except news that went stale before delivery. Opening the list marks it read
   (`read_at`); it refreshes every minute while the tab is visible. Notifications from before the bell existed

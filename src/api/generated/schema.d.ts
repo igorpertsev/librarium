@@ -1631,6 +1631,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/copies/{book_id}/desk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin Copy At Desk
+         * @description For the scan desk: a copy and where it stands - the active order it is in (waiting to be handed over, or out on loan) and whom it is held for.
+         */
+        get: operations["admin_copy_at_desk_api_v1_admin_copies__book_id__desk_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/orders/{order_id}": {
         parameters: {
             query?: never;
@@ -3327,6 +3347,43 @@ export interface components {
             saved: components["schemas"]["WantedTitleRead"][];
             /** Tags */
             tags: components["schemas"]["TagLoansRead"][];
+        };
+        /** DeskCopyRead */
+        DeskCopyRead: {
+            book: components["schemas"]["BookRead"];
+            /** @description The active order with this copy, if any */
+            order: components["schemas"]["DeskOrderRead"] | null;
+            /**
+             * Held For
+             * @description The reader it is held for, if any
+             */
+            held_for: string | null;
+            /** Held Until */
+            held_until: string | null;
+        };
+        /** DeskOrderRead */
+        DeskOrderRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Number */
+            number: number;
+            status: components["schemas"]["OrderStatus"];
+            /** Reader Name */
+            reader_name: string;
+            /** Child Name */
+            child_name: string | null;
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+            /** Pickup At */
+            pickup_at: string | null;
+            /** Book Count */
+            book_count: number;
         };
         /** ErrorBody */
         ErrorBody: {
@@ -9358,6 +9415,64 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_copy_at_desk_api_v1_admin_copies__book_id__desk_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeskCopyRead"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

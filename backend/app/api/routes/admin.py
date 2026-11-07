@@ -43,6 +43,7 @@ from app.schemas.book import (
     BookUpdate,
     BulkBookUpdate,
     BulkResult,
+    DeskCopyRead,
     QualityIssue,
     QualitySummary,
 )
@@ -112,6 +113,7 @@ from app.services import (
     challenges,
     collections,
     covers,
+    desk,
     duplicates,
     pickup,
     purchases,
@@ -414,6 +416,19 @@ async def admin_list_orders(
         total=total,
         page=pagination.page,
         page_size=pagination.page_size,
+    )
+
+
+@router.get(
+    "/copies/{book_id}/desk",
+    response_model=DeskCopyRead,
+    responses=error_responses(404, 422),
+    description="For the scan desk: a copy and where it stands - the active order it is in "
+    "(waiting to be handed over, or out on loan) and whom it is held for.",
+)
+async def admin_copy_at_desk(book_id: uuid.UUID, session: SessionDep) -> DeskCopyRead:
+    return DeskCopyRead.model_validate(
+        await desk.copy_at_desk(session, book_id), from_attributes=True
     )
 
 

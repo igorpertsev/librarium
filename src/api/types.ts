@@ -37,6 +37,7 @@ export type LibrarySettingsDto = Schemas['LibrarySettingsRead'];
 export type LibraryRulesDto = Schemas['LibraryRules'];
 export type PickupPointDto = Schemas['PickupPointRead'];
 export type ChallengeDto = Schemas['ChallengeRead'];
+export type DeskCopyDto = Schemas['DeskCopyRead'];
 export type CollectionSummaryDto = Schemas['CollectionSummary'];
 export type CollectionDto = Schemas['CollectionRead'];
 export type CollectionCreateDto = Schemas['CollectionCreate'];
