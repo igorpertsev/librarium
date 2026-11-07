@@ -69,8 +69,12 @@ test('catalogue for a visitor', async ({ page }) => {
 
 test('book page', async ({ page, request }) => {
   await page.goto(`/books/${await firstBookId(request)}`);
+  // The book opens as a dialog over the catalogue; the catalogue behind it may still be loading,
+  // so only the dialog is compared.
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
   await settle(page);
-  await expect(page).toHaveScreenshot('book.png', { fullPage: true });
+  await expect(dialog).toHaveScreenshot('book.png');
 });
 
 test('reader profile and cart', async ({ page, request }) => {
