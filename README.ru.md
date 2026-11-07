@@ -182,6 +182,27 @@ docker compose --profile dev run --rm backend-dev alembic check
 
 ## Тесты, lint, typecheck
 
+**Всё, что проверяет CI, одной командой** (`scripts/check.sh`): формат, lint и типы backend, миграции (на временной
+БД), тесты, схема API и сгенерированные типы, затем lint, типы, unit-тесты и сборка frontend. В конце команда пишет,
+какие проверки не прошли, и завершается с ошибкой, если такие есть.
+
+```bash
+pnpm check
+```
+
+`pnpm check --fast` пропускает долгое (pytest, миграции, сборку); `--e2e` добавляет браузерные тесты; `--backend`
+или `--frontend` запускает только одну половину.
+
+**Git-хуки** (`.githooks/`, включаются вручную): перед коммитом — ruff для изменённых Python-файлов и ESLint для
+изменённых файлов frontend; перед пушем — `pnpm check`. `git commit --no-verify` / `git push --no-verify` один раз
+их пропускает.
+
+```bash
+pnpm hooks:install
+```
+
+Отдельные шаги:
+
 Backend (PostgreSQL из compose, отдельная БД `bookstore_test`, создаётся init-скриптом/фикстурой):
 
 ```bash

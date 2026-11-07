@@ -1,5 +1,5 @@
-# Runs on every pull request and on pushes to main. The same checks can be run locally,
-# see "Tests, lint, typecheck" in README.md.
+# Runs on every pull request and on pushes to main. The same checks run locally with `pnpm check`
+# (scripts/check.sh), see "Tests, lint, typecheck" in README.md.
 name: CI
 
 on:
