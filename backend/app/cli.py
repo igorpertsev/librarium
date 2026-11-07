@@ -35,6 +35,7 @@ from app.schemas.types import NormalizedEmail
 from app.services import (
     catalog,
     holds,
+    integration_check,
     media_storage,
     mfa,
     reservations,
@@ -220,6 +221,23 @@ async def _telegram_webhook(settings: Settings, action: str) -> None:
         await http.aclose()
 
 
+async def _check_integrations(settings: Settings) -> None:
+    http = make_http_client(settings)
+    try:
+        results = await integration_check.run_checks(settings, http)
+    finally:
+        await http.aclose()
+    marks = {"ok": "OK  ", "fail": "FAIL", "skip": "--  "}
+    width = max(len(r.name) for r in results)
+    for result in results:
+        print(f"{marks[result.status]}  {result.name.ljust(width)}  {result.detail}")
+    failed = [r for r in results if r.status == "fail"]
+    print()
+    print(f"{len(failed)} problem(s)." if failed else "Everything that is configured works.")
+    if failed:
+        sys.exit(1)
+
+
 async def _rotate_mfa_keys(settings: Settings) -> None:
     if not settings.mfa_keys:
         print("Set MFA_ENCRYPTION_KEYS first (the new key first); nothing was changed.")
@@ -361,6 +379,10 @@ def main(argv: list[str] | None = None) -> None:
         "generate-vapid-keys", help="Print a new key pair for Web Push (WEB_PUSH_*_KEY)"
     )
     commands.add_parser(
+        "check-integrations",
+        help="Contact every configured service (email, Telegram, sign-in, S3, push) and report",
+    )
+    commands.add_parser(
         "rotate-mfa-keys",
         help="Re-encrypt two-step sign-in secrets with the first MFA_ENCRYPTION_KEYS key",
     )
@@ -396,6 +418,8 @@ def main(argv: list[str] | None = None) -> None:
         public, private = web_push.generate_keys()
         print(f"WEB_PUSH_PUBLIC_KEY={public}")
         print(f"WEB_PUSH_PRIVATE_KEY={private}")
+    elif args.command == "check-integrations":
+        asyncio.run(_check_integrations(get_settings()))
     elif args.command == "rotate-mfa-keys":
         asyncio.run(_rotate_mfa_keys(get_settings()))
     elif args.command == "translate-books":
