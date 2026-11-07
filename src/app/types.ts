@@ -83,6 +83,8 @@ export interface User {
   role: 'customer' | 'librarian' | 'admin';
   /** Two-step sign-in is on. */
   mfaEnabled?: boolean;
+  /** Notifications also go to a Telegram chat. */
+  telegramConnected?: boolean;
   borrowedBooks: BorrowedBook[];
   contacts?: UserContacts;
   /** Interface language saved on the account (emails use it too). */

@@ -41,6 +41,12 @@ class User(TimestampMixin, Base):
         str_enum(UiLanguage, "ui_language")
     )
 
+    # Telegram chat that gets notifications (see app.services.telegram), and the one-time code
+    # of a link the reader has not opened yet.
+    telegram_chat_id: Mapped[int | None] = mapped_column(sa.BigInteger, unique=True)
+    telegram_link_code: Mapped[str | None] = mapped_column(sa.String(64), unique=True)
+    telegram_link_expires_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True))
+
     # Two-step sign-in (TOTP, see app.services.mfa). Secrets are encrypted; recovery codes are
     # stored as SHA-256 hashes and used once.
     mfa_secret: Mapped[str | None] = mapped_column(sa.String(255))
@@ -54,6 +60,10 @@ class User(TimestampMixin, Base):
     @property
     def mfa_enabled(self) -> bool:
         return self.mfa_enabled_at is not None
+
+    @property
+    def telegram_connected(self) -> bool:
+        return self.telegram_chat_id is not None
 
     def contact_value(self, method: ContactMethod | None) -> str | None:
         if method is None:

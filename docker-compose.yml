@@ -31,6 +31,8 @@ x-backend-env: &backend-env
   APP_BASE_URL: ${APP_BASE_URL:-http://localhost:5173}
   # Optional: machine translation of book descriptions (see .env.example).
   ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+  TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+  TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-}
   TRANSLATION_MODEL: ${TRANSLATION_MODEL:-claude-opus-5-5}
 
 services:

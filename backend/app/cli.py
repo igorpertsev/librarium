@@ -32,7 +32,7 @@ from app.models.enums import UiLanguage, UserRole
 from app.repositories.books import copy_group_key
 from app.schemas.book import BookCreate
 from app.schemas.types import NormalizedEmail
-from app.services import catalog, holds, reservations
+from app.services import catalog, holds, reservations, telegram
 from app.services.books import new_book, translation_rows
 from app.services.library_settings import ensure_library_settings
 from app.services.notifications import deliver_pending, make_smtp_sender, queue_reminders
@@ -178,6 +178,7 @@ async def _notifications(settings: Settings, *, loop_seconds: int | None) -> Non
     db = Database(settings)
     send = make_smtp_sender(settings)
     http = make_http_client(settings)
+    bot = telegram.make_bot(settings, http)
     warned = False
     try:
         while True:
@@ -198,13 +199,16 @@ async def _notifications(settings: Settings, *, loop_seconds: int | None) -> Non
                 await session.commit()
             if queued:
                 print(f"Queued {queued} reminder(s).")
-            if send is None:
-                if not warned:
-                    print("SMTP_HOST is not set: notifications stay queued and are not sent.")
-                    warned = True
-            else:
+            if bot is not None:
                 async with db.sessionmaker() as session:
-                    report = await deliver_pending(session, settings, send)
+                    # Readers linking (or unlinking) their Telegram chat.
+                    await telegram.process_updates(session, bot)
+            if send is None and not warned:
+                print("SMTP_HOST is not set: emails stay queued (Telegram still works if set up).")
+                warned = True
+            if send is not None or bot is not None:
+                async with db.sessionmaker() as session:
+                    report = await deliver_pending(session, settings, send, telegram=bot)
                 if report.total:
                     print(
                         f"Emails: {report.sent} sent, {report.retried} to retry, "

@@ -117,6 +117,7 @@ Docker Compose and Vite read the root `.env` (template: `.env.example`). Filled-
 | `VITE_API_URL` | `http://localhost:8000/api/v1` | API base URL for the frontend |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_STARTTLS`, `SMTP_SSL`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `MAIL_FROM` | empty / `587` / `true` / `false` | outgoing email; empty `SMTP_HOST` disables sending |
 | `APP_BASE_URL`, `DUE_SOON_DAYS` | `http://localhost:5173`, `3` | links in emails; reminder lead time in days |
+| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME` | empty | optional Telegram bot for notifications |
 | `MEDIA_DIR`, `MAX_COVER_BYTES` | `media`, `5242880` | where uploaded covers are kept (the `media` volume, `/app/media`, in Docker); upload limit |
 | `PASSWORD_RESET_EXPIRE_MINUTES` | `60` | lifetime of password reset links (5–1440) |
 | `ANTHROPIC_API_KEY`, `TRANSLATION_MODEL` | —, `claude-opus-5-5` | optional machine translation of book titles and descriptions when Wikidata and Wikipedia have none; without a key only those two are used |
@@ -484,6 +485,12 @@ two copies of the same title are two records (ISBN is not unique).
   form and when an order comes back (*Mark Returned* asks how each copy came back; only changed copies are saved).
   It is not shared between copies of a title. Worn and damaged copies are marked in the admin book list, and
   damaged ones are listed under *Data quality* (`quality=damaged`).
+- **Telegram** (optional, `TELEGRAM_BOT_TOKEN` and `TELEGRAM_BOT_USERNAME`): *Connect Telegram* on the profile
+  (`POST /users/me/telegram/link`) opens the bot with a one-time code valid for 15 minutes; pressing Start links the
+  chat (`/stop` or `DELETE /users/me/telegram` unlinks it; one chat per account). The notifier reads the bot's
+  messages each cycle (`getUpdates`, confirmed by offset) and sends every notification to linked chats as well as by
+  email — once (`telegram_sent_at`), even when the email is retried; without SMTP it still serves readers with
+  Telegram. `GET /library/rules` returns `telegram_bot` so the profile only offers it when it is set up.
 - **Notification bell**: the header shows the reader's news — the same events as the emails (`notifications`), even
   when an email could not be sent, except news that went stale before delivery. Opening the list marks it read
   (`read_at`); it refreshes every minute while the tab is visible. Notifications from before the bell existed

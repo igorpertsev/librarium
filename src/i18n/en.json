@@ -405,7 +405,8 @@
     "mfaSetupNotStarted": "Start setting up two-step sign-in again.",
     "mfaRequiredByLibrary": "The library requires two-step sign-in for staff.",
     "mfaSetupRequired": "Turn on two-step sign-in on your profile to use the admin portal.",
-    "mfaSetupRequiredFirst": "Turn on two-step sign-in for yourself first."
+    "mfaSetupRequiredFirst": "Turn on two-step sign-in for yourself first.",
+    "telegramNotConfigured": "Telegram is not set up for this library."
   },
   "checkout": {
     "title": "Confirm Order",
@@ -1065,5 +1066,14 @@
     "resetTitle": "Reset two-step sign-in?",
     "resetDesc": "{{name}} will sign in with the password only until they turn it on again. Do this only when you are sure who asked.",
     "resetDone": "Two-step sign-in was reset"
+  },
+  "telegram": {
+    "title": "Telegram",
+    "description": "Get the same news as the emails in Telegram: orders, due dates, books that are back.",
+    "connected": "Connected: news also comes from @{{bot}}.",
+    "connect": "Connect Telegram",
+    "waiting": "Press Start in the Telegram chat that opened. This page updates by itself.",
+    "disconnect": "Disconnect",
+    "disconnected": "Telegram disconnected"
   }
 }

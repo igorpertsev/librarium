@@ -83,6 +83,9 @@ class Settings(BaseSettings):
     app_base_url: str = "http://localhost:5173"
     # Uploaded book covers (served at /media); a volume in Docker.
     media_dir: str = "media"
+    # Optional Telegram bot for notifications (see app.services.telegram).
+    telegram_bot_token: SecretStr | None = None
+    telegram_bot_username: str | None = None
     max_cover_bytes: int = 5 * 1024 * 1024
     # Lifetime of the link in password reset emails.
     password_reset_expire_minutes: int = Field(default=60, ge=5, le=24 * 60)

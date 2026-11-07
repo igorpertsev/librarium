@@ -16,6 +16,8 @@ export interface LibraryRules {
   currency: string;
   /** IANA time zone of opening hours and pickup slots. */
   timezone: string;
+  /** Username of the library's Telegram bot, when notifications can go there. */
+  telegramBot: string | null;
 }
 
 let cached: Promise<LibraryRules> | null = null;
@@ -32,6 +34,7 @@ function loadRules(): Promise<LibraryRules> {
       lateFeePerDay: toMoney(dto.late_fee_per_day),
       currency: dto.currency,
       timezone: dto.timezone,
+      telegramBot: dto.telegram_bot ?? null,
     }))
     .catch((error: unknown) => {
       cached = null; // try again next time

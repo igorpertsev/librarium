@@ -28,6 +28,7 @@ import { HeldForYouCard } from '../components/HeldForYouCard';
 import { ExtendFromLink } from '../components/ExtendFromLink';
 import { AccountDataCard } from '../components/AccountDataCard';
 import { TwoStepCard } from '../components/TwoStepCard';
+import { TelegramCard } from '../components/TelegramCard';
 import { useBookText } from '../utils/bookText';
 import { coverOfSize } from '../utils/covers';
 import type { Order } from '../types';
@@ -525,6 +526,7 @@ export default function Profile() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <TelegramCard />
       <TwoStepCard />
       <AccountDataCard />
       {confirmDialog}

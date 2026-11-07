@@ -102,6 +102,9 @@ export const usersApi = {
   releaseHold: (bookId: string) =>
     apiRequest<void>(`/users/me/holds/${id(bookId)}`, { method: 'DELETE' }),
   reservations: () => apiRequest<ReservationDto[]>('/users/me/reservations'),
+  telegramLink: () =>
+    apiRequest<{ url: string; expires_at: string }>('/users/me/telegram/link', { method: 'POST' }),
+  telegramUnlink: () => apiRequest<void>('/users/me/telegram', { method: 'DELETE' }),
   mfaSetup: (password: string) =>
     apiRequest<{ secret: string; otpauth_uri: string }>('/users/me/mfa/setup', { method: 'POST', body: { password } }),
   mfaEnable: (code: string) =>

@@ -371,6 +371,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/users/me/telegram/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Link Telegram
+         * @description A one-time link that opens the library's Telegram bot; pressing Start there connects the chat (15 minutes). 409 TELEGRAM_NOT_CONFIGURED without a bot.
+         */
+        post: operations["link_telegram_api_v1_users_me_telegram_link_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/me/telegram": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Unlink Telegram
+         * @description Stop sending notifications to Telegram.
+         */
+        delete: operations["unlink_telegram_api_v1_users_me_telegram_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users/me/reading-log": {
         parameters: {
             query?: never;
@@ -1957,6 +1997,11 @@ export interface components {
              */
             mfa_enabled: boolean;
             /**
+             * Telegram Connected
+             * @description Notifications also go to a Telegram chat
+             */
+            telegram_connected: boolean;
+            /**
              * Created At
              * Format: date-time
              */
@@ -2705,6 +2750,11 @@ export interface components {
              * @description IANA time zone of opening hours and pickup slots
              */
             timezone: string;
+            /**
+             * Telegram Bot
+             * @description Username of the library's Telegram bot, when notifications can go there
+             */
+            telegram_bot: string | null;
         };
         /** LibrarySettingsRead */
         LibrarySettingsRead: {
@@ -2738,6 +2788,11 @@ export interface components {
              * @description IANA time zone of opening hours and pickup slots
              */
             timezone: string;
+            /**
+             * Telegram Bot
+             * @description Username of the library's Telegram bot, when notifications can go there
+             */
+            telegram_bot: string | null;
             /**
              * Updated At
              * Format: date-time
@@ -3718,6 +3773,19 @@ export interface components {
             /** Name Ru */
             name_ru?: string | null;
         };
+        /** TelegramLink */
+        TelegramLink: {
+            /**
+             * Url
+             * @description Opens the bot with a one-time start code
+             */
+            url: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+        };
         /**
          * TokenResponse
          * @description The refresh token is never part of a JSON body: it travels in an HttpOnly cookie.
@@ -3878,6 +3946,11 @@ export interface components {
              * @description Two-step sign-in is on
              */
             mfa_enabled: boolean;
+            /**
+             * Telegram Connected
+             * @description Notifications also go to a Telegram chat
+             */
+            telegram_connected: boolean;
             /**
              * Created At
              * Format: date-time
@@ -4889,6 +4962,71 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    link_telegram_api_v1_users_me_telegram_link_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelegramLink"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    unlink_telegram_api_v1_users_me_telegram_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

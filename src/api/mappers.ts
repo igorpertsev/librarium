@@ -244,6 +244,7 @@ export function userFromDto(dto: UserDto | AdminUserDto): User {
     email: dto.email,
     role: dto.role,
     mfaEnabled: dto.mfa_enabled,
+    telegramConnected: dto.telegram_connected,
     borrowedBooks: 'active_loans' in dto ? dto.active_loans.map(loanToBorrowedBook) : [],
     contacts: contactsFromDto(dto),
     preferredLanguage: dto.preferred_language ?? null,

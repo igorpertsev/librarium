@@ -67,6 +67,7 @@ const MESSAGE_KEYS: Record<string, string> = {
   MFA_REQUIRED_BY_LIBRARY: 'errors.mfaRequiredByLibrary',
   MFA_SETUP_REQUIRED: 'errors.mfaSetupRequired',
   MFA_SETUP_REQUIRED_FIRST: 'errors.mfaSetupRequiredFirst',
+  TELEGRAM_NOT_CONFIGURED: 'errors.telegramNotConfigured',
 };
 
 /** Translated, user-facing message for an API error. */

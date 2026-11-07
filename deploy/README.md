@@ -300,6 +300,23 @@ docker compose -f docker-compose.prod.yml run --rm backend python -m app.cli tra
 
 Drop `--no-machine` to fill the gaps with machine translation too (at most one request per book).
 
+## Telegram notifications (optional)
+
+Readers can get the same news as the emails in Telegram. Create a bot: in Telegram, open
+@BotFather, send `/newbot`, choose a name and a username ending in `bot`, and copy the token it
+gives you. Put both into `.env`:
+
+```bash
+nano .env   # TELEGRAM_BOT_TOKEN=123456:ABC…  TELEGRAM_BOT_USERNAME=little_dragon_library_bot
+docker compose -f docker-compose.prod.yml up -d
+```
+
+The profile then shows **Connect Telegram**. The notifier asks Telegram for new messages every
+cycle (no webhook, so no extra port), links the chat when the reader presses Start, and sends each
+notification there as well as by email; it works even without SMTP. Messages go to Telegram's
+servers. To turn it off, empty both values and run the same `up -d`; linked chats stop getting
+messages.
+
 ## Monitoring and alerts
 
 Three checks tell you about problems before readers do. All are optional and use free services.

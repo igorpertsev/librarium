@@ -15,7 +15,7 @@ from app.schemas.hold import HeldBookRead
 from app.schemas.inbox import Inbox, MarkRead
 from app.schemas.reading_log import MarkFinished, ReadingLogRead
 from app.schemas.reservation import ReservationCreate, ReservationRead
-from app.schemas.user import DeleteAccountRequest, UserRead, UserUpdate
+from app.schemas.user import DeleteAccountRequest, TelegramLink, UserRead, UserUpdate
 from app.services import (
     account,
     holds,
@@ -25,6 +25,7 @@ from app.services import (
     recommendations,
     reservations,
     series_reading,
+    telegram,
 )
 from app.services import users as users_service
 
@@ -123,6 +124,32 @@ async def enable_mfa(
 async def disable_mfa(body: MfaSetupRequest, user: CurrentUser, session: SessionDep) -> Response:
     """Turn it off (password needed; 409 MFA_REQUIRED_BY_LIBRARY for staff when required)."""
     await mfa.disable(session, user, body.password)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post(
+    "/me/telegram/link",
+    response_model=TelegramLink,
+    responses=error_responses(401, 409),
+    description="A one-time link that opens the library's Telegram bot; pressing Start there "
+    "connects the chat (15 minutes). 409 TELEGRAM_NOT_CONFIGURED without a bot.",
+)
+async def link_telegram(
+    user: CurrentUser, session: SessionDep, settings: SettingsDep
+) -> TelegramLink:
+    url, expires = await telegram.start_link(session, settings, user)
+    return TelegramLink(url=url, expires_at=expires)
+
+
+@router.delete(
+    "/me/telegram",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
+    responses=error_responses(401),
+)
+async def unlink_telegram(user: CurrentUser, session: SessionDep) -> Response:
+    """Stop sending notifications to Telegram."""
+    await telegram.unlink(session, user)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
