@@ -653,6 +653,14 @@ two copies of the same title are two records (ISBN is not unique).
   scanner typing into its field, or a pasted link) and shows where the copy stands (`GET
   /admin/copies/{id}/desk`): in an order waiting to be handed over (*Hand over order*), on loan (*Take back order*,
   with the usual condition notes), held for a reader, or on the shelf.
+- **Passkeys**: *Add a passkey* on the profile (password needed; `POST /users/me/passkeys/options`, then
+  `POST /users/me/passkeys` with the browser's answer) stores a WebAuthn credential for this site (the host of
+  `APP_BASE_URL`; the frontend origins may use it), with user verification required (face, fingerprint or device
+  PIN). *Sign in with a passkey* on the sign-in page (`POST /auth/passkey/options`, then `POST /auth/passkey`) needs
+  no email, password or two-step code: the passkey is already two factors, and it also satisfies *require two-step
+  sign-in for staff*. The challenge travels in a signed state token valid for 5 minutes; the signature counter is
+  kept; up to 10 passkeys per user (`GET`/`DELETE /users/me/passkeys`). Checked by `py_webauthn`; the tests sign
+  with a software authenticator and the browser test with Chromium's virtual one.
 - **Notification bell**: the header shows the reader's news — the same events as the emails (`notifications`), even
   when an email could not be sent, except news that went stale before delivery. Opening the list marks it read
   (`read_at`); it refreshes every minute while the tab is visible. Notifications from before the bell existed

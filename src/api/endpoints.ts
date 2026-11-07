@@ -43,6 +43,8 @@ import type {
   CategoryLoansDto,
   MonthStatsDto,
   DeskCopyDto,
+  PasskeyDto,
+  PasskeyOptionsDto,
   BookPickDto,
   CollectionCreateDto,
   CollectionDto,
@@ -98,6 +100,9 @@ export const authApi = {
   oauthProviders: () => apiRequest<{ providers: string[] }>('/auth/oauth/providers', { auth: false }),
   loginMfa: (body: { mfa_token: string; code: string }) =>
     apiRequest<TokenResponseDto>('/auth/login/mfa', { method: 'POST', body, auth: false }),
+  passkeyOptions: () => apiRequest<PasskeyOptionsDto>('/auth/passkey/options', { method: 'POST', auth: false }),
+  passkeySignIn: (body: { state: string; credential: unknown }) =>
+    apiRequest<TokenResponseDto>('/auth/passkey', { method: 'POST', body, auth: false }),
   logout: () => apiRequest<void>('/auth/logout', { method: 'POST', auth: false }),
   me: () => apiRequest<UserDto>('/auth/me'),
   changePassword: (body: ChangePasswordDto) =>
@@ -119,6 +124,12 @@ export const usersApi = {
   telegramLink: () =>
     apiRequest<{ url: string; expires_at: string }>('/users/me/telegram/link', { method: 'POST' }),
   telegramUnlink: () => apiRequest<void>('/users/me/telegram', { method: 'DELETE' }),
+  passkeyOptions: (password: string) =>
+    apiRequest<PasskeyOptionsDto>('/users/me/passkeys/options', { method: 'POST', body: { password } }),
+  addPasskey: (body: { state: string; credential: unknown; name: string }) =>
+    apiRequest<PasskeyDto>('/users/me/passkeys', { method: 'POST', body }),
+  listPasskeys: () => apiRequest<PasskeyDto[]>('/users/me/passkeys'),
+  removePasskey: (passkeyId: string) => apiRequest<void>(`/users/me/passkeys/${id(passkeyId)}`, { method: 'DELETE' }),
   calendarLink: () => apiRequest<{ url: string }>('/users/me/calendar', { method: 'POST' }),
   calendarRemove: () => apiRequest<void>('/users/me/calendar', { method: 'DELETE' }),
   pushSubscribe: (subscription: { endpoint: string; keys: { p256dh: string; auth: string } }) =>
