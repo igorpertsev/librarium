@@ -1552,6 +1552,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin Audit Log
+         * @description Changes made by staff, newest first (administrators only).
+         */
+        get: operations["admin_audit_log_api_v1_admin_audit_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1646,6 +1666,54 @@ export interface components {
             role?: components["schemas"]["UserRole"] | null;
             /** Is Active */
             is_active?: boolean | null;
+        };
+        /** AuditEventRead */
+        AuditEventRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Actor Email */
+            actor_email: string;
+            /**
+             * Action
+             * @description Endpoint name, e.g. admin_change_order_status
+             */
+            action: string;
+            /** Method */
+            method: string;
+            /** Path */
+            path: string;
+            /** Entity Type */
+            entity_type: string | null;
+            /** Entity Id */
+            entity_id: string | null;
+            /**
+             * Entity Label
+             * @description Book title, order number or user email
+             */
+            entity_label: string | null;
+            /** Details */
+            details: {
+                [key: string]: unknown;
+            };
+        };
+        /** AuditPage */
+        AuditPage: {
+            /** Items */
+            items: components["schemas"]["AuditEventRead"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
         };
         /** BadgeRead */
         BadgeRead: {
@@ -3211,7 +3279,7 @@ export interface components {
          * UserRole
          * @enum {string}
          */
-        UserRole: "customer" | "admin";
+        UserRole: "customer" | "librarian" | "admin";
         /**
          * UserUpdate
          * @description ``PATCH /users/me``. Omitted fields are untouched; ``null`` clears a contact.
@@ -8008,6 +8076,57 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_audit_log_api_v1_admin_audit_get: {
+        parameters: {
+            query?: {
+                actor_id?: string | null;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditPage"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

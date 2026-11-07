@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Textarea } from '../components/ui/textarea';
 import { Badge } from '../components/ui/badge';
-import { Plus, Pencil, Trash2, Users, BookOpen as BookOpenIcon, ClipboardList, CheckCircle2, RotateCcw, Clock, Star, ImageDown, BellRing, BarChart3, CopyPlus, Tags, ListChecks, MapPin, MessageSquare } from 'lucide-react';
+import { Plus, Pencil, Trash2, Users, BookOpen as BookOpenIcon, ClipboardList, CheckCircle2, RotateCcw, Clock, Star, ImageDown, BellRing, BarChart3, CopyPlus, Tags, History, ListChecks, MapPin, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -19,6 +19,8 @@ import { LoanRulesSettings } from '../components/LoanRulesSettings';
 import { PickupLine } from '../components/PickupLine';
 import { PickupPointsTab } from '../components/PickupPointsTab';
 import { UpcomingReservations } from '../components/UpcomingReservations';
+import { ActivityTab } from '../components/ActivityTab';
+import { isAdmin, type Role } from '../utils/roles';
 import { ReportsTab } from '../components/ReportsTab';
 import { BookCatalogFields } from '../components/BookCatalogFields';
 import { BookTranslationFields } from '../components/BookTranslationFields';
@@ -55,7 +57,9 @@ export default function AdminPortal() {
   const { batchConfig, updateBatchConfig, currency } = useCart();
   const fmt = useFormat();
   const [batchDraft, setBatchDraft] = useState<BatchConfig>(batchConfig);
-  const { users, updateUserRole, refreshUsers } = useAuth();
+  const { user: me, users, updateUserRole, refreshUsers } = useAuth();
+  // Librarians run the desk; users, settings, pickup points and the activity log are admin-only.
+  const canAdminister = isAdmin(me);
   const { orders, isLoading: ordersLoading, confirmOrder, markReturned, cancelOrder, updateDueDate, settleLateFee } = useOrders();
   const overdueCount = orders.filter(isOverdueOrder).length;
   const { invalidateCatalog } = useCatalog();
@@ -241,7 +245,7 @@ export default function AdminPortal() {
     },
   });
 
-  const handleRoleChange = async (userId: string, newRole: 'customer' | 'admin') => {
+  const handleRoleChange = async (userId: string, newRole: Role) => {
     const result = await updateUserRole(userId, newRole);
     if (result.ok) {
       toast.success(t('admin.roleUpdated'));
@@ -277,6 +281,7 @@ export default function AdminPortal() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {canAdminister && (
         <Card>
           <CardHeader>
             <CardTitle>{t('admin.batchConfig')}</CardTitle>
@@ -310,6 +315,7 @@ export default function AdminPortal() {
             <LoanRulesSettings />
           </CardContent>
         </Card>
+        )}
 
         <Card>
           <CardHeader>
@@ -348,7 +354,7 @@ export default function AdminPortal() {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="books" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 h-auto mb-6">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-9 h-auto mb-6">
               <TabsTrigger value="books" className="flex items-center gap-2">
                 <BookOpenIcon className="w-4 h-4" />
                 {t('admin.booksTab')}
@@ -382,10 +388,18 @@ export default function AdminPortal() {
                 <BarChart3 className="w-4 h-4" />
                 {t('reports.tab')}
               </TabsTrigger>
-              <TabsTrigger value="pickup" className="flex items-center gap-2">
-                <MapPin className="w-4 h-4" />
-                {t('pickup.tab')}
-              </TabsTrigger>
+              {canAdminister && (
+                <TabsTrigger value="pickup" className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4" />
+                  {t('pickup.tab')}
+                </TabsTrigger>
+              )}
+              {canAdminister && (
+                <TabsTrigger value="activity" className="flex items-center gap-2">
+                  <History className="w-4 h-4" />
+                  {t('audit.tab')}
+                </TabsTrigger>
+              )}
             </TabsList>
 
             <TabsContent value="books">
@@ -556,18 +570,23 @@ export default function AdminPortal() {
                     <TableCell>{user.name}</TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
-                      <Select
-                        value={user.role}
-                        onValueChange={(value: 'customer' | 'admin') => handleRoleChange(user.id, value)}
-                      >
-                        <SelectTrigger className="w-32">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="customer">{t('admin.customer')}</SelectItem>
-                          <SelectItem value="admin">{t('admin.admin')}</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      {canAdminister ? (
+                        <Select
+                          value={user.role}
+                          onValueChange={(value: Role) => handleRoleChange(user.id, value)}
+                        >
+                          <SelectTrigger className="w-36" aria-label={t('admin.roleOf', { name: user.name })}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="customer">{t('admin.roles.customer')}</SelectItem>
+                            <SelectItem value="librarian">{t('admin.roles.librarian')}</SelectItem>
+                            <SelectItem value="admin">{t('admin.roles.admin')}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Badge variant="outline">{t(`admin.roles.${user.role}`)}</Badge>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline">
@@ -642,9 +661,16 @@ export default function AdminPortal() {
               <ReportsTab />
             </TabsContent>
 
-            <TabsContent value="pickup">
-              <PickupPointsTab />
-            </TabsContent>
+            {canAdminister && (
+              <TabsContent value="pickup">
+                <PickupPointsTab />
+              </TabsContent>
+            )}
+            {canAdminister && (
+              <TabsContent value="activity">
+                <ActivityTab />
+              </TabsContent>
+            )}
           </Tabs>
         </CardContent>
       </Card>

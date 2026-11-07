@@ -11,7 +11,13 @@ from enum import StrEnum
 
 class UserRole(StrEnum):
     CUSTOMER = "customer"
+    # Staff: books, orders, reviews, tags and series, reports. Not users, settings or pickup
+    # points, and not the activity log (see app.api.dependencies.require_admin).
+    LIBRARIAN = "librarian"
     ADMIN = "admin"
+
+
+STAFF_ROLES = frozenset({UserRole.LIBRARIAN, UserRole.ADMIN})
 
 
 class ContactMethod(StrEnum):

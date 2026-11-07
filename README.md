@@ -286,6 +286,15 @@ conversion to UI models in `src/api/mappers.ts`. After an API change: export the
 - **Access token** — JWT (HS256), 15 minutes, claims `sub`, `role`, `type`, `jti`, `iat`, `nbf`, `exp`, `iss`, `aud`.
   Sent as `Authorization: Bearer`. The frontend keeps it in memory only.
   Authorisation always uses the role stored in the database; the `role` claim is informational.
+- **Roles** — `customer`, `librarian`, `admin`. Librarians use the admin portal for books, copies, imports, orders,
+  reviews, tags and series, data quality and reports. Changing users and roles, library settings and pickup points,
+  and reading the activity log need an administrator (`ADMIN_ONLY` in `app/api/routes/admin.py`). Administrators
+  change roles on the *Users* tab; staff accounts cannot be deleted by their owners (`ADMIN_ACCOUNT`).
+- **Activity log** — every successful `POST/PUT/PATCH/DELETE` under `/admin` is recorded after it succeeded (router
+  dependency `audit_trail`): who, which endpoint, which record (the first id in the path) and the request body,
+  with passwords and tokens redacted and long values shortened. Failed requests and reads are not logged.
+  Administrators read it on the *Activity* tab (`GET /admin/audit`, `actor_id` filter); the actor's email is kept
+  even if the account is deleted later.
 - **Refresh token** — random string (`secrets.token_urlsafe(48)`); only its SHA-256 hash is stored.
   It lives in the `refresh_token` cookie: `HttpOnly`, `Secure` (from env), `SameSite=Lax`, `Path=/api/v1/auth`.
   It is never returned in JSON.
@@ -462,13 +471,14 @@ Concurrency is covered by tests in which both requests are held at a barrier rig
 
 | Table | Key points |
 | --- | --- |
-| `users` | email unique and lower-case (CHECK), Argon2 hash, role `customer/admin`, contacts (nullable), `preferred_contact_method` |
+| `users` | email unique and lower-case (CHECK), Argon2 hash, role `customer/librarian/admin`, contacts (nullable), `preferred_contact_method` |
 | `books` | one row per physical copy: `cover_url`, `image_urls[]`, `age_range`, `category`, `status` (`available/available-soon/not-available`), `language`, `publication_year`, `is_active` (soft delete), `copy_group_id` (copies of one title), `series_id` + `series_position` (CHECK > 0) |
 | `tags`, `book_tags` | tag `slug` (unique, CHECK format), `name_en`, `name_ru`; book ↔ tag link table |
 | `series` | `name` (unique), `name_en` / `name_ru` (names in each interface language, optional), `description`, `openlibrary_key` (unique, from ISBN lookups) |
 | `book_translations` | per book and language (`en`/`ru`): `title`, `author`, `description`, `title_source`/`description_source` (`manual/wikidata/wikipedia/machine`), `source_url` (Wikipedia attribution) |
 | `library_settings` | single row: `books_per_batch`, `price_per_batch NUMERIC(10,2)`, `currency`, `loan_period_days`, `max_renewals`, `hold_hours`, `block_overdue`, `late_fee_per_day NUMERIC(10,2)`, `timezone` |
 | `reading_log_entries` | reader, copy, `finished_on`, `UNIQUE(user_id, book_id)` (one per title in the service) |
+| `audit_events` | actor (`SET NULL`) and email snapshot, `action`, `method`, `path`, `entity_type`, `entity_id`, `details JSONB` |
 | `advance_reservations` | reader, copy, `starts_on`, `status` (`active/fulfilled/cancelled`) |
 | `pickup_points` | `name`, `address`, `notes`, `hours JSONB` (`[{weekday, opens, closes}]`), `slot_minutes`, `slot_capacity` (NULL: no limit), `active` |
 | `carts`, `cart_items` | one cart per user, `UNIQUE(cart_id, book_id)` |
@@ -523,7 +533,8 @@ Differences (adapters in `src/api/mappers.ts`):
 | POST | `/admin/books/{id}/copies` (`{count}`: more copies of a title) | admin |
 | POST/PATCH/DELETE | `/admin/tags`, `/admin/tags/{id}` · POST `/admin/tags/{id}/merge`; the same for `/admin/series` | admin |
 | POST | `/admin/translations/suggest` (title, author and description in another language; saves nothing) | admin |
-| GET | `/admin/users` · PATCH `/admin/users/{id}` (role, disable) | admin |
+| GET | `/admin/users` (staff) · PATCH `/admin/users/{id}` (role, disable) | admin |
+| GET | `/admin/audit` (activity log, newest first) | admin |
 | GET/POST | `/admin/pickup-points` · PATCH/DELETE `/admin/pickup-points/{id}` | admin |
 | GET | `/admin/reservations` (titles reserved for a date, soonest first) | admin |
 | GET | `/admin/orders`, `/admin/orders/{id}` · PATCH `/admin/orders/{id}/status`, `/admin/orders/{id}/due-date`, `/admin/orders/{id}/late-fee` | admin |

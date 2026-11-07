@@ -76,7 +76,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'customer' | 'admin';
+  role: 'customer' | 'librarian' | 'admin';
   borrowedBooks: BorrowedBook[];
   contacts?: UserContacts;
   /** Interface language saved on the account (emails use it too). */

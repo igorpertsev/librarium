@@ -1,5 +1,6 @@
 """ORM models. Importing this package registers every table on ``Base.metadata``."""
 
+from app.models.audit import AuditEvent
 from app.models.base import Base
 from app.models.book import Book
 from app.models.cart import Cart, CartItem
@@ -21,6 +22,7 @@ from app.models.waitlist import WaitlistEntry
 
 __all__ = [
     "AdvanceReservation",
+    "AuditEvent",
     "Base",
     "Book",
     "BookHold",

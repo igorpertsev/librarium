@@ -284,6 +284,15 @@ pnpm api:types:file
 - **Access token** — JWT (HS256), 15 минут, claims `sub`, `role`, `type`, `jti`, `iat`, `nbf`, `exp`, `iss`, `aud`.
   Передаётся в `Authorization: Bearer`. Frontend держит его только в памяти.
   Роль для авторизации всегда читается из БД, claim `role` — справочный.
+- **Роли** — `customer`, `librarian`, `admin`. Библиотекарь работает в админ-панели с книгами, экземплярами,
+  импортом, заказами, отзывами, тегами и сериями, качеством данных и отчётами. Менять пользователей и роли,
+  настройки библиотеки и пункты выдачи, а также читать журнал действий может только администратор (`ADMIN_ONLY` в
+  `app/api/routes/admin.py`). Роли меняются на вкладке *Пользователи*; сотрудники не могут удалить свой аккаунт
+  сами (`ADMIN_ACCOUNT`).
+- **Журнал действий** — каждый успешный `POST/PUT/PATCH/DELETE` в `/admin` записывается после успеха (зависимость
+  роутера `audit_trail`): кто, какой эндпоинт, какая запись (первый id в пути) и тело запроса — пароли и токены
+  скрыты, длинные значения сокращены. Ошибочные запросы и чтение не записываются. Администратор смотрит журнал на
+  вкладке *Журнал* (`GET /admin/audit`, фильтр `actor_id`); email автора сохраняется, даже если аккаунт потом удалён.
 - **Refresh token** — случайная строка (`secrets.token_urlsafe(48)`), в БД хранится только SHA-256.
   Лежит в cookie `refresh_token`: `HttpOnly`, `Secure` (из env), `SameSite=Lax`, `Path=/api/v1/auth`.
   В JSON никогда не возвращается.
@@ -470,13 +479,14 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 
 | Таблица | Ключевое |
 | --- | --- |
-| `users` | email уникален и в нижнем регистре (CHECK), Argon2-хеш, роль `customer/admin`, контакты (nullable), `preferred_contact_method` |
+| `users` | email уникален и в нижнем регистре (CHECK), Argon2-хеш, роль `customer/librarian/admin`, контакты (nullable), `preferred_contact_method` |
 | `books` | `cover_url`, `image_urls[]`, `age_range`, `category`, `status` (`available/available-soon/not-available`), `language`, `publication_year`, `is_active` (мягкое удаление), `series_id` + `series_position` (CHECK > 0) |
 | `tags`, `book_tags` | `slug` тега (уникальный, CHECK формата), `name_en`, `name_ru`; связь книга ↔ тег |
 | `series` | `name` (уникальное), `name_en` / `name_ru` (названия на языках интерфейса, необязательно), `description`, `openlibrary_key` (уникальный, из поиска по ISBN) |
 | `book_translations` | на книгу и язык (`en`/`ru`): `title`, `author`, `description`, `title_source`/`description_source` (`manual/wikidata/wikipedia/machine`), `source_url` (ссылка на Википедию) |
 | `library_settings` | одна строка: `books_per_batch`, `price_per_batch NUMERIC(10,2)`, `currency`, `loan_period_days`, `max_renewals`, `hold_hours`, `block_overdue`, `late_fee_per_day NUMERIC(10,2)`, `timezone` |
 | `reading_log_entries` | читатель, экземпляр, `finished_on`, `UNIQUE(user_id, book_id)` (одна запись на книгу в сервисе) |
+| `audit_events` | автор (`SET NULL`) и снимок email, `action`, `method`, `path`, `entity_type`, `entity_id`, `details JSONB` |
 | `advance_reservations` | читатель, экземпляр, `starts_on`, `status` (`active/fulfilled/cancelled`) |
 | `pickup_points` | `name`, `address`, `notes`, `hours JSONB` (`[{weekday, opens, closes}]`), `slot_minutes`, `slot_capacity` (NULL — без ограничений), `active` |
 | `carts`, `cart_items` | одна корзина на пользователя, `UNIQUE(cart_id, book_id)` |
@@ -530,7 +540,8 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 | POST | `/admin/books/{id}/copies` (`{count}`: ещё экземпляры книги) | admin |
 | POST/PATCH/DELETE | `/admin/tags`, `/admin/tags/{id}` · POST `/admin/tags/{id}/merge`; то же для `/admin/series` | admin |
 | POST | `/admin/translations/suggest` (название, автор и описание на другом языке; ничего не сохраняет) | admin |
-| GET | `/admin/users` · PATCH `/admin/users/{id}` (роль, блокировка) | admin |
+| GET | `/admin/users` (сотрудники) · PATCH `/admin/users/{id}` (роль, блокировка) | admin |
+| GET | `/admin/audit` (журнал действий, новые сверху) | admin |
 | GET/POST | `/admin/pickup-points` · PATCH/DELETE `/admin/pickup-points/{id}` | admin |
 | GET | `/admin/reservations` (брони на дату, ближайшие первыми) | admin |
 | GET | `/admin/orders`, `/admin/orders/{id}` · PATCH `/admin/orders/{id}/status`, `/admin/orders/{id}/due-date`, `/admin/orders/{id}/late-fee` | admin |

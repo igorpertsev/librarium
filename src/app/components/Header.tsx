@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { SettingsDialog } from './SettingsDialog';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from './ui/sheet';
+import { isStaff } from '../utils/roles';
 
 export function Header() {
   const { user, logout } = useAuth();
@@ -32,7 +33,7 @@ export function Header() {
     navigate(path);
   };
   const mobileItems = [
-    ...(user?.role === 'admin' ? [{ label: t('nav.admin'), icon: LayoutDashboard, onClick: () => go('/admin') }] : []),
+    ...(isStaff(user) ? [{ label: t('nav.admin'), icon: LayoutDashboard, onClick: () => go('/admin') }] : []),
     ...(user
       ? [
           { label: t('nav.myBooks'), icon: User, onClick: () => go('/profile') },
@@ -66,7 +67,7 @@ export function Header() {
           </Link>
 
           <nav className="hidden md:flex items-center gap-4">
-            {user?.role === 'admin' && (
+            {isStaff(user) && (
               <Button variant="ghost" onClick={() => navigate('/admin')}>
                 <LayoutDashboard className="w-4 h-4 mr-2" />
                 {t('nav.admin')}

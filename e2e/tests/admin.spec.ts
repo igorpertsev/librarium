@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { ADMIN, registerCustomer, signIn, unique } from '../helpers';
+import { ADMIN, registerCustomer, signIn, signOut, unique } from '../helpers';
 
 test('the librarian adds, edits and deletes a book', async ({ page }) => {
   const title = `Admin ${unique()}`;
@@ -38,4 +38,29 @@ test('customers cannot open the admin portal', async ({ page }) => {
   await page.goto('/admin');
   await expect(page).toHaveURL('/');
   await expect(page.getByRole('button', { name: 'Admin Portal' })).toHaveCount(0);
+});
+
+test('an administrator makes a reader a librarian; the change is in the activity log', async ({ page }) => {
+  const staff = await registerCustomer(page);
+  await signOut(page);
+  await signIn(page, ADMIN);
+  await page.goto('/admin');
+  await page.getByRole('tab', { name: /Users/ }).click();
+  await page.getByRole('combobox', { name: `Role of ${staff.name}` }).click();
+  await page.getByRole('option', { name: 'Librarian' }).click();
+  await expect(page.getByText('User role updated successfully')).toBeVisible();
+  await page.getByRole('tab', { name: 'Activity' }).click();
+  const log = page.getByRole('list', { name: 'Activity log' });
+  await expect(log.getByRole('listitem').first()).toContainText('Changed a user');
+  await expect(log.getByRole('listitem').first()).toContainText(staff.email);
+  await expect(log.getByRole('listitem').first()).toContainText('role: librarian');
+
+  // The librarian works the desk, without settings, pickup points or the log.
+  await signOut(page);
+  await signIn(page, staff);
+  await page.getByRole('button', { name: 'Admin Portal' }).click();
+  await expect(page.getByRole('tab', { name: /Orders/ })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Activity' })).toHaveCount(0);
+  await expect(page.getByRole('tab', { name: 'Pickup' })).toHaveCount(0);
+  await expect(page.getByText('Batch Configuration')).toHaveCount(0);
 });

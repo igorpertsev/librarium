@@ -188,9 +188,9 @@ async def export_data(session: AsyncSession, user: User) -> dict[str, Any]:
 async def delete_account(session: AsyncSession, user: User, password: str) -> None:
     if not await verify_password(user.password_hash, password):
         raise BadRequestError("Current password is incorrect", code="INVALID_CURRENT_PASSWORD")
-    if user.role is UserRole.ADMIN:
+    if user.role is not UserRole.CUSTOMER:
         raise ConflictError(
-            "Administrators cannot delete their own account; ask another administrator",
+            "Library staff cannot delete their own account; ask an administrator",
             code="ADMIN_ACCOUNT",
         )
     active = await session.scalar(

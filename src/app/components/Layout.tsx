@@ -2,6 +2,7 @@ import { Outlet, Navigate, useLocation } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { Header } from './Header';
 import { useTranslation } from 'react-i18next';
+import { isStaff } from '../utils/roles';
 
 function SessionLoading() {
   const { t } = useTranslation();
@@ -57,7 +58,7 @@ export function AdminLayout() {
     return <SessionLoading />;
   }
 
-  if (!user || user.role !== 'admin') {
+  if (!isStaff(user)) {
     return <Navigate to="/" replace />;
   }
 

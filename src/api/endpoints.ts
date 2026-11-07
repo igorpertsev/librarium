@@ -4,6 +4,7 @@ import type {
   AdminOrderListQuery,
   AdminUserListQuery,
   AdminUserPageDto,
+  AuditPageDto,
   AdminUserUpdateDto,
   BookCreateDto,
   BookImportResultDto,
@@ -250,6 +251,8 @@ export const adminApi = {
       body: { action },
     }),
   upcomingReservations: () => apiRequest<UpcomingReservationDto[]>('/admin/reservations'),
+  auditLog: (page: number, pageSize = 50) =>
+    apiRequest<AuditPageDto>('/admin/audit', { query: { page, page_size: pageSize } }),
   listPickupPoints: () => apiRequest<PickupPointDto[]>('/admin/pickup-points'),
   createPickupPoint: (body: PickupPointCreateDto) =>
     apiRequest<PickupPointDto>('/admin/pickup-points', { method: 'POST', body }),

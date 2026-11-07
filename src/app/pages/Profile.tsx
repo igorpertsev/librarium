@@ -222,7 +222,7 @@ export default function Profile() {
               <div className="p-2 bg-primary/10 rounded-lg"><BookOpen className="w-5 h-5 text-primary" /></div>
               <div>
                 <p className="text-sm text-muted-foreground">{t('profile.role')}</p>
-                <Badge variant="outline" className="capitalize">{user.role === 'admin' ? t('admin.admin') : t('admin.customer')}</Badge>
+                <Badge variant="outline" className="capitalize">{t(`admin.roles.${user.role}`)}</Badge>
               </div>
             </div>
 

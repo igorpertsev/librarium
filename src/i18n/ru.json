@@ -191,7 +191,9 @@
     "markFeePaid": "Оплачен",
     "waiveFee": "Отменить",
     "lateFeePaidMsg": "Штраф отмечен как оплаченный",
-    "lateFeeWaivedMsg": "Штраф отменён"
+    "lateFeeWaivedMsg": "Штраф отменён",
+    "roles": {"customer": "Читатель", "librarian": "Библиотекарь", "admin": "Администратор"},
+    "roleOf": "Роль: {{name}}"
   },
   "bookForm": {
     "title": "Название",
@@ -950,5 +952,14 @@
     "showAll": "Показать все ({{count}})",
     "showLess": "Свернуть",
     "badge": {"first_book": {"name": "Первая книга", "hint": "Прочитать книгу"}, "five_books": {"name": "Книжный червь", "hint": "Прочитать 5 книг"}, "ten_books": {"name": "Чемпион чтения", "hint": "Прочитать 10 книг"}, "twenty_five_books": {"name": "Король чтения", "hint": "Прочитать 25 книг"}, "explorer": {"name": "Исследователь", "hint": "Книги 3 категорий"}, "two_languages": {"name": "Два языка", "hint": "Читать на 2 языках"}, "series_finisher": {"name": "Вся серия", "hint": "Все книги серии"}, "three_months": {"name": "Постоянный читатель", "hint": "По книге 3 месяца подряд"}}
+  },
+  "audit": {
+    "tab": "Журнал",
+    "title": "Журнал действий",
+    "description": "Изменения библиотекарей и администраторов, новые сверху.",
+    "refresh": "Обновить",
+    "empty": "Изменений пока нет.",
+    "more": "Показать ещё",
+    "actions": {"admin_create_book": "Добавлена книга", "admin_import_books": "Импорт книг", "admin_add_copies": "Добавлены экземпляры", "admin_update_book": "Изменена книга", "admin_delete_book": "Убрана книга", "admin_update_user": "Изменён пользователь", "admin_change_order_status": "Изменён статус заказа", "admin_change_order_due_date": "Изменён срок возврата", "admin_settle_late_fee": "Закрыт штраф", "admin_remind_customer": "Отправлено напоминание", "admin_create_tag": "Добавлен тег", "admin_update_tag": "Изменён тег", "admin_delete_tag": "Удалён тег", "admin_merge_tag": "Объединены теги", "admin_create_series": "Добавлена серия", "admin_update_series": "Изменена серия", "admin_delete_series": "Удалена серия", "admin_merge_series": "Объединены серии", "admin_update_settings": "Изменены настройки библиотеки", "admin_moderate_review": "Проверен отзыв", "admin_delete_review": "Удалён отзыв", "admin_create_pickup_point": "Добавлен пункт выдачи", "admin_update_pickup_point": "Изменён пункт выдачи", "admin_delete_pickup_point": "Удалён пункт выдачи"}
   }
 }

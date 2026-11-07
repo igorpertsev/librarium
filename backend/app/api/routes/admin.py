@@ -12,6 +12,7 @@ from app.api.dependencies import (
     PaginationDep,
     SessionDep,
     TranslationLookupDep,
+    audit_trail,
     require_admin,
 )
 from app.api.routes.books import LanguageQuery, TagsQuery, tag_slugs
@@ -20,6 +21,7 @@ from app.models.enums import BookCategory, BookStatus, OrderStatus, ReviewStatus
 from app.repositories import books as books_repo
 from app.repositories import orders as orders_repo
 from app.repositories.books import BookFilters
+from app.schemas.audit import AuditEventRead, AuditPage
 from app.schemas.book import (
     AddCopies,
     BookCreate,
@@ -63,20 +65,33 @@ from app.schemas.review import (
 )
 from app.schemas.translation import TranslationSuggestion, TranslationSuggestRequest
 from app.schemas.user import AdminUserPage, AdminUserUpdate, UserRead
-from app.services import book_import, catalog, duplicates, pickup, reports, reservations, reviews
+from app.services import (
+    audit,
+    book_import,
+    catalog,
+    duplicates,
+    pickup,
+    reports,
+    reservations,
+    reviews,
+)
 from app.services import books as books_service
 from app.services import library_settings as settings_service
 from app.services import orders as orders_service
 from app.services import users as users_service
 from app.services.tag_suggestions import suggest_tags
 
-# Every route below requires an authenticated administrator (checked server-side).
+# Every route below requires library staff (librarian or administrator), checked server-side;
+# routes marked ADMIN_ONLY require an administrator. Changes are recorded in the activity log.
 router = APIRouter(
     prefix="/admin",
     tags=["admin"],
-    dependencies=[Depends(require_admin)],
+    dependencies=[Depends(audit_trail)],
     responses=error_responses(401, 403),
 )
+
+
+ADMIN_ONLY = [Depends(require_admin)]
 
 
 # --- Books -------------------------------------------------------------------------------
@@ -284,7 +299,12 @@ async def admin_list_users(
     )
 
 
-@router.patch("/users/{user_id}", response_model=UserRead, responses=error_responses(404, 409, 422))
+@router.patch(
+    "/users/{user_id}",
+    response_model=UserRead,
+    responses=error_responses(404, 409, 422),
+    dependencies=ADMIN_ONLY,
+)
 async def admin_update_user(
     user_id: uuid.UUID, body: AdminUserUpdate, admin: AdminUser, session: SessionDep
 ) -> UserRead:
@@ -536,7 +556,12 @@ async def admin_get_settings(session: SessionDep) -> LibrarySettingsRead:
     return LibrarySettingsRead.model_validate(await settings_service.get_library_settings(session))
 
 
-@router.patch("/settings", response_model=LibrarySettingsRead, responses=error_responses(422))
+@router.patch(
+    "/settings",
+    response_model=LibrarySettingsRead,
+    responses=error_responses(422),
+    dependencies=ADMIN_ONLY,
+)
 async def admin_update_settings(
     body: LibrarySettingsUpdate, session: SessionDep
 ) -> LibrarySettingsRead:
@@ -619,6 +644,7 @@ async def admin_list_pickup_points(session: SessionDep) -> list[PickupPointRead]
     status_code=status.HTTP_201_CREATED,
     response_model=PickupPointRead,
     responses=error_responses(422),
+    dependencies=ADMIN_ONLY,
 )
 async def admin_create_pickup_point(
     body: PickupPointCreate, session: SessionDep
@@ -627,7 +653,10 @@ async def admin_create_pickup_point(
 
 
 @router.patch(
-    "/pickup-points/{point_id}", response_model=PickupPointRead, responses=error_responses(404, 422)
+    "/pickup-points/{point_id}",
+    response_model=PickupPointRead,
+    responses=error_responses(404, 422),
+    dependencies=ADMIN_ONLY,
 )
 async def admin_update_pickup_point(
     point_id: uuid.UUID, body: PickupPointUpdate, session: SessionDep
@@ -639,6 +668,7 @@ async def admin_update_pickup_point(
     "/pickup-points/{point_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     responses=error_responses(404, 409, 422),
+    dependencies=ADMIN_ONLY,
 )
 async def admin_delete_pickup_point(point_id: uuid.UUID, session: SessionDep) -> Response:
     """Only points no order used; switch the others off (active = false)."""
@@ -653,3 +683,27 @@ async def admin_upcoming_reservations(session: SessionDep) -> list[UpcomingReser
         UpcomingReservationRead.model_validate(item, from_attributes=True)
         for item in await reservations.upcoming(session)
     ]
+
+
+# --- Activity log ------------------------------------------------------------------------
+
+
+@router.get(
+    "/audit",
+    response_model=AuditPage,
+    responses=error_responses(422),
+    dependencies=ADMIN_ONLY,
+)
+async def admin_audit_log(
+    session: SessionDep, pagination: PaginationDep, actor_id: uuid.UUID | None = None
+) -> AuditPage:
+    """Changes made by staff, newest first (administrators only)."""
+    items, total = await audit.list_events(
+        session, page=pagination.page, page_size=pagination.page_size, actor_id=actor_id
+    )
+    return AuditPage(
+        items=[AuditEventRead.model_validate(item, from_attributes=True) for item in items],
+        total=total,
+        page=pagination.page,
+        page_size=pagination.page_size,
+    )
