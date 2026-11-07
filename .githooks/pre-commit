@@ -22,7 +22,7 @@ if ((${#py[@]})); then
 fi
 
 if ((${#ts[@]})); then
-  pnpm -s exec eslint --max-warnings 0 "${ts[@]}" || {
+  pnpm -s exec eslint --max-warnings 0 --no-warn-ignored "${ts[@]}" || {
     echo "pre-commit: fix the ESLint issues above." >&2
     exit 1
   }
