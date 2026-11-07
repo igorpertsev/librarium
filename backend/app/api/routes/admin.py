@@ -19,7 +19,13 @@ from app.api.dependencies import (
 )
 from app.api.routes.books import LanguageQuery, TagsQuery, tag_slugs
 from app.core.exceptions import BadRequestError
-from app.models.enums import BookCategory, BookStatus, OrderStatus, ReviewStatus
+from app.models.enums import (
+    BookCategory,
+    BookStatus,
+    OrderStatus,
+    PurchaseStatus,
+    ReviewStatus,
+)
 from app.repositories import books as books_repo
 from app.repositories import orders as orders_repo
 from app.repositories.books import BookFilters
@@ -59,6 +65,7 @@ from app.schemas.order import (
     ReminderQueued,
 )
 from app.schemas.pickup import PickupPointCreate, PickupPointRead, PickupPointUpdate
+from app.schemas.purchase import PurchaseRequestRead, PurchaseRequestUpdate
 from app.schemas.report import DemandRead, ReportSummaryRead
 from app.schemas.reservation import UpcomingReservationRead
 from app.schemas.review import (
@@ -87,6 +94,7 @@ from app.services import (
     covers,
     duplicates,
     pickup,
+    purchases,
     reports,
     reservations,
     reviews,
@@ -836,3 +844,39 @@ async def admin_finish_stocktake(
 ) -> StocktakeReportRead:
     """Close the count; mark_missing makes copies that were not found "not available"."""
     return _report(await stocktaking.finish(session, stocktake_id, mark_missing=body.mark_missing))
+
+
+# --- Purchase requests -------------------------------------------------------------------
+
+
+@router.get("/purchase-requests", response_model=list[PurchaseRequestRead])
+async def admin_list_purchase_requests(
+    user: StaffUser,
+    session: SessionDep,
+    status_: Annotated[list[PurchaseStatus] | None, Query(alias="status")] = None,
+) -> list[PurchaseRequestRead]:
+    """Readers' suggestions, most votes first (default: every status)."""
+    found = await purchases.list_requests(session, user, tuple(status_) if status_ else None)
+    return [PurchaseRequestRead.model_validate(r, from_attributes=True) for r in found]
+
+
+@router.patch(
+    "/purchase-requests/{request_id}",
+    response_model=PurchaseRequestRead,
+    responses=error_responses(404, 409, 422),
+    description="Mark a suggestion ordered, added or declined, with an optional note for "
+    'readers. "added" needs the book in the catalogue (same ISBN, or title and author; 409 '
+    "BOOK_NOT_IN_CATALOGUE) and emails everyone who voted.",
+)
+async def admin_update_purchase_request(
+    request_id: uuid.UUID, body: PurchaseRequestUpdate, user: StaffUser, session: SessionDep
+) -> PurchaseRequestRead:
+    view = await purchases.update(
+        session,
+        user,
+        request_id,
+        status=body.status,
+        librarian_note=body.librarian_note,
+        note_given="librarian_note" in body.model_fields_set,
+    )
+    return PurchaseRequestRead.model_validate(view, from_attributes=True)

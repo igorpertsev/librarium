@@ -448,6 +448,14 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 ближайшие брони над списком заказов (`GET /admin/reservations`). Удаление аккаунта снимает его удержания и брони,
 а экземпляры переходят дальше.
 
+**Предложения книг**: читатели предлагают книги для покупки (`/suggestions`; ссылка есть и при пустом поиске, и в
+профиле) и голосуют за идеи друг друга (`GET/POST /purchase-requests`, `PUT/DELETE /purchase-requests/{id}/vote`).
+Та же книга ещё раз (ISBN или название и автор в любом регистре) засчитывается как голос (`created: false`); книги,
+которые уже есть в каталоге, не принимаются (`409 ALREADY_IN_CATALOGUE`); у читателя — до 10 открытых предложений.
+Сотрудники видят их на вкладке *Предложения* (по числу голосов) и отмечают заказанными, добавленными или
+отклонёнными, с заметкой для читателей (`PATCH /admin/purchase-requests/{id}`). *Добавлена* требует книгу в каталоге
+(`409 BOOK_NOT_IN_CATALOGUE`) и отправляет письмо всем проголосовавшим (`purchase_added`, видно и в колокольчике).
+
 **Загрузка обложки**: *Загрузить обложку* в форме книги (при редактировании) принимает JPEG, PNG или WebP до 5 МБ
 (`POST /admin/books/{id}/cover`, multipart `file`). Pillow декодирует файл (не больше 40 мегапикселей), удаляет
 метаданные и сохраняет WebP в размерах L/M/S (800/400/160 px в высоту) как `media/covers/<случайное>-<размер>.webp`;
@@ -517,6 +525,7 @@ localhost) и `Permissions-Policy: camera=(self)`, который отправл
 | `library_settings` | одна строка: `books_per_batch`, `price_per_batch NUMERIC(10,2)`, `currency`, `loan_period_days`, `max_renewals`, `hold_hours`, `block_overdue`, `late_fee_per_day NUMERIC(10,2)`, `timezone` |
 | `reading_log_entries` | читатель, экземпляр, `finished_on`, `UNIQUE(user_id, book_id)` (одна запись на книгу в сервисе) |
 | `stocktakes`, `stocktake_counts` | пересчёты полок (один открытый: частичный уникальный индекс); счёт по книге (`group_id`) или неизвестному `isbn` |
+| `purchase_requests`, `purchase_votes` | предложения читателей (`status` `open/ordered/added/declined`, `book_id` после добавления) и по одному голосу от читателя |
 | `audit_events` | автор (`SET NULL`) и снимок email, `action`, `method`, `path`, `entity_type`, `entity_id`, `details JSONB` |
 | `advance_reservations` | читатель, экземпляр, `starts_on`, `status` (`active/fulfilled/cancelled`) |
 | `pickup_points` | `name`, `address`, `notes`, `hours JSONB` (`[{weekday, opens, closes}]`), `slot_minutes`, `slot_capacity` (NULL — без ограничений), `active` |
@@ -561,6 +570,7 @@ localhost) и `Permissions-Policy: camera=(self)`, который отправл
 | GET `/users/me/recommendations` (книги по тегам взятых и отложенных) | полка «Вам может понравиться» | пользователь |
 | GET `/users/me/holds` · DELETE `/users/me/holds/{book_id}` | книги, отложенные для читателя; отказ | пользователь |
 | GET/POST `/users/me/reservations` · DELETE `/users/me/reservations/{id}` | бронь книги на дату; отмена | пользователь |
+| GET/POST `/purchase-requests` · PUT/DELETE `/purchase-requests/{id}/vote` | предложить книгу, голосовать | пользователь |
 | GET `/users/me/reading-log` · PUT/DELETE `/users/me/reading-log/{book_id}` | прочитанные книги, счётчики, значки, взятые книги без отметки | пользователь |
 | GET `/users/me/notifications` · POST `/users/me/notifications/read` (`{ids}` или пусто — все) | колокольчик: последние 30 новостей за 60 дней и число непрочитанных | пользователь |
 | GET/POST | `/admin/books`, GET `/admin/books/stats`, GET/PATCH/DELETE `/admin/books/{id}` | admin |
@@ -574,6 +584,7 @@ localhost) и `Permissions-Policy: camera=(self)`, который отправл
 | POST | `/admin/translations/suggest` (название, автор и описание на другом языке; ничего не сохраняет) | admin |
 | GET | `/admin/users` (сотрудники) · PATCH `/admin/users/{id}` (роль, блокировка) | admin |
 | GET | `/admin/audit` (журнал действий, новые сверху) | admin |
+| GET | `/admin/purchase-requests` · PATCH `/admin/purchase-requests/{id}` (`status`, `librarian_note`) | сотрудники |
 | GET/POST | `/admin/stocktakes` · GET `/admin/stocktakes/{id}` (отчёт) · POST `/admin/stocktakes/{id}/scan` `{isbn}`, `/count` `{book_id, delta}`, `/finish` `{mark_missing}` | сотрудники |
 | GET/POST | `/admin/pickup-points` · PATCH/DELETE `/admin/pickup-points/{id}` | admin |
 | GET | `/admin/reservations` (брони на дату, ближайшие первыми) | admin |

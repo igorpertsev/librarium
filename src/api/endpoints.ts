@@ -39,6 +39,8 @@ import type {
   PickupPointDto,
   PickupPointUpdateDto,
   PickupSlotDto,
+  PurchaseRequestDto,
+  PurchaseStatusDto,
   ReservationDto,
   UpcomingReservationDto,
   Paged,
@@ -181,6 +183,16 @@ export const readingListApi = {
   remove: (bookId: string) => apiRequest<void>(`/reading-list/${id(bookId)}`, { method: 'DELETE' }),
 };
 
+export const purchasesApi = {
+  list: () => apiRequest<PurchaseRequestDto[]>('/purchase-requests'),
+  suggest: (body: { title: string; author: string; isbn?: string | null; note?: string | null }) =>
+    apiRequest<{ request: PurchaseRequestDto; created: boolean }>('/purchase-requests', { method: 'POST', body }),
+  vote: (requestId: string) =>
+    apiRequest<PurchaseRequestDto>(`/purchase-requests/${id(requestId)}/vote`, { method: 'PUT' }),
+  unvote: (requestId: string) =>
+    apiRequest<PurchaseRequestDto>(`/purchase-requests/${id(requestId)}/vote`, { method: 'DELETE' }),
+};
+
 export const libraryApi = {
   rules: () => apiRequest<LibraryRulesDto>('/library/rules', { auth: false }),
   pickupPoints: () => apiRequest<PickupPointDto[]>('/library/pickup-points', { auth: false }),
@@ -263,6 +275,9 @@ export const adminApi = {
       body: { action },
     }),
   upcomingReservations: () => apiRequest<UpcomingReservationDto[]>('/admin/reservations'),
+  purchaseRequests: () => apiRequest<PurchaseRequestDto[]>('/admin/purchase-requests'),
+  updatePurchaseRequest: (requestId: string, body: { status?: PurchaseStatusDto; librarian_note?: string | null }) =>
+    apiRequest<PurchaseRequestDto>(`/admin/purchase-requests/${id(requestId)}`, { method: 'PATCH', body }),
   stocktakes: () => apiRequest<StocktakeBriefDto[]>('/admin/stocktakes'),
   startStocktake: () => apiRequest<StocktakeBriefDto>('/admin/stocktakes', { method: 'POST' }),
   stocktakeReport: (takeId: string) => apiRequest<StocktakeReportDto>(`/admin/stocktakes/${id(takeId)}`),

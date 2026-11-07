@@ -394,7 +394,10 @@
     "stocktakeFinished": "This count is already finished.",
     "invalidIsbn": "That is not an ISBN.",
     "invalidImage": "That file is not a JPEG, PNG or WebP image.",
-    "imageTooLarge": "The image is too large (at most 5 MB)."
+    "imageTooLarge": "The image is too large (at most 5 MB).",
+    "alreadyInCatalogue": "This book is already in the catalogue.",
+    "tooManySuggestions": "You can have up to 10 open suggestions.",
+    "bookNotInCatalogue": "Add the book to the catalogue first (same ISBN, or the same title and author)."
   },
   "checkout": {
     "title": "Confirm Order",
@@ -874,7 +877,7 @@
     "title": "Notifications",
     "empty": "Nothing new yet. News about your orders and books will appear here.",
     "new": "new",
-    "kinds": {"order_received": "We received your request #{{number}}", "order_confirmed": "Order #{{number}}: your books have been handed over", "order_cancelled": "Order #{{number}} was cancelled by the library", "due_soon": "Order #{{number}}: please return the books soon", "overdue": "Order #{{number}} is overdue", "book_available": "“{{title}}” is available again", "book_held": "“{{title}}” is held for you", "reservation_ready": "“{{title}}”, which you reserved, is ready"}
+    "kinds": {"order_received": "We received your request #{{number}}", "order_confirmed": "Order #{{number}}: your books have been handed over", "order_cancelled": "Order #{{number}} was cancelled by the library", "due_soon": "Order #{{number}}: please return the books soon", "overdue": "Order #{{number}} is overdue", "book_available": "“{{title}}” is available again", "book_held": "“{{title}}” is held for you", "reservation_ready": "“{{title}}”, which you reserved, is ready", "purchase_added": "“{{title}}”, which you asked for, is in the library"}
   },
   "readingLog": {
     "title": "My reading log",
@@ -905,7 +908,7 @@
     "refresh": "Refresh",
     "empty": "No changes recorded yet.",
     "more": "Show more",
-    "actions": {"admin_create_book": "Added a book", "admin_import_books": "Imported books", "admin_add_copies": "Added copies", "admin_update_book": "Edited a book", "admin_delete_book": "Removed a book", "admin_update_user": "Changed a user", "admin_change_order_status": "Changed an order's status", "admin_change_order_due_date": "Changed a due date", "admin_settle_late_fee": "Settled a late fee", "admin_remind_customer": "Sent a reminder", "admin_create_tag": "Added a tag", "admin_update_tag": "Edited a tag", "admin_delete_tag": "Deleted a tag", "admin_merge_tag": "Merged tags", "admin_create_series": "Added a series", "admin_update_series": "Edited a series", "admin_delete_series": "Deleted a series", "admin_merge_series": "Merged series", "admin_update_settings": "Changed library settings", "admin_moderate_review": "Moderated a review", "admin_delete_review": "Deleted a review", "admin_create_pickup_point": "Added a pickup point", "admin_update_pickup_point": "Edited a pickup point", "admin_delete_pickup_point": "Deleted a pickup point"}
+    "actions": {"admin_create_book": "Added a book", "admin_import_books": "Imported books", "admin_add_copies": "Added copies", "admin_update_book": "Edited a book", "admin_delete_book": "Removed a book", "admin_update_user": "Changed a user", "admin_change_order_status": "Changed an order's status", "admin_change_order_due_date": "Changed a due date", "admin_settle_late_fee": "Settled a late fee", "admin_remind_customer": "Sent a reminder", "admin_create_tag": "Added a tag", "admin_update_tag": "Edited a tag", "admin_delete_tag": "Deleted a tag", "admin_merge_tag": "Merged tags", "admin_create_series": "Added a series", "admin_update_series": "Edited a series", "admin_delete_series": "Deleted a series", "admin_merge_series": "Merged series", "admin_update_settings": "Changed library settings", "admin_moderate_review": "Moderated a review", "admin_delete_review": "Deleted a review", "admin_create_pickup_point": "Added a pickup point", "admin_update_pickup_point": "Edited a pickup point", "admin_delete_pickup_point": "Deleted a pickup point", "admin_update_purchase_request": "Updated a suggestion", "admin_upload_cover": "Uploaded a cover", "admin_bulk_update_books": "Changed several books", "admin_start_stocktake": "Started a stocktake", "admin_finish_stocktake": "Finished a stocktake"}
   },
   "condition": {
     "label": "Condition of this copy",
@@ -990,5 +993,37 @@
     "upload": "Upload cover",
     "hint": "JPEG, PNG or WebP, up to 5 MB. It is used for every copy of the title right away.",
     "uploaded": "Cover uploaded"
+  },
+  "suggest": {
+    "title": "Suggest a book",
+    "description": "Tell the library which books to buy, and vote for other readers' suggestions. The most wanted ones are bought first.",
+    "formTitle": "Your suggestion",
+    "formHint": "If someone suggested the same book already, your suggestion counts as a vote for it.",
+    "isbn": "ISBN (optional)",
+    "note": "Why this book? (optional)",
+    "submit": "Suggest",
+    "created": "Thank you! Your suggestion was added.",
+    "merged": "Someone suggested this book already; your vote was added.",
+    "listTitle": "Suggestions from readers",
+    "empty": "No suggestions yet.",
+    "vote": "Vote for “{{title}}”",
+    "unvote": "Take back your vote for “{{title}}”",
+    "libraryNote": "Library: {{note}}",
+    "status": {"open": "Open", "ordered": "Ordered", "added": "In the library", "declined": "Declined"},
+    "fromSearch": "Not here? Suggest it to the library",
+    "profileTitle": "Missing a book?",
+    "profileText": "Suggest books for the library to buy and vote for other readers' ideas.",
+    "open": "Suggest a book",
+    "tab": "Suggestions",
+    "adminTitle": "Readers' suggestions",
+    "adminDescription": "Most votes first. Mark a suggestion ordered or declined; once the book is in the catalogue, mark it added and everyone who voted is emailed.",
+    "votes_one": "{{count}} vote",
+    "votes_other": "{{count}} votes",
+    "statusOf": "Status of “{{title}}”",
+    "noteFor": "Note for readers about “{{title}}”",
+    "notePlaceholder": "Note for readers (e.g. expected in May)",
+    "saveNote": "Save note",
+    "saved": "Suggestion updated",
+    "addedToast": "“{{title}}” marked as added; voters will be emailed"
   }
 }

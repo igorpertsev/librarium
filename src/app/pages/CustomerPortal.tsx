@@ -23,6 +23,7 @@ import { useCatalog } from '../contexts/CatalogContext';
 import { errorMessage } from '../utils/apiErrors';
 import type { BookListQuery } from '../../api/types';
 import { parseSeriesParam, parseTagParam } from '../utils/catalogLists';
+import { useAuth } from '../contexts/AuthContext';
 
 const PAGE_SIZE = 24;
 
@@ -217,6 +218,7 @@ export default function CustomerPortal() {
   // /books/<id>: a shared link opens that book over the catalogue.
   const { bookId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [linkedBook, setLinkedBook] = useState<Book | null>(null);
   useEffect(() => {
     if (!bookId) {
@@ -428,8 +430,13 @@ export default function CustomerPortal() {
           )}
 
           {!isLoading && !error && books.length === 0 && (
-            <div className="text-center py-12">
+            <div className="text-center py-12 space-y-3">
               <p className="text-muted-foreground">{t('home.noResults')}</p>
+              {user && search.trim() && (
+                <Button variant="outline" onClick={() => navigate(`/suggestions?title=${encodeURIComponent(search.trim())}`)}>
+                  {t('suggest.fromSearch')}
+                </Button>
+              )}
             </div>
           )}
 

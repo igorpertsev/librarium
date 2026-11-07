@@ -104,6 +104,7 @@ class NotificationKind(StrEnum):
     BOOK_AVAILABLE = "book_available"  # a book on the customer's waiting list is back
     BOOK_HELD = "book_held"  # a returned book is held for the customer for a while
     RESERVATION_READY = "reservation_ready"  # a book reserved for a date is ready to collect
+    PURCHASE_ADDED = "purchase_added"  # a book the reader asked the library to buy is in
 
 
 class NotificationStatus(StrEnum):
@@ -127,3 +128,12 @@ class ReservationStatus(StrEnum):
     ACTIVE = "active"  # waiting for its date
     FULFILLED = "fulfilled"  # the date came and the copy was held for the reader
     CANCELLED = "cancelled"  # by the reader
+
+
+class PurchaseStatus(StrEnum):
+    """A reader's suggestion for the library to buy a book."""
+
+    OPEN = "open"  # collecting votes
+    ORDERED = "ordered"  # the library has ordered it
+    ADDED = "added"  # it is in the catalogue (voters are told)
+    DECLINED = "declined"

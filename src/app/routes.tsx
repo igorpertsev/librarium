@@ -65,6 +65,10 @@ export const router = createBrowserRouter([
             lazy: page(() => import('./pages/Cart')),
           },
           {
+            path: 'suggestions',
+            lazy: page(() => import('./pages/Suggestions')),
+          },
+          {
             path: 'admin',
             element: <AdminLayout />,
             children: [

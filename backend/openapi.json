@@ -3264,6 +3264,277 @@
         }
       }
     },
+    "/api/v1/purchase-requests": {
+      "get": {
+        "tags": [
+          "purchase requests"
+        ],
+        "summary": "List Purchase Requests",
+        "description": "Suggestions with the most votes first (default: open and ordered ones).",
+        "operationId": "list_purchase_requests_api_v1_purchase_requests_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PurchaseStatus"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PurchaseRequestRead"
+                  },
+                  "title": "Response List Purchase Requests Api V1 Purchase Requests Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "purchase requests"
+        ],
+        "summary": "Suggest Purchase",
+        "description": "Suggest a book for the library to buy. The same book suggested earlier gets a vote instead (created=false). 409 ALREADY_IN_CATALOGUE (details.book_id) or TOO_MANY_SUGGESTIONS (10 open ones per reader).",
+        "operationId": "suggest_purchase_api_v1_purchase_requests_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PurchaseRequestCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseRequestCreated"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/purchase-requests/{request_id}/vote": {
+      "put": {
+        "tags": [
+          "purchase requests"
+        ],
+        "summary": "Vote For Purchase",
+        "operationId": "vote_for_purchase_api_v1_purchase_requests__request_id__vote_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseRequestRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "purchase requests"
+        ],
+        "summary": "Withdraw Purchase Vote",
+        "operationId": "withdraw_purchase_vote_api_v1_purchase_requests__request_id__vote_delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseRequestRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
     "/api/v1/admin/books": {
       "get": {
         "tags": [
@@ -4187,6 +4458,115 @@
             "HTTPBearer": []
           }
         ]
+      }
+    },
+    "/api/v1/admin/books/{book_id}/cover": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Upload Cover",
+        "description": "Upload a cover (JPEG, PNG or WebP, at most 5 MB) for every copy of the title. It is stored as WebP in three sizes; cover_url becomes /media/covers/<name>-L.webp.",
+        "operationId": "admin_upload_cover_api_v1_admin_books__book_id__cover_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_admin_upload_cover_api_v1_admin_books__book_id__cover_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
       }
     },
     "/api/v1/admin/books/{book_id}": {
@@ -7479,6 +7859,187 @@
           }
         }
       }
+    },
+    "/api/v1/admin/purchase-requests": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin List Purchase Requests",
+        "description": "Readers' suggestions, most votes first (default: every status).",
+        "operationId": "admin_list_purchase_requests_api_v1_admin_purchase_requests_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PurchaseStatus"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PurchaseRequestRead"
+                  },
+                  "title": "Response Admin List Purchase Requests Api V1 Admin Purchase Requests Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/purchase-requests/{request_id}": {
+      "patch": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Update Purchase Request",
+        "description": "Mark a suggestion ordered, added or declined, with an optional note for readers. \"added\" needs the book in the catalogue (same ISBN, or title and author; 409 BOOK_NOT_IN_CATALOGUE) and emails everyone who voted.",
+        "operationId": "admin_update_purchase_request_api_v1_admin_purchase_requests__request_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PurchaseRequestUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseRequestRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -7885,6 +8446,20 @@
           "goal"
         ],
         "title": "BadgeRead"
+      },
+      "Body_admin_upload_cover_api_v1_admin_books__book_id__cover_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_admin_upload_cover_api_v1_admin_books__book_id__cover_post"
       },
       "BookBrief": {
         "properties": {
@@ -10226,7 +10801,8 @@
           "overdue",
           "book_available",
           "book_held",
-          "reservation_ready"
+          "reservation_ready",
+          "purchase_added"
         ],
         "title": "NotificationKind"
       },
@@ -11015,6 +11591,212 @@
           "created_at"
         ],
         "title": "PublicReviewRead"
+      },
+      "PurchaseRequestCreate": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "author": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Author"
+          },
+          "isbn": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9Xx][0-9Xx\\- ]{8,30}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Isbn"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "title",
+          "author"
+        ],
+        "title": "PurchaseRequestCreate"
+      },
+      "PurchaseRequestCreated": {
+        "properties": {
+          "request": {
+            "$ref": "#/components/schemas/PurchaseRequestRead"
+          },
+          "created": {
+            "type": "boolean",
+            "title": "Created",
+            "description": "False when it was suggested already: it got a vote"
+          }
+        },
+        "type": "object",
+        "required": [
+          "request",
+          "created"
+        ],
+        "title": "PurchaseRequestCreated"
+      },
+      "PurchaseRequestRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "author": {
+            "type": "string",
+            "title": "Author"
+          },
+          "isbn": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Isbn"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PurchaseStatus"
+          },
+          "librarian_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Librarian Note"
+          },
+          "book_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Book Id",
+            "description": "The catalogue book, once added"
+          },
+          "votes": {
+            "type": "integer",
+            "title": "Votes"
+          },
+          "voted": {
+            "type": "boolean",
+            "title": "Voted",
+            "description": "The signed-in reader voted for it"
+          },
+          "mine": {
+            "type": "boolean",
+            "title": "Mine",
+            "description": "The signed-in reader suggested it"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "author",
+          "isbn",
+          "note",
+          "status",
+          "librarian_note",
+          "book_id",
+          "votes",
+          "voted",
+          "mine",
+          "created_at"
+        ],
+        "title": "PurchaseRequestRead"
+      },
+      "PurchaseRequestUpdate": {
+        "properties": {
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PurchaseStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "librarian_note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Librarian Note"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "PurchaseRequestUpdate"
+      },
+      "PurchaseStatus": {
+        "type": "string",
+        "enum": [
+          "open",
+          "ordered",
+          "added",
+          "declined"
+        ],
+        "title": "PurchaseStatus",
+        "description": "A reader's suggestion for the library to buy a book."
       },
       "QualityIssue": {
         "type": "string",

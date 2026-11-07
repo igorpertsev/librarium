@@ -288,6 +288,30 @@ def _render_book_available(user: User, book: Book, app_url: str) -> tuple[str, s
     )
 
 
+def _render_purchase_added(user: User, book: Book, app_url: str) -> tuple[str, str]:
+    by_language = {item.language: item for item in book.translations}
+    title_en, author_en = _titled(book.title, book.author, by_language.get(UiLanguage.EN))
+    title_ru, author_ru = _titled(book.title, book.author, by_language.get(UiLanguage.RU))
+    link = f"{app_url}/books/{book.id}"
+    english = (
+        f"Hello {user.full_name},\n\n"
+        f"the library has bought “{title_en}” by {author_en}, which you asked for. It is in the "
+        f"catalogue now: {link}\n\n— Little Dragon library\n"
+    )
+    russian = (
+        f"Здравствуйте, {user.full_name}!\n\n"
+        f"библиотека купила книгу «{title_ru}» ({author_ru}), которую вы просили. Она уже в "
+        f"каталоге: {link}\n\n— Библиотека Little Dragon\n"
+    )
+    return localized(
+        user,
+        f"“{title_en}” is in the library",
+        f"«{title_ru}» теперь в библиотеке",
+        english,
+        russian,
+    )
+
+
 def _when_en(value: datetime, zone: ZoneInfo) -> str:
     """Date and time in the library's time zone ("UTC" is spelled out)."""
     local = value.astimezone(zone)
@@ -393,6 +417,20 @@ class DeliveryReport:
         return self.sent + self.retried + self.failed + self.expired
 
 
+async def _compose_book_news(
+    session: AsyncSession, notification: Notification, user: User, app_url: str
+) -> tuple[str, str] | None:
+    book = await session.get(Book, notification.book_id) if notification.book_id else None
+    if book is None:
+        return None
+    if notification.kind is NotificationKind.PURCHASE_ADDED:
+        return _render_purchase_added(user, book, app_url)
+    # Someone else may have ordered it in the meantime: then the news is stale.
+    if not await _book_still_available(session, book):
+        return None
+    return _render_book_available(user, book, app_url)
+
+
 async def _compose(
     session: AsyncSession,
     notification: Notification,
@@ -416,12 +454,8 @@ async def _compose(
             zone,
             reserved=notification.kind is NotificationKind.RESERVATION_READY,
         )
-    if notification.kind is NotificationKind.BOOK_AVAILABLE:
-        book = await session.get(Book, notification.book_id) if notification.book_id else None
-        # Someone else may have ordered it in the meantime: then the news is stale.
-        if book is None or not await _book_still_available(session, book):
-            return None
-        return _render_book_available(user, book, app_url)
+    if notification.kind in {NotificationKind.BOOK_AVAILABLE, NotificationKind.PURCHASE_ADDED}:
+        return await _compose_book_news(session, notification, user, app_url)
     order = (
         await orders_repo.get_order(session, notification.order_id)
         if notification.order_id

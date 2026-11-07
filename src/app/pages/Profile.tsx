@@ -31,6 +31,7 @@ import { useBookText } from '../utils/bookText';
 import { coverOfSize } from '../utils/covers';
 import type { Order } from '../types';
 import { BorrowingHistory } from '../components/BorrowingHistory';
+import { Link } from 'react-router';
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -274,6 +275,17 @@ export default function Profile() {
 
       <ReadingListCard />
       <ReadingLogCard />
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('suggest.profileTitle')}</CardTitle>
+          <CardDescription>{t('suggest.profileText')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button variant="outline" asChild>
+            <Link to="/suggestions">{t('suggest.open')}</Link>
+          </Button>
+        </CardContent>
+      </Card>
 
       {waitlist.length > 0 && (
         <Card>

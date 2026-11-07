@@ -9,6 +9,7 @@ from app.models.library_settings import LibrarySettings
 from app.models.notification import Notification
 from app.models.order import Order, OrderItem
 from app.models.pickup import PickupPoint
+from app.models.purchase import PurchaseRequest, PurchaseVote
 from app.models.reading_list import ReadingListEntry
 from app.models.reading_log import ReadingLogEntry
 from app.models.refresh_token import RefreshToken
@@ -35,6 +36,8 @@ __all__ = [
     "Order",
     "OrderItem",
     "PickupPoint",
+    "PurchaseRequest",
+    "PurchaseVote",
     "ReadingListEntry",
     "ReadingLogEntry",
     "RefreshToken",

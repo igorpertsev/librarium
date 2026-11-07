@@ -442,6 +442,13 @@ two copies of the same title are two records (ISBN is not unique).
   hold. Cancelling (`DELETE /users/me/reservations/{id}`) gives a set-aside copy to the readers waiting for it.
   Librarians see upcoming reservations above the order list (`GET /admin/reservations`). Deleting an account
   drops its holds and reservations and passes those copies on.
+- **Book suggestions**: readers suggest books for the library to buy (`/suggestions`, also offered when a search
+  finds nothing and on the profile) and vote for each other's ideas (`GET/POST /purchase-requests`, `PUT/DELETE
+  /purchase-requests/{id}/vote`). The same book again (ISBN, or title and author in any case) counts as a vote
+  (`created: false`); books already in the catalogue are refused (`409 ALREADY_IN_CATALOGUE`); at most 10 open
+  suggestions per reader. Staff see them most-voted first on the *Suggestions* tab and mark them ordered, added or
+  declined with a note for readers (`PATCH /admin/purchase-requests/{id}`). *Added* needs the book in the catalogue
+  (`409 BOOK_NOT_IN_CATALOGUE`) and emails everyone who voted (`purchase_added`, also under the bell).
 - **Cover upload**: *Upload cover* in the book form (when editing) takes a JPEG, PNG or WebP up to 5 MB
   (`POST /admin/books/{id}/cover`, multipart `file`). Pillow decodes it (at most 40 megapixels), drops its metadata
   and stores WebP renditions L/M/S (800/400/160 px high) as `media/covers/<random>-<size>.webp`; every copy of the
@@ -504,6 +511,7 @@ Concurrency is covered by tests in which both requests are held at a barrier rig
 | `library_settings` | single row: `books_per_batch`, `price_per_batch NUMERIC(10,2)`, `currency`, `loan_period_days`, `max_renewals`, `hold_hours`, `block_overdue`, `late_fee_per_day NUMERIC(10,2)`, `timezone` |
 | `reading_log_entries` | reader, copy, `finished_on`, `UNIQUE(user_id, book_id)` (one per title in the service) |
 | `stocktakes`, `stocktake_counts` | counts of the shelves (one open at a time: partial unique index); counts per title (`group_id`) or unknown `isbn` |
+| `purchase_requests`, `purchase_votes` | readers' suggestions (`status` `open/ordered/added/declined`, `book_id` once added) and one vote per reader |
 | `audit_events` | actor (`SET NULL`) and email snapshot, `action`, `method`, `path`, `entity_type`, `entity_id`, `details JSONB` |
 | `advance_reservations` | reader, copy, `starts_on`, `status` (`active/fulfilled/cancelled`) |
 | `pickup_points` | `name`, `address`, `notes`, `hours JSONB` (`[{weekday, opens, closes}]`), `slot_minutes`, `slot_capacity` (NULL: no limit), `active` |
@@ -549,6 +557,7 @@ Differences (adapters in `src/api/mappers.ts`):
 | GET `/users/me/recommendations` (titles ranked by the tags of borrowed and saved ones) | “For you” shelf | signed-in user |
 | GET `/users/me/holds` · DELETE `/users/me/holds/{book_id}` | books held for the reader; give one up | signed-in user |
 | GET/POST `/users/me/reservations` · DELETE `/users/me/reservations/{id}` | reserve a title for a date; cancel | signed-in user |
+| GET/POST `/purchase-requests` · PUT/DELETE `/purchase-requests/{id}/vote` | suggest books to buy, vote | signed-in user |
 | GET `/users/me/reading-log` · PUT/DELETE `/users/me/reading-log/{book_id}` | finished titles, counts, badges, borrowed titles to log | signed-in user |
 | GET `/users/me/notifications` · POST `/users/me/notifications/read` (`{ids}` or nothing for all) | the bell: latest 30 news items of the last 60 days and the unread count | signed-in user |
 | GET/POST | `/admin/books`, GET `/admin/books/stats`, GET/PATCH/DELETE `/admin/books/{id}` | admin |
@@ -562,6 +571,7 @@ Differences (adapters in `src/api/mappers.ts`):
 | POST | `/admin/translations/suggest` (title, author and description in another language; saves nothing) | admin |
 | GET | `/admin/users` (staff) · PATCH `/admin/users/{id}` (role, disable) | admin |
 | GET | `/admin/audit` (activity log, newest first) | admin |
+| GET | `/admin/purchase-requests` · PATCH `/admin/purchase-requests/{id}` (`status`, `librarian_note`) | staff |
 | GET/POST | `/admin/stocktakes` · GET `/admin/stocktakes/{id}` (report) · POST `/admin/stocktakes/{id}/scan` `{isbn}`, `/count` `{book_id, delta}`, `/finish` `{mark_missing}` | staff |
 | GET/POST | `/admin/pickup-points` · PATCH/DELETE `/admin/pickup-points/{id}` | admin |
 | GET | `/admin/reservations` (titles reserved for a date, soonest first) | admin |

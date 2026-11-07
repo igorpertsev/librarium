@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Textarea } from '../components/ui/textarea';
 import { Badge } from '../components/ui/badge';
-import { Plus, Pencil, Trash2, Users, BookOpen as BookOpenIcon, ClipboardList, CheckCircle2, RotateCcw, Clock, Star, ImageDown, BellRing, BarChart3, CopyPlus, Tags, ClipboardCheck, History, ListChecks, MapPin, MessageSquare, ScanBarcode, Upload } from 'lucide-react';
+import { Plus, Pencil, Trash2, Users, BookOpen as BookOpenIcon, ClipboardList, CheckCircle2, RotateCcw, Clock, Star, ImageDown, BellRing, BarChart3, CopyPlus, Tags, ClipboardCheck, History, Lightbulb, ListChecks, MapPin, MessageSquare, ScanBarcode, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -26,6 +26,7 @@ import { ReturnDialog } from '../components/ReturnDialog';
 import { BulkBookActions } from '../components/BulkBookActions';
 import { IsbnScanner } from '../components/IsbnScanner';
 import { StocktakingTab } from '../components/StocktakingTab';
+import { PurchaseRequestsTab } from '../components/PurchaseRequestsTab';
 import { Checkbox } from '../components/ui/checkbox';
 import { isAdmin, type Role } from '../utils/roles';
 import { ReportsTab } from '../components/ReportsTab';
@@ -403,6 +404,10 @@ export default function AdminPortal() {
                 <BarChart3 className="w-4 h-4" />
                 {t('reports.tab')}
               </TabsTrigger>
+              <TabsTrigger value="suggestions" className="flex items-center gap-2">
+                <Lightbulb className="w-4 h-4" />
+                {t('suggest.tab')}
+              </TabsTrigger>
               <TabsTrigger value="stock" className="flex items-center gap-2">
                 <ClipboardCheck className="w-4 h-4" />
                 {t('stock.tab')}
@@ -723,6 +728,9 @@ export default function AdminPortal() {
               <ReportsTab />
             </TabsContent>
 
+            <TabsContent value="suggestions">
+              <PurchaseRequestsTab />
+            </TabsContent>
             <TabsContent value="stock">
               <StocktakingTab />
             </TabsContent>

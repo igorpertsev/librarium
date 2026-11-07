@@ -400,7 +400,10 @@
     "stocktakeFinished": "Этот пересчёт уже завершён.",
     "invalidIsbn": "Это не ISBN.",
     "invalidImage": "Это не изображение JPEG, PNG или WebP.",
-    "imageTooLarge": "Изображение слишком большое (не больше 5 МБ)."
+    "imageTooLarge": "Изображение слишком большое (не больше 5 МБ).",
+    "alreadyInCatalogue": "Эта книга уже есть в каталоге.",
+    "tooManySuggestions": "Открытых предложений может быть не больше 10.",
+    "bookNotInCatalogue": "Сначала добавьте книгу в каталог (тот же ISBN или то же название и автор)."
   },
   "checkout": {
     "title": "Подтверждение заказа",
@@ -932,7 +935,7 @@
     "title": "Уведомления",
     "empty": "Пока ничего нового. Здесь появятся новости о ваших заказах и книгах.",
     "new": "новое",
-    "kinds": {"order_received": "Мы получили вашу заявку №{{number}}", "order_confirmed": "Заказ №{{number}}: книги выданы", "order_cancelled": "Библиотека отменила заказ №{{number}}", "due_soon": "Заказ №{{number}}: скоро нужно вернуть книги", "overdue": "Заказ №{{number}} просрочен", "book_available": "«{{title}}» снова доступна", "book_held": "«{{title}}» отложена для вас", "reservation_ready": "«{{title}}», которую вы забронировали, готова"}
+    "kinds": {"order_received": "Мы получили вашу заявку №{{number}}", "order_confirmed": "Заказ №{{number}}: книги выданы", "order_cancelled": "Библиотека отменила заказ №{{number}}", "due_soon": "Заказ №{{number}}: скоро нужно вернуть книги", "overdue": "Заказ №{{number}} просрочен", "book_available": "«{{title}}» снова доступна", "book_held": "«{{title}}» отложена для вас", "reservation_ready": "«{{title}}», которую вы забронировали, готова", "purchase_added": "«{{title}}», которую вы просили, теперь в библиотеке"}
   },
   "readingLog": {
     "title": "Мой дневник чтения",
@@ -965,7 +968,7 @@
     "refresh": "Обновить",
     "empty": "Изменений пока нет.",
     "more": "Показать ещё",
-    "actions": {"admin_create_book": "Добавлена книга", "admin_import_books": "Импорт книг", "admin_add_copies": "Добавлены экземпляры", "admin_update_book": "Изменена книга", "admin_delete_book": "Убрана книга", "admin_update_user": "Изменён пользователь", "admin_change_order_status": "Изменён статус заказа", "admin_change_order_due_date": "Изменён срок возврата", "admin_settle_late_fee": "Закрыт штраф", "admin_remind_customer": "Отправлено напоминание", "admin_create_tag": "Добавлен тег", "admin_update_tag": "Изменён тег", "admin_delete_tag": "Удалён тег", "admin_merge_tag": "Объединены теги", "admin_create_series": "Добавлена серия", "admin_update_series": "Изменена серия", "admin_delete_series": "Удалена серия", "admin_merge_series": "Объединены серии", "admin_update_settings": "Изменены настройки библиотеки", "admin_moderate_review": "Проверен отзыв", "admin_delete_review": "Удалён отзыв", "admin_create_pickup_point": "Добавлен пункт выдачи", "admin_update_pickup_point": "Изменён пункт выдачи", "admin_delete_pickup_point": "Удалён пункт выдачи"}
+    "actions": {"admin_create_book": "Добавлена книга", "admin_import_books": "Импорт книг", "admin_add_copies": "Добавлены экземпляры", "admin_update_book": "Изменена книга", "admin_delete_book": "Убрана книга", "admin_update_user": "Изменён пользователь", "admin_change_order_status": "Изменён статус заказа", "admin_change_order_due_date": "Изменён срок возврата", "admin_settle_late_fee": "Закрыт штраф", "admin_remind_customer": "Отправлено напоминание", "admin_create_tag": "Добавлен тег", "admin_update_tag": "Изменён тег", "admin_delete_tag": "Удалён тег", "admin_merge_tag": "Объединены теги", "admin_create_series": "Добавлена серия", "admin_update_series": "Изменена серия", "admin_delete_series": "Удалена серия", "admin_merge_series": "Объединены серии", "admin_update_settings": "Изменены настройки библиотеки", "admin_moderate_review": "Проверен отзыв", "admin_delete_review": "Удалён отзыв", "admin_create_pickup_point": "Добавлен пункт выдачи", "admin_update_pickup_point": "Изменён пункт выдачи", "admin_delete_pickup_point": "Удалён пункт выдачи", "admin_update_purchase_request": "Изменено предложение", "admin_upload_cover": "Загружена обложка", "admin_bulk_update_books": "Изменено несколько книг", "admin_start_stocktake": "Начата инвентаризация", "admin_finish_stocktake": "Завершена инвентаризация"}
   },
   "condition": {
     "label": "Состояние экземпляра",
@@ -1066,5 +1069,39 @@
     "upload": "Загрузить обложку",
     "hint": "JPEG, PNG или WebP до 5 МБ. Обложка сразу появится у всех экземпляров книги.",
     "uploaded": "Обложка загружена"
+  },
+  "suggest": {
+    "title": "Предложить книгу",
+    "description": "Подскажите библиотеке, какие книги купить, и голосуйте за предложения других читателей. Самые нужные покупают первыми.",
+    "formTitle": "Ваше предложение",
+    "formHint": "Если эту книгу уже предложили, ваше предложение засчитается как голос за неё.",
+    "isbn": "ISBN (необязательно)",
+    "note": "Почему эта книга? (необязательно)",
+    "submit": "Предложить",
+    "created": "Спасибо! Предложение добавлено.",
+    "merged": "Эту книгу уже предложили — ваш голос добавлен.",
+    "listTitle": "Предложения читателей",
+    "empty": "Предложений пока нет.",
+    "vote": "Проголосовать за «{{title}}»",
+    "unvote": "Отозвать голос за «{{title}}»",
+    "libraryNote": "Библиотека: {{note}}",
+    "status": {"open": "Открыто", "ordered": "Заказана", "added": "Уже в библиотеке", "declined": "Отклонено"},
+    "fromSearch": "Нет такой книги? Предложите её библиотеке",
+    "profileTitle": "Не нашли книгу?",
+    "profileText": "Предлагайте книги для покупки и голосуйте за идеи других читателей.",
+    "open": "Предложить книгу",
+    "tab": "Предложения",
+    "adminTitle": "Предложения читателей",
+    "adminDescription": "Сначала с наибольшим числом голосов. Отметьте предложение заказанным или отклонённым; когда книга появится в каталоге, отметьте её добавленной — все проголосовавшие получат письмо.",
+    "votes_one": "{{count}} голос",
+    "votes_few": "{{count}} голоса",
+    "votes_many": "{{count}} голосов",
+    "votes_other": "{{count}} голоса",
+    "statusOf": "Статус «{{title}}»",
+    "noteFor": "Заметка для читателей о «{{title}}»",
+    "notePlaceholder": "Заметка для читателей (например, ожидается в мае)",
+    "saveNote": "Сохранить заметку",
+    "saved": "Предложение обновлено",
+    "addedToast": "«{{title}}» отмечена добавленной; проголосовавшим придёт письмо"
   }
 }
