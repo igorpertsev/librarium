@@ -379,6 +379,35 @@ docker image prune -f
 The `migrate` service applies new Alembic migrations before the backend restarts. Expect a few
 seconds of downtime while the single backend container is replaced.
 
+## Automatic deployment (staging, then production)
+
+`.github/workflows/deploy.yml` deploys every commit on `main` that passed CI: first to a staging
+server, then a smoke test (`deploy/smoke.sh`: backend and database up, the app and catalogue answer,
+the manifest and security headers are there), then — after someone approves it in GitHub — to
+production, with a backup first. It can also be started by hand (*Actions → Deploy → Run workflow*,
+optionally with a commit id).
+
+1. **A staging server.** Repeat sections 1–8 on a second (small) VM with its own hostname, e.g.
+   `staging.library.example.com`, and its own `.env` and secrets. Do not copy production data to it.
+2. **A deploy key per server.** On your computer: `ssh-keygen -t ed25519 -f deploy-staging -N ''`.
+   On the server, restrict that key to the update script by adding one line to
+   `~/.ssh/authorized_keys` (the second server gets its own key, without `DEPLOY_NO_BACKUP=1`):
+
+   ```text
+   command="DEPLOY_NO_BACKUP=1 /home/ubuntu/librarium/deploy/update.sh",no-port-forwarding,no-agent-forwarding,no-X11-forwarding,no-pty ssh-ed25519 AAAA… deploy-staging
+   ```
+
+   The script only accepts a commit id, refuses to run over local changes, fetches, checks out
+   that commit, runs `docker compose … up -d --build --wait` and prunes old images.
+3. **GitHub environments.** In the repository's *Settings → Environments* create `staging` and
+   `production`; give `production` *Required reviewers*. In each, add the variables `SITE_URL`
+   (`https://…`), `DEPLOY_HOST`, `DEPLOY_USER` (e.g. `ubuntu`), `DEPLOY_DIR`
+   (`/home/ubuntu/librarium`) and the secrets `DEPLOY_SSH_KEY` (the private key file's contents)
+   and `DEPLOY_KNOWN_HOSTS` (the output of `ssh-keyscan <host>`, so an impostor server is refused).
+
+Until the environments have these values the workflow runs but skips the SSH and smoke steps. The
+smoke test can be run by hand against any site: `deploy/smoke.sh https://library.example.com`.
+
 ## Everyday commands
 
 ```bash

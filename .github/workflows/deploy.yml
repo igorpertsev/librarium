@@ -1,0 +1,91 @@
+# Deploys main after CI passed: staging first, a smoke test, then production after approval.
+#
+# Set up once (see "Automatic deployment" in deploy/README.md):
+#   - GitHub environments "staging" and "production" (production with required reviewers),
+#   - in each: variables SITE_URL, DEPLOY_HOST, DEPLOY_USER, DEPLOY_DIR and secrets
+#     DEPLOY_SSH_KEY (private key of a deploy key) and DEPLOY_KNOWN_HOSTS (`ssh-keyscan` line).
+# Without the "staging" environment's variables the workflow skips itself.
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Commit to deploy (default: the latest commit on main)"
+        required: false
+
+# One deploy at a time; a newer one waits instead of cancelling a running one.
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  staging:
+    name: Staging
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment:
+      name: staging
+      url: ${{ vars.SITE_URL }}
+    outputs:
+      ref: ${{ steps.ref.outputs.sha }}
+    steps:
+      - name: Commit to deploy
+        id: ref
+        env:
+          WANTED: ${{ inputs.ref || github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          if [[ ! "$WANTED" =~ ^[0-9a-f]{7,40}$ ]]; then
+            echo "::error::expected a commit id, got '$WANTED'"; exit 1
+          fi
+          echo "sha=$WANTED" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.ref.outputs.sha }}
+      - name: Deploy over SSH
+        if: vars.DEPLOY_HOST != ''
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          TARGET: ${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }}
+          DIR: ${{ vars.DEPLOY_DIR }}
+          SHA: ${{ steps.ref.outputs.sha }}
+        run: deploy/ci-ssh.sh "$TARGET" "$DIR" --no-backup "$SHA"
+      - name: Smoke test
+        if: vars.SITE_URL != ''
+        run: deploy/smoke.sh "${{ vars.SITE_URL }}"
+
+  production:
+    name: Production
+    needs: staging
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment:
+      name: production
+      url: ${{ vars.SITE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.staging.outputs.ref }}
+      - name: Deploy over SSH (backup first)
+        if: vars.DEPLOY_HOST != ''
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          TARGET: ${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }}
+          DIR: ${{ vars.DEPLOY_DIR }}
+          SHA: ${{ needs.staging.outputs.ref }}
+        run: deploy/ci-ssh.sh "$TARGET" "$DIR" "$SHA"
+      - name: Smoke test
+        if: vars.SITE_URL != ''
+        run: deploy/smoke.sh "${{ vars.SITE_URL }}"

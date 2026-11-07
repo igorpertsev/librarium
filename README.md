@@ -495,6 +495,9 @@ two copies of the same title are two records (ISBN is not unique).
   form and when an order comes back (*Mark Returned* asks how each copy came back; only changed copies are saved).
   It is not shared between copies of a title. Worn and damaged copies are marked in the admin book list, and
   damaged ones are listed under *Data quality* (`quality=damaged`).
+- **Automatic deployment**: `.github/workflows/deploy.yml` deploys `main` after CI passes — staging, smoke test
+  (`deploy/smoke.sh`), then production after approval (backup first) — over SSH with a restricted key that may only
+  run `deploy/update.sh <commit>`. Setup: *Automatic deployment* in `deploy/README.md`.
 - **Installable app (PWA)**: `public/manifest.webmanifest`, icons made from the logo, and a small hand-written
   service worker (`public/sw.js`, registered only in production builds). Pages are network-first with the last copy
   of the app as the offline fallback (a banner says the catalogue needs a connection); built `/assets/*` files are
