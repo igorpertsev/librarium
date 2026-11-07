@@ -37,6 +37,7 @@ class UserRead(ApiModel):
     preferred_language: UiLanguage | None
     mfa_enabled: bool = Field(description="Two-step sign-in is on")
     telegram_connected: bool = Field(description="Notifications also go to a Telegram chat")
+    calendar_feed: bool = Field(description="A calendar feed link exists (see /users/me/calendar)")
     created_at: datetime
     updated_at: datetime
 
@@ -99,3 +100,7 @@ class DeleteAccountRequest(RequestModel):
 class TelegramLink(ApiModel):
     url: str = Field(description="Opens the bot with a one-time start code")
     expires_at: datetime
+
+
+class CalendarLink(ApiModel):
+    url: str = Field(description="Secret iCalendar feed URL; keep it private")

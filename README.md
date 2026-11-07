@@ -624,6 +624,12 @@ two copies of the same title are two records (ISBN is not unique).
   year of birth sees one chip per child above the catalogue ("Mia, 7"), which sets `for_age` in the address bar; at
   checkout, choosing a child under *Who are the books for?* lists the books marked for older readers (a hint, the
   order is not blocked).
+- **Calendar feed**: *Get calendar link* on the profile (`POST /users/me/calendar`) makes a secret iCalendar link,
+  `GET /calendar/<token>.ics`, that calendar apps subscribe to without signing in (Google: *From URL*; Apple and
+  Outlook: the `webcal:` button). It lists due dates as all-day events with a reminder the day before, pickup
+  appointments at their point and time, the last day to collect a held book and reservation dates, in the reader's
+  language. Only a SHA-256 of the token is stored: a new link replaces the old one and `DELETE /users/me/calendar`
+  turns it off (both then answer 404). Links use `API_PUBLIC_URL`.
 - **Notification bell**: the header shows the reader's news — the same events as the emails (`notifications`), even
   when an email could not be sent, except news that went stale before delivery. Opening the list marks it read
   (`read_at`); it refreshes every minute while the tab is visible. Notifications from before the bell existed

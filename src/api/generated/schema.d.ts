@@ -475,6 +475,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/users/me/calendar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * New Calendar Link
+         * @description A new secret link to the reader's calendar feed (due dates, pickups, holds, reservations); an earlier link stops working.
+         */
+        post: operations["new_calendar_link_api_v1_users_me_calendar_post"];
+        /**
+         * Remove Calendar Link
+         * @description Turn the calendar feed off (its link stops working).
+         */
+        delete: operations["remove_calendar_link_api_v1_users_me_calendar_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users/me/children": {
         parameters: {
             query?: never;
@@ -648,6 +672,26 @@ export interface paths {
          * @description Everything stored about the signed-in reader, as a JSON file.
          */
         get: operations["export_my_data_api_v1_users_me_export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/calendar/{token}.ics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Calendar Feed
+         * @description Due dates, pickup appointments, held books and reservations of the reader whose link this is (see POST /users/me/calendar). 404 for an unknown or replaced link.
+         */
+        get: operations["calendar_feed_api_v1_calendar__token__ics_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2128,6 +2172,11 @@ export interface components {
              */
             telegram_connected: boolean;
             /**
+             * Calendar Feed
+             * @description A calendar feed link exists (see /users/me/calendar)
+             */
+            calendar_feed: boolean;
+            /**
              * Created At
              * Format: date-time
              */
@@ -2636,6 +2685,14 @@ export interface components {
             titles: number;
             /** Copies */
             copies: number;
+        };
+        /** CalendarLink */
+        CalendarLink: {
+            /**
+             * Url
+             * @description Secret iCalendar feed URL; keep it private
+             */
+            url: string;
         };
         /** CartItemCreate */
         CartItemCreate: {
@@ -4151,6 +4208,11 @@ export interface components {
              */
             telegram_connected: boolean;
             /**
+             * Calendar Feed
+             * @description A calendar feed link exists (see /users/me/calendar)
+             */
+            calendar_feed: boolean;
+            /**
              * Created At
              * Format: date-time
              */
@@ -5404,6 +5466,62 @@ export interface operations {
             };
         };
     };
+    new_calendar_link_api_v1_users_me_calendar_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarLink"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    remove_calendar_link_api_v1_users_me_calendar_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     my_children_api_v1_users_me_children_get: {
         parameters: {
             query?: never;
@@ -5968,6 +6086,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    calendar_feed_api_v1_calendar__token__ics_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description An iCalendar feed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/calendar": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

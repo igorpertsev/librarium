@@ -153,3 +153,23 @@ test('a parent finds books for a child and hears about books for older readers',
     await setBatchSize(request, 5);
   }
 });
+
+test('a reader gets a calendar link and the feed answers', async ({ page, request }) => {
+  await registerCustomer(page);
+  await page.getByRole('button', { name: 'My Books' }).click();
+  const card = page.getByTestId('calendar');
+  await card.getByRole('button', { name: 'Get calendar link' }).click();
+  const link = card.getByLabel('Your calendar link');
+  await expect(link).toHaveValue(/\/api\/v1\/calendar\/.+\.ics$/);
+  await expect(card.getByRole('link', { name: 'Open in calendar app' })).toHaveAttribute('href', /^webcal:/);
+
+  // Calendar apps fetch it without signing in.
+  const url = await link.inputValue();
+  const feed = await request.get(url);
+  expect(feed.status()).toBe(200);
+  expect(await feed.text()).toContain('BEGIN:VCALENDAR');
+
+  await card.getByRole('button', { name: 'Turn off' }).click();
+  await expect(card.getByRole('button', { name: 'Get calendar link' })).toBeVisible();
+  expect((await request.get(url)).status()).toBe(404);
+});

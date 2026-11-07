@@ -11,6 +11,8 @@ x-backend: &backend
     DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/librarium_e2e
     JWT_SECRET_KEY: e2e-only-jwt-secret-e2e-only-jwt-secret-0123456789
     FRONTEND_ORIGINS: http://localhost:4173
+    # Links the backend hands out (calendar feed, sign-in callbacks) point at itself.
+    API_PUBLIC_URL: http://localhost:8100/api/v1
     SEED_ADMIN_EMAIL: e2e-admin@example.com
     SEED_ADMIN_PASSWORD: e2e-admin-password
     SEED_ADMIN_NAME: E2E Librarian
