@@ -586,6 +586,101 @@
         }
       }
     },
+    "/api/v1/auth/oauth/providers": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Oauth Providers",
+        "description": "The outside sign-in methods this library has set up (shown on the sign-in page).",
+        "operationId": "oauth_providers_api_v1_auth_oauth_providers_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthProviders"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/oauth/{provider}/start": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Oauth Start",
+        "description": "Send the browser to the provider; it comes back to the callback.",
+        "operationId": "oauth_start_api_v1_auth_oauth__provider__start_get",
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Provider"
+            }
+          },
+          {
+            "name": "next",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Next"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/users/me": {
       "get": {
         "tags": [
@@ -11347,6 +11442,23 @@
           "purchase_added"
         ],
         "title": "NotificationKind"
+      },
+      "OAuthProviders": {
+        "properties": {
+          "providers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Providers",
+            "description": "google and/or apple, when set up"
+          }
+        },
+        "type": "object",
+        "required": [
+          "providers"
+        ],
+        "title": "OAuthProviders"
       },
       "OpeningHours": {
         "properties": {

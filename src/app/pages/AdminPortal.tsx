@@ -430,7 +430,7 @@ export default function AdminPortal() {
 
             <TabsContent value="books">
           {booksError && (
-            <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md mb-4 flex items-center justify-between gap-2">
+            <div className="text-sm text-destructive dark:text-red-300 bg-destructive/10 p-3 rounded-md mb-4 flex items-center justify-between gap-2">
               <span>{errorMessage(t, booksError)}</span>
               <Button size="sm" variant="outline" onClick={() => loadBooks(currentPage)}>{t('common.retry')}</Button>
             </div>

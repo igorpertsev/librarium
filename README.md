@@ -117,6 +117,7 @@ Docker Compose and Vite read the root `.env` (template: `.env.example`). Filled-
 | `VITE_API_URL` | `http://localhost:8000/api/v1` | API base URL for the frontend |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_STARTTLS`, `SMTP_SSL`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `MAIL_FROM` | empty / `587` / `true` / `false` | outgoing email; empty `SMTP_HOST` disables sending |
 | `APP_BASE_URL`, `DUE_SOON_DAYS` | `http://localhost:5173`, `3` | links in emails; reminder lead time in days |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `APPLE_CLIENT_ID`, `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY`, `API_PUBLIC_URL` | empty | optional Google / Apple sign-in; callback base URL (default `APP_BASE_URL/api/v1`) |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME` | empty | optional Telegram bot for notifications |
 | `MEDIA_DIR`, `MAX_COVER_BYTES` | `media`, `5242880` | where uploaded covers are kept (the `media` volume, `/app/media`, in Docker); upload limit |
 | `PASSWORD_RESET_EXPIRE_MINUTES` | `60` | lifetime of password reset links (5–1440) |
@@ -288,6 +289,15 @@ conversion to UI models in `src/api/mappers.ts`. After an API change: export the
 - **Access token** — JWT (HS256), 15 minutes, claims `sub`, `role`, `type`, `jti`, `iat`, `nbf`, `exp`, `iss`, `aud`.
   Sent as `Authorization: Bearer`. The frontend keeps it in memory only.
   Authorisation always uses the role stored in the database; the `role` claim is informational.
+- **Sign in with Google or Apple** (optional; shown only for providers with credentials, `GET
+  /auth/oauth/providers`) — OpenID Connect authorization code flow with PKCE (`/auth/oauth/{provider}/start` →
+  provider → `/auth/oauth/{provider}/callback`; Apple answers with a form POST). `state`, `nonce` and the PKCE
+  verifier travel in a signed HttpOnly cookie for 10 minutes; the ID token's signature (provider keys, cached for
+  an hour), issuer, audience, expiry and nonce are checked. Accounts are matched by the provider's subject id
+  (`user_identities`), then by the *verified* email (the identity is linked), else created as customers with a
+  random password ("Forgot password" sets a real one). Users with two-step sign-in finish on the sign-in page
+  (`/login#mfa=…`); errors come back as `/login?oauth_error=<code>`; after signing in, only paths on this site
+  are followed. Apple's client secret is a short-lived ES256 JWT signed with the team's key.
 - **Two-step sign-in** — optional for every account (profile → *Two-step sign-in*): confirm the password
   (`POST /users/me/mfa/setup`), scan the `otpauth://` QR code with an authenticator app, confirm with a code
   (`/users/me/mfa/enable`) and keep the ten recovery codes it returns (shown once, stored as SHA-256 hashes, each

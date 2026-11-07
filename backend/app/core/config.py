@@ -83,6 +83,16 @@ class Settings(BaseSettings):
     app_base_url: str = "http://localhost:5173"
     # Uploaded book covers (served at /media); a volume in Docker.
     media_dir: str = "media"
+    # Sign in with Google / Apple (optional, see app.services.oauth). The backend's public URL
+    # (for the callback address the providers send people back to) defaults to
+    # APP_BASE_URL + /api/v1, which fits a single domain behind Caddy.
+    api_public_url: str | None = None
+    google_client_id: str | None = None
+    google_client_secret: SecretStr | None = None
+    apple_client_id: str | None = None
+    apple_team_id: str | None = None
+    apple_key_id: str | None = None
+    apple_private_key: SecretStr | None = None
     # Optional Telegram bot for notifications (see app.services.telegram).
     telegram_bot_token: SecretStr | None = None
     telegram_bot_username: str | None = None
@@ -117,6 +127,14 @@ class Settings(BaseSettings):
             value = "postgresql+asyncpg://" + value.removeprefix("postgresql://")
         if not value.startswith("postgresql+asyncpg://"):
             raise ValueError("DATABASE_URL must be a PostgreSQL URL (postgresql+asyncpg://...)")
+        return value
+
+    @field_validator("apple_private_key", mode="before")
+    @classmethod
+    def _real_line_breaks(cls, value: object) -> object:
+        """A .p8 key written on one line in .env, with "\\n" for the line breaks."""
+        if isinstance(value, str) and "\\n" in value and "\n" not in value:
+            return value.replace("\\n", "\n")
         return value
 
     @field_validator("app_base_url")
@@ -193,6 +211,10 @@ class Settings(BaseSettings):
     @property
     def cors_origins(self) -> list[str]:
         return [o.strip() for o in self.frontend_origins.split(",") if o.strip()]
+
+    @property
+    def public_api_url(self) -> str:
+        return (self.api_public_url or f"{self.app_base_url}/api/v1").rstrip("/")
 
     @property
     def jwt_secret(self) -> str:

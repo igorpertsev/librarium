@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link, Navigate, useLocation } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
@@ -9,6 +9,7 @@ import dragonLogo from '../../imports/dragon.webp';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { errorMessage } from '../utils/apiErrors';
+import { SocialSignIn } from '../components/SocialSignIn';
 
 export default function Login() {
   const { t } = useTranslation();
@@ -26,6 +27,18 @@ export default function Login() {
   const requested = (location.state as { from?: unknown } | null)?.from;
   const returnTo =
     typeof requested === 'string' && requested.startsWith('/') && !requested.startsWith('//') ? requested : '/';
+
+  // Back from Google / Apple: an error to show, or the code step of two-step sign-in.
+  useEffect(() => {
+    const oauthError = new URLSearchParams(location.search).get('oauth_error');
+    if (oauthError) setError(t(`social.errors.${oauthError}`, { defaultValue: t('social.errors.OAUTH_FAILED') }));
+    const fragment = new URLSearchParams(location.hash.replace(/^#/, ''));
+    const token = fragment.get('mfa');
+    if (token) {
+      setMfaToken(token);
+      window.history.replaceState(null, '', location.pathname + location.search);
+    }
+  }, [location.search, location.hash, location.pathname, t]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,7 +126,7 @@ export default function Login() {
             </>
             )}
             {error && (
-              <div role="alert" className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
+              <div role="alert" className="text-sm text-destructive dark:text-red-300 bg-destructive/10 p-3 rounded-md">
                 {error}
               </div>
             )}
@@ -126,6 +139,11 @@ export default function Login() {
               </Button>
             )}
           </form>
+          {!mfaToken && (
+            <div className="mt-4">
+              <SocialSignIn returnTo={returnTo} />
+            </div>
+          )}
         </CardContent>
         <CardFooter className="flex flex-col items-center gap-2">
           <p className="text-sm text-muted-foreground">

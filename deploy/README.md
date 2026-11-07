@@ -317,6 +317,24 @@ notification there as well as by email; it works even without SMTP. Messages go 
 servers. To turn it off, empty both values and run the same `up -d`; linked chats stop getting
 messages.
 
+## Sign in with Google or Apple (optional)
+
+**Google.** In Google Cloud Console → APIs & Services → Credentials, create an *OAuth client ID*
+of type *Web application* with the authorised redirect URI
+`https://<your domain>/api/v1/auth/oauth/google/callback` (the consent screen needs the app name and
+a support email). Put the client ID and secret into `.env` as `GOOGLE_CLIENT_ID` and
+`GOOGLE_CLIENT_SECRET`.
+
+**Apple** (needs a paid Apple Developer account). Create a *Services ID* (this is
+`APPLE_CLIENT_ID`), enable *Sign in with Apple* for it with your domain and the return URL
+`https://<your domain>/api/v1/auth/oauth/apple/callback`, then create a key with *Sign in with
+Apple* and download the `.p8` file. Set `APPLE_TEAM_ID`, `APPLE_KEY_ID` and `APPLE_PRIVATE_KEY`
+(the file's contents; in `.env` write the line breaks as `\n`).
+
+Apply with `docker compose -f docker-compose.prod.yml up -d`. The buttons appear on the sign-in and
+sign-up pages only for providers that are set up. People who already have an account are matched
+by their confirmed email address; two-step sign-in still asks for the code.
+
 ## Monitoring and alerts
 
 Three checks tell you about problems before readers do. All are optional and use free services.

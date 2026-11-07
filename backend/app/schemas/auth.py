@@ -90,3 +90,7 @@ class MfaEnableRequest(RequestModel):
 
 class MfaRecoveryCodes(ApiModel):
     recovery_codes: list[str] = Field(description="Each works once; shown only now")
+
+
+class OAuthProviders(ApiModel):
+    providers: list[str] = Field(description="google and/or apple, when set up")

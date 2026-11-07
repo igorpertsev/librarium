@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { PreferredContact } from '../types';
 import { Star } from 'lucide-react';
 import { errorMessage } from '../utils/apiErrors';
+import { SocialSignIn } from '../components/SocialSignIn';
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -138,9 +139,12 @@ export default function Register() {
               ))}
             </div>
 
-            {error && <div role="alert" className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">{error}</div>}
+            {error && <div role="alert" className="text-sm text-destructive dark:text-red-300 bg-destructive/10 p-3 rounded-md">{error}</div>}
             <Button type="submit" className="w-full" disabled={submitting}>{t('auth.createAccountBtn')}</Button>
           </form>
+          <div className="mt-4">
+            <SocialSignIn />
+          </div>
         </CardContent>
         <CardFooter className="flex justify-center">
           <p className="text-sm text-muted-foreground">

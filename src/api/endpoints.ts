@@ -82,6 +82,7 @@ export const authApi = {
     apiRequest<TokenResponseDto>('/auth/register', { method: 'POST', body, auth: false }),
   login: (body: LoginDto) =>
     apiRequest<TokenResponseDto>('/auth/login', { method: 'POST', body, auth: false }),
+  oauthProviders: () => apiRequest<{ providers: string[] }>('/auth/oauth/providers', { auth: false }),
   loginMfa: (body: { mfa_token: string; code: string }) =>
     apiRequest<TokenResponseDto>('/auth/login/mfa', { method: 'POST', body, auth: false }),
   logout: () => apiRequest<void>('/auth/logout', { method: 'POST', auth: false }),

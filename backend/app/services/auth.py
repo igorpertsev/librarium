@@ -154,6 +154,13 @@ async def login(
     return await _signed_in(session, settings, user, meta)
 
 
+async def signed_in(
+    session: AsyncSession, settings: Settings, user: User, meta: ClientMeta
+) -> AuthResult:
+    """Issue a session for a user whose identity is already proven (e.g. by Google)."""
+    return await _signed_in(session, settings, user, meta)
+
+
 async def _signed_in(
     session: AsyncSession, settings: Settings, user: User, meta: ClientMeta
 ) -> AuthResult:

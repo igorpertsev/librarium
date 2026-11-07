@@ -114,7 +114,8 @@ async def _clean_database(app: FastAPI) -> None:
                 "TRUNCATE users, books, carts, cart_items, orders, order_items, refresh_tokens, "
                 "notifications, waitlist_entries, reading_list_entries, reviews, book_holds, "
                 "tags, series, pickup_points, advance_reservations, reading_log_entries, "
-                "audit_events, stocktakes, stocktake_counts, purchase_requests, purchase_votes "
+                "audit_events, stocktakes, stocktake_counts, purchase_requests, purchase_votes, "
+                "user_identities "
                 "RESTART IDENTITY CASCADE"
             )
         )

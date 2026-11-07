@@ -489,7 +489,7 @@ export default function Profile() {
                 ));
               })()}
             </div>
-            {error && <div role="alert" className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">{error}</div>}
+            {error && <div role="alert" className="text-sm text-destructive dark:text-red-300 bg-destructive/10 p-3 rounded-md">{error}</div>}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>{t('admin.cancel')}</Button>
@@ -518,7 +518,7 @@ export default function Profile() {
               <Label htmlFor="confirm-password">{t('profile.confirmPassword')}</Label>
               <Input id="confirm-password" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder={t('profile.repeatPassword')} />
             </div>
-            {passwordError && <div role="alert" className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">{passwordError}</div>}
+            {passwordError && <div role="alert" className="text-sm text-destructive dark:text-red-300 bg-destructive/10 p-3 rounded-md">{passwordError}</div>}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsPasswordDialogOpen(false)}>{t('admin.cancel')}</Button>

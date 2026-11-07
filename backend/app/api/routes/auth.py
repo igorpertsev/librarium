@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import logging
 from email.message import EmailMessage
+from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, Request, Response, status
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, BackgroundTasks, Form, Query, Request, Response, status
+from fastapi.responses import JSONResponse, RedirectResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import (
     ClientMetaDep,
@@ -14,6 +16,7 @@ from app.api.dependencies import (
     SessionDep,
     SettingsDep,
 )
+from app.api.prefix import API_PREFIX
 from app.core.config import Settings
 from app.core.exceptions import (
     AppError,
@@ -36,6 +39,7 @@ from app.schemas.auth import (
     ForgotPasswordRequest,
     LoginMfaRequest,
     LoginRequest,
+    OAuthProviders,
     RegisterRequest,
     ResetPasswordRequest,
     TokenResponse,
@@ -43,7 +47,7 @@ from app.schemas.auth import (
 from app.schemas.common import error_responses
 from app.schemas.user import UserRead
 from app.services import auth as auth_service
-from app.services import mfa, password_reset
+from app.services import mfa, oauth, password_reset
 from app.services.auth import AuthResult, ClientMeta
 from app.services.notifications import Sender
 
@@ -320,3 +324,131 @@ async def reset_password(
     limiter.consume(f"reset-password:ip:{_client_ip(meta)}", RESET_PASSWORD_PER_IP)
     await password_reset.reset_password(session, settings, body.token, body.new_password)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+# --- Sign in with Google / Apple --------------------------------------------------------
+
+OAUTH_COOKIE = "oauth_state"
+
+
+@router.get("/oauth/providers", response_model=OAuthProviders)
+async def oauth_providers(settings: SettingsDep) -> OAuthProviders:
+    """The outside sign-in methods this library has set up (shown on the sign-in page)."""
+    return OAuthProviders(providers=list(oauth.providers(settings)))
+
+
+@router.get(
+    "/oauth/{provider}/start",
+    response_class=RedirectResponse,
+    status_code=status.HTTP_302_FOUND,
+    responses=error_responses(400, 429),
+)
+async def oauth_start(
+    provider: str,
+    settings: SettingsDep,
+    meta: ClientMetaDep,
+    limiter: RateLimiterDep,
+    next_path: Annotated[str | None, Query(alias="next", max_length=500)] = None,
+) -> RedirectResponse:
+    """Send the browser to the provider; it comes back to the callback."""
+    limiter.consume(f"oauth:ip:{_client_ip(meta)}", LOGIN_PER_IP)
+    started = oauth.start(settings, provider, next_path)
+    response = RedirectResponse(started.url, status_code=status.HTTP_302_FOUND)
+    # Apple posts the answer back from its own site: the cookie must be sent cross-site then.
+    cross_site = provider == "apple" and settings.cookie_secure
+    response.set_cookie(
+        OAUTH_COOKIE,
+        started.state_cookie,
+        max_age=int(oauth.STATE_TTL.total_seconds()),
+        path=f"{API_PREFIX}/auth/oauth",
+        secure=settings.cookie_secure,
+        httponly=True,
+        samesite="none" if cross_site else "lax",
+    )
+    return response
+
+
+async def _oauth_finish(
+    provider: str,
+    request: Request,
+    session: AsyncSession,
+    settings: Settings,
+    meta: ClientMeta,
+    *,
+    state: str | None,
+    code: str | None,
+    error: str | None,
+    apple_user: str | None = None,
+) -> RedirectResponse:
+    app_url = settings.app_base_url
+    try:
+        if error:
+            raise oauth.OAuthError("Signing in was cancelled", code="OAUTH_CANCELLED")
+        done = await oauth.finish(
+            session,
+            settings,
+            request.app.state.http,
+            provider,
+            state_cookie=request.cookies.get(OAUTH_COOKIE),
+            state=state,
+            code=code,
+            apple_user=apple_user,
+        )
+        if not done.user.is_active:
+            raise PermissionDeniedError("This account has been disabled", code="ACCOUNT_DISABLED")
+        if done.user.mfa_enabled:
+            # The code from the authenticator app is still needed: finish on the sign-in page.
+            await session.commit()
+            token = mfa.challenge(settings, done.user)
+            response = RedirectResponse(f"{app_url}/login#mfa={token}", status_code=303)
+        else:
+            result = await auth_service.signed_in(session, settings, done.user, meta)
+            response = RedirectResponse(f"{app_url}{done.next_path}", status_code=303)
+            _set_refresh_cookie(response, settings, result.refresh_token)
+    except AppError as exc:
+        await session.rollback()
+        response = RedirectResponse(f"{app_url}/login?oauth_error={exc.code}", status_code=303)
+    response.delete_cookie(OAUTH_COOKIE, path=f"{API_PREFIX}/auth/oauth")
+    return response
+
+
+@router.get("/oauth/{provider}/callback", response_class=RedirectResponse, include_in_schema=False)
+async def oauth_callback(
+    provider: str,
+    request: Request,
+    session: SessionDep,
+    settings: SettingsDep,
+    meta: ClientMetaDep,
+    state: str | None = None,
+    code: str | None = None,
+    error: str | None = None,
+) -> RedirectResponse:
+    return await _oauth_finish(
+        provider, request, session, settings, meta, state=state, code=code, error=error
+    )
+
+
+@router.post("/oauth/{provider}/callback", response_class=RedirectResponse, include_in_schema=False)
+async def oauth_callback_post(
+    provider: str,
+    request: Request,
+    session: SessionDep,
+    settings: SettingsDep,
+    meta: ClientMetaDep,
+    state: Annotated[str | None, Form()] = None,
+    code: Annotated[str | None, Form()] = None,
+    error: Annotated[str | None, Form()] = None,
+    user: Annotated[str | None, Form(max_length=2000)] = None,
+) -> RedirectResponse:
+    """Apple answers with a form POST (response_mode=form_post)."""
+    return await _oauth_finish(
+        provider,
+        request,
+        session,
+        settings,
+        meta,
+        state=state,
+        code=code,
+        error=error,
+        apple_user=user,
+    )
