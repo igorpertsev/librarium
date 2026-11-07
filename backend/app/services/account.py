@@ -24,6 +24,7 @@ from app.models import (
     Book,
     BookHold,
     Cart,
+    ChildProfile,
     Notification,
     Order,
     PurchaseRequest,
@@ -67,6 +68,9 @@ async def export_data(session: AsyncSession, user: User) -> dict[str, Any]:
             .join(Book, Book.id == ReadingListEntry.book_id)
             .where(ReadingListEntry.user_id == user.id)
         )
+    ).all()
+    children = (
+        await session.scalars(select(ChildProfile).where(ChildProfile.parent_id == user.id))
     ).all()
     suggested = (
         await session.execute(
@@ -148,6 +152,7 @@ async def export_data(session: AsyncSession, user: User) -> dict[str, Any]:
             {"title": title, "author": author, "since": _iso(since)}
             for title, author, since in saved
         ],
+        "children": [{"name": c.name, "birth_year": c.birth_year} for c in children],
         "purchase_votes": [
             {"title": title, "author": author, "status": purchase_status.value}
             for title, author, purchase_status in suggested
@@ -260,6 +265,7 @@ async def delete_account(session: AsyncSession, user: User, password: str) -> No
     )
     for table in personal:
         await session.execute(delete(table).where(table.user_id == user.id))
+    await session.execute(delete(ChildProfile).where(ChildProfile.parent_id == user.id))
     await waitlist.notify_waiting_readers(session, [*released, *set_aside])
     user.email = anonymous_email
     user.full_name = DELETED_NAME

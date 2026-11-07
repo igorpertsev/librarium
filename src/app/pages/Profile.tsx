@@ -28,6 +28,7 @@ import { HeldForYouCard } from '../components/HeldForYouCard';
 import { ExtendFromLink } from '../components/ExtendFromLink';
 import { AccountDataCard } from '../components/AccountDataCard';
 import { TwoStepCard } from '../components/TwoStepCard';
+import { FamilyCard } from '../components/FamilyCard';
 import { TelegramCard } from '../components/TelegramCard';
 import { useBookText } from '../utils/bookText';
 import { coverOfSize } from '../utils/covers';
@@ -276,6 +277,7 @@ export default function Profile() {
       <NextInSeriesCard />
 
       <ReadingListCard />
+      <FamilyCard />
       <ReadingLogCard />
       <Card>
         <CardHeader>
@@ -351,6 +353,7 @@ export default function Profile() {
                     {t('profile.cancelRequest')}
                   </Button>
                 </div>
+                {order.childName && <p className="text-sm text-muted-foreground">{t('family.forChild', { name: order.childName })}</p>}
                 <PickupLine order={order} />
                 <div className="flex gap-2 flex-wrap">
                   {order.books.map(book => (

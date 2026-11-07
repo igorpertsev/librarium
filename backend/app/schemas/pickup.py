@@ -78,7 +78,9 @@ class PickupSlot(ApiModel):
 
 
 class PickupChoice(RequestModel):
-    """Optional body of POST /orders: where and when the reader collects the books."""
+    """Optional body of POST /orders: where and when the reader collects the books, and which
+    child of the account they are for."""
 
     pickup_point_id: uuid.UUID | None = None
     pickup_at: datetime | None = None
+    child_id: uuid.UUID | None = None

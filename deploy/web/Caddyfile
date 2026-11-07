@@ -48,6 +48,9 @@
 		root * /srv
 		@hashed path /assets/*
 		header @hashed Cache-Control "public, max-age=31536000, immutable"
+		# Installable app: the manifest's type, and the service worker is always checked anew.
+		@manifest path /manifest.webmanifest
+		header @manifest Content-Type "application/manifest+json"
 		header ?Cache-Control "no-cache"
 		try_files {path} /index.html
 		file_server

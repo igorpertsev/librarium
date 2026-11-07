@@ -43,6 +43,7 @@ timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
 target="$BACKUP_DIR/librarium-$timestamp.dump"
 
 # Write to a temporary name first so an interrupted run never leaves a "valid-looking" file.
+# shellcheck disable=SC2016 # expanded inside the container
 "${COMPOSE[@]}" exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --format=custom' \
   > "$target.partial"
 mv "$target.partial" "$target"

@@ -506,6 +506,16 @@ localhost) и `Permissions-Policy: camera=(self)`, который отправл
 экземпляры помечены в списке книг администратора, а повреждённые видны в разделе *Качество данных*
 (`quality=damaged`).
 
+**Автоматическое развёртывание**: `.github/workflows/deploy.yml` после успешного CI разворачивает `main` — сначала
+staging, smoke-тест (`deploy/smoke.sh`), затем production после одобрения (с резервной копией) — по SSH с ключом,
+которому разрешено только `deploy/update.sh <commit>`. Настройка: раздел *Automatic deployment* в `deploy/README.md`.
+
+**Устанавливаемое приложение (PWA)**: `public/manifest.webmanifest`, иконки из логотипа и небольшой service worker
+(`public/sw.js`, регистрируется только в production-сборке). Страницы — сначала сеть, без сети показывается последняя
+сохранённая копия приложения (баннер объясняет, что каталогу нужна сеть); собранные `/assets/*` берутся из кеша;
+изображения с этого сайта (загруженные обложки) хранятся до 200 штук; API никогда не кешируется. Браузеры, которые
+умеют устанавливать приложения, показывают кнопку *Установить приложение* в настройках.
+
 **Telegram** (по желанию, `TELEGRAM_BOT_TOKEN` и `TELEGRAM_BOT_USERNAME`): *Подключить Telegram* в профиле
 (`POST /users/me/telegram/link`) открывает бота с одноразовым кодом на 15 минут; кнопка «Старт» привязывает чат
 (`/stop` или `DELETE /users/me/telegram` отвязывает; один чат на аккаунт). Notifier каждый цикл читает сообщения бота
@@ -517,6 +527,12 @@ localhost) и `Permissions-Policy: camera=(self)`, который отправл
 если письмо не удалось отправить, кроме новостей, устаревших до отправки. Открытие списка отмечает их прочитанными
 (`read_at`); список обновляется раз в минуту, пока вкладка видна. Уведомления, появившиеся до колокольчика,
 считаются прочитанными.
+
+**Семейный аккаунт**: читатель добавляет в профиле до шести детей (`GET/POST /users/me/children`,
+`PATCH/DELETE /users/me/children/{id}`). Дети берут книги через аккаунт родителя; у каждого свой дневник чтения и
+значки (`?child=<id>` у эндпоинтов дневника; профиль и диалог книги работают с профилем, выбранным в дневнике, —
+выбор запоминается на устройстве), а в заказе можно указать, для кого он (`child_id` в `POST /orders`; заказ хранит
+имя `child_name` и после удаления профиля). Удаление ребёнка удаляет и его дневник.
 
 **Дневник чтения и значки**: читатель отмечает прочитанные книги («Прочитал(а)» в диалоге книги или у взятых книг
 в профиле; `PUT /users/me/reading-log/{book_id}` `{finished_on}`, по умолчанию сегодня и не в будущем; одна запись
@@ -553,6 +569,7 @@ localhost) и `Permissions-Policy: camera=(self)`, который отправл
 | `reading_log_entries` | читатель, экземпляр, `finished_on`, `UNIQUE(user_id, book_id)` (одна запись на книгу в сервисе) |
 | `stocktakes`, `stocktake_counts` | пересчёты полок (один открытый: частичный уникальный индекс); счёт по книге (`group_id`) или неизвестному `isbn` |
 | `purchase_requests`, `purchase_votes` | предложения читателей (`status` `open/ordered/added/declined`, `book_id` после добавления) и по одному голосу от читателя |
+| `child_profiles` | дети аккаунта: `name`, `birth_year`; `reading_log_entries.child_id` (уникально по профилю и экземпляру, NULLs not distinct), `orders.child_name` |
 | `audit_events` | автор (`SET NULL`) и снимок email, `action`, `method`, `path`, `entity_type`, `entity_id`, `details JSONB` |
 | `advance_reservations` | читатель, экземпляр, `starts_on`, `status` (`active/fulfilled/cancelled`) |
 | `pickup_points` | `name`, `address`, `notes`, `hours JSONB` (`[{weekday, opens, closes}]`), `slot_minutes`, `slot_capacity` (NULL — без ограничений), `active` |
@@ -597,6 +614,7 @@ localhost) и `Permissions-Policy: camera=(self)`, который отправл
 | GET `/users/me/recommendations` (книги по тегам взятых и отложенных) | полка «Вам может понравиться» | пользователь |
 | GET `/users/me/holds` · DELETE `/users/me/holds/{book_id}` | книги, отложенные для читателя; отказ | пользователь |
 | GET/POST `/users/me/reservations` · DELETE `/users/me/reservations/{id}` | бронь книги на дату; отмена | пользователь |
+| GET/POST `/users/me/children` · PATCH/DELETE `/users/me/children/{id}` | профили детей семейного аккаунта | пользователь |
 | GET/POST `/purchase-requests` · PUT/DELETE `/purchase-requests/{id}/vote` | предложить книгу, голосовать | пользователь |
 | GET `/users/me/reading-log` · PUT/DELETE `/users/me/reading-log/{book_id}` | прочитанные книги, счётчики, значки, взятые книги без отметки | пользователь |
 | GET `/users/me/notifications` · POST `/users/me/notifications/read` (`{ids}` или пусто — все) | колокольчик: последние 30 новостей за 60 дней и число непрочитанных | пользователь |

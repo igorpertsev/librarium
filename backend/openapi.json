@@ -1325,21 +1325,24 @@
         ]
       }
     },
-    "/api/v1/users/me/reading-log": {
+    "/api/v1/users/me/children": {
       "get": {
         "tags": [
           "users"
         ],
-        "summary": "My Reading Log",
-        "description": "Titles the reader has finished (newest first), counts, badges and borrowed titles not logged yet.",
-        "operationId": "my_reading_log_api_v1_users_me_reading_log_get",
+        "summary": "My Children",
+        "operationId": "my_children_api_v1_users_me_children_get",
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ReadingLogRead"
+                  "items": {
+                    "$ref": "#/components/schemas/ChildRead"
+                  },
+                  "type": "array",
+                  "title": "Response My Children Api V1 Users Me Children Get"
                 }
               }
             }
@@ -1360,6 +1363,277 @@
             "HTTPBearer": []
           }
         ]
+      },
+      "post": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Add Child",
+        "description": "Add a child profile (up to 6): they get their own reading log and badges, and orders can say they are for them.",
+        "operationId": "add_child_api_v1_users_me_children_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChildCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChildRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/me/children/{child_id}": {
+      "patch": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Update Child",
+        "operationId": "update_child_api_v1_users_me_children__child_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "child_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Child Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChildUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChildRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Remove Child",
+        "description": "Their reading log goes too; orders keep the name they were placed for.",
+        "operationId": "remove_child_api_v1_users_me_children__child_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "child_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Child Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/users/me/reading-log": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "My Reading Log",
+        "description": "Titles the reader has finished (newest first), counts, badges and borrowed titles not logged yet.",
+        "operationId": "my_reading_log_api_v1_users_me_reading_log_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "child",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "A child profile of the account",
+              "title": "Child"
+            },
+            "description": "A child profile of the account"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadingLogRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/users/me/reading-log/{book_id}": {
@@ -1385,6 +1659,25 @@
               "format": "uuid",
               "title": "Book Id"
             }
+          },
+          {
+            "name": "child",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "A child profile of the account",
+              "title": "Child"
+            },
+            "description": "A child profile of the account"
           }
         ],
         "requestBody": {
@@ -1471,6 +1764,25 @@
               "format": "uuid",
               "title": "Book Id"
             }
+          },
+          {
+            "name": "child",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "A child profile of the account",
+              "title": "Child"
+            },
+            "description": "A child profile of the account"
           }
         ],
         "responses": {
@@ -10412,6 +10724,99 @@
         ],
         "title": "ChangePasswordRequest"
       },
+      "ChildCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "birth_year": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 2100.0,
+                "minimum": 1990.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birth Year"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "ChildCreate"
+      },
+      "ChildRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "birth_year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birth Year"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "birth_year"
+        ],
+        "title": "ChildRead"
+      },
+      "ChildUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "birth_year": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 2100.0,
+                "minimum": 1990.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birth Year"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ChildUpdate"
+      },
       "ContactMethod": {
         "type": "string",
         "enum": [
@@ -11766,6 +12171,18 @@
               }
             ]
           },
+          "child_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Child Name",
+            "description": "The child of the account the books are for"
+          },
           "pickup_at": {
             "anyOf": [
               {
@@ -11855,6 +12272,7 @@
           "late_fee",
           "late_fee_settled_at",
           "pickup_point",
+          "child_name",
           "pickup_at",
           "confirmed_at",
           "returned_at",
@@ -11913,12 +12331,24 @@
               }
             ],
             "title": "Pickup At"
+          },
+          "child_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Child Id"
           }
         },
         "additionalProperties": false,
         "type": "object",
         "title": "PickupChoice",
-        "description": "Optional body of POST /orders: where and when the reader collects the books."
+        "description": "Optional body of POST /orders: where and when the reader collects the books, and which\nchild of the account they are for."
       },
       "PickupPointBrief": {
         "properties": {

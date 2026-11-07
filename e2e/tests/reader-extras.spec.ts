@@ -86,3 +86,29 @@ test('a reader logs a finished book and earns the first badge', async ({ page, r
   await expect(log.getByRole('listitem').filter({ hasText: 'First book' })).toContainText('Earned!');
   await expect(log).toContainText(title);
 });
+
+test("a parent adds a child and keeps the child's reading log apart", async ({ page, request }) => {
+  const title = `Picture book ${unique()}`;
+  await createBook(request, { title });
+  await registerCustomer(page);
+  await page.goto('/profile');
+  const family = page.getByTestId('family');
+  await family.getByLabel("Child's name").fill('Mia');
+  await family.getByLabel('Year of birth').fill('2019');
+  await family.getByRole('button', { name: 'Add child' }).click();
+  await expect(page.getByText('Mia was added')).toBeVisible();
+
+  // Mia's log is chosen, then the book is marked as read by her.
+  const log = page.getByTestId('reading-log');
+  await log.getByRole('button', { name: 'Mia' }).click();
+  await page.goto(`/?q=${encodeURIComponent(title)}`);
+  await page.getByRole('button', { name: title, exact: true }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Mia read it' }).click();
+  await expect(page.getByRole('dialog').getByRole('button', { name: 'Read by Mia' })).toBeVisible();
+  await page.keyboard.press('Escape');
+
+  await page.goto('/profile');
+  await expect(log).toContainText(title);
+  await log.getByRole('button', { name: 'Me' }).click();
+  await expect(log).not.toContainText(title);
+});

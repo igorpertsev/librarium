@@ -1331,6 +1331,9 @@ function OrdersTab({
                         <div>
                           <p className="font-medium">{order.userName}</p>
                           <p className="text-xs text-muted-foreground">{order.userEmail}</p>
+                          {order.childName && (
+                            <p className="text-xs text-muted-foreground">{t('family.forChild', { name: order.childName })}</p>
+                          )}
                           {pref && prefValue && (
                             <div className="flex items-center gap-1 mt-0.5">
                               <Star className="w-3 h-3 fill-amber-400 text-amber-400 shrink-0" />

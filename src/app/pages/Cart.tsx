@@ -21,6 +21,8 @@ import type { ActionResult } from '../../api/errors';
 import { PickupChooser } from '../components/PickupChooser';
 import { usePickupPoints } from '../utils/pickup';
 import type { PickupChoiceDto } from '../../api/types';
+import { useFamily } from '../contexts/FamilyContext';
+import { Label } from '../components/ui/label';
 
 const PICKUP_ERRORS = new Set(['PICKUP_REQUIRED', 'INVALID_PICKUP_SLOT', 'PICKUP_SLOT_FULL', 'PICKUP_POINT_NOT_FOUND']);
 
@@ -49,6 +51,8 @@ export default function Cart() {
   const pickupPoints = usePickupPoints();
   const [pickupChoice, setPickupChoice] = useState<PickupChoiceDto | null>(null);
   const [slotsVersion, setSlotsVersion] = useState(0);
+  const { children: kids } = useFamily();
+  const [forChild, setForChild] = useState('');
   const pickupRequired = (pickupPoints?.length ?? 0) > 0;
   const navigate = useNavigate();
 
@@ -77,7 +81,11 @@ export default function Cart() {
     if (!user || submitting) return;
     setSubmitting(true);
     // The server builds the order from its copy of the cart and computes the total.
-    const result = await placeOrder(pickupRequired && pickupChoice ? pickupChoice : undefined);
+    const body = {
+      ...(pickupRequired && pickupChoice ? pickupChoice : {}),
+      ...(forChild && kids.some((kid) => kid.id === forChild) ? { child_id: forChild } : {}),
+    };
+    const result = await placeOrder(Object.keys(body).length > 0 ? body : undefined);
     setSubmitting(false);
     if (!result.ok && PICKUP_ERRORS.has(result.error.code)) {
       // The slot filled up or went away: keep the dialog open and show fresh slots.
@@ -356,6 +364,24 @@ export default function Cart() {
                     <span>{money(totalPrice, currency)}</span>
                   </div>
                 </div>
+                {kids.length > 0 && (
+                  <div className="space-y-2">
+                    <Label htmlFor="order-for">{t('family.orderFor')}</Label>
+                    <select
+                      id="order-for"
+                      className="w-full border border-border rounded-md px-2 py-1.5 text-sm bg-background"
+                      value={forChild}
+                      onChange={(e) => setForChild(e.target.value)}
+                    >
+                      <option value="">{t('readingLog.me')}</option>
+                      {kids.map((kid) => (
+                        <option key={kid.id} value={kid.id}>
+                          {kid.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 {pickupPoints === null ? (
                   <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
                 ) : pickupRequired ? (

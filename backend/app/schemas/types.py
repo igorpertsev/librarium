@@ -20,7 +20,7 @@ def _blank_to_none(value: object) -> object:
     return value
 
 
-def _no_control_chars(value: str) -> str:
+def no_control_chars(value: str) -> str:
     if _CONTROL_CHARS.search(value):
         raise ValueError("must not contain control characters")
     return value
@@ -47,11 +47,11 @@ AnyPassword = Annotated[str, StringConstraints(min_length=1, max_length=128)]
 FullName = Annotated[
     str,
     StringConstraints(strip_whitespace=True, min_length=1, max_length=200),
-    AfterValidator(_no_control_chars),
+    AfterValidator(no_control_chars),
 ]
 
 _Phone = Annotated[str, StringConstraints(pattern=r"^\+?[0-9][0-9 ()\-.]{3,30}$")]
-_Handle = Annotated[str, StringConstraints(max_length=100), AfterValidator(_no_control_chars)]
+_Handle = Annotated[str, StringConstraints(max_length=100), AfterValidator(no_control_chars)]
 # Optional contact values: blank strings become ``null``.
 PhoneLike = Annotated[_Phone | None, BeforeValidator(_blank_to_none)]
 Handle = Annotated[_Handle | None, BeforeValidator(_blank_to_none)]
@@ -59,12 +59,12 @@ Handle = Annotated[_Handle | None, BeforeValidator(_blank_to_none)]
 Title = Annotated[
     str,
     StringConstraints(strip_whitespace=True, min_length=1, max_length=500),
-    AfterValidator(_no_control_chars),
+    AfterValidator(no_control_chars),
 ]
 AuthorName = Annotated[
     str,
     StringConstraints(strip_whitespace=True, min_length=1, max_length=300),
-    AfterValidator(_no_control_chars),
+    AfterValidator(no_control_chars),
 ]
 Description = Annotated[str, StringConstraints(strip_whitespace=True, max_length=10_000)]
 AgeRange = Annotated[str, StringConstraints(strip_whitespace=True, max_length=20)]
@@ -94,17 +94,17 @@ CurrencyCode = Annotated[str, StringConstraints(strip_whitespace=True, pattern=r
 PlaceName = Annotated[
     str,
     StringConstraints(strip_whitespace=True, min_length=1, max_length=120),
-    AfterValidator(_no_control_chars),
+    AfterValidator(no_control_chars),
 ]
 Address = Annotated[
     str,
     StringConstraints(strip_whitespace=True, min_length=1, max_length=255),
-    AfterValidator(_no_control_chars),
+    AfterValidator(no_control_chars),
 ]
 _Note = Annotated[str, StringConstraints(strip_whitespace=True, max_length=500)]
 OptionalNote = Annotated[_Note | None, BeforeValidator(_blank_to_none)]
 _ShortNote = Annotated[
-    str, StringConstraints(strip_whitespace=True, max_length=300), AfterValidator(_no_control_chars)
+    str, StringConstraints(strip_whitespace=True, max_length=300), AfterValidator(no_control_chars)
 ]
 OptionalShortNote = Annotated[_ShortNote | None, BeforeValidator(_blank_to_none)]
 
@@ -123,3 +123,6 @@ def _time_zone(value: str) -> str:
 TimeZoneName = Annotated[
     str, StringConstraints(strip_whitespace=True, max_length=64), AfterValidator(_time_zone)
 ]
+
+
+_no_control_chars = no_control_chars  # older name
