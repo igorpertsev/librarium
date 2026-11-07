@@ -1082,5 +1082,10 @@
     "apple": "Continue with Apple",
     "other": "Continue with {{provider}}",
     "errors": {"OAUTH_STATE": "That took too long or came from another tab. Please try again.", "OAUTH_FAILED": "Signing in with that account did not work. Please try again.", "OAUTH_NO_EMAIL": "That account has no confirmed email address, so it cannot be used here.", "OAUTH_CANCELLED": "Signing in was cancelled.", "OAUTH_NOT_CONFIGURED": "That way of signing in is not set up.", "ACCOUNT_DISABLED": "This account has been disabled."}
+  },
+  "pwa": {
+    "install": "Install the app",
+    "installHint": "Add Little Dragon to your home screen or dock. It opens like an app and starts even without a connection.",
+    "offline": "You are offline. The catalogue and your loans need a connection; they come back as soon as you are online."
   }
 }

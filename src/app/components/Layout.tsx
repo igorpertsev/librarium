@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Header } from './Header';
 import { useTranslation } from 'react-i18next';
 import { isStaff } from '../utils/roles';
+import { useOnline } from '../utils/pwa';
 
 function SessionLoading() {
   const { t } = useTranslation();
@@ -14,6 +15,7 @@ function SessionLoading() {
 }
 
 export function Layout() {
+  const online = useOnline();
   const { isLoading } = useAuth();
   const { t } = useTranslation();
 
@@ -30,6 +32,11 @@ export function Layout() {
         {t('a11y.skipToContent')}
       </a>
       <Header />
+      {!online && (
+        <p role="status" className="bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-100 text-sm text-center px-4 py-2">
+          {t('pwa.offline')}
+        </p>
+      )}
       <main id="main-content" tabIndex={-1} className="flex-1 flex flex-col overflow-hidden focus:outline-none">
         <Outlet />
       </main>

@@ -495,6 +495,11 @@ two copies of the same title are two records (ISBN is not unique).
   form and when an order comes back (*Mark Returned* asks how each copy came back; only changed copies are saved).
   It is not shared between copies of a title. Worn and damaged copies are marked in the admin book list, and
   damaged ones are listed under *Data quality* (`quality=damaged`).
+- **Installable app (PWA)**: `public/manifest.webmanifest`, icons made from the logo, and a small hand-written
+  service worker (`public/sw.js`, registered only in production builds). Pages are network-first with the last copy
+  of the app as the offline fallback (a banner says the catalogue needs a connection); built `/assets/*` files are
+  cache-first; images from this site (uploaded covers) are kept up to 200; the API is never cached. Browsers that
+  offer installation get an *Install the app* button in the settings.
 - **Telegram** (optional, `TELEGRAM_BOT_TOKEN` and `TELEGRAM_BOT_USERNAME`): *Connect Telegram* on the profile
   (`POST /users/me/telegram/link`) opens the bot with a one-time code valid for 15 minutes; pressing Start links the
   chat (`/stop` or `DELETE /users/me/telegram` unlinks it; one chat per account). The notifier reads the bot's
