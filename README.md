@@ -422,6 +422,16 @@ two copies of the same title are two records (ISBN is not unique).
   cannot take the last place). Cancelled orders free their place. Without active points nothing changes. The
   "order received" email, the profile and the admin order list show the place and time. A point used by orders
   cannot be deleted (`409 PICKUP_POINT_IN_USE`); switch it off instead.
+- **Reserve ahead**: a reader can reserve a title for a day from tomorrow to 90 days ahead (book dialog, `POST
+  /users/me/reservations` `{book_id, starts_on}`; at most 5 at a time, one per title). A copy is set aside that can
+  be free then: no other reservation within a loan period of the day, and not out on a loan due on or after it
+  (`409 NO_COPY_FOR_DATE` otherwise). From one loan period before the day nobody else can borrow that copy (the
+  catalogue shows it back one loan after the day) and loans of it cannot be extended past the day
+  (`requested_by_others`). On the day, or as soon as a late copy is back, the notifier holds it for the reader for
+  at least 48 hours (`hold_hours` if longer) and emails them (`reservation_ready`); from there it works like any
+  hold. Cancelling (`DELETE /users/me/reservations/{id}`) gives a set-aside copy to the readers waiting for it.
+  Librarians see upcoming reservations above the order list (`GET /admin/reservations`). Deleting an account
+  drops its holds and reservations and passes those copies on.
 
 `POST /api/v1/orders` runs in a single transaction (`app/services/orders.py`):
 
@@ -449,6 +459,7 @@ Concurrency is covered by tests in which both requests are held at a barrier rig
 | `series` | `name` (unique), `name_en` / `name_ru` (names in each interface language, optional), `description`, `openlibrary_key` (unique, from ISBN lookups) |
 | `book_translations` | per book and language (`en`/`ru`): `title`, `author`, `description`, `title_source`/`description_source` (`manual/wikidata/wikipedia/machine`), `source_url` (Wikipedia attribution) |
 | `library_settings` | single row: `books_per_batch`, `price_per_batch NUMERIC(10,2)`, `currency`, `loan_period_days`, `max_renewals`, `hold_hours`, `block_overdue`, `late_fee_per_day NUMERIC(10,2)`, `timezone` |
+| `advance_reservations` | reader, copy, `starts_on`, `status` (`active/fulfilled/cancelled`) |
 | `pickup_points` | `name`, `address`, `notes`, `hours JSONB` (`[{weekday, opens, closes}]`), `slot_minutes`, `slot_capacity` (NULL: no limit), `active` |
 | `carts`, `cart_items` | one cart per user, `UNIQUE(cart_id, book_id)` |
 | `waitlist_entries` | customer waiting for a book, `UNIQUE(user_id, book_id)` |
@@ -491,6 +502,7 @@ Differences (adapters in `src/api/mappers.ts`):
 | GET `/admin/reviews?status` · PATCH/DELETE `/admin/reviews/{id}` | moderation (publish, reject) | admin |
 | GET `/users/me/recommendations` (titles ranked by the tags of borrowed and saved ones) | “For you” shelf | signed-in user |
 | GET `/users/me/holds` · DELETE `/users/me/holds/{book_id}` | books held for the reader; give one up | signed-in user |
+| GET/POST `/users/me/reservations` · DELETE `/users/me/reservations/{id}` | reserve a title for a date; cancel | signed-in user |
 | GET/POST | `/admin/books`, GET `/admin/books/stats`, GET/PATCH/DELETE `/admin/books/{id}` | admin |
 | POST | `/admin/books/import` (CSV, all or nothing, `dry_run`; `warnings` for rows that look like books already there), GET `/admin/isbn/{isbn}` (details from Open Library) | admin |
 | GET | `/admin/books/duplicates?isbn&title&author` (titles with the same ISBN, or the same title and author) | admin |
@@ -501,6 +513,7 @@ Differences (adapters in `src/api/mappers.ts`):
 | POST | `/admin/translations/suggest` (title, author and description in another language; saves nothing) | admin |
 | GET | `/admin/users` · PATCH `/admin/users/{id}` (role, disable) | admin |
 | GET/POST | `/admin/pickup-points` · PATCH/DELETE `/admin/pickup-points/{id}` | admin |
+| GET | `/admin/reservations` (titles reserved for a date, soonest first) | admin |
 | GET | `/admin/orders`, `/admin/orders/{id}` · PATCH `/admin/orders/{id}/status`, `/admin/orders/{id}/due-date`, `/admin/orders/{id}/late-fee` | admin |
 | GET/PATCH | `/admin/settings` (batch size, price, currency, loan period) | admin |
 

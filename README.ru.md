@@ -427,6 +427,18 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 в профиле и в списке заказов администратора. Пункт, который есть в заказах, удалить нельзя
 (`409 PICKUP_POINT_IN_USE`) — его отключают.
 
+**Бронь на дату**: читатель может забронировать книгу на день — с завтрашнего и не дальше чем через 90 дней
+(диалог книги, `POST /users/me/reservations` `{book_id, starts_on}`; до 5 броней сразу, одна на книгу).
+Откладывается экземпляр, который к этому дню будет свободен: нет другой брони ближе чем за срок выдачи и он не
+выдан со сроком возврата в этот день или позже (иначе `409 NO_COPY_FOR_DATE`). За один срок выдачи до этого дня
+экземпляр больше никому не выдают (каталог показывает, что он вернётся через срок выдачи после дня брони), а
+выдачи этого экземпляра нельзя продлить дальше этого дня (`requested_by_others`). В этот день — или как только
+опоздавший экземпляр вернут — notifier откладывает его для читателя минимум на 48 часов (или на `hold_hours`, если
+больше) и присылает письмо (`reservation_ready`); дальше всё как с обычным удержанием. Отмена брони
+(`DELETE /users/me/reservations/{id}`) отдаёт отложенный экземпляр ждущим читателям. Библиотекарь видит
+ближайшие брони над списком заказов (`GET /admin/reservations`). Удаление аккаунта снимает его удержания и брони,
+а экземпляры переходят дальше.
+
 `POST /api/v1/orders` выполняется в одной транзакции (`app/services/orders.py`):
 
 1. `SELECT … FOR UPDATE` строки корзины (защита от двойного клика/двух вкладок);
@@ -453,6 +465,7 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 | `series` | `name` (уникальное), `name_en` / `name_ru` (названия на языках интерфейса, необязательно), `description`, `openlibrary_key` (уникальный, из поиска по ISBN) |
 | `book_translations` | на книгу и язык (`en`/`ru`): `title`, `author`, `description`, `title_source`/`description_source` (`manual/wikidata/wikipedia/machine`), `source_url` (ссылка на Википедию) |
 | `library_settings` | одна строка: `books_per_batch`, `price_per_batch NUMERIC(10,2)`, `currency`, `loan_period_days`, `max_renewals`, `hold_hours`, `block_overdue`, `late_fee_per_day NUMERIC(10,2)`, `timezone` |
+| `advance_reservations` | читатель, экземпляр, `starts_on`, `status` (`active/fulfilled/cancelled`) |
 | `pickup_points` | `name`, `address`, `notes`, `hours JSONB` (`[{weekday, opens, closes}]`), `slot_minutes`, `slot_capacity` (NULL — без ограничений), `active` |
 | `carts`, `cart_items` | одна корзина на пользователя, `UNIQUE(cart_id, book_id)` |
 | `reading_list_entries` | «хочу прочитать», одна запись на читателя и издание, `UNIQUE(user_id, book_id)` |
@@ -494,6 +507,7 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 | GET `/admin/reviews?status` · PATCH/DELETE `/admin/reviews/{id}` | модерация (опубликовать, отклонить) | admin |
 | GET `/users/me/recommendations` (книги по тегам взятых и отложенных) | полка «Вам может понравиться» | пользователь |
 | GET `/users/me/holds` · DELETE `/users/me/holds/{book_id}` | книги, отложенные для читателя; отказ | пользователь |
+| GET/POST `/users/me/reservations` · DELETE `/users/me/reservations/{id}` | бронь книги на дату; отмена | пользователь |
 | GET/POST | `/admin/books`, GET `/admin/books/stats`, GET/PATCH/DELETE `/admin/books/{id}` | admin |
 | POST | `/admin/books/import` (CSV, всё или ничего, `dry_run`; `warnings` — строки, похожие на уже имеющиеся книги), GET `/admin/isbn/{isbn}` (данные из Open Library) | admin |
 | GET | `/admin/books/duplicates?isbn&title&author` (издания с тем же ISBN или с тем же названием и автором) | admin |
@@ -504,6 +518,7 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 | POST | `/admin/translations/suggest` (название, автор и описание на другом языке; ничего не сохраняет) | admin |
 | GET | `/admin/users` · PATCH `/admin/users/{id}` (роль, блокировка) | admin |
 | GET/POST | `/admin/pickup-points` · PATCH/DELETE `/admin/pickup-points/{id}` | admin |
+| GET | `/admin/reservations` (брони на дату, ближайшие первыми) | admin |
 | GET | `/admin/orders`, `/admin/orders/{id}` · PATCH `/admin/orders/{id}/status`, `/admin/orders/{id}/due-date`, `/admin/orders/{id}/late-fee` | admin |
 | GET/PATCH | `/admin/settings` (партия, цена, валюта, срок выдачи) | admin |
 

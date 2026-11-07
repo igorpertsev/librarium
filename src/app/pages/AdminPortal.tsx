@@ -18,6 +18,7 @@ import { useConfirm } from '../components/ConfirmDialog';
 import { LoanRulesSettings } from '../components/LoanRulesSettings';
 import { PickupLine } from '../components/PickupLine';
 import { PickupPointsTab } from '../components/PickupPointsTab';
+import { UpcomingReservations } from '../components/UpcomingReservations';
 import { ReportsTab } from '../components/ReportsTab';
 import { BookCatalogFields } from '../components/BookCatalogFields';
 import { BookTranslationFields } from '../components/BookTranslationFields';
@@ -1062,6 +1063,7 @@ function OrdersTab({
 
   return (
     <div className="space-y-4">
+      <UpcomingReservations />
       <Input
         type="search"
         value={search}

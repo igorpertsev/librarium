@@ -43,6 +43,11 @@ const MESSAGE_KEYS: Record<string, string> = {
   PICKUP_SLOT_FULL: 'errors.pickupSlotFull',
   PICKUP_POINT_NOT_FOUND: 'errors.pickupPointNotFound',
   PICKUP_POINT_IN_USE: 'errors.pickupPointInUse',
+  NO_COPY_FOR_DATE: 'errors.noCopyForDate',
+  ALREADY_RESERVED: 'errors.alreadyReserved',
+  TOO_MANY_RESERVATIONS: 'errors.tooManyReservations',
+  INVALID_RESERVATION_DATE: 'errors.invalidReservationDate',
+  RESERVATION_NOT_FOUND: 'errors.notFound',
 };
 
 /** Translated, user-facing message for an API error. */

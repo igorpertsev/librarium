@@ -382,7 +382,11 @@
     "invalidPickupSlot": "That pickup time is no longer available. Please choose another.",
     "pickupSlotFull": "That pickup time has just been booked. Please choose another.",
     "pickupPointNotFound": "That pickup point is no longer available.",
-    "pickupPointInUse": "Orders use this pickup point. Switch it off instead."
+    "pickupPointInUse": "Orders use this pickup point. Switch it off instead.",
+    "noCopyForDate": "No copy can be free for that day. Please try another day.",
+    "alreadyReserved": "You have already reserved this book.",
+    "tooManyReservations": "You can reserve up to 5 books ahead.",
+    "invalidReservationDate": "Choose a day from tomorrow up to 90 days ahead."
   },
   "checkout": {
     "title": "Confirm Order",
@@ -839,5 +843,20 @@
     "closes": "Closes",
     "removeHours": "Remove these hours",
     "addHours": "Add hours"
+  },
+  "reserve": {
+    "open": "Reserve for a date",
+    "from": "I want it from",
+    "submit": "Reserve",
+    "explain_one": "We set a copy aside and keep it for you from that day. Up to {{count}} day ahead.",
+    "explain_other": "We set a copy aside and keep it for you from that day. Up to {{count}} days ahead.",
+    "done": "“{{title}}” is reserved for you from {{date}}",
+    "reservedFrom": "Reserved for you from {{date}}",
+    "cancel": "Cancel reservation",
+    "cancelled": "Reservation of “{{title}}” cancelled",
+    "title": "Reserved for later",
+    "description": "On the day, the book is held for you and we send you an email.",
+    "upcoming_one": "{{count}} book reserved for later",
+    "upcoming_other": "{{count}} books reserved for later"
   }
 }

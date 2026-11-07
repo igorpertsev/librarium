@@ -9,6 +9,7 @@ import useEmblaCarousel from 'embla-carousel-react';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useSignInFirst } from '../utils/useSignInFirst';
+import { ReserveAhead } from './ReserveAhead';
 import { useLibraryRules } from '../utils/useLibraryRules';
 import { useOrders } from '../contexts/OrdersContext';
 import { toast } from 'sonner';
@@ -462,6 +463,7 @@ export function BookDetailsModal({ book: initialBook, open, onOpenChange }: Book
                 <div className="flex justify-center">
                   <ReadingListButton bookId={book.id} groupId={book.groupId} title={text.title} withLabel />
                 </div>
+                <ReserveAhead bookId={book.id} groupId={book.groupId} title={text.title} />
               </>
             ) : (
               <div className="space-y-2 text-center">

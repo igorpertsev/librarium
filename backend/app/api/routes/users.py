@@ -11,8 +11,9 @@ from app.api.routes.auth import clear_refresh_cookie
 from app.schemas.book import BookRead
 from app.schemas.common import error_responses
 from app.schemas.hold import HeldBookRead
+from app.schemas.reservation import ReservationCreate, ReservationRead
 from app.schemas.user import DeleteAccountRequest, UserRead, UserUpdate
-from app.services import account, holds, recommendations, series_reading
+from app.services import account, holds, recommendations, reservations, series_reading
 from app.services import users as users_service
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -72,6 +73,46 @@ async def my_holds(user: CurrentUser, session: SessionDep) -> list[HeldBookRead]
 )
 async def release_hold(book_id: uuid.UUID, user: CurrentUser, session: SessionDep) -> Response:
     await holds.release(session, user, book_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get(
+    "/me/reservations",
+    response_model=list[ReservationRead],
+    responses=error_responses(401),
+    description="Books the reader reserved for a date, soonest first.",
+)
+async def my_reservations(user: CurrentUser, session: SessionDep) -> list[ReservationRead]:
+    found = await reservations.list_for(session, user)
+    return [ReservationRead.model_validate(item, from_attributes=True) for item in found]
+
+
+@router.post(
+    "/me/reservations",
+    status_code=status.HTTP_201_CREATED,
+    response_model=ReservationRead,
+    responses=error_responses(400, 401, 404, 409, 422),
+    description="Reserve a title for a day from tomorrow to 90 days ahead. A copy that can be "
+    "free then is set aside; on the day it is held for the reader, who gets an email. 409 "
+    "NO_COPY_FOR_DATE, ALREADY_RESERVED or TOO_MANY_RESERVATIONS (5 at a time).",
+)
+async def reserve_ahead(
+    body: ReservationCreate, user: CurrentUser, session: SessionDep
+) -> ReservationRead:
+    created = await reservations.create(session, user, body.book_id, body.starts_on)
+    return ReservationRead.model_validate(created, from_attributes=True)
+
+
+@router.delete(
+    "/me/reservations/{reservation_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
+    responses=error_responses(401, 404, 422),
+)
+async def cancel_reservation(
+    reservation_id: uuid.UUID, user: CurrentUser, session: SessionDep
+) -> Response:
+    await reservations.cancel(session, user, reservation_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

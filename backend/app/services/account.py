@@ -3,7 +3,8 @@
 Deleting keeps the orders (the library's lending records) but strips them of the reader's
 name and contacts, and anonymises the user row instead of removing it, because orders
 reference it. Everything else that is personal (sessions, cart, waiting list, reading list,
-email queue) is deleted.
+reviews, holds, reservations, email queue) is deleted; held or set-aside copies go to the next
+reader in line.
 """
 
 from __future__ import annotations
@@ -19,7 +20,9 @@ from sqlalchemy.orm import selectinload
 from app.core.exceptions import BadRequestError, ConflictError
 from app.core.security import hash_password, verify_password
 from app.models import (
+    AdvanceReservation,
     Book,
+    BookHold,
     Cart,
     Notification,
     Order,
@@ -30,6 +33,7 @@ from app.models import (
     WaitlistEntry,
 )
 from app.models.enums import ACTIVE_ORDER_STATUSES, UserRole
+from app.services import waitlist
 
 DELETED_NAME = "Deleted user"
 
@@ -59,6 +63,14 @@ async def export_data(session: AsyncSession, user: User) -> dict[str, Any]:
             select(Book.title, Book.author, ReadingListEntry.created_at)
             .join(Book, Book.id == ReadingListEntry.book_id)
             .where(ReadingListEntry.user_id == user.id)
+        )
+    ).all()
+    reserved = (
+        await session.execute(
+            select(Book.title, Book.author, AdvanceReservation.starts_on, AdvanceReservation.status)
+            .join(Book, Book.id == AdvanceReservation.book_id)
+            .where(AdvanceReservation.user_id == user.id)
+            .order_by(AdvanceReservation.starts_on)
         )
     ).all()
     reviews = (
@@ -117,6 +129,15 @@ async def export_data(session: AsyncSession, user: User) -> dict[str, Any]:
         "want_to_read": [
             {"title": title, "author": author, "since": _iso(since)}
             for title, author, since in saved
+        ],
+        "reservations": [
+            {
+                "title": title,
+                "author": author,
+                "from": starts_on.isoformat(),
+                "status": reservation_status.value,
+            }
+            for title, author, starts_on, reservation_status in reserved
         ],
         "reviews": [
             {
@@ -184,8 +205,21 @@ async def delete_account(session: AsyncSession, user: User, password: str) -> No
             contact_preferred_method=None,
         )
     )
+    released = (
+        await session.scalars(
+            delete(BookHold).where(BookHold.user_id == user.id).returning(BookHold.book_id)
+        )
+    ).all()
+    set_aside = (
+        await session.scalars(
+            delete(AdvanceReservation)
+            .where(AdvanceReservation.user_id == user.id)
+            .returning(AdvanceReservation.book_id)
+        )
+    ).all()
     for table in (RefreshToken, Notification, WaitlistEntry, ReadingListEntry, Review, Cart):
         await session.execute(delete(table).where(table.user_id == user.id))
+    await waitlist.notify_waiting_readers(session, [*released, *set_aside])
     user.email = anonymous_email
     user.full_name = DELETED_NAME
     user.whatsapp = user.telegram = user.instagram = user.phone = None

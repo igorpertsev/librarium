@@ -54,6 +54,7 @@ from app.schemas.order import (
 )
 from app.schemas.pickup import PickupPointCreate, PickupPointRead, PickupPointUpdate
 from app.schemas.report import DemandRead, ReportSummaryRead
+from app.schemas.reservation import UpcomingReservationRead
 from app.schemas.review import (
     ModerateReview,
     ModerationReviewPage,
@@ -62,7 +63,7 @@ from app.schemas.review import (
 )
 from app.schemas.translation import TranslationSuggestion, TranslationSuggestRequest
 from app.schemas.user import AdminUserPage, AdminUserUpdate, UserRead
-from app.services import book_import, catalog, duplicates, pickup, reports, reviews
+from app.services import book_import, catalog, duplicates, pickup, reports, reservations, reviews
 from app.services import books as books_service
 from app.services import library_settings as settings_service
 from app.services import orders as orders_service
@@ -643,3 +644,12 @@ async def admin_delete_pickup_point(point_id: uuid.UUID, session: SessionDep) ->
     """Only points no order used; switch the others off (active = false)."""
     await pickup.delete(session, point_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/reservations", response_model=list[UpcomingReservationRead])
+async def admin_upcoming_reservations(session: SessionDep) -> list[UpcomingReservationRead]:
+    """Titles readers reserved for a date that has not come yet (or whose copy is late)."""
+    return [
+        UpcomingReservationRead.model_validate(item, from_attributes=True)
+        for item in await reservations.upcoming(session)
+    ]

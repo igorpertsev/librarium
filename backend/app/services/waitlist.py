@@ -21,7 +21,7 @@ from app.core.exceptions import ConflictError, NotFoundError
 from app.models import Book, BookHold, LibrarySettings, Notification, User, WaitlistEntry
 from app.models.enums import BookStatus, NotificationKind
 from app.models.library_settings import SETTINGS_ROW_ID
-from app.repositories.books import copy_group_key, reserved_book_ids
+from app.repositories.books import copy_group_key, reserved_ahead_exists, reserved_book_ids
 
 
 async def _groups(session: AsyncSession, book_ids: Iterable[uuid.UUID]) -> set[uuid.UUID]:
@@ -36,7 +36,7 @@ async def free_copies(
     session: AsyncSession, groups: set[uuid.UUID]
 ) -> list[tuple[uuid.UUID, uuid.UUID]]:
     """(title, copy) of copies anyone could order right now: active, status available, not in
-    an active order and not held for a reader."""
+    an active order, not held for a reader and not kept for a reservation."""
     if not groups:
         return []
     rows = (
@@ -47,6 +47,7 @@ async def free_copies(
                 Book.is_active,
                 Book.status == BookStatus.AVAILABLE,
                 ~exists().where(BookHold.book_id == Book.id, BookHold.held_until > func.now()),
+                ~reserved_ahead_exists(Book.id),
             )
             .order_by(Book.id)
         )

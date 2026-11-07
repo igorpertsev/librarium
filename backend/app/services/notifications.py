@@ -314,15 +314,23 @@ def _pickup_lines(order: Order, zone: ZoneInfo) -> tuple[str, str]:
 
 
 def _render_book_held(
-    user: User, book: Book, held_until: datetime, app_url: str, zone: ZoneInfo
+    user: User,
+    book: Book,
+    held_until: datetime,
+    app_url: str,
+    zone: ZoneInfo,
+    *,
+    reserved: bool = False,
 ) -> tuple[str, str]:
     by_language = {item.language: item for item in book.translations}
     title_en, author_en = _titled(book.title, book.author, by_language.get(UiLanguage.EN))
     title_ru, author_ru = _titled(book.title, book.author, by_language.get(UiLanguage.RU))
     profile = f"{app_url}/profile"
+    why_en = "which you reserved, is ready" if reserved else "which you were waiting for, is back"
+    why_ru = "которую вы забронировали, готова" if reserved else "которую вы ждали, вернулась"
     english = (
         f"Hello {user.full_name},\n\n"
-        f"“{title_en}” by {author_en}, which you were waiting for, is back, and we are keeping "
+        f"“{title_en}” by {author_en}, {why_en}, and we are keeping "
         f"it for you until {_when_en(held_until, zone)}. Add it to your cart from your profile: "
         f"{profile}\n\n"
         "If you don't take it by then, it goes to the next reader in line. You can also give "
@@ -330,7 +338,7 @@ def _render_book_held(
     )
     russian = (
         f"Здравствуйте, {user.full_name}!\n\n"
-        f"книга «{title_ru}» ({author_ru}), которую вы ждали, вернулась, и мы держим её для вас "
+        f"книга «{title_ru}» ({author_ru}), {why_ru}, и мы держим её для вас "
         f"до {_when_ru(held_until, zone)}. Добавьте её в корзину в профиле: {profile}\n\n"
         "Если не успеете, книга перейдёт следующему читателю в очереди. Отказаться от неё "
         "тоже можно в профиле.\n\n— Библиотека Little Dragon\n"
@@ -394,13 +402,20 @@ async def _compose(
     zone: ZoneInfo,
 ) -> tuple[str, str] | None:
     """Subject and body of the email, or None when its news is stale."""
-    if notification.kind is NotificationKind.BOOK_HELD:
+    if notification.kind in {NotificationKind.BOOK_HELD, NotificationKind.RESERVATION_READY}:
         hold = await session.get(BookHold, notification.book_id) if notification.book_id else None
         book = await session.get(Book, notification.book_id) if notification.book_id else None
         # Taken, released or expired before the email went out: nothing to announce.
         if hold is None or book is None or hold.user_id != user.id or hold.held_until <= now:
             return None
-        return _render_book_held(user, book, hold.held_until, app_url, zone)
+        return _render_book_held(
+            user,
+            book,
+            hold.held_until,
+            app_url,
+            zone,
+            reserved=notification.kind is NotificationKind.RESERVATION_READY,
+        )
     if notification.kind is NotificationKind.BOOK_AVAILABLE:
         book = await session.get(Book, notification.book_id) if notification.book_id else None
         # Someone else may have ordered it in the meantime: then the news is stale.

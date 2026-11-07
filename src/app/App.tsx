@@ -6,6 +6,7 @@ import { OrdersProvider } from './contexts/OrdersContext';
 import { WaitlistProvider } from './contexts/WaitlistContext';
 import { ReadingListProvider } from './contexts/ReadingListContext';
 import { HoldsProvider } from './contexts/HoldsContext';
+import { ReservationsProvider } from './contexts/ReservationsContext';
 import { Toaster } from './components/ui/sonner';
 import { router } from './routes';
 import '../i18n/config';
@@ -20,8 +21,10 @@ export default function App() {
             <WaitlistProvider>
               <ReadingListProvider>
                 <HoldsProvider>
-                  <RouterProvider router={router} />
-                  <Toaster />
+                  <ReservationsProvider>
+                    <RouterProvider router={router} />
+                    <Toaster />
+                  </ReservationsProvider>
                 </HoldsProvider>
               </ReadingListProvider>
             </WaitlistProvider>

@@ -88,6 +88,7 @@ class NotificationKind(StrEnum):
     OVERDUE = "overdue"  # the due date has passed
     BOOK_AVAILABLE = "book_available"  # a book on the customer's waiting list is back
     BOOK_HELD = "book_held"  # a returned book is held for the customer for a while
+    RESERVATION_READY = "reservation_ready"  # a book reserved for a date is ready to collect
 
 
 class NotificationStatus(StrEnum):
@@ -103,3 +104,11 @@ class ReviewStatus(StrEnum):
     PENDING = "pending"
     PUBLISHED = "published"
     REJECTED = "rejected"
+
+
+class ReservationStatus(StrEnum):
+    """A reader's reservation of a title for a date (see ``app.services.reservations``)."""
+
+    ACTIVE = "active"  # waiting for its date
+    FULFILLED = "fulfilled"  # the date came and the copy was held for the reader
+    CANCELLED = "cancelled"  # by the reader

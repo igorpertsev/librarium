@@ -857,6 +857,193 @@
         }
       }
     },
+    "/api/v1/users/me/reservations": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "My Reservations",
+        "description": "Books the reader reserved for a date, soonest first.",
+        "operationId": "my_reservations_api_v1_users_me_reservations_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ReservationRead"
+                  },
+                  "type": "array",
+                  "title": "Response My Reservations Api V1 Users Me Reservations Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Reserve Ahead",
+        "description": "Reserve a title for a day from tomorrow to 90 days ahead. A copy that can be free then is set aside; on the day it is held for the reader, who gets an email. 409 NO_COPY_FOR_DATE, ALREADY_RESERVED or TOO_MANY_RESERVATIONS (5 at a time).",
+        "operationId": "reserve_ahead_api_v1_users_me_reservations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReservationCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservationRead"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/me/reservations/{reservation_id}": {
+      "delete": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Cancel Reservation",
+        "operationId": "cancel_reservation_api_v1_users_me_reservations__reservation_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "reservation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Reservation Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
     "/api/v1/users/me/export": {
       "get": {
         "tags": [
@@ -6295,6 +6482,57 @@
           }
         }
       }
+    },
+    "/api/v1/admin/reservations": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Upcoming Reservations",
+        "description": "Titles readers reserved for a date that has not come yet (or whose copy is late).",
+        "operationId": "admin_upcoming_reservations_api_v1_admin_reservations_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/UpcomingReservationRead"
+                  },
+                  "type": "array",
+                  "title": "Response Admin Upcoming Reservations Api V1 Admin Reservations Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -8519,7 +8757,8 @@
           "due_soon",
           "overdue",
           "book_available",
-          "book_held"
+          "book_held",
+          "reservation_ready"
         ],
         "title": "NotificationKind"
       },
@@ -9557,6 +9796,65 @@
         ],
         "title": "ReportSummaryRead"
       },
+      "ReservationCreate": {
+        "properties": {
+          "book_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Book Id"
+          },
+          "starts_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Starts On"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "book_id",
+          "starts_on"
+        ],
+        "title": "ReservationCreate"
+      },
+      "ReservationRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "book": {
+            "$ref": "#/components/schemas/BookRead"
+          },
+          "starts_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Starts On"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReservationStatus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "book",
+          "starts_on",
+          "status"
+        ],
+        "title": "ReservationRead"
+      },
+      "ReservationStatus": {
+        "type": "string",
+        "enum": [
+          "active",
+          "fulfilled",
+          "cancelled"
+        ],
+        "title": "ReservationStatus",
+        "description": "A reader's reservation of a title for a date (see ``app.services.reservations``)."
+      },
       "ResetPasswordRequest": {
         "properties": {
           "token": {
@@ -10345,6 +10643,52 @@
         ],
         "title": "UiLanguage",
         "description": "Languages of the web interface and of customer emails."
+      },
+      "UpcomingReservationRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "starts_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Starts On"
+          },
+          "book_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Book Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "author": {
+            "type": "string",
+            "title": "Author"
+          },
+          "reader_name": {
+            "type": "string",
+            "title": "Reader Name"
+          },
+          "reader_email": {
+            "type": "string",
+            "title": "Reader Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "starts_on",
+          "book_id",
+          "title",
+          "author",
+          "reader_name",
+          "reader_email"
+        ],
+        "title": "UpcomingReservationRead"
       },
       "UserRead": {
         "properties": {

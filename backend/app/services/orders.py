@@ -35,7 +35,7 @@ from app.models.enums import (
 from app.repositories import orders as orders_repo
 from app.repositories.books import reserved_book_ids
 from app.schemas.pickup import PickupChoice
-from app.services import holds, notifications, pickup, waitlist
+from app.services import holds, notifications, pickup, reservations, waitlist
 from app.services.library_settings import get_library_settings
 
 ACTIVE_BOOK_INDEX = "uq_order_items_active_book"
@@ -124,6 +124,7 @@ async def place_order(
     # the customer's own: the UI never lets a reserved copy be added again.
     reserved = await reserved_book_ids(session, book_ids)
     reserved |= await holds.held_by_others(session, book_ids, user.id, datetime.now(UTC))
+    reserved |= await reservations.kept_copies(session, book_ids)
     unavailable = [
         (book_id, books[book_id].title if book_id in books else "")
         for book_id in book_ids
@@ -314,9 +315,11 @@ async def renew_own_order(session: AsyncSession, user: User, order_id: uuid.UUID
     if order is None:
         raise order_not_found()
     library = await get_library_settings(session, lock="share")
+    book_ids = await _book_ids(session, order.id)
+    new_due = order.due_date + timedelta(days=library.loan_period_days)
     others_waiting = await waitlist.has_waiting_readers(
-        session, await _book_ids(session, order.id), except_user=user.id
-    )
+        session, book_ids, except_user=user.id
+    ) or await reservations.blocks_renewal(session, book_ids, new_due)
     reason = renewal_refusal(order, library, _today(), others_waiting=others_waiting)
     if reason is not None:
         raise ConflictError(

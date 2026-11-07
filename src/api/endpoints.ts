@@ -31,6 +31,8 @@ import type {
   PickupPointDto,
   PickupPointUpdateDto,
   PickupSlotDto,
+  ReservationDto,
+  UpcomingReservationDto,
   Paged,
   ModerationReviewPageDto,
   MyReviewDto,
@@ -87,6 +89,14 @@ export const usersApi = {
   holds: () => apiRequest<HeldBookDto[]>('/users/me/holds'),
   releaseHold: (bookId: string) =>
     apiRequest<void>(`/users/me/holds/${id(bookId)}`, { method: 'DELETE' }),
+  reservations: () => apiRequest<ReservationDto[]>('/users/me/reservations'),
+  reserve: (bookId: string, startsOn: string) =>
+    apiRequest<ReservationDto>('/users/me/reservations', {
+      method: 'POST',
+      body: { book_id: bookId, starts_on: startsOn },
+    }),
+  cancelReservation: (reservationId: string) =>
+    apiRequest<void>(`/users/me/reservations/${id(reservationId)}`, { method: 'DELETE' }),
   exportData: () => apiDownload('/users/me/export'),
   deleteMe: (password: string) =>
     apiRequest<void>('/users/me', { method: 'DELETE', body: { password } }),
@@ -226,6 +236,7 @@ export const adminApi = {
       method: 'PATCH',
       body: { action },
     }),
+  upcomingReservations: () => apiRequest<UpcomingReservationDto[]>('/admin/reservations'),
   listPickupPoints: () => apiRequest<PickupPointDto[]>('/admin/pickup-points'),
   createPickupPoint: (body: PickupPointCreateDto) =>
     apiRequest<PickupPointDto>('/admin/pickup-points', { method: 'POST', body }),

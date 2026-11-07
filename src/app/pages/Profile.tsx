@@ -18,6 +18,7 @@ import { orderLabel } from '../utils/translations';
 import { useLibraryRules } from '../utils/useLibraryRules';
 import { LateReturnsCard } from '../components/LateReturnsCard';
 import { PickupLine } from '../components/PickupLine';
+import { ReservationsCard } from '../components/ReservationsCard';
 import { useWaitlist } from '../contexts/WaitlistContext';
 import { WaitlistButton } from '../components/WaitlistButton';
 import { ReadingListCard } from '../components/ReadingListCard';
@@ -267,6 +268,7 @@ export default function Profile() {
       <LateReturnsCard orders={userOrders} />
       <ExtendFromLink orders={userOrders} confirm={confirm} renew={handleRenew} />
       <HeldForYouCard />
+      <ReservationsCard />
       <NextInSeriesCard />
 
       <ReadingListCard />

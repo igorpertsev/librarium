@@ -10,6 +10,7 @@ from app.models.order import Order, OrderItem
 from app.models.pickup import PickupPoint
 from app.models.reading_list import ReadingListEntry
 from app.models.refresh_token import RefreshToken
+from app.models.reservation import AdvanceReservation
 from app.models.review import Review
 from app.models.series import Series
 from app.models.tag import Tag, book_tags
@@ -18,6 +19,7 @@ from app.models.user import User
 from app.models.waitlist import WaitlistEntry
 
 __all__ = [
+    "AdvanceReservation",
     "Base",
     "Book",
     "BookHold",
