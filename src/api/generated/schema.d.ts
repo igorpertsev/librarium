@@ -724,6 +724,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/collections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Collections */
+        get: operations["list_collections_api_v1_collections_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/collections/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Collection */
+        get: operations["get_collection_api_v1_collections__slug__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/calendar/{token}.ics": {
         parameters: {
             query?: never;
@@ -1135,6 +1169,26 @@ export interface paths {
          * @description Pickup times for the next two weeks, starting at least an hour from now.
          */
         get: operations["pickup_slots_api_v1_library_pickup_points__point_id__slots_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/library/pick": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Book Of The Month
+         * @description The librarians' book of the month with its note (null: none chosen).
+         */
+        get: operations["book_of_the_month_api_v1_library_pick_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2191,6 +2245,85 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/collections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Admin Create Collection
+         * @description A new, empty collection (its address is made unique if the slug is taken).
+         */
+        post: operations["admin_create_collection_api_v1_admin_collections_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/collections/{collection_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Admin Delete Collection */
+        delete: operations["admin_delete_collection_api_v1_admin_collections__collection_id__delete"];
+        options?: never;
+        head?: never;
+        /** Admin Update Collection */
+        patch: operations["admin_update_collection_api_v1_admin_collections__collection_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/collections/{collection_id}/books": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Admin Set Collection Books
+         * @description Replace the titles of a collection (in this order).
+         */
+        put: operations["admin_set_collection_books_api_v1_admin_collections__collection_id__books_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pick": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Admin Set Pick
+         * @description Choose the book of the month (shown at the top of the catalogue).
+         */
+        put: operations["admin_set_pick_api_v1_admin_pick_put"];
+        post?: never;
+        /** Admin Clear Pick */
+        delete: operations["admin_clear_pick_api_v1_admin_pick_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2557,6 +2690,27 @@ export interface components {
             page: number;
             /** Page Size */
             page_size: number;
+        };
+        /** BookPick */
+        BookPick: {
+            book: components["schemas"]["BookRead"];
+            /** Note En */
+            note_en: string | null;
+            /** Note Ru */
+            note_ru: string | null;
+        };
+        /** BookPickUpdate */
+        BookPickUpdate: {
+            /**
+             * Book Id
+             * Format: uuid
+             * @description Any copy of the title
+             */
+            book_id: string;
+            /** Note En */
+            note_en?: string | null;
+            /** Note Ru */
+            note_ru?: string | null;
         };
         /** BookRead */
         BookRead: {
@@ -3007,6 +3161,126 @@ export interface components {
             /** Birth Year */
             birth_year?: number | null;
         };
+        /** CollectionBooks */
+        CollectionBooks: {
+            /**
+             * Book Ids
+             * @description Any copy of each title, in order (a title counts once)
+             */
+            book_ids: string[];
+        };
+        /** CollectionCreate */
+        CollectionCreate: {
+            /** Title En */
+            title_en: string;
+            /** Title Ru */
+            title_ru?: string | null;
+            /**
+             * Description En
+             * @default
+             */
+            description_en: string;
+            /** Description Ru */
+            description_ru?: string | null;
+            /**
+             * Slug
+             * @description Default: made from the English title
+             */
+            slug?: string | null;
+            /**
+             * Featured
+             * @default false
+             */
+            featured: boolean;
+            /**
+             * Position
+             * @description Lower comes first
+             * @default 0
+             */
+            position: number;
+        };
+        /** CollectionRead */
+        CollectionRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Slug
+             * @description Its page: /collections/<slug>
+             */
+            slug: string;
+            /** Title En */
+            title_en: string;
+            /** Title Ru */
+            title_ru: string | null;
+            /** Description En */
+            description_en: string;
+            /** Description Ru */
+            description_ru: string | null;
+            /**
+             * Featured
+             * @description Shown as a shelf above the catalogue
+             */
+            featured: boolean;
+            /** Position */
+            position: number;
+            /** Book Count */
+            book_count: number;
+            /**
+             * Books
+             * @description Its titles in the librarians' order
+             */
+            books: components["schemas"]["BookRead"][];
+        };
+        /** CollectionSummary */
+        CollectionSummary: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Slug
+             * @description Its page: /collections/<slug>
+             */
+            slug: string;
+            /** Title En */
+            title_en: string;
+            /** Title Ru */
+            title_ru: string | null;
+            /** Description En */
+            description_en: string;
+            /** Description Ru */
+            description_ru: string | null;
+            /**
+             * Featured
+             * @description Shown as a shelf above the catalogue
+             */
+            featured: boolean;
+            /** Position */
+            position: number;
+            /** Book Count */
+            book_count: number;
+        };
+        /** CollectionUpdate */
+        CollectionUpdate: {
+            /** Title En */
+            title_en?: string | null;
+            /** Title Ru */
+            title_ru?: string | null;
+            /** Description En */
+            description_en?: string | null;
+            /** Description Ru */
+            description_ru?: string | null;
+            /** Slug */
+            slug?: string | null;
+            /** Featured */
+            featured?: boolean | null;
+            /** Position */
+            position?: number | null;
+        };
         /**
          * ContactMethod
          * @enum {string}
@@ -3192,6 +3466,12 @@ export interface components {
              */
             timezone: string;
             /**
+             * Has Pick
+             * @description A book of the month is chosen (see /library/pick)
+             * @default false
+             */
+            has_pick: boolean;
+            /**
              * Telegram Bot
              * @description Username of the library's Telegram bot, when notifications can go there
              */
@@ -3234,6 +3514,12 @@ export interface components {
              * @description IANA time zone of opening hours and pickup slots
              */
             timezone: string;
+            /**
+             * Has Pick
+             * @description A book of the month is chosen (see /library/pick)
+             * @default false
+             */
+            has_pick: boolean;
             /**
              * Telegram Bot
              * @description Username of the library's Telegram bot, when notifications can go there
@@ -6451,6 +6737,78 @@ export interface operations {
             };
         };
     };
+    list_collections_api_v1_collections_get: {
+        parameters: {
+            query?: {
+                /** @description Only those shown on the catalogue */
+                featured?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionSummary"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_collection_api_v1_collections__slug__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionRead"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     calendar_feed_api_v1_calendar__token__ics_get: {
         parameters: {
             query?: never;
@@ -7386,6 +7744,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    book_of_the_month_api_v1_library_pick_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookPick"] | null;
                 };
             };
         };
@@ -11368,6 +11746,342 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_create_collection_api_v1_admin_collections_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CollectionCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionRead"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_delete_collection_api_v1_admin_collections__collection_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_update_collection_api_v1_admin_collections__collection_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CollectionUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionSummary"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_set_collection_books_api_v1_admin_collections__collection_id__books_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CollectionBooks"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionRead"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_set_pick_api_v1_admin_pick_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BookPickUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookPick"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_clear_pick_api_v1_admin_pick_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
         };

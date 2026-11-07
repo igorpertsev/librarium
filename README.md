@@ -631,6 +631,14 @@ two copies of the same title are two records (ISBN is not unique).
   every title marked *I've read it* within the dates (and in the category) counts once; progress is computed from the
   reading log, so it never disagrees with it. `GET /challenges` lists the current and coming ones with the reader's
   own progress; `GET /admin/challenges/{id}/participants` lists who takes part, most books first.
+- **Collections and book of the month**: in the *Collections* tab staff create collections (English and optional
+  Russian title and description, an address `/collections/<slug>` made from the title and kept unique, an order,
+  *show as a shelf*), fill them by searching the catalogue and arrange the titles (`PUT
+  /admin/collections/{id}/books` with any copy of each title; each title once, in that order). Featured collections
+  appear as shelves above the catalogue with *See all* leading to their page (`GET /collections`,
+  `GET /collections/{slug}`; removed books are left out). The book of the month (`PUT/DELETE /admin/pick`, shown by
+  `GET /library/pick`) is one title with a short note, at the top of the catalogue; `GET /library/rules` says whether
+  there is one (`has_pick`), so its place is kept while it loads and the catalogue does not jump.
 - **Notification bell**: the header shows the reader's news — the same events as the emails (`notifications`), even
   when an email could not be sent, except news that went stale before delivery. Opening the list marks it read
   (`read_at`); it refreshes every minute while the tab is visible. Notifications from before the bell existed

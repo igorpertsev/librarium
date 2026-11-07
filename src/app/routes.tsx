@@ -54,6 +54,10 @@ export const router = createBrowserRouter([
         lazy: page(() => import('./pages/CustomerPortal')),
       },
       {
+        path: 'collections/:slug',
+        lazy: page(() => import('./pages/CollectionPage')),
+      },
+      {
         element: <RequireAuth />,
         children: [
           {

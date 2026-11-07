@@ -10,6 +10,7 @@ from app.api.routes import (
     cart,
     catalog,
     challenges,
+    collections,
     health,
     library,
     orders,
@@ -29,6 +30,7 @@ api_router.include_router(health.router)
 api_router.include_router(auth.router)
 api_router.include_router(users.router)
 api_router.include_router(challenges.router)
+api_router.include_router(collections.router)
 api_router.include_router(calendar.router)
 api_router.include_router(telegram.router)
 api_router.include_router(books.router)
