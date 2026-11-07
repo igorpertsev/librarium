@@ -81,6 +81,12 @@ test('reader profile and cart', async ({ page, request }) => {
   await ensureReader(request);
   await signIn(page, READER);
   await page.goto('/profile');
+  // The cards load their data separately: wait until each shows it, so the page has its final
+  // height (otherwise the comparison catches it half-built).
+  await expect(page.getByTestId('reading-log')).toContainText('0 badges');
+  await expect(page.getByTestId('family')).toBeVisible();
+  await expect(page.getByTestId('calendar')).toBeVisible();
+  await expect(page.getByText(/haven't borrowed any books yet/)).toBeVisible();
   await settle(page);
   await expect(page).toHaveScreenshot('profile.png', { fullPage: true });
   await page.goto('/cart');
