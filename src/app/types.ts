@@ -85,6 +85,8 @@ export interface User {
   mfaEnabled?: boolean;
   /** Notifications also go to a Telegram chat. */
   telegramConnected?: boolean;
+  /** A calendar feed link exists. */
+  calendarFeed?: boolean;
   borrowedBooks: BorrowedBook[];
   contacts?: UserContacts;
   /** Interface language saved on the account (emails use it too). */

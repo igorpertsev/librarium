@@ -619,6 +619,31 @@ two copies of the same title are two records (ISBN is not unique).
   `aes128gcm`) and signed with the VAPID key (RFC 8292); a device the push service reports gone (404/410) is
   forgotten, and the news counts as delivered when one device has it. `public/sw.js` shows it and opens the page
   it is about.
+- **Books for a child's age**: `GET /books?for_age=7` keeps books whose age label starts at that age or younger
+  (the first number of the label: "6+", "6-10", "12 лет") and books without a label. A parent whose children have a
+  year of birth sees one chip per child above the catalogue ("Mia, 7"), which sets `for_age` in the address bar; at
+  checkout, choosing a child under *Who are the books for?* lists the books marked for older readers (a hint, the
+  order is not blocked).
+- **Calendar feed**: *Get calendar link* on the profile (`POST /users/me/calendar`) makes a secret iCalendar link,
+  `GET /calendar/<token>.ics`, that calendar apps subscribe to without signing in (Google: *From URL*; Apple and
+  Outlook: the `webcal:` button). It lists due dates as all-day events with a reminder the day before, pickup
+  appointments at their point and time, the last day to collect a held book and reservation dates, in the reader's
+  language. Only a SHA-256 of the token is stored: a new link replaces the old one and `DELETE /users/me/calendar`
+  turns it off (both then answer 404). Links use `API_PUBLIC_URL`.
+- **Reading challenges**: staff set challenges in the *Challenges* tab (`/admin/challenges`: name and description in
+  English and optionally Russian, dates, a goal of 1–100 books, optionally one category). Readers join on their profile
+  for themselves or a child (`PUT/DELETE /challenges/{id}/entry?child=`; 409 `CHALLENGE_OVER` after the end), and
+  every title marked *I've read it* within the dates (and in the category) counts once; progress is computed from the
+  reading log, so it never disagrees with it. `GET /challenges` lists the current and coming ones with the reader's
+  own progress; `GET /admin/challenges/{id}/participants` lists who takes part, most books first.
+- **Collections and book of the month**: in the *Collections* tab staff create collections (English and optional
+  Russian title and description, an address `/collections/<slug>` made from the title and kept unique, an order,
+  *show as a shelf*), fill them by searching the catalogue and arrange the titles (`PUT
+  /admin/collections/{id}/books` with any copy of each title; each title once, in that order). Featured collections
+  appear as shelves above the catalogue with *See all* leading to their page (`GET /collections`,
+  `GET /collections/{slug}`; removed books are left out). The book of the month (`PUT/DELETE /admin/pick`, shown by
+  `GET /library/pick`) is one title with a short note, at the top of the catalogue; `GET /library/rules` says whether
+  there is one (`has_pick`), so its place is kept while it loads and the catalogue does not jump.
 - **Notification bell**: the header shows the reader's news — the same events as the emails (`notifications`), even
   when an email could not be sent, except news that went stale before delivery. Opening the list marks it read
   (`read_at`); it refreshes every minute while the tab is visible. Notifications from before the bell existed

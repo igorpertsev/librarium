@@ -47,6 +47,15 @@ async def list_books(
     q: SearchQuery = None,
     category: BookCategory | None = None,
     age_range: Annotated[str | None, Query(max_length=20)] = None,
+    for_age: Annotated[
+        int | None,
+        Query(
+            ge=0,
+            le=18,
+            description="Suitable for a reader this old: books labelled for "
+            'this age or younger ("6+" for 7), and books without an age label',
+        ),
+    ] = None,
     available: Annotated[
         bool | None, Query(description="true: can be borrowed now; false: cannot")
     ] = None,
@@ -64,6 +73,7 @@ async def list_books(
             q=q.strip() if q else None,
             category=category,
             age_range=age_range,
+            for_age=for_age,
             available=available,
             tags=tag_slugs(tags),
             series_id=series,

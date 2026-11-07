@@ -46,6 +46,8 @@ class User(TimestampMixin, Base):
     telegram_chat_id: Mapped[int | None] = mapped_column(sa.BigInteger, unique=True)
     telegram_link_code: Mapped[str | None] = mapped_column(sa.String(64), unique=True)
     telegram_link_expires_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True))
+    # SHA-256 of the secret in the reader's calendar feed URL (see app.services.calendar).
+    calendar_token_hash: Mapped[str | None] = mapped_column(sa.String(64), unique=True)
 
     # Two-step sign-in (TOTP, see app.services.mfa). Secrets are encrypted; recovery codes are
     # stored as SHA-256 hashes and used once.
@@ -64,6 +66,10 @@ class User(TimestampMixin, Base):
     @property
     def telegram_connected(self) -> bool:
         return self.telegram_chat_id is not None
+
+    @property
+    def calendar_feed(self) -> bool:
+        return self.calendar_token_hash is not None
 
     def contact_value(self, method: ContactMethod | None) -> str | None:
         if method is None:

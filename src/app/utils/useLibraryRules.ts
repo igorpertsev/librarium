@@ -20,6 +20,8 @@ export interface LibraryRules {
   telegramBot: string | null;
   /** VAPID public key for notifications on this device (null: push is not set up). */
   webPushKey: string | null;
+  /** A book of the month is chosen. */
+  hasPick: boolean;
 }
 
 let cached: Promise<LibraryRules> | null = null;
@@ -38,6 +40,7 @@ function loadRules(): Promise<LibraryRules> {
       timezone: dto.timezone,
       telegramBot: dto.telegram_bot ?? null,
       webPushKey: dto.web_push_key ?? null,
+      hasPick: dto.has_pick ?? false,
     }))
     .catch((error: unknown) => {
       cached = null; // try again next time

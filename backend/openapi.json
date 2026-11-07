@@ -1440,6 +1440,71 @@
         }
       }
     },
+    "/api/v1/users/me/calendar": {
+      "post": {
+        "tags": [
+          "users"
+        ],
+        "summary": "New Calendar Link",
+        "description": "A new secret link to the reader's calendar feed (due dates, pickups, holds, reservations); an earlier link stops working.",
+        "operationId": "new_calendar_link_api_v1_users_me_calendar_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarLink"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Remove Calendar Link",
+        "description": "Turn the calendar feed off (its link stops working).",
+        "operationId": "remove_calendar_link_api_v1_users_me_calendar_delete",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/users/me/children": {
       "get": {
         "tags": [
@@ -2242,6 +2307,358 @@
         ]
       }
     },
+    "/api/v1/challenges": {
+      "get": {
+        "tags": [
+          "challenges"
+        ],
+        "summary": "List Challenges",
+        "description": "Challenges that are on or coming up, with the reader's (and children's) progress.",
+        "operationId": "list_challenges_api_v1_challenges_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ChallengeRead"
+                  },
+                  "type": "array",
+                  "title": "Response List Challenges Api V1 Challenges Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/challenges/{challenge_id}/entry": {
+      "put": {
+        "tags": [
+          "challenges"
+        ],
+        "summary": "Join Challenge",
+        "description": "Take part (``?child=`` for a child profile). 409 CHALLENGE_OVER after its end.",
+        "operationId": "join_challenge_api_v1_challenges__challenge_id__entry_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "challenge_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Challenge Id"
+            }
+          },
+          {
+            "name": "child",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "A child profile of the account",
+              "title": "Child"
+            },
+            "description": "A child profile of the account"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "challenges"
+        ],
+        "summary": "Leave Challenge",
+        "description": "Stop taking part (the books read stay in the reading log).",
+        "operationId": "leave_challenge_api_v1_challenges__challenge_id__entry_delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "challenge_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Challenge Id"
+            }
+          },
+          {
+            "name": "child",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "A child profile of the account",
+              "title": "Child"
+            },
+            "description": "A child profile of the account"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/collections": {
+      "get": {
+        "tags": [
+          "collections"
+        ],
+        "summary": "List Collections",
+        "operationId": "list_collections_api_v1_collections_get",
+        "parameters": [
+          {
+            "name": "featured",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Only those shown on the catalogue",
+              "default": false,
+              "title": "Featured"
+            },
+            "description": "Only those shown on the catalogue"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CollectionSummary"
+                  },
+                  "title": "Response List Collections Api V1 Collections Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/collections/{slug}": {
+      "get": {
+        "tags": [
+          "collections"
+        ],
+        "summary": "Get Collection",
+        "operationId": "get_collection_api_v1_collections__slug__get",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 80,
+              "title": "Slug"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionRead"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/calendar/{token}.ics": {
+      "get": {
+        "tags": [
+          "calendar"
+        ],
+        "summary": "Calendar Feed",
+        "description": "Due dates, pickup appointments, held books and reservations of the reader whose link this is (see POST /users/me/calendar). 404 for an unknown or replaced link.",
+        "operationId": "calendar_feed_api_v1_calendar__token__ics_get",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "An iCalendar feed",
+            "content": {
+              "text/calendar": {}
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/telegram/webhook": {
       "post": {
         "tags": [
@@ -2384,6 +2801,26 @@
               ],
               "title": "Age Range"
             }
+          },
+          {
+            "name": "for_age",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 18,
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Suitable for a reader this old: books labelled for this age or younger (\"6+\" for 7), and books without an age label",
+              "title": "For Age"
+            },
+            "description": "Suitable for a reader this old: books labelled for this age or younger (\"6+\" for 7), and books without an age label"
           },
           {
             "name": "available",
@@ -3646,6 +4083,36 @@
               }
             },
             "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/library/pick": {
+      "get": {
+        "tags": [
+          "library"
+        ],
+        "summary": "Book Of The Month",
+        "description": "The librarians' book of the month with its note (null: none chosen).",
+        "operationId": "book_of_the_month_api_v1_library_pick_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/BookPick"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Book Of The Month Api V1 Library Pick Get"
+                }
+              }
+            }
           }
         }
       }
@@ -9028,6 +9495,809 @@
           }
         }
       }
+    },
+    "/api/v1/admin/challenges": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin List Challenges",
+        "description": "Every challenge, newest first, with how many take part and reached the goal.",
+        "operationId": "admin_list_challenges_api_v1_admin_challenges_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ChallengeRead"
+                  },
+                  "type": "array",
+                  "title": "Response Admin List Challenges Api V1 Admin Challenges Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Create Challenge",
+        "operationId": "admin_create_challenge_api_v1_admin_challenges_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChallengeCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChallengeRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/challenges/{challenge_id}": {
+      "patch": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Update Challenge",
+        "operationId": "admin_update_challenge_api_v1_admin_challenges__challenge_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "challenge_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Challenge Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChallengeUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChallengeRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Delete Challenge",
+        "description": "Remove a challenge and who took part (the reading logs stay).",
+        "operationId": "admin_delete_challenge_api_v1_admin_challenges__challenge_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "challenge_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Challenge Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/challenges/{challenge_id}/participants": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Challenge Participants",
+        "description": "Who takes part and how far they are, most books first (to hand out prizes).",
+        "operationId": "admin_challenge_participants_api_v1_admin_challenges__challenge_id__participants_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "challenge_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Challenge Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ChallengeParticipant"
+                  },
+                  "title": "Response Admin Challenge Participants Api V1 Admin Challenges  Challenge Id  Participants Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/collections": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Create Collection",
+        "description": "A new, empty collection (its address is made unique if the slug is taken).",
+        "operationId": "admin_create_collection_api_v1_admin_collections_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectionCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/collections/{collection_id}": {
+      "patch": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Update Collection",
+        "operationId": "admin_update_collection_api_v1_admin_collections__collection_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "collection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Collection Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectionUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionSummary"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Delete Collection",
+        "operationId": "admin_delete_collection_api_v1_admin_collections__collection_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "collection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Collection Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/collections/{collection_id}/books": {
+      "put": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Set Collection Books",
+        "description": "Replace the titles of a collection (in this order).",
+        "operationId": "admin_set_collection_books_api_v1_admin_collections__collection_id__books_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "collection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Collection Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectionBooks"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/pick": {
+      "put": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Set Pick",
+        "description": "Choose the book of the month (shown at the top of the catalogue).",
+        "operationId": "admin_set_pick_api_v1_admin_pick_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BookPickUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookPick"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Clear Pick",
+        "operationId": "admin_clear_pick_api_v1_admin_pick_delete",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -9235,6 +10505,11 @@
             "title": "Telegram Connected",
             "description": "Notifications also go to a Telegram chat"
           },
+          "calendar_feed": {
+            "type": "boolean",
+            "title": "Calendar Feed",
+            "description": "A calendar feed link exists (see /users/me/calendar)"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -9268,6 +10543,7 @@
           "preferred_language",
           "mfa_enabled",
           "telegram_connected",
+          "calendar_feed",
           "created_at",
           "updated_at",
           "active_loans"
@@ -10073,6 +11349,82 @@
         ],
         "title": "BookPage"
       },
+      "BookPick": {
+        "properties": {
+          "book": {
+            "$ref": "#/components/schemas/BookRead"
+          },
+          "note_en": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note En"
+          },
+          "note_ru": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note Ru"
+          }
+        },
+        "type": "object",
+        "required": [
+          "book",
+          "note_en",
+          "note_ru"
+        ],
+        "title": "BookPick"
+      },
+      "BookPickUpdate": {
+        "properties": {
+          "book_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Book Id",
+            "description": "Any copy of the title"
+          },
+          "note_en": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note En"
+          },
+          "note_ru": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note Ru"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "book_id"
+        ],
+        "title": "BookPickUpdate"
+      },
       "BookRead": {
         "properties": {
           "id": {
@@ -10799,6 +12151,20 @@
         ],
         "title": "BulkResult"
       },
+      "CalendarLink": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url",
+            "description": "Secret iCalendar feed URL; keep it private"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "title": "CalendarLink"
+      },
       "CartItemCreate": {
         "properties": {
           "book_id": {
@@ -10898,6 +12264,370 @@
         ],
         "title": "CartRead",
         "description": "The cart grouped into batches (in the order books were added).\n\n``total_amount`` is informational; the authoritative total is recomputed when the\norder is placed."
+      },
+      "ChallengeCreate": {
+        "properties": {
+          "name_en": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name En"
+          },
+          "name_ru": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Ru"
+          },
+          "description_en": {
+            "type": "string",
+            "maxLength": 5000,
+            "title": "Description En",
+            "default": ""
+          },
+          "description_ru": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Ru"
+          },
+          "starts_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Starts On"
+          },
+          "ends_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Ends On"
+          },
+          "goal": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Goal",
+            "description": "Books to read"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BookCategory"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name_en",
+          "starts_on",
+          "ends_on",
+          "goal"
+        ],
+        "title": "ChallengeCreate"
+      },
+      "ChallengeParticipant": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "parent_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Name",
+            "description": "For a child: the account it belongs to"
+          },
+          "read": {
+            "type": "integer",
+            "title": "Read"
+          },
+          "completed": {
+            "type": "boolean",
+            "title": "Completed"
+          },
+          "joined_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Joined At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "parent_name",
+          "read",
+          "completed",
+          "joined_at"
+        ],
+        "title": "ChallengeParticipant"
+      },
+      "ChallengeProgress": {
+        "properties": {
+          "child_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Child Id",
+            "description": "null: the reader themselves"
+          },
+          "child_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Child Name"
+          },
+          "read": {
+            "type": "integer",
+            "title": "Read",
+            "description": "Titles read in the challenge's dates that count"
+          },
+          "completed": {
+            "type": "boolean",
+            "title": "Completed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "child_id",
+          "child_name",
+          "read",
+          "completed"
+        ],
+        "title": "ChallengeProgress"
+      },
+      "ChallengeRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name_en": {
+            "type": "string",
+            "title": "Name En"
+          },
+          "name_ru": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Ru"
+          },
+          "description_en": {
+            "type": "string",
+            "title": "Description En"
+          },
+          "description_ru": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Ru"
+          },
+          "starts_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Starts On"
+          },
+          "ends_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Ends On"
+          },
+          "goal": {
+            "type": "integer",
+            "title": "Goal"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BookCategory"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Only books of this category count"
+          },
+          "participants": {
+            "type": "integer",
+            "title": "Participants"
+          },
+          "completed": {
+            "type": "integer",
+            "title": "Completed",
+            "description": "Participants who reached the goal"
+          },
+          "mine": {
+            "items": {
+              "$ref": "#/components/schemas/ChallengeProgress"
+            },
+            "type": "array",
+            "title": "Mine",
+            "description": "The reader's own profiles taking part"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name_en",
+          "name_ru",
+          "description_en",
+          "description_ru",
+          "starts_on",
+          "ends_on",
+          "goal",
+          "category",
+          "participants",
+          "completed",
+          "mine"
+        ],
+        "title": "ChallengeRead"
+      },
+      "ChallengeUpdate": {
+        "properties": {
+          "name_en": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name En"
+          },
+          "name_ru": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Ru"
+          },
+          "description_en": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description En"
+          },
+          "description_ru": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Ru"
+          },
+          "starts_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Starts On"
+          },
+          "ends_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ends On"
+          },
+          "goal": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 1.0,
+                "description": "Books to read"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Goal"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BookCategory"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ChallengeUpdate"
       },
       "ChangePasswordRequest": {
         "properties": {
@@ -11014,6 +12744,344 @@
         "additionalProperties": false,
         "type": "object",
         "title": "ChildUpdate"
+      },
+      "CollectionBooks": {
+        "properties": {
+          "book_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Book Ids",
+            "description": "Any copy of each title, in order (a title counts once)"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "book_ids"
+        ],
+        "title": "CollectionBooks"
+      },
+      "CollectionCreate": {
+        "properties": {
+          "title_en": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title En"
+          },
+          "title_ru": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title Ru"
+          },
+          "description_en": {
+            "type": "string",
+            "maxLength": 5000,
+            "title": "Description En",
+            "default": ""
+          },
+          "description_ru": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Ru"
+          },
+          "slug": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9-]+$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slug",
+            "description": "Default: made from the English title"
+          },
+          "featured": {
+            "type": "boolean",
+            "title": "Featured",
+            "default": false
+          },
+          "position": {
+            "type": "integer",
+            "maximum": 1000.0,
+            "minimum": 0.0,
+            "title": "Position",
+            "description": "Lower comes first",
+            "default": 0
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "title_en"
+        ],
+        "title": "CollectionCreate"
+      },
+      "CollectionRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug",
+            "description": "Its page: /collections/<slug>"
+          },
+          "title_en": {
+            "type": "string",
+            "title": "Title En"
+          },
+          "title_ru": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title Ru"
+          },
+          "description_en": {
+            "type": "string",
+            "title": "Description En"
+          },
+          "description_ru": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Ru"
+          },
+          "featured": {
+            "type": "boolean",
+            "title": "Featured",
+            "description": "Shown as a shelf above the catalogue"
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          },
+          "book_count": {
+            "type": "integer",
+            "title": "Book Count"
+          },
+          "books": {
+            "items": {
+              "$ref": "#/components/schemas/BookRead"
+            },
+            "type": "array",
+            "title": "Books",
+            "description": "Its titles in the librarians' order"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "slug",
+          "title_en",
+          "title_ru",
+          "description_en",
+          "description_ru",
+          "featured",
+          "position",
+          "book_count",
+          "books"
+        ],
+        "title": "CollectionRead"
+      },
+      "CollectionSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug",
+            "description": "Its page: /collections/<slug>"
+          },
+          "title_en": {
+            "type": "string",
+            "title": "Title En"
+          },
+          "title_ru": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title Ru"
+          },
+          "description_en": {
+            "type": "string",
+            "title": "Description En"
+          },
+          "description_ru": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Ru"
+          },
+          "featured": {
+            "type": "boolean",
+            "title": "Featured",
+            "description": "Shown as a shelf above the catalogue"
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          },
+          "book_count": {
+            "type": "integer",
+            "title": "Book Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "slug",
+          "title_en",
+          "title_ru",
+          "description_en",
+          "description_ru",
+          "featured",
+          "position",
+          "book_count"
+        ],
+        "title": "CollectionSummary"
+      },
+      "CollectionUpdate": {
+        "properties": {
+          "title_en": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title En"
+          },
+          "title_ru": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title Ru"
+          },
+          "description_en": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description En"
+          },
+          "description_ru": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Ru"
+          },
+          "slug": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9-]+$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slug"
+          },
+          "featured": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Featured"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1000.0,
+                "minimum": 0.0,
+                "description": "Lower comes first"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "CollectionUpdate"
       },
       "ContactMethod": {
         "type": "string",
@@ -11408,6 +13476,12 @@
             "title": "Timezone",
             "description": "IANA time zone of opening hours and pickup slots"
           },
+          "has_pick": {
+            "type": "boolean",
+            "title": "Has Pick",
+            "description": "A book of the month is chosen (see /library/pick)",
+            "default": false
+          },
           "telegram_bot": {
             "anyOf": [
               {
@@ -11444,6 +13518,7 @@
           "block_overdue",
           "late_fee_per_day",
           "timezone",
+          "has_pick",
           "telegram_bot",
           "web_push_key"
         ],
@@ -11492,6 +13567,12 @@
             "title": "Timezone",
             "description": "IANA time zone of opening hours and pickup slots"
           },
+          "has_pick": {
+            "type": "boolean",
+            "title": "Has Pick",
+            "description": "A book of the month is chosen (see /library/pick)",
+            "default": false
+          },
           "telegram_bot": {
             "anyOf": [
               {
@@ -11538,6 +13619,7 @@
           "block_overdue",
           "late_fee_per_day",
           "timezone",
+          "has_pick",
           "telegram_bot",
           "web_push_key",
           "updated_at",
@@ -14694,6 +16776,11 @@
             "title": "Telegram Connected",
             "description": "Notifications also go to a Telegram chat"
           },
+          "calendar_feed": {
+            "type": "boolean",
+            "title": "Calendar Feed",
+            "description": "A calendar feed link exists (see /users/me/calendar)"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -14720,6 +16807,7 @@
           "preferred_language",
           "mfa_enabled",
           "telegram_connected",
+          "calendar_feed",
           "created_at",
           "updated_at"
         ],

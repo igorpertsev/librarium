@@ -13,6 +13,7 @@ from sqlalchemy import (
     ColumnElement,
     Date,
     Exists,
+    Integer,
     ScalarSelect,
     and_,
     case,
@@ -302,6 +303,23 @@ class BookFilters:
     groups: tuple[uuid.UUID, ...] | None = None  # only these titles (copy groups)
     author: str | None = None  # exact name, any case
     quality: QualityIssue | None = None
+    for_age: int | None = None  # suitable for a reader of this age (see min_age)
+
+
+def min_age() -> ColumnElement[int]:
+    """The youngest age a book is labelled for: the first number of its age range ("8+",
+    "6-10", "12 лет" → 8, 6, 12); NULL when it has none (unlabelled books suit everyone)."""
+    return cast(func.substring(Book.age_range, r"^\s*(\d{1,2})"), Integer)
+
+
+def _age_conditions(filters: BookFilters) -> list[ColumnElement[bool]]:
+    found: list[ColumnElement[bool]] = []
+    if filters.age_range:
+        found.append(Book.age_range == filters.age_range)
+    if filters.for_age is not None:
+        age = min_age()
+        found.append(age.is_(None) | (age <= filters.for_age))
+    return found
 
 
 def _conditions(
@@ -314,8 +332,7 @@ def _conditions(
         conditions.append(search_condition(filters.q))
     if filters.category is not None:
         conditions.append(Book.category == filters.category)
-    if filters.age_range:
-        conditions.append(Book.age_range == filters.age_range)
+    conditions.extend(_age_conditions(filters))
     if filters.status is not None:
         conditions.append(Book.status == filters.status)
     for slug in filters.tags:

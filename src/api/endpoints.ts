@@ -38,6 +38,15 @@ import type {
   PickupChoiceDto,
   PickupPointCreateDto,
   PickupPointDto,
+  ChallengeCreateDto,
+  ChallengeDto,
+  BookPickDto,
+  CollectionCreateDto,
+  CollectionDto,
+  CollectionSummaryDto,
+  CollectionUpdateDto,
+  ChallengeParticipantDto,
+  ChallengeUpdateDto,
   PickupPointUpdateDto,
   PickupSlotDto,
   PurchaseRequestDto,
@@ -107,6 +116,8 @@ export const usersApi = {
   telegramLink: () =>
     apiRequest<{ url: string; expires_at: string }>('/users/me/telegram/link', { method: 'POST' }),
   telegramUnlink: () => apiRequest<void>('/users/me/telegram', { method: 'DELETE' }),
+  calendarLink: () => apiRequest<{ url: string }>('/users/me/calendar', { method: 'POST' }),
+  calendarRemove: () => apiRequest<void>('/users/me/calendar', { method: 'DELETE' }),
   pushSubscribe: (subscription: { endpoint: string; keys: { p256dh: string; auth: string } }) =>
     apiRequest<void>('/users/me/push-subscriptions', { method: 'POST', body: subscription }),
   pushUnsubscribe: (endpoint: string) =>
@@ -218,13 +229,44 @@ export const purchasesApi = {
 };
 
 export const libraryApi = {
+  pick: () => apiRequest<BookPickDto | null>('/library/pick', { auth: false }),
   rules: () => apiRequest<LibraryRulesDto>('/library/rules', { auth: false }),
   pickupPoints: () => apiRequest<PickupPointDto[]>('/library/pickup-points', { auth: false }),
   pickupSlots: (pointId: string) =>
     apiRequest<PickupSlotDto[]>(`/library/pickup-points/${id(pointId)}/slots`, { auth: false }),
 };
 
+export const collectionsApi = {
+  list: (featured = false) =>
+    apiRequest<CollectionSummaryDto[]>(`/collections${featured ? '?featured=true' : ''}`, { auth: false }),
+  get: (slug: string) => apiRequest<CollectionDto>(`/collections/${encodeURIComponent(slug)}`, { auth: false }),
+};
+
+export const challengesApi = {
+  list: () => apiRequest<ChallengeDto[]>('/challenges'),
+  join: (challengeId: string, child?: string | null) =>
+    apiRequest<void>(`/challenges/${challengeId}/entry${child ? `?child=${encodeURIComponent(child)}` : ''}`, { method: 'PUT' }),
+  leave: (challengeId: string, child?: string | null) =>
+    apiRequest<void>(`/challenges/${challengeId}/entry${child ? `?child=${encodeURIComponent(child)}` : ''}`, { method: 'DELETE' }),
+};
+
 export const adminApi = {
+  createCollection: (body: CollectionCreateDto) => apiRequest<CollectionDto>('/admin/collections', { method: 'POST', body }),
+  updateCollection: (collectionId: string, body: CollectionUpdateDto) =>
+    apiRequest<CollectionSummaryDto>(`/admin/collections/${collectionId}`, { method: 'PATCH', body }),
+  deleteCollection: (collectionId: string) => apiRequest<void>(`/admin/collections/${collectionId}`, { method: 'DELETE' }),
+  setCollectionBooks: (collectionId: string, bookIds: string[]) =>
+    apiRequest<CollectionDto>(`/admin/collections/${collectionId}/books`, { method: 'PUT', body: { book_ids: bookIds } }),
+  setPick: (body: { book_id: string; note_en: string | null; note_ru: string | null }) =>
+    apiRequest<BookPickDto>('/admin/pick', { method: 'PUT', body }),
+  clearPick: () => apiRequest<void>('/admin/pick', { method: 'DELETE' }),
+  listChallenges: () => apiRequest<ChallengeDto[]>('/admin/challenges'),
+  createChallenge: (body: ChallengeCreateDto) => apiRequest<ChallengeDto>('/admin/challenges', { method: 'POST', body }),
+  updateChallenge: (challengeId: string, body: ChallengeUpdateDto) =>
+    apiRequest<ChallengeDto>(`/admin/challenges/${challengeId}`, { method: 'PATCH', body }),
+  deleteChallenge: (challengeId: string) => apiRequest<void>(`/admin/challenges/${challengeId}`, { method: 'DELETE' }),
+  challengeParticipants: (challengeId: string) =>
+    apiRequest<ChallengeParticipantDto[]>(`/admin/challenges/${challengeId}/participants`),
   listBooks: (query: AdminBookListQuery) => apiRequest<BookPageDto>('/admin/books', { query }),
   bookStats: () => apiRequest<BookStatsDto>('/admin/books/stats'),
   bookQuality: () => apiRequest<QualitySummaryDto>('/admin/books/quality'),

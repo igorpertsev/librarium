@@ -34,6 +34,9 @@ class LibraryRules(ApiModel):
         description="Charged per day late when books come back (0: none)"
     )
     timezone: str = Field(description="IANA time zone of opening hours and pickup slots")
+    has_pick: bool = Field(
+        default=False, description="A book of the month is chosen (see /library/pick)"
+    )
     telegram_bot: str | None = Field(
         None, description="Username of the library's Telegram bot, when notifications can go there"
     )

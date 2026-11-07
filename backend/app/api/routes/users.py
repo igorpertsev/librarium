@@ -18,9 +18,16 @@ from app.schemas.inbox import Inbox, MarkRead
 from app.schemas.push import PushSubscriptionCreate
 from app.schemas.reading_log import MarkFinished, ReadingLogRead
 from app.schemas.reservation import ReservationCreate, ReservationRead
-from app.schemas.user import DeleteAccountRequest, TelegramLink, UserRead, UserUpdate
+from app.schemas.user import (
+    CalendarLink,
+    DeleteAccountRequest,
+    TelegramLink,
+    UserRead,
+    UserUpdate,
+)
 from app.services import (
     account,
+    calendar,
     family,
     holds,
     inbox,
@@ -198,6 +205,31 @@ async def remove_push_subscription(
 ) -> Response:
     """No more notifications on that device."""
     await web_push.unsubscribe(session, user, endpoint)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post(
+    "/me/calendar",
+    response_model=CalendarLink,
+    responses=error_responses(401),
+    description="A new secret link to the reader's calendar feed (due dates, pickups, holds, "
+    "reservations); an earlier link stops working.",
+)
+async def new_calendar_link(
+    user: CurrentUser, session: SessionDep, settings: SettingsDep
+) -> CalendarLink:
+    return CalendarLink(url=await calendar.new_link(session, settings, user))
+
+
+@router.delete(
+    "/me/calendar",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
+    responses=error_responses(401),
+)
+async def remove_calendar_link(user: CurrentUser, session: SessionDep) -> Response:
+    """Turn the calendar feed off (its link stops working)."""
+    await calendar.remove_link(session, user)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

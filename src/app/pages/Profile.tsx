@@ -30,6 +30,8 @@ import { AccountDataCard } from '../components/AccountDataCard';
 import { TwoStepCard } from '../components/TwoStepCard';
 import { FamilyCard } from '../components/FamilyCard';
 import { PushCard } from '../components/PushCard';
+import { CalendarCard } from '../components/CalendarCard';
+import { ChallengesCard } from '../components/ChallengesCard';
 import { TelegramCard } from '../components/TelegramCard';
 import { useBookText } from '../utils/bookText';
 import { coverOfSize } from '../utils/covers';
@@ -280,6 +282,7 @@ export default function Profile() {
       <ReadingListCard />
       <FamilyCard />
       <ReadingLogCard />
+      <ChallengesCard />
       <Card>
         <CardHeader>
           <CardTitle>{t('suggest.profileTitle')}</CardTitle>
@@ -531,6 +534,7 @@ export default function Profile() {
         </DialogContent>
       </Dialog>
       <TelegramCard />
+      <CalendarCard />
       <PushCard />
       <TwoStepCard />
       <AccountDataCard />

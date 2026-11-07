@@ -475,6 +475,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/users/me/calendar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * New Calendar Link
+         * @description A new secret link to the reader's calendar feed (due dates, pickups, holds, reservations); an earlier link stops working.
+         */
+        post: operations["new_calendar_link_api_v1_users_me_calendar_post"];
+        /**
+         * Remove Calendar Link
+         * @description Turn the calendar feed off (its link stops working).
+         */
+        delete: operations["remove_calendar_link_api_v1_users_me_calendar_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users/me/children": {
         parameters: {
             query?: never;
@@ -648,6 +672,104 @@ export interface paths {
          * @description Everything stored about the signed-in reader, as a JSON file.
          */
         get: operations["export_my_data_api_v1_users_me_export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/challenges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Challenges
+         * @description Challenges that are on or coming up, with the reader's (and children's) progress.
+         */
+        get: operations["list_challenges_api_v1_challenges_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/challenges/{challenge_id}/entry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Join Challenge
+         * @description Take part (``?child=`` for a child profile). 409 CHALLENGE_OVER after its end.
+         */
+        put: operations["join_challenge_api_v1_challenges__challenge_id__entry_put"];
+        post?: never;
+        /**
+         * Leave Challenge
+         * @description Stop taking part (the books read stay in the reading log).
+         */
+        delete: operations["leave_challenge_api_v1_challenges__challenge_id__entry_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/collections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Collections */
+        get: operations["list_collections_api_v1_collections_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/collections/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Collection */
+        get: operations["get_collection_api_v1_collections__slug__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/calendar/{token}.ics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Calendar Feed
+         * @description Due dates, pickup appointments, held books and reservations of the reader whose link this is (see POST /users/me/calendar). 404 for an unknown or replaced link.
+         */
+        get: operations["calendar_feed_api_v1_calendar__token__ics_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1047,6 +1169,26 @@ export interface paths {
          * @description Pickup times for the next two weeks, starting at least an hour from now.
          */
         get: operations["pickup_slots_api_v1_library_pickup_points__point_id__slots_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/library/pick": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Book Of The Month
+         * @description The librarians' book of the month with its note (null: none chosen).
+         */
+        get: operations["book_of_the_month_api_v1_library_pick_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2041,6 +2183,147 @@ export interface paths {
         patch: operations["admin_update_purchase_request_api_v1_admin_purchase_requests__request_id__patch"];
         trace?: never;
     };
+    "/api/v1/admin/challenges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin List Challenges
+         * @description Every challenge, newest first, with how many take part and reached the goal.
+         */
+        get: operations["admin_list_challenges_api_v1_admin_challenges_get"];
+        put?: never;
+        /** Admin Create Challenge */
+        post: operations["admin_create_challenge_api_v1_admin_challenges_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/challenges/{challenge_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Admin Delete Challenge
+         * @description Remove a challenge and who took part (the reading logs stay).
+         */
+        delete: operations["admin_delete_challenge_api_v1_admin_challenges__challenge_id__delete"];
+        options?: never;
+        head?: never;
+        /** Admin Update Challenge */
+        patch: operations["admin_update_challenge_api_v1_admin_challenges__challenge_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/challenges/{challenge_id}/participants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin Challenge Participants
+         * @description Who takes part and how far they are, most books first (to hand out prizes).
+         */
+        get: operations["admin_challenge_participants_api_v1_admin_challenges__challenge_id__participants_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/collections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Admin Create Collection
+         * @description A new, empty collection (its address is made unique if the slug is taken).
+         */
+        post: operations["admin_create_collection_api_v1_admin_collections_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/collections/{collection_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Admin Delete Collection */
+        delete: operations["admin_delete_collection_api_v1_admin_collections__collection_id__delete"];
+        options?: never;
+        head?: never;
+        /** Admin Update Collection */
+        patch: operations["admin_update_collection_api_v1_admin_collections__collection_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/collections/{collection_id}/books": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Admin Set Collection Books
+         * @description Replace the titles of a collection (in this order).
+         */
+        put: operations["admin_set_collection_books_api_v1_admin_collections__collection_id__books_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pick": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Admin Set Pick
+         * @description Choose the book of the month (shown at the top of the catalogue).
+         */
+        put: operations["admin_set_pick_api_v1_admin_pick_put"];
+        post?: never;
+        /** Admin Clear Pick */
+        delete: operations["admin_clear_pick_api_v1_admin_pick_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2127,6 +2410,11 @@ export interface components {
              * @description Notifications also go to a Telegram chat
              */
             telegram_connected: boolean;
+            /**
+             * Calendar Feed
+             * @description A calendar feed link exists (see /users/me/calendar)
+             */
+            calendar_feed: boolean;
             /**
              * Created At
              * Format: date-time
@@ -2403,6 +2691,27 @@ export interface components {
             /** Page Size */
             page_size: number;
         };
+        /** BookPick */
+        BookPick: {
+            book: components["schemas"]["BookRead"];
+            /** Note En */
+            note_en: string | null;
+            /** Note Ru */
+            note_ru: string | null;
+        };
+        /** BookPickUpdate */
+        BookPickUpdate: {
+            /**
+             * Book Id
+             * Format: uuid
+             * @description Any copy of the title
+             */
+            book_id: string;
+            /** Note En */
+            note_en?: string | null;
+            /** Note Ru */
+            note_ru?: string | null;
+        };
         /** BookRead */
         BookRead: {
             /**
@@ -2637,6 +2946,14 @@ export interface components {
             /** Copies */
             copies: number;
         };
+        /** CalendarLink */
+        CalendarLink: {
+            /**
+             * Url
+             * @description Secret iCalendar feed URL; keep it private
+             */
+            url: string;
+        };
         /** CartItemCreate */
         CartItemCreate: {
             /**
@@ -2685,6 +3002,132 @@ export interface components {
             /** Has Unavailable Items */
             has_unavailable_items: boolean;
         };
+        /** ChallengeCreate */
+        ChallengeCreate: {
+            /** Name En */
+            name_en: string;
+            /** Name Ru */
+            name_ru?: string | null;
+            /**
+             * Description En
+             * @default
+             */
+            description_en: string;
+            /** Description Ru */
+            description_ru?: string | null;
+            /**
+             * Starts On
+             * Format: date
+             */
+            starts_on: string;
+            /**
+             * Ends On
+             * Format: date
+             */
+            ends_on: string;
+            /**
+             * Goal
+             * @description Books to read
+             */
+            goal: number;
+            category?: components["schemas"]["BookCategory"] | null;
+        };
+        /** ChallengeParticipant */
+        ChallengeParticipant: {
+            /** Name */
+            name: string;
+            /**
+             * Parent Name
+             * @description For a child: the account it belongs to
+             */
+            parent_name: string | null;
+            /** Read */
+            read: number;
+            /** Completed */
+            completed: boolean;
+            /**
+             * Joined At
+             * Format: date-time
+             */
+            joined_at: string;
+        };
+        /** ChallengeProgress */
+        ChallengeProgress: {
+            /**
+             * Child Id
+             * @description null: the reader themselves
+             */
+            child_id: string | null;
+            /** Child Name */
+            child_name: string | null;
+            /**
+             * Read
+             * @description Titles read in the challenge's dates that count
+             */
+            read: number;
+            /** Completed */
+            completed: boolean;
+        };
+        /** ChallengeRead */
+        ChallengeRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name En */
+            name_en: string;
+            /** Name Ru */
+            name_ru: string | null;
+            /** Description En */
+            description_en: string;
+            /** Description Ru */
+            description_ru: string | null;
+            /**
+             * Starts On
+             * Format: date
+             */
+            starts_on: string;
+            /**
+             * Ends On
+             * Format: date
+             */
+            ends_on: string;
+            /** Goal */
+            goal: number;
+            /** @description Only books of this category count */
+            category: components["schemas"]["BookCategory"] | null;
+            /** Participants */
+            participants: number;
+            /**
+             * Completed
+             * @description Participants who reached the goal
+             */
+            completed: number;
+            /**
+             * Mine
+             * @description The reader's own profiles taking part
+             */
+            mine: components["schemas"]["ChallengeProgress"][];
+        };
+        /** ChallengeUpdate */
+        ChallengeUpdate: {
+            /** Name En */
+            name_en?: string | null;
+            /** Name Ru */
+            name_ru?: string | null;
+            /** Description En */
+            description_en?: string | null;
+            /** Description Ru */
+            description_ru?: string | null;
+            /** Starts On */
+            starts_on?: string | null;
+            /** Ends On */
+            ends_on?: string | null;
+            /** Goal */
+            goal?: number | null;
+            category?: components["schemas"]["BookCategory"] | null;
+        };
         /** ChangePasswordRequest */
         ChangePasswordRequest: {
             /** Current Password */
@@ -2717,6 +3160,126 @@ export interface components {
             name?: string | null;
             /** Birth Year */
             birth_year?: number | null;
+        };
+        /** CollectionBooks */
+        CollectionBooks: {
+            /**
+             * Book Ids
+             * @description Any copy of each title, in order (a title counts once)
+             */
+            book_ids: string[];
+        };
+        /** CollectionCreate */
+        CollectionCreate: {
+            /** Title En */
+            title_en: string;
+            /** Title Ru */
+            title_ru?: string | null;
+            /**
+             * Description En
+             * @default
+             */
+            description_en: string;
+            /** Description Ru */
+            description_ru?: string | null;
+            /**
+             * Slug
+             * @description Default: made from the English title
+             */
+            slug?: string | null;
+            /**
+             * Featured
+             * @default false
+             */
+            featured: boolean;
+            /**
+             * Position
+             * @description Lower comes first
+             * @default 0
+             */
+            position: number;
+        };
+        /** CollectionRead */
+        CollectionRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Slug
+             * @description Its page: /collections/<slug>
+             */
+            slug: string;
+            /** Title En */
+            title_en: string;
+            /** Title Ru */
+            title_ru: string | null;
+            /** Description En */
+            description_en: string;
+            /** Description Ru */
+            description_ru: string | null;
+            /**
+             * Featured
+             * @description Shown as a shelf above the catalogue
+             */
+            featured: boolean;
+            /** Position */
+            position: number;
+            /** Book Count */
+            book_count: number;
+            /**
+             * Books
+             * @description Its titles in the librarians' order
+             */
+            books: components["schemas"]["BookRead"][];
+        };
+        /** CollectionSummary */
+        CollectionSummary: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Slug
+             * @description Its page: /collections/<slug>
+             */
+            slug: string;
+            /** Title En */
+            title_en: string;
+            /** Title Ru */
+            title_ru: string | null;
+            /** Description En */
+            description_en: string;
+            /** Description Ru */
+            description_ru: string | null;
+            /**
+             * Featured
+             * @description Shown as a shelf above the catalogue
+             */
+            featured: boolean;
+            /** Position */
+            position: number;
+            /** Book Count */
+            book_count: number;
+        };
+        /** CollectionUpdate */
+        CollectionUpdate: {
+            /** Title En */
+            title_en?: string | null;
+            /** Title Ru */
+            title_ru?: string | null;
+            /** Description En */
+            description_en?: string | null;
+            /** Description Ru */
+            description_ru?: string | null;
+            /** Slug */
+            slug?: string | null;
+            /** Featured */
+            featured?: boolean | null;
+            /** Position */
+            position?: number | null;
         };
         /**
          * ContactMethod
@@ -2903,6 +3466,12 @@ export interface components {
              */
             timezone: string;
             /**
+             * Has Pick
+             * @description A book of the month is chosen (see /library/pick)
+             * @default false
+             */
+            has_pick: boolean;
+            /**
              * Telegram Bot
              * @description Username of the library's Telegram bot, when notifications can go there
              */
@@ -2945,6 +3514,12 @@ export interface components {
              * @description IANA time zone of opening hours and pickup slots
              */
             timezone: string;
+            /**
+             * Has Pick
+             * @description A book of the month is chosen (see /library/pick)
+             * @default false
+             */
+            has_pick: boolean;
             /**
              * Telegram Bot
              * @description Username of the library's Telegram bot, when notifications can go there
@@ -4150,6 +4725,11 @@ export interface components {
              * @description Notifications also go to a Telegram chat
              */
             telegram_connected: boolean;
+            /**
+             * Calendar Feed
+             * @description A calendar feed link exists (see /users/me/calendar)
+             */
+            calendar_feed: boolean;
             /**
              * Created At
              * Format: date-time
@@ -5404,6 +5984,62 @@ export interface operations {
             };
         };
     };
+    new_calendar_link_api_v1_users_me_calendar_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarLink"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    remove_calendar_link_api_v1_users_me_calendar_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     my_children_api_v1_users_me_children_get: {
         parameters: {
             query?: never;
@@ -5972,6 +6608,247 @@ export interface operations {
             };
         };
     };
+    list_challenges_api_v1_challenges_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChallengeRead"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    join_challenge_api_v1_challenges__challenge_id__entry_put: {
+        parameters: {
+            query?: {
+                /** @description A child profile of the account */
+                child?: string | null;
+            };
+            header?: never;
+            path: {
+                challenge_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    leave_challenge_api_v1_challenges__challenge_id__entry_delete: {
+        parameters: {
+            query?: {
+                /** @description A child profile of the account */
+                child?: string | null;
+            };
+            header?: never;
+            path: {
+                challenge_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_collections_api_v1_collections_get: {
+        parameters: {
+            query?: {
+                /** @description Only those shown on the catalogue */
+                featured?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionSummary"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_collection_api_v1_collections__slug__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionRead"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    calendar_feed_api_v1_calendar__token__ics_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description An iCalendar feed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/calendar": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     telegram_webhook_api_v1_telegram_webhook_post: {
         parameters: {
             query?: never;
@@ -6034,6 +6911,8 @@ export interface operations {
                 q?: string | null;
                 category?: components["schemas"]["BookCategory"] | null;
                 age_range?: string | null;
+                /** @description Suitable for a reader this old: books labelled for this age or younger ("6+" for 7), and books without an age label */
+                for_age?: number | null;
                 /** @description true: can be borrowed now; false: cannot */
                 available?: boolean | null;
                 /** @description Comma-separated tag slugs; a book must have all of them */
@@ -6867,6 +7746,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    book_of_the_month_api_v1_library_pick_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookPick"] | null;
                 };
             };
         };
@@ -10570,6 +11469,616 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_list_challenges_api_v1_admin_challenges_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChallengeRead"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_create_challenge_api_v1_admin_challenges_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChallengeCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChallengeRead"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_delete_challenge_api_v1_admin_challenges__challenge_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                challenge_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_update_challenge_api_v1_admin_challenges__challenge_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                challenge_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChallengeUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChallengeRead"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_challenge_participants_api_v1_admin_challenges__challenge_id__participants_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                challenge_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChallengeParticipant"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_create_collection_api_v1_admin_collections_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CollectionCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionRead"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_delete_collection_api_v1_admin_collections__collection_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_update_collection_api_v1_admin_collections__collection_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CollectionUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionSummary"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_set_collection_books_api_v1_admin_collections__collection_id__books_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CollectionBooks"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionRead"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_set_pick_api_v1_admin_pick_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BookPickUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookPick"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_clear_pick_api_v1_admin_pick_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { createBook, registerCustomer, unique } from '../helpers';
+import { createBook, registerCustomer, setBatchSize, unique } from '../helpers';
 
 test('a reader filters by language, saves a book, follows an author and a series', async ({ page, request }) => {
   const id = unique();
@@ -111,4 +111,65 @@ test("a parent adds a child and keeps the child's reading log apart", async ({ p
   await expect(log).toContainText(title);
   await log.getByRole('button', { name: 'Me' }).click();
   await expect(log).not.toContainText(title);
+});
+
+test('a parent finds books for a child and hears about books for older readers', async ({ page, request }) => {
+  const id = unique();
+  await createBook(request, { title: `${id} little`, age_range: '6+' });
+  await createBook(request, { title: `${id} teen`, age_range: '14+' });
+  await registerCustomer(page);
+  await page.goto('/profile');
+  const family = page.getByTestId('family');
+  await family.getByLabel("Child's name").fill('Mia');
+  await family.getByLabel('Year of birth').fill(String(new Date().getFullYear() - 7));
+  await family.getByRole('button', { name: 'Add child' }).click();
+  await expect(page.getByText('Mia was added')).toBeVisible();
+
+  const heading = (title: string) => page.getByRole('heading', { name: title, exact: true });
+  await page.goto(`/?q=${encodeURIComponent(id)}`);
+  await expect(heading(`${id} teen`)).toBeVisible();
+  const chip = page.getByRole('button', { name: 'Mia, 7' });
+  await chip.click();
+  await expect(chip).toHaveAttribute('aria-pressed', 'true');
+  await expect(page).toHaveURL(/for_age=7/);
+  await expect(heading(`${id} little`)).toBeVisible();
+  await expect(heading(`${id} teen`)).toBeHidden();
+  await chip.click();
+  await expect(heading(`${id} teen`)).toBeVisible();
+
+  await setBatchSize(request, 1);
+  try {
+    const card = page.locator('[data-slot=card]').filter({ has: heading(`${id} teen`) });
+    await card.getByRole('button', { name: 'Add to Cart' }).click();
+    await expect(card.getByRole('button', { name: 'Pending' })).toBeVisible();
+    await page.getByRole('button', { name: /^Cart/ }).click();
+    await page.getByRole('button', { name: 'Proceed to Checkout' }).click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByLabel('Who are the books for?').selectOption({ label: 'Mia' });
+    const note = dialog.getByRole('status').filter({ hasText: 'marked for older readers' });
+    await expect(note).toContainText('Mia is about 7');
+    await expect(note).toContainText(`${id} teen (14+)`);
+  } finally {
+    await setBatchSize(request, 5);
+  }
+});
+
+test('a reader gets a calendar link and the feed answers', async ({ page, request }) => {
+  await registerCustomer(page);
+  await page.getByRole('button', { name: 'My Books' }).click();
+  const card = page.getByTestId('calendar');
+  await card.getByRole('button', { name: 'Get calendar link' }).click();
+  const link = card.getByLabel('Your calendar link');
+  await expect(link).toHaveValue(/\/api\/v1\/calendar\/.+\.ics$/);
+  await expect(card.getByRole('link', { name: 'Open in calendar app' })).toHaveAttribute('href', /^webcal:/);
+
+  // Calendar apps fetch it without signing in.
+  const url = await link.inputValue();
+  const feed = await request.get(url);
+  expect(feed.status()).toBe(200);
+  expect(await feed.text()).toContain('BEGIN:VCALENDAR');
+
+  await card.getByRole('button', { name: 'Turn off' }).click();
+  await expect(card.getByRole('button', { name: 'Get calendar link' })).toBeVisible();
+  expect((await request.get(url)).status()).toBe(404);
 });
