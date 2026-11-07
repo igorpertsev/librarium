@@ -278,6 +278,13 @@ pnpm e2e:stack:down
 `src/app/routes.tsx`); React и i18next вынесены в отдельные долго кешируемые файлы (`vite.config.ts`). Если открытая
 вкладка запрашивает файлы страницы, заменённые новым релизом, она один раз перезагружается.
 
+### Обновления зависимостей
+
+Dependabot (`.github/dependabot.yml`) по понедельникам открывает pull request'ы с обновлениями Python (uv),
+frontend (pnpm), базовых Docker-образов, образов в compose и GitHub Actions; minor- и patch-обновления приходят
+сгруппированными по экосистемам. Новые minor-версии Python, major-версии PostgreSQL и Node.js остаются на ваше
+решение.
+
 ## Генерация TypeScript-типов из OpenAPI
 
 Из запущенного backend:
