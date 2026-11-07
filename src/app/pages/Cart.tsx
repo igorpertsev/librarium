@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { errorMessage } from '../utils/apiErrors';
 import { useFormat } from '../utils/format';
+import { childAge, minAge } from '../utils/ages';
 import { useBookText } from '../utils/bookText';
 import { coverOfSize } from '../utils/covers';
 import { useConfirm } from '../components/ConfirmDialog';
@@ -53,6 +54,13 @@ export default function Cart() {
   const [slotsVersion, setSlotsVersion] = useState(0);
   const { children: kids } = useFamily();
   const [forChild, setForChild] = useState('');
+  const chosenKid = kids.find((kid) => kid.id === forChild) ?? null;
+  const chosenAge = childAge(chosenKid?.birth_year);
+  // Books labelled for older readers than the child the order is for (a hint, not a block).
+  const tooOld =
+    chosenAge === null
+      ? []
+      : cart.flatMap((batch) => batch.books).filter((book) => (minAge(book.ageRange) ?? 0) > chosenAge);
   const pickupRequired = (pickupPoints?.length ?? 0) > 0;
   const navigate = useNavigate();
 
@@ -380,6 +388,16 @@ export default function Cart() {
                         </option>
                       ))}
                     </select>
+                    {tooOld.length > 0 && chosenKid && (
+                      <div role="status" className="rounded-md border border-amber-600/40 bg-amber-50 dark:bg-amber-950/40 p-2 text-sm text-amber-900 dark:text-amber-200">
+                        <p>{t('ages.olderReaders', { name: chosenKid.name, age: chosenAge })}</p>
+                        <ul className="list-disc pl-5">
+                          {tooOld.map((book) => (
+                            <li key={book.id}>{textOf(book).title} ({book.ageRange})</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 )}
                 {pickupPoints === null ? (

@@ -619,6 +619,11 @@ two copies of the same title are two records (ISBN is not unique).
   `aes128gcm`) and signed with the VAPID key (RFC 8292); a device the push service reports gone (404/410) is
   forgotten, and the news counts as delivered when one device has it. `public/sw.js` shows it and opens the page
   it is about.
+- **Books for a child's age**: `GET /books?for_age=7` keeps books whose age label starts at that age or younger
+  (the first number of the label: "6+", "6-10", "12 лет") and books without a label. A parent whose children have a
+  year of birth sees one chip per child above the catalogue ("Mia, 7"), which sets `for_age` in the address bar; at
+  checkout, choosing a child under *Who are the books for?* lists the books marked for older readers (a hint, the
+  order is not blocked).
 - **Notification bell**: the header shows the reader's news — the same events as the emails (`notifications`), even
   when an email could not be sent, except news that went stale before delivery. Opening the list marks it read
   (`read_at`); it refreshes every minute while the tab is visible. Notifications from before the bell existed

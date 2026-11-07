@@ -2386,6 +2386,26 @@
             }
           },
           {
+            "name": "for_age",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 18,
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Suitable for a reader this old: books labelled for this age or younger (\"6+\" for 7), and books without an age label",
+              "title": "For Age"
+            },
+            "description": "Suitable for a reader this old: books labelled for this age or younger (\"6+\" for 7), and books without an age label"
+          },
+          {
             "name": "available",
             "in": "query",
             "required": false,

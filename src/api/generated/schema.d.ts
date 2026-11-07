@@ -6034,6 +6034,8 @@ export interface operations {
                 q?: string | null;
                 category?: components["schemas"]["BookCategory"] | null;
                 age_range?: string | null;
+                /** @description Suitable for a reader this old: books labelled for this age or younger ("6+" for 7), and books without an age label */
+                for_age?: number | null;
                 /** @description true: can be borrowed now; false: cannot */
                 available?: boolean | null;
                 /** @description Comma-separated tag slugs; a book must have all of them */
