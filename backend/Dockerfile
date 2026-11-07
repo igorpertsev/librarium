@@ -40,6 +40,8 @@ COPY --from=build /opt/venv /opt/venv
 COPY --chown=app:app alembic.ini ./
 COPY --chown=app:app alembic ./alembic
 COPY --chown=app:app app ./app
+# Uploaded covers; a named volume mounted here starts with this owner.
+RUN mkdir -p /app/media && chown app:app /app/media
 USER app
 EXPOSE 8000
 HEALTHCHECK --interval=15s --timeout=3s --start-period=10s --retries=3 \

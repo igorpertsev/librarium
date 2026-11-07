@@ -1,5 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
-import { BatchConfig, Book, BookCategory, BookStatus, Order } from '../types';
+import { useCallback, useEffect, useState, type Dispatch, type SetStateAction } from 'react';
+import { BatchConfig, Book, BookCategory, BookStatus, CopyCondition, Order } from '../types';
+
+const COPY_CONDITIONS: CopyCondition[] = ['new', 'good', 'worn', 'damaged'];
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -8,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Textarea } from '../components/ui/textarea';
 import { Badge } from '../components/ui/badge';
-import { Plus, Pencil, Trash2, Users, BookOpen as BookOpenIcon, ClipboardList, CheckCircle2, RotateCcw, Clock, Star, ImageDown, BellRing, BarChart3, CopyPlus, Tags, ListChecks, MapPin, MessageSquare } from 'lucide-react';
+import { Plus, Pencil, Trash2, Users, BookOpen as BookOpenIcon, ClipboardList, CheckCircle2, RotateCcw, Clock, Star, ImageDown, BellRing, BarChart3, CopyPlus, Tags, ClipboardCheck, History, Lightbulb, ListChecks, MapPin, MessageSquare, ScanBarcode, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -19,6 +21,14 @@ import { LoanRulesSettings } from '../components/LoanRulesSettings';
 import { PickupLine } from '../components/PickupLine';
 import { PickupPointsTab } from '../components/PickupPointsTab';
 import { UpcomingReservations } from '../components/UpcomingReservations';
+import { ActivityTab } from '../components/ActivityTab';
+import { ReturnDialog } from '../components/ReturnDialog';
+import { BulkBookActions } from '../components/BulkBookActions';
+import { IsbnScanner } from '../components/IsbnScanner';
+import { StocktakingTab } from '../components/StocktakingTab';
+import { PurchaseRequestsTab } from '../components/PurchaseRequestsTab';
+import { Checkbox } from '../components/ui/checkbox';
+import { isAdmin, type Role } from '../utils/roles';
 import { ReportsTab } from '../components/ReportsTab';
 import { BookCatalogFields } from '../components/BookCatalogFields';
 import { BookTranslationFields } from '../components/BookTranslationFields';
@@ -55,12 +65,15 @@ export default function AdminPortal() {
   const { batchConfig, updateBatchConfig, currency } = useCart();
   const fmt = useFormat();
   const [batchDraft, setBatchDraft] = useState<BatchConfig>(batchConfig);
-  const { users, updateUserRole, refreshUsers } = useAuth();
+  const { user: me, users, updateUserRole, refreshUsers } = useAuth();
+  // Librarians run the desk; users, settings, pickup points and the activity log are admin-only.
+  const canAdminister = isAdmin(me);
   const { orders, isLoading: ordersLoading, confirmOrder, markReturned, cancelOrder, updateDueDate, settleLateFee } = useOrders();
   const overdueCount = orders.filter(isOverdueOrder).length;
   const { invalidateCatalog } = useCatalog();
   const { confirm, confirmDialog } = useConfirm();
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedBooks, setSelectedBooks] = useState<Set<string>>(new Set());
   const booksPerPage = 10;
 
   const { booksPerBatch, pricePerBatch } = batchConfig;
@@ -105,6 +118,8 @@ export default function AdminPortal() {
     category: 'fiction' as BookCategory,
     ageRange: '',
     status: 'available' as BookStatus,
+    condition: 'good',
+    conditionNote: '',
     coverImage: '',
     images: [] as string[],
     description: '',
@@ -125,6 +140,8 @@ export default function AdminPortal() {
       category: 'fiction',
       ageRange: '',
       status: 'available',
+      condition: 'good',
+      conditionNote: '',
       coverImage: '',
       images: [],
       description: '',
@@ -205,6 +222,8 @@ export default function AdminPortal() {
       category: book.category,
       ageRange: book.ageRange,
       status: book.status,
+      condition: book.condition ?? 'good',
+      conditionNote: book.conditionNote ?? '',
       coverImage: book.coverImage,
       images: book.images || [book.coverImage],
       description: book.description,
@@ -227,6 +246,7 @@ export default function AdminPortal() {
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+    setSelectedBooks(new Set()); // a selection is for one page
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -241,7 +261,7 @@ export default function AdminPortal() {
     },
   });
 
-  const handleRoleChange = async (userId: string, newRole: 'customer' | 'admin') => {
+  const handleRoleChange = async (userId: string, newRole: Role) => {
     const result = await updateUserRole(userId, newRole);
     if (result.ok) {
       toast.success(t('admin.roleUpdated'));
@@ -277,6 +297,7 @@ export default function AdminPortal() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {canAdminister && (
         <Card>
           <CardHeader>
             <CardTitle>{t('admin.batchConfig')}</CardTitle>
@@ -310,6 +331,7 @@ export default function AdminPortal() {
             <LoanRulesSettings />
           </CardContent>
         </Card>
+        )}
 
         <Card>
           <CardHeader>
@@ -348,7 +370,7 @@ export default function AdminPortal() {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="books" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 h-auto mb-6">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 h-auto mb-6">
               <TabsTrigger value="books" className="flex items-center gap-2">
                 <BookOpenIcon className="w-4 h-4" />
                 {t('admin.booksTab')}
@@ -382,10 +404,26 @@ export default function AdminPortal() {
                 <BarChart3 className="w-4 h-4" />
                 {t('reports.tab')}
               </TabsTrigger>
-              <TabsTrigger value="pickup" className="flex items-center gap-2">
-                <MapPin className="w-4 h-4" />
-                {t('pickup.tab')}
+              <TabsTrigger value="suggestions" className="flex items-center gap-2">
+                <Lightbulb className="w-4 h-4" />
+                {t('suggest.tab')}
               </TabsTrigger>
+              <TabsTrigger value="stock" className="flex items-center gap-2">
+                <ClipboardCheck className="w-4 h-4" />
+                {t('stock.tab')}
+              </TabsTrigger>
+              {canAdminister && (
+                <TabsTrigger value="pickup" className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4" />
+                  {t('pickup.tab')}
+                </TabsTrigger>
+              )}
+              {canAdminister && (
+                <TabsTrigger value="activity" className="flex items-center gap-2">
+                  <History className="w-4 h-4" />
+                  {t('audit.tab')}
+                </TabsTrigger>
+              )}
             </TabsList>
 
             <TabsContent value="books">
@@ -398,10 +436,30 @@ export default function AdminPortal() {
           {booksLoading && books.length === 0 && (
             <p className="text-muted-foreground text-sm py-8 text-center">{t('common.loading')}</p>
           )}
+          {selectedBooks.size > 0 && (
+            <BulkBookActions
+              selected={[...selectedBooks]}
+              onClear={() => setSelectedBooks(new Set())}
+              onDone={() => {
+                setSelectedBooks(new Set());
+                invalidateCatalog();
+                loadBooks(currentPage);
+              }}
+            />
+          )}
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      aria-label={t('bulk.selectPage')}
+                      checked={paginatedBooks.length > 0 && paginatedBooks.every((b) => selectedBooks.has(b.id))}
+                      onCheckedChange={(checked) =>
+                        setSelectedBooks(checked ? new Set(paginatedBooks.map((b) => b.id)) : new Set())
+                      }
+                    />
+                  </TableHead>
                   <TableHead>{t('admin.title')}</TableHead>
                   <TableHead>{t('admin.author')}</TableHead>
                   <TableHead>{t('admin.category')}</TableHead>
@@ -412,7 +470,21 @@ export default function AdminPortal() {
               </TableHeader>
               <TableBody>
                 {paginatedBooks.map(book => (
-                  <TableRow key={book.id}>
+                  <TableRow key={book.id} data-state={selectedBooks.has(book.id) ? 'selected' : undefined}>
+                    <TableCell>
+                      <Checkbox
+                        aria-label={t('bulk.select', { title: book.title })}
+                        checked={selectedBooks.has(book.id)}
+                        onCheckedChange={(checked) =>
+                          setSelectedBooks((current) => {
+                            const next = new Set(current);
+                            if (checked) next.add(book.id);
+                            else next.delete(book.id);
+                            return next;
+                          })
+                        }
+                      />
+                    </TableCell>
                     <TableCell>
                       {book.title}
                       {(book.copies ?? 1) > 1 && (
@@ -435,6 +507,15 @@ export default function AdminPortal() {
                       {book.status === 'available' && <Badge className="bg-green-700 text-white">{getStatusTranslation(t, book.status)}</Badge>}
                       {book.status === 'available-soon' && <Badge className="bg-amber-700 text-white">{getStatusTranslation(t, book.status)}</Badge>}
                       {book.status === 'not-available' && <Badge variant="destructive">{getStatusTranslation(t, book.status)}</Badge>}
+                      {(book.condition === 'worn' || book.condition === 'damaged') && (
+                        <Badge
+                          variant="outline"
+                          className={book.condition === 'damaged' ? 'ml-1 border-destructive text-destructive dark:text-red-400' : 'ml-1'}
+                          title={book.conditionNote ?? undefined}
+                        >
+                          {t(`condition.${book.condition}`)}
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell>{book.ageRange}</TableCell>
                     <TableCell>
@@ -556,18 +637,23 @@ export default function AdminPortal() {
                     <TableCell>{user.name}</TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
-                      <Select
-                        value={user.role}
-                        onValueChange={(value: 'customer' | 'admin') => handleRoleChange(user.id, value)}
-                      >
-                        <SelectTrigger className="w-32">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="customer">{t('admin.customer')}</SelectItem>
-                          <SelectItem value="admin">{t('admin.admin')}</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      {canAdminister ? (
+                        <Select
+                          value={user.role}
+                          onValueChange={(value: Role) => handleRoleChange(user.id, value)}
+                        >
+                          <SelectTrigger className="w-36" aria-label={t('admin.roleOf', { name: user.name })}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="customer">{t('admin.roles.customer')}</SelectItem>
+                            <SelectItem value="librarian">{t('admin.roles.librarian')}</SelectItem>
+                            <SelectItem value="admin">{t('admin.roles.admin')}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Badge variant="outline">{t(`admin.roles.${user.role}`)}</Badge>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline">
@@ -642,9 +728,22 @@ export default function AdminPortal() {
               <ReportsTab />
             </TabsContent>
 
-            <TabsContent value="pickup">
-              <PickupPointsTab />
+            <TabsContent value="suggestions">
+              <PurchaseRequestsTab />
             </TabsContent>
+            <TabsContent value="stock">
+              <StocktakingTab />
+            </TabsContent>
+            {canAdminister && (
+              <TabsContent value="pickup">
+                <PickupPointsTab />
+              </TabsContent>
+            )}
+            {canAdminister && (
+              <TabsContent value="activity">
+                <ActivityTab />
+              </TabsContent>
+            )}
           </Tabs>
         </CardContent>
       </Card>
@@ -655,7 +754,7 @@ export default function AdminPortal() {
             <DialogTitle>{t('admin.editBookTitle')}</DialogTitle>
             <DialogDescription>{t('admin.editBookDesc')}</DialogDescription>
           </DialogHeader>
-          <BookForm formData={formData} setFormData={setFormData} t={t} />
+          <BookForm formData={formData} setFormData={setFormData} t={t} bookId={editingBook?.id} onCoverUploaded={() => { invalidateCatalog(); loadBooks(currentPage); }} />
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>{t('admin.cancel')}</Button>
             <Button onClick={handleEditBook}>{t('admin.saveChanges')}</Button>
@@ -667,18 +766,38 @@ export default function AdminPortal() {
   );
 }
 
-function BookForm({ formData, setFormData, t, onAddCopy }: {
+function BookForm({ formData, setFormData, t, onAddCopy, bookId, onCoverUploaded }: {
   formData: BookFormValues;
-  setFormData: (data: BookFormValues) => void;
+  setFormData: Dispatch<SetStateAction<BookFormValues>>;
   t: TFunction;
   /** Only when adding: offer "add a copy" of a title that looks the same. */
   onAddCopy?: (book: Book) => void;
+  /** Only when editing: covers are uploaded straight to the saved book. */
+  bookId?: string;
+  onCoverUploaded?: () => void;
 }) {
   const [findingCover, setFindingCover] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
 
-  const handleFindCover = async () => {
+  const uploadCover = async (file: File) => {
+    if (!bookId) return;
+    setUploadingCover(true);
+    const result = await runAction(() => adminApi.uploadCover(bookId, file));
+    setUploadingCover(false);
+    if (!result.ok) {
+      toast.error(errorMessage(t, result.error));
+      return;
+    }
+    const saved = bookFromDto(result.data);
+    setFormData((current) => ({ ...current, coverImage: saved.coverImage, images: saved.images ?? [saved.coverImage] }));
+    toast.success(t('cover.uploaded'));
+    onCoverUploaded?.();
+  };
+
+  const [scanning, setScanning] = useState(false);
+  const handleFindCover = async (isbn: string = formData.isbn ?? '') => {
     setFindingCover(true);
-    const result = await lookupBookByIsbn(formData.isbn ?? '');
+    const result = await lookupBookByIsbn(isbn);
     setFindingCover(false);
     if (result.status === 'found') {
       const { details } = result;
@@ -689,6 +808,7 @@ function BookForm({ formData, setFormData, t, onAddCopy }: {
       // Only empty fields are filled in; what the librarian typed is kept.
       setFormData({
         ...formData,
+        isbn,
         title: formData.title || details.title,
         author: formData.author || details.author || '',
         description: formData.description || details.description || '',
@@ -785,6 +905,31 @@ function BookForm({ formData, setFormData, t, onAddCopy }: {
         </div>
 
         <div className="space-y-2">
+          <Label htmlFor="condition">{t('condition.label')}</Label>
+          <Select value={formData.condition} onValueChange={(value) => setFormData({ ...formData, condition: value as CopyCondition })}>
+            <SelectTrigger id="condition">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {COPY_CONDITIONS.map((condition) => (
+                <SelectItem key={condition} value={condition}>{t(`condition.${condition}`)}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="conditionNote">{t('condition.note')}</Label>
+          <Input
+            id="conditionNote"
+            maxLength={300}
+            placeholder={t('condition.notePlaceholder')}
+            value={formData.conditionNote}
+            onChange={(e) => setFormData({ ...formData, conditionNote: e.target.value })}
+          />
+        </div>
+
+        <div className="space-y-2">
           <Label htmlFor="ageRange">{t('bookForm.ageRange')}</Label>
           <Input
             id="ageRange"
@@ -800,10 +945,24 @@ function BookForm({ formData, setFormData, t, onAddCopy }: {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="isbn">{t('bookForm.isbn')}</Label>
-          <Input
-            id="isbn"
-            value={formData.isbn}
-            onChange={(e) => setFormData({ ...formData, isbn: e.target.value })}
+          <div className="flex gap-2">
+            <Input
+              id="isbn"
+              value={formData.isbn}
+              onChange={(e) => setFormData({ ...formData, isbn: e.target.value })}
+              className="flex-1"
+            />
+            <Button type="button" variant="outline" onClick={() => setScanning(true)} aria-label={t('scanner.open')} title={t('scanner.open')}>
+              <ScanBarcode className="w-4 h-4" aria-hidden="true" />
+            </Button>
+          </div>
+          <IsbnScanner
+            open={scanning}
+            onClose={() => setScanning(false)}
+            onDetected={(isbn) => {
+              setFormData((current) => ({ ...current, isbn }));
+              void handleFindCover(isbn);
+            }}
           />
         </div>
         <div className="space-y-2">
@@ -830,13 +989,33 @@ function BookForm({ formData, setFormData, t, onAddCopy }: {
           <Button
             type="button"
             variant="outline"
-            onClick={handleFindCover}
+            onClick={() => handleFindCover()}
             disabled={findingCover || !formData.isbn?.trim()}
           >
             <ImageDown className="w-4 h-4 mr-2" />
             {t('bookForm.lookupIsbn')}
           </Button>
+          {bookId && (
+            <Button type="button" variant="outline" disabled={uploadingCover} onClick={() => document.getElementById('cover-file')?.click()}>
+              <Upload className="w-4 h-4 mr-2" aria-hidden="true" />
+              {t('cover.upload')}
+            </Button>
+          )}
+          <input
+            id="cover-file"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="sr-only"
+            tabIndex={-1}
+            aria-hidden="true"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = '';
+              if (file) void uploadCover(file);
+            }}
+          />
         </div>
+        {bookId && <p className="text-xs text-muted-foreground">{t('cover.hint')}</p>}
         <p className="text-xs text-muted-foreground">{t('bookForm.lookupIsbnDesc')}</p>
         {formData.coverImage && (
           <img
@@ -1015,6 +1194,7 @@ function OrdersTab({
   const fmt = useFormat();
   const [busyOrderId, setBusyOrderId] = useState<string | null>(null);
   const { confirm, confirmDialog } = useConfirm();
+  const [returning, setReturning] = useState<Order | null>(null);
 
   const runOrderAction = async (
     orderId: string,
@@ -1243,7 +1423,7 @@ function OrdersTab({
                           size="sm"
                           variant="outline"
                           disabled={busyOrderId === order.id}
-                          onClick={() => runOrderAction(order.id, () => onMarkReturned(order.id), 'admin.orderReturnedMsg')}
+                          onClick={() => setReturning(order)}
                         >
                           <RotateCcw className="w-4 h-4 mr-1" />
                           {t('admin.markReturned')}
@@ -1296,6 +1476,14 @@ function OrdersTab({
         </div>
       )}
 
+      <ReturnDialog
+        order={returning}
+        onClose={() => setReturning(null)}
+        onReturn={async (order) => {
+          await runOrderAction(order.id, () => onMarkReturned(order.id), 'admin.orderReturnedMsg');
+          setReturning(null);
+        }}
+      />
       <OrderBooksModal
         order={selectedOrder}
         userContacts={selectedUserContacts}

@@ -15,7 +15,8 @@ from app.core.exceptions import AuthenticationError, PermissionDeniedError
 from app.core.rate_limit import RateLimiter
 from app.core.security import InvalidAccessTokenError, decode_access_token
 from app.models import User
-from app.models.enums import UserRole
+from app.models.enums import STAFF_ROLES, UserRole
+from app.services import audit
 from app.services.auth import ClientMeta
 from app.services.notifications import Sender
 from app.services.openlibrary import OpenLibraryClient
@@ -98,6 +99,50 @@ async def require_admin(user: CurrentUser) -> User:
 
 
 AdminUser = Annotated[User, Depends(require_admin)]
+
+
+async def require_staff(user: CurrentUser) -> User:
+    """Librarians and administrators (the admin portal)."""
+    if user.role not in STAFF_ROLES:
+        raise PermissionDeniedError("Library staff privileges are required")
+    return user
+
+
+StaffUser = Annotated[User, Depends(require_staff)]
+
+AUDITED_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
+# POST endpoints that change nothing, or only a stocktake's counts (one per scanned book).
+NOT_AUDITED = frozenset(
+    {"admin_suggest_translation", "admin_stocktake_scan", "admin_stocktake_count"}
+)
+
+
+async def audit_trail(
+    request: Request, user: StaffUser, session: SessionDep
+) -> AsyncIterator[None]:
+    """Record staff changes in the activity log once they have succeeded.
+
+    FastAPI has already read the body (it is cached on the request); an endpoint that fails
+    raises through the ``yield``, so nothing is recorded for it.
+    """
+    # File uploads (multipart) are not copied into the log; only JSON bodies are.
+    is_json = request.headers.get("content-type", "").startswith("application/json")
+    body = await request.body() if request.method in AUDITED_METHODS and is_json else b""
+    yield
+    route = request.scope.get("route")
+    name = getattr(route, "name", None) or request.url.path
+    if request.method not in AUDITED_METHODS or name in NOT_AUDITED:
+        return
+    await audit.record(
+        session,
+        user,
+        action=name,
+        method=request.method,
+        path=getattr(route, "path", None) or request.url.path,
+        path_params=dict(request.path_params),
+        query=dict(request.query_params),
+        body=body,
+    )
 
 
 def client_meta(request: Request) -> ClientMeta:

@@ -29,12 +29,17 @@ export async function lookupBookByIsbn(isbn: string): Promise<IsbnLookupResult> 
 }
 
 const OPEN_LIBRARY_COVER = /^(https:\/\/covers\.openlibrary\.org\/b\/(?:id|isbn|olid)\/[^/?#]+)-[SML]\.jpg$/;
+// A cover uploaded to our backend (see mediaUrl); stored in three sizes too.
+const UPLOADED_COVER = /^(.*\/media\/covers\/[0-9a-f]{32})-[SML]\.webp$/;
 
 /**
- * The same Open Library cover in another size: S (small), M (medium, enough for cards) or L
- * (large, for the book dialog). Other image URLs are returned unchanged.
+ * The same cover in another size: S (small), M (medium, enough for cards) or L (large, for the
+ * book dialog), for Open Library covers and uploaded ones. Other image URLs are returned
+ * unchanged.
  */
 export function coverOfSize(url: string, size: 'S' | 'M' | 'L'): string {
-  const match = OPEN_LIBRARY_COVER.exec(url);
-  return match ? `${match[1]}-${size}.jpg` : url;
+  const openLibrary = OPEN_LIBRARY_COVER.exec(url);
+  if (openLibrary) return `${openLibrary[1]}-${size}.jpg`;
+  const uploaded = UPLOADED_COVER.exec(url);
+  return uploaded ? `${uploaded[1]}-${size}.webp` : url;
 }

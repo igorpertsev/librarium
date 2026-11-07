@@ -42,6 +42,7 @@ async def test_the_quality_page_counts_and_lists_gaps(admin: ApiUser, customer: 
         "no_isbn": 2,
         "no_translation": 1,
         "machine_translation": 1,
+        "damaged": 0,
     }
 
     async def titles(issue: str) -> list[str]:

@@ -26,6 +26,8 @@ from app.models import (
     Cart,
     Notification,
     Order,
+    PurchaseRequest,
+    PurchaseVote,
     ReadingListEntry,
     ReadingLogEntry,
     RefreshToken,
@@ -64,6 +66,13 @@ async def export_data(session: AsyncSession, user: User) -> dict[str, Any]:
             select(Book.title, Book.author, ReadingListEntry.created_at)
             .join(Book, Book.id == ReadingListEntry.book_id)
             .where(ReadingListEntry.user_id == user.id)
+        )
+    ).all()
+    suggested = (
+        await session.execute(
+            select(PurchaseRequest.title, PurchaseRequest.author, PurchaseRequest.status)
+            .join(PurchaseVote, PurchaseVote.request_id == PurchaseRequest.id)
+            .where(PurchaseVote.user_id == user.id)
         )
     ).all()
     finished = (
@@ -139,6 +148,10 @@ async def export_data(session: AsyncSession, user: User) -> dict[str, Any]:
             {"title": title, "author": author, "since": _iso(since)}
             for title, author, since in saved
         ],
+        "purchase_votes": [
+            {"title": title, "author": author, "status": purchase_status.value}
+            for title, author, purchase_status in suggested
+        ],
         "reading_log": [
             {"title": title, "author": author, "finished_on": day.isoformat()}
             for title, author, day in finished
@@ -188,9 +201,9 @@ async def export_data(session: AsyncSession, user: User) -> dict[str, Any]:
 async def delete_account(session: AsyncSession, user: User, password: str) -> None:
     if not await verify_password(user.password_hash, password):
         raise BadRequestError("Current password is incorrect", code="INVALID_CURRENT_PASSWORD")
-    if user.role is UserRole.ADMIN:
+    if user.role is not UserRole.CUSTOMER:
         raise ConflictError(
-            "Administrators cannot delete their own account; ask another administrator",
+            "Library staff cannot delete their own account; ask an administrator",
             code="ADMIN_ACCOUNT",
         )
     active = await session.scalar(
@@ -230,7 +243,13 @@ async def delete_account(session: AsyncSession, user: User, password: str) -> No
             .returning(AdvanceReservation.book_id)
         )
     ).all()
+    await session.execute(
+        update(PurchaseRequest)
+        .where(PurchaseRequest.created_by_id == user.id)
+        .values(created_by_id=None)
+    )
     personal = (
+        PurchaseVote,
         RefreshToken,
         Notification,
         WaitlistEntry,

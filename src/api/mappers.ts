@@ -19,6 +19,7 @@ import type {
   BookTag,
   BookTranslation,
   BorrowedBook,
+  CopyCondition,
   CartItem,
   Order,
   PreferredContact,
@@ -41,6 +42,7 @@ import type {
   UserDto,
   UserUpdateDto,
 } from './types';
+import { mediaUrl, storedMediaUrl } from './media';
 
 const UI_CONTACTS: readonly PreferredContact[] = ['whatsapp', 'telegram', 'instagram', 'phone'];
 
@@ -50,8 +52,8 @@ export function toMoney(value: string | number): number {
 }
 
 function imagesOf(cover: string | null, images: string[]): string[] {
-  if (images.length > 0) return images;
-  return cover ? [cover] : [];
+  if (images.length > 0) return images.map((url) => mediaUrl(url));
+  return cover ? [mediaUrl(cover)] : [];
 }
 
 export function tagFromDto(dto: TagBriefDto): BookTag {
@@ -78,7 +80,9 @@ export function bookFromDto(dto: BookDto | BookBriefDto): Book {
     category: dto.category,
     ageRange: dto.age_range,
     status: dto.status,
-    coverImage: dto.cover_url ?? '',
+    condition: dto.condition,
+    conditionNote: dto.condition_note,
+    coverImage: dto.cover_url ? mediaUrl(dto.cover_url) : '',
     images: imagesOf(dto.cover_url, dto.image_urls),
     description: dto.description,
     isbn: dto.isbn ?? '',
@@ -108,6 +112,8 @@ export interface BookFormValues {
   category: Book['category'];
   ageRange: string;
   status: BookStatus;
+  condition: CopyCondition;
+  conditionNote: string;
   coverImage: string;
   images: string[];
   description: string;
@@ -127,8 +133,8 @@ export interface BookFormValues {
 }
 
 export function bookFormToDto(form: BookFormValues): BookCreateDto {
-  const images = form.images.map((url) => url.trim()).filter(Boolean);
-  const cover = form.coverImage.trim();
+  const images = form.images.map((url) => storedMediaUrl(url.trim())).filter(Boolean);
+  const cover = storedMediaUrl(form.coverImage.trim());
   return {
     title: form.title,
     author: form.author,
@@ -136,6 +142,8 @@ export function bookFormToDto(form: BookFormValues): BookCreateDto {
     age_range: form.ageRange,
     // "pending" is a UI-only state (book in the cart) and is never persisted.
     status: form.status === 'pending' ? 'available' : form.status,
+    condition: form.condition,
+    condition_note: form.conditionNote.trim() || null,
     cover_url: cover || null,
     image_urls: images.length > 0 ? images : cover ? [cover] : [],
     description: form.description,
@@ -208,7 +216,7 @@ export function contactsToDto(contacts: UserContacts): Pick<
 }
 
 function loanToBorrowedBook(loan: ActiveLoanDto): BorrowedBook {
-  const cover = loan.cover_url ?? '';
+  const cover = loan.cover_url ? mediaUrl(loan.cover_url) : '';
   return {
     bookId: loan.book_id,
     book: {
@@ -252,7 +260,7 @@ function orderItemToBook(item: OrderItemDto): Book {
     isbn: item.isbn ?? '',
     category: item.category,
     ageRange: item.age_range,
-    coverImage: item.cover_url ?? current.coverImage,
+    coverImage: item.cover_url ? mediaUrl(item.cover_url) : current.coverImage,
   };
 }
 

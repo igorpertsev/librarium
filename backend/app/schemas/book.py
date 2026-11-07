@@ -8,7 +8,7 @@ from typing import Annotated, Any, ClassVar
 from pydantic import Field, field_validator, model_validator
 
 from app.models.book import Book
-from app.models.enums import BookCategory, BookStatus
+from app.models.enums import BookCategory, BookStatus, CopyCondition
 from app.schemas.catalog import SeriesBrief, SeriesName, SeriesPosition, TagBrief, TagSlug
 from app.schemas.common import ApiModel, Page, PatchModel, RequestModel
 from app.schemas.translation import BookTranslationRead, Translations
@@ -16,14 +16,16 @@ from app.schemas.types import (
     AgeRange,
     AuthorName,
     Description,
-    HttpUrlStr,
+    ImageUrlStr,
     Isbn,
     LanguageCode,
-    OptionalHttpUrlStr,
+    OptionalImageUrlStr,
+    OptionalShortNote,
     Title,
 )
 
-ImageUrls = Annotated[list[HttpUrlStr], Field(max_length=20)]
+ImageUrls = Annotated[list[ImageUrlStr], Field(max_length=20)]
+ConditionNote = OptionalShortNote
 PublicationYear = Annotated[int, Field(ge=0, le=9999)]
 
 
@@ -60,6 +62,8 @@ class BookBrief(ApiModel):
     category: BookCategory
     age_range: str
     status: BookStatus
+    condition: CopyCondition = Field(description="Of this copy: new, good, worn or damaged")
+    condition_note: str | None
     cover_url: str | None
     image_urls: list[str]
     isbn: str | None
@@ -129,6 +133,7 @@ class QualityIssue(StrEnum):
     NO_ISBN = "no_isbn"
     NO_TRANSLATION = "no_translation"
     MACHINE_TRANSLATION = "machine_translation"  # not yet checked by a librarian
+    DAMAGED = "damaged"  # a copy in damaged condition (to repair or replace)
 
 
 class QualitySummary(ApiModel):
@@ -160,7 +165,9 @@ class BookCreate(RequestModel):
     category: BookCategory
     age_range: AgeRange = ""
     status: BookStatus = BookStatus.AVAILABLE
-    cover_url: OptionalHttpUrlStr = None
+    condition: CopyCondition = CopyCondition.GOOD
+    condition_note: ConditionNote = None
+    cover_url: OptionalImageUrlStr = None
     image_urls: ImageUrls = Field(default_factory=list)
     isbn: Isbn = None
     language: LanguageCode = None
@@ -191,6 +198,7 @@ class BookUpdate(PatchModel):
             "category",
             "age_range",
             "status",
+            "condition",
             "image_urls",
             "tags",
             "translations",
@@ -203,7 +211,9 @@ class BookUpdate(PatchModel):
     category: BookCategory | None = None
     age_range: AgeRange | None = None
     status: BookStatus | None = None
-    cover_url: OptionalHttpUrlStr = None
+    condition: CopyCondition | None = None
+    condition_note: ConditionNote = None
+    cover_url: OptionalImageUrlStr = None
     image_urls: ImageUrls | None = None
     isbn: Isbn = None
     language: LanguageCode = None
@@ -229,3 +239,33 @@ class BookStats(ApiModel):
     available_soon: int
     not_available: int
     reserved: int
+
+
+class BulkBookUpdate(RequestModel):
+    """The same change to several titles at once (every copy of each title)."""
+
+    book_ids: Annotated[list[uuid.UUID], Field(min_length=1, max_length=200)]
+    status: BookStatus | None = None
+    category: BookCategory | None = None
+    condition: CopyCondition | None = None
+    add_tags: Tags = Field(default_factory=list, description="Tag slugs to add")
+    remove_tags: Tags = Field(default_factory=list, description="Tag slugs to remove")
+    deactivate: bool = Field(False, description="Remove the titles from the catalogue")
+
+    @model_validator(mode="after")
+    def _something_to_do(self) -> BulkBookUpdate:
+        if not (
+            self.status
+            or self.category
+            or self.condition
+            or self.add_tags
+            or self.remove_tags
+            or self.deactivate
+        ):
+            raise ValueError("Choose a change to make")
+        return self
+
+
+class BulkResult(ApiModel):
+    titles: int
+    copies: int

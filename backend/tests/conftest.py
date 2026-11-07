@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import tempfile
 import uuid
 from argparse import Namespace
 from collections.abc import AsyncIterator, Awaitable, Callable
@@ -91,6 +92,7 @@ def make_settings(database_url: str, **overrides: Any) -> Settings:
         "cookie_secure": False,
         "frontend_origins": FRONTEND_ORIGIN,
         "database_pool_size": 10,
+        "media_dir": tempfile.mkdtemp(prefix="librarium-media-"),
     }
     values.update(overrides)
     return Settings(_env_file=None, **values)
@@ -111,7 +113,8 @@ async def _clean_database(app: FastAPI) -> None:
             text(
                 "TRUNCATE users, books, carts, cart_items, orders, order_items, refresh_tokens, "
                 "notifications, waitlist_entries, reading_list_entries, reviews, book_holds, "
-                "tags, series, pickup_points, advance_reservations, reading_log_entries "
+                "tags, series, pickup_points, advance_reservations, reading_log_entries, "
+                "audit_events, stocktakes, stocktake_counts, purchase_requests, purchase_votes "
                 "RESTART IDENTITY CASCADE"
             )
         )

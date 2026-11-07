@@ -7,7 +7,7 @@ from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, str_enum, uuid_pk
-from app.models.enums import BookCategory, BookStatus
+from app.models.enums import BookCategory, BookStatus, CopyCondition
 from app.models.series import Series
 from app.models.tag import Tag, book_tags
 from app.models.translation import BookTranslation
@@ -68,6 +68,13 @@ class Book(TimestampMixin, Base):
         default=BookStatus.AVAILABLE,
         server_default=BookStatus.AVAILABLE.value,
     )
+    # Per copy: how it looks, and what a librarian noted (e.g. "torn cover", when returned).
+    condition: Mapped[CopyCondition] = mapped_column(
+        str_enum(CopyCondition, "copy_condition"),
+        default=CopyCondition.GOOD,
+        server_default=CopyCondition.GOOD.value,
+    )
+    condition_note: Mapped[str | None] = mapped_column(sa.String(300))
     cover_url: Mapped[str | None] = mapped_column(sa.String(2048))
     image_urls: Mapped[list[str]] = mapped_column(
         postgresql.ARRAY(sa.String(2048)),

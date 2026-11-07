@@ -72,6 +72,19 @@ HttpUrlStr = Annotated[
     str, StringConstraints(strip_whitespace=True, max_length=2048), AfterValidator(_http_url)
 ]
 OptionalHttpUrlStr = Annotated[HttpUrlStr | None, BeforeValidator(_blank_to_none)]
+
+_UPLOADED_COVER = re.compile(r"^/media/covers/[0-9a-f]{32}-[SML]\.webp$")
+
+
+def _image_url(value: str) -> str:
+    """An absolute http(s) URL, or a cover uploaded to this server (/media/covers/...)."""
+    return value if _UPLOADED_COVER.match(value) else _http_url(value)
+
+
+ImageUrlStr = Annotated[
+    str, StringConstraints(strip_whitespace=True, max_length=2048), AfterValidator(_image_url)
+]
+OptionalImageUrlStr = Annotated[ImageUrlStr | None, BeforeValidator(_blank_to_none)]
 _Isbn = Annotated[str, StringConstraints(pattern=r"^[0-9Xx][0-9Xx\- ]{8,30}$")]
 Isbn = Annotated[_Isbn | None, BeforeValidator(_blank_to_none)]
 _Language = Annotated[str, StringConstraints(pattern=r"^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$")]
@@ -90,6 +103,10 @@ Address = Annotated[
 ]
 _Note = Annotated[str, StringConstraints(strip_whitespace=True, max_length=500)]
 OptionalNote = Annotated[_Note | None, BeforeValidator(_blank_to_none)]
+_ShortNote = Annotated[
+    str, StringConstraints(strip_whitespace=True, max_length=300), AfterValidator(_no_control_chars)
+]
+OptionalShortNote = Annotated[_ShortNote | None, BeforeValidator(_blank_to_none)]
 
 
 @cache

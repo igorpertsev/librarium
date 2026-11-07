@@ -117,6 +117,7 @@ Docker Compose and Vite read the root `.env` (template: `.env.example`). Filled-
 | `VITE_API_URL` | `http://localhost:8000/api/v1` | API base URL for the frontend |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_STARTTLS`, `SMTP_SSL`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `MAIL_FROM` | empty / `587` / `true` / `false` | outgoing email; empty `SMTP_HOST` disables sending |
 | `APP_BASE_URL`, `DUE_SOON_DAYS` | `http://localhost:5173`, `3` | links in emails; reminder lead time in days |
+| `MEDIA_DIR`, `MAX_COVER_BYTES` | `media`, `5242880` | where uploaded covers are kept (the `media` volume, `/app/media`, in Docker); upload limit |
 | `PASSWORD_RESET_EXPIRE_MINUTES` | `60` | lifetime of password reset links (5–1440) |
 | `ANTHROPIC_API_KEY`, `TRANSLATION_MODEL` | —, `claude-opus-5-5` | optional machine translation of book titles and descriptions when Wikidata and Wikipedia have none; without a key only those two are used |
 
@@ -286,6 +287,15 @@ conversion to UI models in `src/api/mappers.ts`. After an API change: export the
 - **Access token** — JWT (HS256), 15 minutes, claims `sub`, `role`, `type`, `jti`, `iat`, `nbf`, `exp`, `iss`, `aud`.
   Sent as `Authorization: Bearer`. The frontend keeps it in memory only.
   Authorisation always uses the role stored in the database; the `role` claim is informational.
+- **Roles** — `customer`, `librarian`, `admin`. Librarians use the admin portal for books, copies, imports, orders,
+  reviews, tags and series, data quality and reports. Changing users and roles, library settings and pickup points,
+  and reading the activity log need an administrator (`ADMIN_ONLY` in `app/api/routes/admin.py`). Administrators
+  change roles on the *Users* tab; staff accounts cannot be deleted by their owners (`ADMIN_ACCOUNT`).
+- **Activity log** — every successful `POST/PUT/PATCH/DELETE` under `/admin` is recorded after it succeeded (router
+  dependency `audit_trail`): who, which endpoint, which record (the first id in the path) and the request body,
+  with passwords and tokens redacted and long values shortened. Failed requests and reads are not logged.
+  Administrators read it on the *Activity* tab (`GET /admin/audit`, `actor_id` filter); the actor's email is kept
+  even if the account is deleted later.
 - **Refresh token** — random string (`secrets.token_urlsafe(48)`); only its SHA-256 hash is stored.
   It lives in the `refresh_token` cookie: `HttpOnly`, `Secure` (from env), `SameSite=Lax`, `Path=/api/v1/auth`.
   It is never returned in JSON.
@@ -432,6 +442,37 @@ two copies of the same title are two records (ISBN is not unique).
   hold. Cancelling (`DELETE /users/me/reservations/{id}`) gives a set-aside copy to the readers waiting for it.
   Librarians see upcoming reservations above the order list (`GET /admin/reservations`). Deleting an account
   drops its holds and reservations and passes those copies on.
+- **Book suggestions**: readers suggest books for the library to buy (`/suggestions`, also offered when a search
+  finds nothing and on the profile) and vote for each other's ideas (`GET/POST /purchase-requests`, `PUT/DELETE
+  /purchase-requests/{id}/vote`). The same book again (ISBN, or title and author in any case) counts as a vote
+  (`created: false`); books already in the catalogue are refused (`409 ALREADY_IN_CATALOGUE`); at most 10 open
+  suggestions per reader. Staff see them most-voted first on the *Suggestions* tab and mark them ordered, added or
+  declined with a note for readers (`PATCH /admin/purchase-requests/{id}`). *Added* needs the book in the catalogue
+  (`409 BOOK_NOT_IN_CATALOGUE`) and emails everyone who voted (`purchase_added`, also under the bell).
+- **Cover upload**: *Upload cover* in the book form (when editing) takes a JPEG, PNG or WebP up to 5 MB
+  (`POST /admin/books/{id}/cover`, multipart `file`). Pillow decodes it (at most 40 megapixels), drops its metadata
+  and stores WebP renditions L/M/S (800/400/160 px high) as `media/covers/<random>-<size>.webp`; every copy of the
+  title gets `cover_url = /media/covers/<random>-L.webp`, and the previous upload is deleted. The backend serves
+  `/media` with long-lived cache headers (Caddy passes `/media/*` to it); the frontend loads the size it needs (S
+  in lists, M on cards, L in the dialog). Share previews use the full address (`APP_BASE_URL` + path).
+- **Stocktaking** (admin tab, staff): start a count, scan every book on the shelves (the ISBN scanner keeps
+  scanning; typed ISBNs work too) or count books without an ISBN by hand (+1/−1). Copies are counted per title. A
+  title is expected on the shelf with every active copy that is not out on loan and not marked *not available*.
+  The report lists titles with missing or extra copies first, and ISBNs that are not in the catalogue. Finishing
+  can mark the copies that were not found *not available* with a note (never copies on loan). One count is open at
+  a time (`409 STOCKTAKE_OPEN`); scans are not written to the activity log, starting and finishing are.
+- **ISBN scanner**: the camera button next to the ISBN field in the book form reads the barcode on the back of a
+  book and runs the Open Library lookup. It uses the browser's `BarcodeDetector` where there is one (Chrome, Edge,
+  Android) and otherwise ZXing (`@zxing/browser`, loaded only when scanning). Only ISBN barcodes (EAN-13 978/979
+  with a valid check digit) are taken; without a camera the ISBN can be typed in the same dialog. The camera needs
+  HTTPS (or localhost) and `Permissions-Policy: camera=(self)`, which Caddy sends.
+- **Bulk edit**: in the admin book list, tick titles (or the whole page) and apply one change to every copy of
+  them: status, category, condition, add or remove a tag, or remove them from the catalogue (asks first; drops them
+  from carts). Unknown tags change nothing (`UNKNOWN_TAGS`).
+- **Copy condition**: each copy has a condition (`new/good/worn/damaged`) and an optional note, set in the book
+  form and when an order comes back (*Mark Returned* asks how each copy came back; only changed copies are saved).
+  It is not shared between copies of a title. Worn and damaged copies are marked in the admin book list, and
+  damaged ones are listed under *Data quality* (`quality=damaged`).
 - **Notification bell**: the header shows the reader's news — the same events as the emails (`notifications`), even
   when an email could not be sent, except news that went stale before delivery. Opening the list marks it read
   (`read_at`); it refreshes every minute while the tab is visible. Notifications from before the bell existed
@@ -462,13 +503,16 @@ Concurrency is covered by tests in which both requests are held at a barrier rig
 
 | Table | Key points |
 | --- | --- |
-| `users` | email unique and lower-case (CHECK), Argon2 hash, role `customer/admin`, contacts (nullable), `preferred_contact_method` |
-| `books` | one row per physical copy: `cover_url`, `image_urls[]`, `age_range`, `category`, `status` (`available/available-soon/not-available`), `language`, `publication_year`, `is_active` (soft delete), `copy_group_id` (copies of one title), `series_id` + `series_position` (CHECK > 0) |
+| `users` | email unique and lower-case (CHECK), Argon2 hash, role `customer/librarian/admin`, contacts (nullable), `preferred_contact_method` |
+| `books` | one row per physical copy: `cover_url`, `image_urls[]`, `age_range`, `category`, `status` (`available/available-soon/not-available`), `condition` (`new/good/worn/damaged`, per copy) + `condition_note`, `language`, `publication_year`, `is_active` (soft delete), `copy_group_id` (copies of one title), `series_id` + `series_position` (CHECK > 0) |
 | `tags`, `book_tags` | tag `slug` (unique, CHECK format), `name_en`, `name_ru`; book ↔ tag link table |
 | `series` | `name` (unique), `name_en` / `name_ru` (names in each interface language, optional), `description`, `openlibrary_key` (unique, from ISBN lookups) |
 | `book_translations` | per book and language (`en`/`ru`): `title`, `author`, `description`, `title_source`/`description_source` (`manual/wikidata/wikipedia/machine`), `source_url` (Wikipedia attribution) |
 | `library_settings` | single row: `books_per_batch`, `price_per_batch NUMERIC(10,2)`, `currency`, `loan_period_days`, `max_renewals`, `hold_hours`, `block_overdue`, `late_fee_per_day NUMERIC(10,2)`, `timezone` |
 | `reading_log_entries` | reader, copy, `finished_on`, `UNIQUE(user_id, book_id)` (one per title in the service) |
+| `stocktakes`, `stocktake_counts` | counts of the shelves (one open at a time: partial unique index); counts per title (`group_id`) or unknown `isbn` |
+| `purchase_requests`, `purchase_votes` | readers' suggestions (`status` `open/ordered/added/declined`, `book_id` once added) and one vote per reader |
+| `audit_events` | actor (`SET NULL`) and email snapshot, `action`, `method`, `path`, `entity_type`, `entity_id`, `details JSONB` |
 | `advance_reservations` | reader, copy, `starts_on`, `status` (`active/fulfilled/cancelled`) |
 | `pickup_points` | `name`, `address`, `notes`, `hours JSONB` (`[{weekday, opens, closes}]`), `slot_minutes`, `slot_capacity` (NULL: no limit), `active` |
 | `carts`, `cart_items` | one cart per user, `UNIQUE(cart_id, book_id)` |
@@ -513,6 +557,7 @@ Differences (adapters in `src/api/mappers.ts`):
 | GET `/users/me/recommendations` (titles ranked by the tags of borrowed and saved ones) | “For you” shelf | signed-in user |
 | GET `/users/me/holds` · DELETE `/users/me/holds/{book_id}` | books held for the reader; give one up | signed-in user |
 | GET/POST `/users/me/reservations` · DELETE `/users/me/reservations/{id}` | reserve a title for a date; cancel | signed-in user |
+| GET/POST `/purchase-requests` · PUT/DELETE `/purchase-requests/{id}/vote` | suggest books to buy, vote | signed-in user |
 | GET `/users/me/reading-log` · PUT/DELETE `/users/me/reading-log/{book_id}` | finished titles, counts, badges, borrowed titles to log | signed-in user |
 | GET `/users/me/notifications` · POST `/users/me/notifications/read` (`{ids}` or nothing for all) | the bell: latest 30 news items of the last 60 days and the unread count | signed-in user |
 | GET/POST | `/admin/books`, GET `/admin/books/stats`, GET/PATCH/DELETE `/admin/books/{id}` | admin |
@@ -521,9 +566,13 @@ Differences (adapters in `src/api/mappers.ts`):
 | GET | `/admin/books/quality` (titles without cover, description, tags, ISBN or translation; unchecked machine translations) · `/admin/books?quality=<issue>` lists them | admin |
 | GET | `/admin/reports/summary`, `/admin/reports/demand` (longest waiting lists, most saved titles, most borrowed tags), `/admin/reports/orders.csv` (`date_from`, `date_to`; default last 30 days) | admin |
 | POST | `/admin/books/{id}/copies` (`{count}`: more copies of a title) | admin |
+| POST | `/admin/books/bulk` (`book_ids` ≤ 200 and one or more of `status`, `category`, `condition`, `add_tags`, `remove_tags`, `deactivate`: every copy of each title, all or nothing) | staff |
 | POST/PATCH/DELETE | `/admin/tags`, `/admin/tags/{id}` · POST `/admin/tags/{id}/merge`; the same for `/admin/series` | admin |
 | POST | `/admin/translations/suggest` (title, author and description in another language; saves nothing) | admin |
-| GET | `/admin/users` · PATCH `/admin/users/{id}` (role, disable) | admin |
+| GET | `/admin/users` (staff) · PATCH `/admin/users/{id}` (role, disable) | admin |
+| GET | `/admin/audit` (activity log, newest first) | admin |
+| GET | `/admin/purchase-requests` · PATCH `/admin/purchase-requests/{id}` (`status`, `librarian_note`) | staff |
+| GET/POST | `/admin/stocktakes` · GET `/admin/stocktakes/{id}` (report) · POST `/admin/stocktakes/{id}/scan` `{isbn}`, `/count` `{book_id, delta}`, `/finish` `{mark_missing}` | staff |
 | GET/POST | `/admin/pickup-points` · PATCH/DELETE `/admin/pickup-points/{id}` | admin |
 | GET | `/admin/reservations` (titles reserved for a date, soonest first) | admin |
 | GET | `/admin/orders`, `/admin/orders/{id}` · PATCH `/admin/orders/{id}/status`, `/admin/orders/{id}/due-date`, `/admin/orders/{id}/late-fee` | admin |

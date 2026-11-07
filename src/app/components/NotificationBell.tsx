@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
-import { Bell, BookOpenCheck, CalendarClock, CircleAlert, Clock, PackageCheck, PackageX, Sparkles, Inbox as InboxIcon, type LucideIcon } from 'lucide-react';
+import { Bell, BookOpenCheck, CalendarClock, CircleAlert, Clock, PackageCheck, PackageX, Sparkles, Gift, Inbox as InboxIcon, type LucideIcon } from 'lucide-react';
 import { usersApi } from '../../api/endpoints';
 import { bookFromDto } from '../../api/mappers';
 import type { InboxDto, InboxItemDto } from '../../api/types';
@@ -23,6 +23,7 @@ const ICONS: Record<InboxItemDto['kind'], LucideIcon> = {
   book_available: Sparkles,
   book_held: BookOpenCheck,
   reservation_ready: CalendarClock,
+  purchase_added: Gift,
 };
 
 /** Header bell: the reader's latest news (the same events as the emails). */
@@ -78,7 +79,7 @@ export function NotificationBell({ compact = false }: { compact?: boolean }) {
 
   const openItem = (item: InboxItemDto) => {
     setOpen(false);
-    if (item.kind === 'book_available' && item.book) navigate(`/books/${item.book.id}`);
+    if ((item.kind === 'book_available' || item.kind === 'purchase_added') && item.book) navigate(`/books/${item.book.id}`);
     else navigate('/profile');
   };
 

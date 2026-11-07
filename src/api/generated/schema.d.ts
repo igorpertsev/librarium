@@ -933,6 +933,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/purchase-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Purchase Requests
+         * @description Suggestions with the most votes first (default: open and ordered ones).
+         */
+        get: operations["list_purchase_requests_api_v1_purchase_requests_get"];
+        put?: never;
+        /**
+         * Suggest Purchase
+         * @description Suggest a book for the library to buy. The same book suggested earlier gets a vote instead (created=false). 409 ALREADY_IN_CATALOGUE (details.book_id) or TOO_MANY_SUGGESTIONS (10 open ones per reader).
+         */
+        post: operations["suggest_purchase_api_v1_purchase_requests_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/purchase-requests/{request_id}/vote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Vote For Purchase */
+        put: operations["vote_for_purchase_api_v1_purchase_requests__request_id__vote_put"];
+        post?: never;
+        /** Withdraw Purchase Vote */
+        delete: operations["withdraw_purchase_vote_api_v1_purchase_requests__request_id__vote_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/books": {
         parameters: {
             query?: never;
@@ -1082,6 +1124,46 @@ export interface paths {
          * @description Adds copies of a title (same catalogue data, status available). The catalogue lists the title once and counts its copies.
          */
         post: operations["admin_add_copies_api_v1_admin_books__book_id__copies_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/books/bulk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Admin Bulk Update Books
+         * @description One change (status, category, condition, tags to add or remove, or removal from the catalogue) for every copy of up to 200 titles, all or nothing.
+         */
+        post: operations["admin_bulk_update_books_api_v1_admin_books_bulk_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/books/{book_id}/cover": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Admin Upload Cover
+         * @description Upload a cover (JPEG, PNG or WebP, at most 5 MB) for every copy of the title. It is stored as WebP in three sizes; cover_url becomes /media/covers/<name>-L.webp.
+         */
+        post: operations["admin_upload_cover_api_v1_admin_books__book_id__cover_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1552,6 +1634,167 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin Audit Log
+         * @description Changes made by staff, newest first (administrators only).
+         */
+        get: operations["admin_audit_log_api_v1_admin_audit_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/stocktakes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin List Stocktakes
+         * @description The latest counts, newest first (an open one has no finished_at).
+         */
+        get: operations["admin_list_stocktakes_api_v1_admin_stocktakes_get"];
+        put?: never;
+        /**
+         * Admin Start Stocktake
+         * @description Start counting the shelves (409 STOCKTAKE_OPEN while another count is open).
+         */
+        post: operations["admin_start_stocktake_api_v1_admin_stocktakes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/stocktakes/{stocktake_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Admin Stocktake Report */
+        get: operations["admin_stocktake_report_api_v1_admin_stocktakes__stocktake_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/stocktakes/{stocktake_id}/scan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Admin Stocktake Scan
+         * @description Count one copy by its ISBN; unknown ISBNs are listed in the report.
+         */
+        post: operations["admin_stocktake_scan_api_v1_admin_stocktakes__stocktake_id__scan_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/stocktakes/{stocktake_id}/count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Admin Stocktake Count
+         * @description Count a title by hand (+1), or take one back (-1).
+         */
+        post: operations["admin_stocktake_count_api_v1_admin_stocktakes__stocktake_id__count_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/stocktakes/{stocktake_id}/finish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Admin Finish Stocktake
+         * @description Close the count; mark_missing makes copies that were not found "not available".
+         */
+        post: operations["admin_finish_stocktake_api_v1_admin_stocktakes__stocktake_id__finish_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/purchase-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin List Purchase Requests
+         * @description Readers' suggestions, most votes first (default: every status).
+         */
+        get: operations["admin_list_purchase_requests_api_v1_admin_purchase_requests_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/purchase-requests/{request_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Admin Update Purchase Request
+         * @description Mark a suggestion ordered, added or declined, with an optional note for readers. "added" needs the book in the catalogue (same ISBN, or title and author; 409 BOOK_NOT_IN_CATALOGUE) and emails everyone who voted.
+         */
+        patch: operations["admin_update_purchase_request_api_v1_admin_purchase_requests__request_id__patch"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1647,6 +1890,54 @@ export interface components {
             /** Is Active */
             is_active?: boolean | null;
         };
+        /** AuditEventRead */
+        AuditEventRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Actor Email */
+            actor_email: string;
+            /**
+             * Action
+             * @description Endpoint name, e.g. admin_change_order_status
+             */
+            action: string;
+            /** Method */
+            method: string;
+            /** Path */
+            path: string;
+            /** Entity Type */
+            entity_type: string | null;
+            /** Entity Id */
+            entity_id: string | null;
+            /**
+             * Entity Label
+             * @description Book title, order number or user email
+             */
+            entity_label: string | null;
+            /** Details */
+            details: {
+                [key: string]: unknown;
+            };
+        };
+        /** AuditPage */
+        AuditPage: {
+            /** Items */
+            items: components["schemas"]["AuditEventRead"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
         /** BadgeRead */
         BadgeRead: {
             /**
@@ -1660,6 +1951,11 @@ export interface components {
             progress: number;
             /** Goal */
             goal: number;
+        };
+        /** Body_admin_upload_cover_api_v1_admin_books__book_id__cover_post */
+        Body_admin_upload_cover_api_v1_admin_books__book_id__cover_post: {
+            /** File */
+            file: string;
         };
         /**
          * BookBrief
@@ -1681,6 +1977,10 @@ export interface components {
             /** Age Range */
             age_range: string;
             status: components["schemas"]["BookStatus"];
+            /** @description Of this copy: new, good, worn or damaged */
+            condition: components["schemas"]["CopyCondition"];
+            /** Condition Note */
+            condition_note: string | null;
             /** Cover Url */
             cover_url: string | null;
             /** Image Urls */
@@ -1737,6 +2037,10 @@ export interface components {
             age_range: string;
             /** @default available */
             status: components["schemas"]["BookStatus"];
+            /** @default good */
+            condition: components["schemas"]["CopyCondition"];
+            /** Condition Note */
+            condition_note?: string | null;
             /** Cover Url */
             cover_url?: string | null;
             /** Image Urls */
@@ -1855,6 +2159,10 @@ export interface components {
             /** Age Range */
             age_range: string;
             status: components["schemas"]["BookStatus"];
+            /** @description Of this copy: new, good, worn or damaged */
+            condition: components["schemas"]["CopyCondition"];
+            /** Condition Note */
+            condition_note: string | null;
             /** Cover Url */
             cover_url: string | null;
             /** Image Urls */
@@ -1999,6 +2307,9 @@ export interface components {
             /** Age Range */
             age_range?: string | null;
             status?: components["schemas"]["BookStatus"] | null;
+            condition?: components["schemas"]["CopyCondition"] | null;
+            /** Condition Note */
+            condition_note?: string | null;
             /** Cover Url */
             cover_url?: string | null;
             /** Image Urls */
@@ -2030,6 +2341,40 @@ export interface components {
              * @description Replaces the translations
              */
             translations?: components["schemas"]["BookTranslationIn"][] | null;
+        };
+        /**
+         * BulkBookUpdate
+         * @description The same change to several titles at once (every copy of each title).
+         */
+        BulkBookUpdate: {
+            /** Book Ids */
+            book_ids: string[];
+            status?: components["schemas"]["BookStatus"] | null;
+            category?: components["schemas"]["BookCategory"] | null;
+            condition?: components["schemas"]["CopyCondition"] | null;
+            /**
+             * Add Tags
+             * @description Tag slugs to add
+             */
+            add_tags?: string[];
+            /**
+             * Remove Tags
+             * @description Tag slugs to remove
+             */
+            remove_tags?: string[];
+            /**
+             * Deactivate
+             * @description Remove the titles from the catalogue
+             * @default false
+             */
+            deactivate: boolean;
+        };
+        /** BulkResult */
+        BulkResult: {
+            /** Titles */
+            titles: number;
+            /** Copies */
+            copies: number;
         };
         /** CartItemCreate */
         CartItemCreate: {
@@ -2091,6 +2436,31 @@ export interface components {
          * @enum {string}
          */
         ContactMethod: "whatsapp" | "telegram" | "instagram" | "phone" | "email";
+        /**
+         * CopyCondition
+         * @description Physical state of a copy, noted by librarians (per copy, not per title).
+         * @enum {string}
+         */
+        CopyCondition: "new" | "good" | "worn" | "damaged";
+        /** CountIn */
+        CountIn: {
+            /**
+             * Book Id
+             * Format: uuid
+             */
+            book_id: string;
+            /**
+             * Delta
+             * @default 1
+             * @enum {integer}
+             */
+            delta: 1 | -1;
+        };
+        /** Counted */
+        Counted: {
+            /** Counted */
+            counted: number;
+        };
         /** DeleteAccountRequest */
         DeleteAccountRequest: {
             /**
@@ -2135,6 +2505,14 @@ export interface components {
         /** ErrorResponse */
         ErrorResponse: {
             error: components["schemas"]["ErrorBody"];
+        };
+        /** FinishIn */
+        FinishIn: {
+            /**
+             * Mark Missing
+             * @default false
+             */
+            mark_missing: boolean;
         };
         /** ForgotPasswordRequest */
         ForgotPasswordRequest: {
@@ -2415,7 +2793,7 @@ export interface components {
          * NotificationKind
          * @enum {string}
          */
-        NotificationKind: "order_received" | "order_confirmed" | "order_cancelled" | "due_soon" | "overdue" | "book_available" | "book_held" | "reservation_ready";
+        NotificationKind: "order_received" | "order_confirmed" | "order_cancelled" | "due_soon" | "overdue" | "book_available" | "book_held" | "reservation_ready" | "purchase_added";
         /**
          * OpeningHours
          * @description One opening period on a weekday (0 = Monday), in the library's time zone.
@@ -2699,12 +3077,85 @@ export interface components {
              */
             created_at: string;
         };
+        /** PurchaseRequestCreate */
+        PurchaseRequestCreate: {
+            /** Title */
+            title: string;
+            /** Author */
+            author: string;
+            /** Isbn */
+            isbn?: string | null;
+            /** Note */
+            note?: string | null;
+        };
+        /** PurchaseRequestCreated */
+        PurchaseRequestCreated: {
+            request: components["schemas"]["PurchaseRequestRead"];
+            /**
+             * Created
+             * @description False when it was suggested already: it got a vote
+             */
+            created: boolean;
+        };
+        /** PurchaseRequestRead */
+        PurchaseRequestRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            /** Author */
+            author: string;
+            /** Isbn */
+            isbn: string | null;
+            /** Note */
+            note: string | null;
+            status: components["schemas"]["PurchaseStatus"];
+            /** Librarian Note */
+            librarian_note: string | null;
+            /**
+             * Book Id
+             * @description The catalogue book, once added
+             */
+            book_id: string | null;
+            /** Votes */
+            votes: number;
+            /**
+             * Voted
+             * @description The signed-in reader voted for it
+             */
+            voted: boolean;
+            /**
+             * Mine
+             * @description The signed-in reader suggested it
+             */
+            mine: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** PurchaseRequestUpdate */
+        PurchaseRequestUpdate: {
+            status?: components["schemas"]["PurchaseStatus"] | null;
+            /** Librarian Note */
+            librarian_note?: string | null;
+        };
+        /**
+         * PurchaseStatus
+         * @description A reader's suggestion for the library to buy a book.
+         * @enum {string}
+         */
+        PurchaseStatus: "open" | "ordered" | "added" | "declined";
         /**
          * QualityIssue
          * @description Gaps in a title's catalogue data, for the admin data-quality page.
          * @enum {string}
          */
-        QualityIssue: "no_cover" | "no_description" | "no_tags" | "no_isbn" | "no_translation" | "machine_translation";
+        QualityIssue: "no_cover" | "no_description" | "no_tags" | "no_isbn" | "no_translation" | "machine_translation" | "damaged";
         /** QualitySummary */
         QualitySummary: {
             /**
@@ -2905,6 +3356,24 @@ export interface components {
              */
             text: string;
         };
+        /** ScanIn */
+        ScanIn: {
+            /** Isbn */
+            isbn: string;
+        };
+        /** ScanResultRead */
+        ScanResultRead: {
+            /** Found */
+            found: boolean;
+            /** Isbn */
+            isbn: string;
+            /** Title */
+            title: string | null;
+            /** Counted */
+            counted: number;
+            /** Expected */
+            expected: number | null;
+        };
         /** SeriesBrief */
         SeriesBrief: {
             /**
@@ -2986,6 +3455,72 @@ export interface components {
             name_ru?: string | null;
             /** Description */
             description?: string | null;
+        };
+        /** StocktakeBrief */
+        StocktakeBrief: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /** Finished At */
+            finished_at: string | null;
+            /** Marked Missing */
+            marked_missing: number;
+        };
+        /** StocktakeLine */
+        StocktakeLine: {
+            /**
+             * Book Id
+             * Format: uuid
+             * @description A copy of the title (for counting by hand)
+             */
+            book_id: string;
+            /** Title */
+            title: string;
+            /** Author */
+            author: string;
+            /** Isbn */
+            isbn: string | null;
+            /**
+             * Expected
+             * @description Active copies not on loan and not marked not available
+             */
+            expected: number;
+            /** Counted */
+            counted: number;
+            /** On Loan */
+            on_loan: number;
+        };
+        /** StocktakeReportRead */
+        StocktakeReportRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /** Finished At */
+            finished_at: string | null;
+            /** Marked Missing */
+            marked_missing: number;
+            /** Expected */
+            expected: number;
+            /** Counted */
+            counted: number;
+            /** Lines */
+            lines: components["schemas"]["StocktakeLine"][];
+            /** Unknown Isbns */
+            unknown_isbns: components["schemas"]["UnknownIsbn"][];
         };
         /** TagBrief */
         TagBrief: {
@@ -3146,6 +3681,13 @@ export interface components {
          * @enum {string}
          */
         UiLanguage: "en" | "ru";
+        /** UnknownIsbn */
+        UnknownIsbn: {
+            /** Isbn */
+            isbn: string;
+            /** Counted */
+            counted: number;
+        };
         /** UpcomingReservationRead */
         UpcomingReservationRead: {
             /**
@@ -3211,7 +3753,7 @@ export interface components {
          * UserRole
          * @enum {string}
          */
-        UserRole: "customer" | "admin";
+        UserRole: "customer" | "librarian" | "admin";
         /**
          * UserUpdate
          * @description ``PATCH /users/me``. Omitted fields are untouched; ``null`` clears a contact.
@@ -5636,6 +6178,195 @@ export interface operations {
             };
         };
     };
+    list_purchase_requests_api_v1_purchase_requests_get: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["PurchaseStatus"][] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseRequestRead"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    suggest_purchase_api_v1_purchase_requests_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PurchaseRequestCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseRequestCreated"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    vote_for_purchase_api_v1_purchase_requests__request_id__vote_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseRequestRead"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    withdraw_purchase_vote_api_v1_purchase_requests__request_id__vote_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseRequestRead"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     admin_list_books_api_v1_admin_books_get: {
         parameters: {
             query?: {
@@ -6092,6 +6823,155 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_bulk_update_books_api_v1_admin_books_bulk_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkBookUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkResult"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_upload_cover_api_v1_admin_books__book_id__cover_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_admin_upload_cover_api_v1_admin_books__book_id__cover_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookRead"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request Entity Too Large */
+            413: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -8008,6 +8888,542 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_audit_log_api_v1_admin_audit_get: {
+        parameters: {
+            query?: {
+                actor_id?: string | null;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditPage"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_list_stocktakes_api_v1_admin_stocktakes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StocktakeBrief"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_start_stocktake_api_v1_admin_stocktakes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StocktakeBrief"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_stocktake_report_api_v1_admin_stocktakes__stocktake_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                stocktake_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StocktakeReportRead"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_stocktake_scan_api_v1_admin_stocktakes__stocktake_id__scan_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                stocktake_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScanIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScanResultRead"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_stocktake_count_api_v1_admin_stocktakes__stocktake_id__count_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                stocktake_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CountIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Counted"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_finish_stocktake_api_v1_admin_stocktakes__stocktake_id__finish_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                stocktake_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FinishIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StocktakeReportRead"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_list_purchase_requests_api_v1_admin_purchase_requests_get: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["PurchaseStatus"][] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseRequestRead"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_update_purchase_request_api_v1_admin_purchase_requests__request_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PurchaseRequestUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseRequestRead"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

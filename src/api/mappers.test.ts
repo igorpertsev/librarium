@@ -54,6 +54,8 @@ describe('bookFormToDto', () => {
     category: 'fiction' as const,
     ageRange: '14+',
     status: 'pending' as const,
+    condition: 'worn' as const,
+    conditionNote: ' Spine creased ',
     coverImage: '  https://img.example.com/dune.jpg ',
     images: [' ', 'https://img.example.com/dune-2.jpg '],
     description: 'Spice.',
@@ -73,6 +75,8 @@ describe('bookFormToDto', () => {
       category: 'fiction',
       age_range: '14+',
       status: 'available',
+      condition: 'worn',
+      condition_note: 'Spine creased',
       cover_url: 'https://img.example.com/dune.jpg',
       image_urls: ['https://img.example.com/dune-2.jpg'],
       description: 'Spice.',
@@ -159,5 +163,20 @@ describe('contactsToDto', () => {
       phone: null,
       preferred_contact_method: 'telegram',
     });
+  });
+});
+
+describe('uploaded covers', () => {
+  it('are shown from the backend and saved back as paths', async () => {
+    const { mediaUrl, storedMediaUrl } = await import('./media');
+    const { coverOfSize } = await import('../app/utils/covers');
+    const path = '/media/covers/0123456789abcdef0123456789abcdef-L.webp';
+    const shown = mediaUrl(path, 'https://api.example.com');
+    expect(shown).toBe(`https://api.example.com${path}`);
+    expect(coverOfSize(shown, 'S')).toBe('https://api.example.com/media/covers/0123456789abcdef0123456789abcdef-S.webp');
+    expect(storedMediaUrl(shown, 'https://api.example.com')).toBe(path);
+    expect(storedMediaUrl('https://covers.openlibrary.org/b/id/1-L.jpg', 'https://api.example.com')).toBe(
+      'https://covers.openlibrary.org/b/id/1-L.jpg',
+    );
   });
 });

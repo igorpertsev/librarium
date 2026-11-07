@@ -12,7 +12,15 @@ from app.models import Book, BookTranslation, CartItem, Series
 from app.models.enums import BookStatus
 from app.repositories import books as books_repo
 from app.repositories.books import BookFilters
-from app.schemas.book import BookCreate, BookRead, BookSort, BookStats, BookUpdate
+from app.schemas.book import (
+    BookCreate,
+    BookRead,
+    BookSort,
+    BookStats,
+    BookUpdate,
+    BulkBookUpdate,
+    BulkResult,
+)
 from app.schemas.translation import BookTranslationIn
 from app.services import catalog, waitlist
 
@@ -273,4 +281,44 @@ async def stats(session: AsyncSession) -> BookStats:
         available_soon=row[2],
         not_available=row[3],
         reserved=int(row[4] or 0),
+    )
+
+
+async def bulk_update(session: AsyncSession, body: BulkBookUpdate) -> BulkResult:
+    """Apply one change to every copy of the chosen titles, in one transaction."""
+    groups = select(books_repo.copy_group_key()).where(Book.id.in_(body.book_ids)).scalar_subquery()
+    copies = list(
+        (
+            await session.scalars(
+                select(Book)
+                .where(books_repo.copy_group_key().in_(groups), Book.is_active.is_(True))
+                .order_by(Book.id)
+                .with_for_update()
+            )
+        ).all()
+    )
+    if not copies:
+        raise book_not_found()
+    add = await catalog.resolve_tags(session, body.add_tags)
+    remove = {tag.slug for tag in await catalog.resolve_tags(session, body.remove_tags)}
+    for copy in copies:
+        if body.status is not None:
+            copy.status = body.status
+        if body.category is not None:
+            copy.category = body.category
+        if body.condition is not None:
+            copy.condition = body.condition
+        if add or remove:
+            kept = [tag for tag in copy.tags if tag.slug not in remove]
+            copy.tags = kept + [tag for tag in add if tag not in kept]
+        if body.deactivate:
+            copy.is_active = False
+    ids = [copy.id for copy in copies]
+    if body.deactivate:
+        await session.execute(delete(CartItem).where(CartItem.book_id.in_(ids)))
+    elif body.status is BookStatus.AVAILABLE:
+        await waitlist.notify_waiting_readers(session, ids)
+    await session.commit()
+    return BulkResult(
+        titles=len({copy.copy_group_id or copy.id for copy in copies}), copies=len(ids)
     )

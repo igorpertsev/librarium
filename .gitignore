@@ -65,3 +65,6 @@ htmlcov/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Uploaded covers from local runs (MEDIA_DIR)
+backend/media/

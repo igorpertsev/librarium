@@ -4,6 +4,10 @@ import type {
   AdminOrderListQuery,
   AdminUserListQuery,
   AdminUserPageDto,
+  AuditPageDto,
+  ScanResultDto,
+  StocktakeBriefDto,
+  StocktakeReportDto,
   AdminUserUpdateDto,
   BookCreateDto,
   BookImportResultDto,
@@ -13,6 +17,8 @@ import type {
   BookPageDto,
   BookStatsDto,
   BookUpdateDto,
+  BulkBookUpdateDto,
+  BulkResultDto,
   CartDto,
   DemandDto,
   ChangePasswordDto,
@@ -33,6 +39,8 @@ import type {
   PickupPointDto,
   PickupPointUpdateDto,
   PickupSlotDto,
+  PurchaseRequestDto,
+  PurchaseStatusDto,
   ReservationDto,
   UpcomingReservationDto,
   Paged,
@@ -175,6 +183,16 @@ export const readingListApi = {
   remove: (bookId: string) => apiRequest<void>(`/reading-list/${id(bookId)}`, { method: 'DELETE' }),
 };
 
+export const purchasesApi = {
+  list: () => apiRequest<PurchaseRequestDto[]>('/purchase-requests'),
+  suggest: (body: { title: string; author: string; isbn?: string | null; note?: string | null }) =>
+    apiRequest<{ request: PurchaseRequestDto; created: boolean }>('/purchase-requests', { method: 'POST', body }),
+  vote: (requestId: string) =>
+    apiRequest<PurchaseRequestDto>(`/purchase-requests/${id(requestId)}/vote`, { method: 'PUT' }),
+  unvote: (requestId: string) =>
+    apiRequest<PurchaseRequestDto>(`/purchase-requests/${id(requestId)}/vote`, { method: 'DELETE' }),
+};
+
 export const libraryApi = {
   rules: () => apiRequest<LibraryRulesDto>('/library/rules', { auth: false }),
   pickupPoints: () => apiRequest<PickupPointDto[]>('/library/pickup-points', { auth: false }),
@@ -199,6 +217,13 @@ export const adminApi = {
     apiRequest<BookDto[]>(`/admin/books/${id(bookId)}/copies`, { method: 'POST', body: { count } }),
   createBook: (body: BookCreateDto) =>
     apiRequest<BookDto>('/admin/books', { method: 'POST', body }),
+  uploadCover: (bookId: string, file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    return apiRequest<BookDto>(`/admin/books/${id(bookId)}/cover`, { method: 'POST', body: form });
+  },
+  bulkUpdateBooks: (body: BulkBookUpdateDto) =>
+    apiRequest<BulkResultDto>('/admin/books/bulk', { method: 'POST', body }),
   updateBook: (bookId: string, body: BookUpdateDto) =>
     apiRequest<BookDto>(`/admin/books/${id(bookId)}`, { method: 'PATCH', body }),
   deleteBook: (bookId: string) =>
@@ -250,6 +275,26 @@ export const adminApi = {
       body: { action },
     }),
   upcomingReservations: () => apiRequest<UpcomingReservationDto[]>('/admin/reservations'),
+  purchaseRequests: () => apiRequest<PurchaseRequestDto[]>('/admin/purchase-requests'),
+  updatePurchaseRequest: (requestId: string, body: { status?: PurchaseStatusDto; librarian_note?: string | null }) =>
+    apiRequest<PurchaseRequestDto>(`/admin/purchase-requests/${id(requestId)}`, { method: 'PATCH', body }),
+  stocktakes: () => apiRequest<StocktakeBriefDto[]>('/admin/stocktakes'),
+  startStocktake: () => apiRequest<StocktakeBriefDto>('/admin/stocktakes', { method: 'POST' }),
+  stocktakeReport: (takeId: string) => apiRequest<StocktakeReportDto>(`/admin/stocktakes/${id(takeId)}`),
+  stocktakeScan: (takeId: string, isbn: string) =>
+    apiRequest<ScanResultDto>(`/admin/stocktakes/${id(takeId)}/scan`, { method: 'POST', body: { isbn } }),
+  stocktakeCount: (takeId: string, bookId: string, delta: 1 | -1) =>
+    apiRequest<{ counted: number }>(`/admin/stocktakes/${id(takeId)}/count`, {
+      method: 'POST',
+      body: { book_id: bookId, delta },
+    }),
+  finishStocktake: (takeId: string, markMissing: boolean) =>
+    apiRequest<StocktakeReportDto>(`/admin/stocktakes/${id(takeId)}/finish`, {
+      method: 'POST',
+      body: { mark_missing: markMissing },
+    }),
+  auditLog: (page: number, pageSize = 50) =>
+    apiRequest<AuditPageDto>('/admin/audit', { query: { page, page_size: pageSize } }),
   listPickupPoints: () => apiRequest<PickupPointDto[]>('/admin/pickup-points'),
   createPickupPoint: (body: PickupPointCreateDto) =>
     apiRequest<PickupPointDto>('/admin/pickup-points', { method: 'POST', body }),

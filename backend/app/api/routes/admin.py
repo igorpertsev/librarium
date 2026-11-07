@@ -4,22 +4,32 @@ import uuid
 from datetime import UTC, date, datetime, timedelta
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Response, status
+from fastapi import APIRouter, Depends, Query, Response, UploadFile, status
 
 from app.api.dependencies import (
     AdminUser,
     OpenLibraryDep,
     PaginationDep,
     SessionDep,
+    SettingsDep,
+    StaffUser,
     TranslationLookupDep,
+    audit_trail,
     require_admin,
 )
 from app.api.routes.books import LanguageQuery, TagsQuery, tag_slugs
 from app.core.exceptions import BadRequestError
-from app.models.enums import BookCategory, BookStatus, OrderStatus, ReviewStatus
+from app.models.enums import (
+    BookCategory,
+    BookStatus,
+    OrderStatus,
+    PurchaseStatus,
+    ReviewStatus,
+)
 from app.repositories import books as books_repo
 from app.repositories import orders as orders_repo
 from app.repositories.books import BookFilters
+from app.schemas.audit import AuditEventRead, AuditPage
 from app.schemas.book import (
     AddCopies,
     BookCreate,
@@ -28,6 +38,8 @@ from app.schemas.book import (
     BookSort,
     BookStats,
     BookUpdate,
+    BulkBookUpdate,
+    BulkResult,
     QualityIssue,
     QualitySummary,
 )
@@ -53,6 +65,7 @@ from app.schemas.order import (
     ReminderQueued,
 )
 from app.schemas.pickup import PickupPointCreate, PickupPointRead, PickupPointUpdate
+from app.schemas.purchase import PurchaseRequestRead, PurchaseRequestUpdate
 from app.schemas.report import DemandRead, ReportSummaryRead
 from app.schemas.reservation import UpcomingReservationRead
 from app.schemas.review import (
@@ -61,22 +74,49 @@ from app.schemas.review import (
     ModerationReviewRead,
     ReviewRead,
 )
+from app.schemas.stocktake import (
+    Counted,
+    CountIn,
+    FinishIn,
+    ScanIn,
+    ScanResultRead,
+    StocktakeBrief,
+    StocktakeLine,
+    StocktakeReportRead,
+    UnknownIsbn,
+)
 from app.schemas.translation import TranslationSuggestion, TranslationSuggestRequest
 from app.schemas.user import AdminUserPage, AdminUserUpdate, UserRead
-from app.services import book_import, catalog, duplicates, pickup, reports, reservations, reviews
+from app.services import (
+    audit,
+    book_import,
+    catalog,
+    covers,
+    duplicates,
+    pickup,
+    purchases,
+    reports,
+    reservations,
+    reviews,
+    stocktaking,
+)
 from app.services import books as books_service
 from app.services import library_settings as settings_service
 from app.services import orders as orders_service
 from app.services import users as users_service
 from app.services.tag_suggestions import suggest_tags
 
-# Every route below requires an authenticated administrator (checked server-side).
+# Every route below requires library staff (librarian or administrator), checked server-side;
+# routes marked ADMIN_ONLY require an administrator. Changes are recorded in the activity log.
 router = APIRouter(
     prefix="/admin",
     tags=["admin"],
-    dependencies=[Depends(require_admin)],
+    dependencies=[Depends(audit_trail)],
     responses=error_responses(401, 403),
 )
+
+
+ADMIN_ONLY = [Depends(require_admin)]
 
 
 # --- Books -------------------------------------------------------------------------------
@@ -245,6 +285,37 @@ async def admin_add_copies(
     return await books_service.add_copies(session, book_id, body.count)
 
 
+@router.post(
+    "/books/bulk",
+    response_model=BulkResult,
+    responses=error_responses(400, 404, 422),
+    description="One change (status, category, condition, tags to add or remove, or removal "
+    "from the catalogue) for every copy of up to 200 titles, all or nothing.",
+)
+async def admin_bulk_update_books(body: BulkBookUpdate, session: SessionDep) -> BulkResult:
+    return await books_service.bulk_update(session, body)
+
+
+@router.post(
+    "/books/{book_id}/cover",
+    response_model=BookRead,
+    responses=error_responses(400, 404, 413, 422),
+    description="Upload a cover (JPEG, PNG or WebP, at most 5 MB) for every copy of the title. "
+    "It is stored as WebP in three sizes; cover_url becomes /media/covers/<name>-L.webp.",
+)
+async def admin_upload_cover(
+    book_id: uuid.UUID, file: UploadFile, session: SessionDep, settings: SettingsDep
+) -> BookRead:
+    data = await file.read(settings.max_cover_bytes + 1)
+    return await covers.upload(
+        session,
+        book_id,
+        data,
+        media_dir=settings.media_dir,
+        max_bytes=settings.max_cover_bytes,
+    )
+
+
 @router.get("/books/{book_id}", response_model=BookRead, responses=error_responses(404, 422))
 async def admin_get_book(book_id: uuid.UUID, session: SessionDep) -> BookRead:
     return await books_service.get_book(session, book_id, include_inactive=True)
@@ -284,7 +355,12 @@ async def admin_list_users(
     )
 
 
-@router.patch("/users/{user_id}", response_model=UserRead, responses=error_responses(404, 409, 422))
+@router.patch(
+    "/users/{user_id}",
+    response_model=UserRead,
+    responses=error_responses(404, 409, 422),
+    dependencies=ADMIN_ONLY,
+)
 async def admin_update_user(
     user_id: uuid.UUID, body: AdminUserUpdate, admin: AdminUser, session: SessionDep
 ) -> UserRead:
@@ -536,7 +612,12 @@ async def admin_get_settings(session: SessionDep) -> LibrarySettingsRead:
     return LibrarySettingsRead.model_validate(await settings_service.get_library_settings(session))
 
 
-@router.patch("/settings", response_model=LibrarySettingsRead, responses=error_responses(422))
+@router.patch(
+    "/settings",
+    response_model=LibrarySettingsRead,
+    responses=error_responses(422),
+    dependencies=ADMIN_ONLY,
+)
 async def admin_update_settings(
     body: LibrarySettingsUpdate, session: SessionDep
 ) -> LibrarySettingsRead:
@@ -619,6 +700,7 @@ async def admin_list_pickup_points(session: SessionDep) -> list[PickupPointRead]
     status_code=status.HTTP_201_CREATED,
     response_model=PickupPointRead,
     responses=error_responses(422),
+    dependencies=ADMIN_ONLY,
 )
 async def admin_create_pickup_point(
     body: PickupPointCreate, session: SessionDep
@@ -627,7 +709,10 @@ async def admin_create_pickup_point(
 
 
 @router.patch(
-    "/pickup-points/{point_id}", response_model=PickupPointRead, responses=error_responses(404, 422)
+    "/pickup-points/{point_id}",
+    response_model=PickupPointRead,
+    responses=error_responses(404, 422),
+    dependencies=ADMIN_ONLY,
 )
 async def admin_update_pickup_point(
     point_id: uuid.UUID, body: PickupPointUpdate, session: SessionDep
@@ -639,6 +724,7 @@ async def admin_update_pickup_point(
     "/pickup-points/{point_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     responses=error_responses(404, 409, 422),
+    dependencies=ADMIN_ONLY,
 )
 async def admin_delete_pickup_point(point_id: uuid.UUID, session: SessionDep) -> Response:
     """Only points no order used; switch the others off (active = false)."""
@@ -653,3 +739,144 @@ async def admin_upcoming_reservations(session: SessionDep) -> list[UpcomingReser
         UpcomingReservationRead.model_validate(item, from_attributes=True)
         for item in await reservations.upcoming(session)
     ]
+
+
+# --- Activity log ------------------------------------------------------------------------
+
+
+@router.get(
+    "/audit",
+    response_model=AuditPage,
+    responses=error_responses(422),
+    dependencies=ADMIN_ONLY,
+)
+async def admin_audit_log(
+    session: SessionDep, pagination: PaginationDep, actor_id: uuid.UUID | None = None
+) -> AuditPage:
+    """Changes made by staff, newest first (administrators only)."""
+    items, total = await audit.list_events(
+        session, page=pagination.page, page_size=pagination.page_size, actor_id=actor_id
+    )
+    return AuditPage(
+        items=[AuditEventRead.model_validate(item, from_attributes=True) for item in items],
+        total=total,
+        page=pagination.page,
+        page_size=pagination.page_size,
+    )
+
+
+# --- Stocktaking -------------------------------------------------------------------------
+
+
+def _report(report: stocktaking.StocktakeReport) -> StocktakeReportRead:
+    return StocktakeReportRead(
+        id=report.id,
+        started_at=report.started_at,
+        finished_at=report.finished_at,
+        marked_missing=report.marked_missing,
+        expected=report.expected,
+        counted=report.counted,
+        lines=[StocktakeLine.model_validate(line, from_attributes=True) for line in report.lines],
+        unknown_isbns=[UnknownIsbn(isbn=i, counted=c) for i, c in report.unknown_isbns],
+    )
+
+
+@router.get("/stocktakes", response_model=list[StocktakeBrief])
+async def admin_list_stocktakes(session: SessionDep) -> list[StocktakeBrief]:
+    """The latest counts, newest first (an open one has no finished_at)."""
+    return [StocktakeBrief.model_validate(s) for s in await stocktaking.latest(session)]
+
+
+@router.post(
+    "/stocktakes",
+    status_code=status.HTTP_201_CREATED,
+    response_model=StocktakeBrief,
+    responses=error_responses(409),
+)
+async def admin_start_stocktake(user: StaffUser, session: SessionDep) -> StocktakeBrief:
+    """Start counting the shelves (409 STOCKTAKE_OPEN while another count is open)."""
+    return StocktakeBrief.model_validate(await stocktaking.start(session, user))
+
+
+@router.get(
+    "/stocktakes/{stocktake_id}",
+    response_model=StocktakeReportRead,
+    responses=error_responses(404, 422),
+)
+async def admin_stocktake_report(
+    stocktake_id: uuid.UUID, session: SessionDep
+) -> StocktakeReportRead:
+    return _report(await stocktaking.report(session, stocktake_id))
+
+
+@router.post(
+    "/stocktakes/{stocktake_id}/scan",
+    response_model=ScanResultRead,
+    responses=error_responses(400, 404, 409, 422),
+)
+async def admin_stocktake_scan(
+    stocktake_id: uuid.UUID, body: ScanIn, session: SessionDep
+) -> ScanResultRead:
+    """Count one copy by its ISBN; unknown ISBNs are listed in the report."""
+    result = await stocktaking.scan(session, stocktake_id, body.isbn)
+    return ScanResultRead.model_validate(result, from_attributes=True)
+
+
+@router.post(
+    "/stocktakes/{stocktake_id}/count",
+    response_model=Counted,
+    responses=error_responses(404, 409, 422),
+)
+async def admin_stocktake_count(
+    stocktake_id: uuid.UUID, body: CountIn, session: SessionDep
+) -> Counted:
+    """Count a title by hand (+1), or take one back (-1)."""
+    return Counted(counted=await stocktaking.count(session, stocktake_id, body.book_id, body.delta))
+
+
+@router.post(
+    "/stocktakes/{stocktake_id}/finish",
+    response_model=StocktakeReportRead,
+    responses=error_responses(404, 409, 422),
+)
+async def admin_finish_stocktake(
+    stocktake_id: uuid.UUID, body: FinishIn, session: SessionDep
+) -> StocktakeReportRead:
+    """Close the count; mark_missing makes copies that were not found "not available"."""
+    return _report(await stocktaking.finish(session, stocktake_id, mark_missing=body.mark_missing))
+
+
+# --- Purchase requests -------------------------------------------------------------------
+
+
+@router.get("/purchase-requests", response_model=list[PurchaseRequestRead])
+async def admin_list_purchase_requests(
+    user: StaffUser,
+    session: SessionDep,
+    status_: Annotated[list[PurchaseStatus] | None, Query(alias="status")] = None,
+) -> list[PurchaseRequestRead]:
+    """Readers' suggestions, most votes first (default: every status)."""
+    found = await purchases.list_requests(session, user, tuple(status_) if status_ else None)
+    return [PurchaseRequestRead.model_validate(r, from_attributes=True) for r in found]
+
+
+@router.patch(
+    "/purchase-requests/{request_id}",
+    response_model=PurchaseRequestRead,
+    responses=error_responses(404, 409, 422),
+    description="Mark a suggestion ordered, added or declined, with an optional note for "
+    'readers. "added" needs the book in the catalogue (same ISBN, or title and author; 409 '
+    "BOOK_NOT_IN_CATALOGUE) and emails everyone who voted.",
+)
+async def admin_update_purchase_request(
+    request_id: uuid.UUID, body: PurchaseRequestUpdate, user: StaffUser, session: SessionDep
+) -> PurchaseRequestRead:
+    view = await purchases.update(
+        session,
+        user,
+        request_id,
+        status=body.status,
+        librarian_note=body.librarian_note,
+        note_given="librarian_note" in body.model_fields_set,
+    )
+    return PurchaseRequestRead.model_validate(view, from_attributes=True)

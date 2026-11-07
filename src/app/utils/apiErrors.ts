@@ -49,6 +49,16 @@ const MESSAGE_KEYS: Record<string, string> = {
   INVALID_RESERVATION_DATE: 'errors.invalidReservationDate',
   RESERVATION_NOT_FOUND: 'errors.notFound',
   INVALID_FINISHED_ON: 'errors.invalidFinishedOn',
+  STOCKTAKE_OPEN: 'errors.stocktakeOpen',
+  STOCKTAKE_FINISHED: 'errors.stocktakeFinished',
+  STOCKTAKE_NOT_FOUND: 'errors.notFound',
+  INVALID_ISBN: 'errors.invalidIsbn',
+  INVALID_IMAGE: 'errors.invalidImage',
+  IMAGE_TOO_LARGE: 'errors.imageTooLarge',
+  ALREADY_IN_CATALOGUE: 'errors.alreadyInCatalogue',
+  TOO_MANY_SUGGESTIONS: 'errors.tooManySuggestions',
+  BOOK_NOT_IN_CATALOGUE: 'errors.bookNotInCatalogue',
+  PURCHASE_REQUEST_NOT_FOUND: 'errors.notFound',
 };
 
 /** Translated, user-facing message for an API error. */

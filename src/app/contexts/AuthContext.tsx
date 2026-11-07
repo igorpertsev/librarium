@@ -17,7 +17,7 @@ interface AuthContextType {
   register: (name: string, email: string, password: string, contacts: UserContacts) => Promise<ActionResult>;
   updateUser: (name: string, email: string, contacts: UserContacts) => Promise<ActionResult>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<ActionResult>;
-  updateUserRole: (userId: string, role: 'customer' | 'admin') => Promise<ActionResult>;
+  updateUserRole: (userId: string, role: User['role']) => Promise<ActionResult>;
   refreshUsers: () => Promise<void>;
   /** Switch the interface language; saved on the account when signed in. */
   setLanguage: (language: UiLanguage) => Promise<void>;
@@ -80,7 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (user?.role === 'admin') {
+    if (user?.role === 'admin' || user?.role === 'librarian') {
       refreshUsers().catch(() => setUsers([]));
     } else {
       setUsers([]);
@@ -139,7 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       );
     });
 
-  const updateUserRole = (userId: string, role: 'customer' | 'admin') =>
+  const updateUserRole = (userId: string, role: User['role']) =>
     runAction(async () => {
       const updated = await adminApi.updateUser(userId, { role });
       setUsers((prev) =>

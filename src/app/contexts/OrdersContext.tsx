@@ -6,6 +6,7 @@ import { orderFromDto } from '../../api/mappers';
 import type { OrderDto, PickupChoiceDto } from '../../api/types';
 import { useAuth } from './AuthContext';
 import { useCatalog } from './CatalogContext';
+import { isStaff } from '../utils/roles';
 
 const ACTIVE_STATUSES: ReadonlySet<OrderStatus> = new Set<OrderStatus>(['pending', 'confirmed']);
 
@@ -43,7 +44,7 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
   const [knownReserved, setKnownReserved] = useState<ReadonlySet<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = isStaff(user); // staff see every order
 
   const refreshOrders = useCallback(async () => {
     if (!user) {

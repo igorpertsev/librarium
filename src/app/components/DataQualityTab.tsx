@@ -15,6 +15,7 @@ const ISSUES: QualityIssueDto[] = [
   'no_tags',
   'no_translation',
   'no_isbn',
+  'damaged',
 ];
 const PAGE_SIZE = 20;
 

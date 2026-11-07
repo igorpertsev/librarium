@@ -284,6 +284,15 @@ pnpm api:types:file
 - **Access token** — JWT (HS256), 15 минут, claims `sub`, `role`, `type`, `jti`, `iat`, `nbf`, `exp`, `iss`, `aud`.
   Передаётся в `Authorization: Bearer`. Frontend держит его только в памяти.
   Роль для авторизации всегда читается из БД, claim `role` — справочный.
+- **Роли** — `customer`, `librarian`, `admin`. Библиотекарь работает в админ-панели с книгами, экземплярами,
+  импортом, заказами, отзывами, тегами и сериями, качеством данных и отчётами. Менять пользователей и роли,
+  настройки библиотеки и пункты выдачи, а также читать журнал действий может только администратор (`ADMIN_ONLY` в
+  `app/api/routes/admin.py`). Роли меняются на вкладке *Пользователи*; сотрудники не могут удалить свой аккаунт
+  сами (`ADMIN_ACCOUNT`).
+- **Журнал действий** — каждый успешный `POST/PUT/PATCH/DELETE` в `/admin` записывается после успеха (зависимость
+  роутера `audit_trail`): кто, какой эндпоинт, какая запись (первый id в пути) и тело запроса — пароли и токены
+  скрыты, длинные значения сокращены. Ошибочные запросы и чтение не записываются. Администратор смотрит журнал на
+  вкладке *Журнал* (`GET /admin/audit`, фильтр `actor_id`); email автора сохраняется, даже если аккаунт потом удалён.
 - **Refresh token** — случайная строка (`secrets.token_urlsafe(48)`), в БД хранится только SHA-256.
   Лежит в cookie `refresh_token`: `HttpOnly`, `Secure` (из env), `SameSite=Lax`, `Path=/api/v1/auth`.
   В JSON никогда не возвращается.
@@ -439,6 +448,44 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 ближайшие брони над списком заказов (`GET /admin/reservations`). Удаление аккаунта снимает его удержания и брони,
 а экземпляры переходят дальше.
 
+**Предложения книг**: читатели предлагают книги для покупки (`/suggestions`; ссылка есть и при пустом поиске, и в
+профиле) и голосуют за идеи друг друга (`GET/POST /purchase-requests`, `PUT/DELETE /purchase-requests/{id}/vote`).
+Та же книга ещё раз (ISBN или название и автор в любом регистре) засчитывается как голос (`created: false`); книги,
+которые уже есть в каталоге, не принимаются (`409 ALREADY_IN_CATALOGUE`); у читателя — до 10 открытых предложений.
+Сотрудники видят их на вкладке *Предложения* (по числу голосов) и отмечают заказанными, добавленными или
+отклонёнными, с заметкой для читателей (`PATCH /admin/purchase-requests/{id}`). *Добавлена* требует книгу в каталоге
+(`409 BOOK_NOT_IN_CATALOGUE`) и отправляет письмо всем проголосовавшим (`purchase_added`, видно и в колокольчике).
+
+**Загрузка обложки**: *Загрузить обложку* в форме книги (при редактировании) принимает JPEG, PNG или WebP до 5 МБ
+(`POST /admin/books/{id}/cover`, multipart `file`). Pillow декодирует файл (не больше 40 мегапикселей), удаляет
+метаданные и сохраняет WebP в размерах L/M/S (800/400/160 px в высоту) как `media/covers/<случайное>-<размер>.webp`;
+у всех экземпляров книги `cover_url = /media/covers/<случайное>-L.webp`, прежняя загрузка удаляется. Backend отдаёт
+`/media` с долгим кешированием (Caddy передаёт ему `/media/*`); frontend берёт нужный размер (S в списках, M на
+карточках, L в диалоге). Превью ссылок используют полный адрес (`APP_BASE_URL` + путь).
+
+**Инвентаризация** (вкладка админ-панели, сотрудники): начните пересчёт, сканируйте каждую книгу на полке (сканер
+продолжает работать; можно вводить ISBN вручную) или считайте книги без ISBN кнопками +1/−1. Экземпляры считаются по
+книгам. На полке ожидаются все активные экземпляры, которые не выданы и не отмечены *недоступными*. В отчёте сначала
+книги, где экземпляров не хватает или есть лишние, и ISBN, которых нет в каталоге. При завершении можно отметить
+ненайденные экземпляры *недоступными* с заметкой (выданные — никогда). Одновременно открыт только один пересчёт
+(`409 STOCKTAKE_OPEN`); сканы не пишутся в журнал действий, начало и завершение — пишутся.
+
+**Сканер ISBN**: кнопка с камерой рядом с полем ISBN в форме книги считывает штрихкод на обороте книги и
+запускает поиск в Open Library. Используется встроенный в браузер `BarcodeDetector`, если он есть (Chrome, Edge,
+Android), иначе ZXing (`@zxing/browser`, загружается только при сканировании). Принимаются только штрихкоды ISBN
+(EAN-13 978/979 с верной контрольной цифрой); без камеры ISBN можно ввести в том же окне. Камере нужен HTTPS (или
+localhost) и `Permissions-Policy: camera=(self)`, который отправляет Caddy.
+
+**Массовое изменение**: в списке книг администратора отметьте книги (или всю страницу) и примените одно
+изменение ко всем их экземплярам: статус, категория, состояние, добавить или убрать тег, убрать из каталога
+(с подтверждением; книги уходят из корзин). Неизвестный тег не меняет ничего (`UNKNOWN_TAGS`).
+
+**Состояние экземпляров**: у каждого экземпляра есть состояние (`new/good/worn/damaged`) и необязательная
+заметка — их задают в форме книги и при возврате заказа (*Отметить возврат* спрашивает, в каком виде вернулся каждый
+экземпляр; сохраняются только изменения). Между экземплярами одной книги оно не общее. Потёртые и повреждённые
+экземпляры помечены в списке книг администратора, а повреждённые видны в разделе *Качество данных*
+(`quality=damaged`).
+
 **Колокольчик уведомлений**: в шапке видны новости читателя — те же события, что и письма (`notifications`), даже
 если письмо не удалось отправить, кроме новостей, устаревших до отправки. Открытие списка отмечает их прочитанными
 (`read_at`); список обновляется раз в минуту, пока вкладка видна. Уведомления, появившиеся до колокольчика,
@@ -470,13 +517,16 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 
 | Таблица | Ключевое |
 | --- | --- |
-| `users` | email уникален и в нижнем регистре (CHECK), Argon2-хеш, роль `customer/admin`, контакты (nullable), `preferred_contact_method` |
-| `books` | `cover_url`, `image_urls[]`, `age_range`, `category`, `status` (`available/available-soon/not-available`), `language`, `publication_year`, `is_active` (мягкое удаление), `series_id` + `series_position` (CHECK > 0) |
+| `users` | email уникален и в нижнем регистре (CHECK), Argon2-хеш, роль `customer/librarian/admin`, контакты (nullable), `preferred_contact_method` |
+| `books` | `cover_url`, `image_urls[]`, `age_range`, `category`, `status` (`available/available-soon/not-available`), `condition` (`new/good/worn/damaged`, у каждого экземпляра своё) + `condition_note`, `language`, `publication_year`, `is_active` (мягкое удаление), `series_id` + `series_position` (CHECK > 0) |
 | `tags`, `book_tags` | `slug` тега (уникальный, CHECK формата), `name_en`, `name_ru`; связь книга ↔ тег |
 | `series` | `name` (уникальное), `name_en` / `name_ru` (названия на языках интерфейса, необязательно), `description`, `openlibrary_key` (уникальный, из поиска по ISBN) |
 | `book_translations` | на книгу и язык (`en`/`ru`): `title`, `author`, `description`, `title_source`/`description_source` (`manual/wikidata/wikipedia/machine`), `source_url` (ссылка на Википедию) |
 | `library_settings` | одна строка: `books_per_batch`, `price_per_batch NUMERIC(10,2)`, `currency`, `loan_period_days`, `max_renewals`, `hold_hours`, `block_overdue`, `late_fee_per_day NUMERIC(10,2)`, `timezone` |
 | `reading_log_entries` | читатель, экземпляр, `finished_on`, `UNIQUE(user_id, book_id)` (одна запись на книгу в сервисе) |
+| `stocktakes`, `stocktake_counts` | пересчёты полок (один открытый: частичный уникальный индекс); счёт по книге (`group_id`) или неизвестному `isbn` |
+| `purchase_requests`, `purchase_votes` | предложения читателей (`status` `open/ordered/added/declined`, `book_id` после добавления) и по одному голосу от читателя |
+| `audit_events` | автор (`SET NULL`) и снимок email, `action`, `method`, `path`, `entity_type`, `entity_id`, `details JSONB` |
 | `advance_reservations` | читатель, экземпляр, `starts_on`, `status` (`active/fulfilled/cancelled`) |
 | `pickup_points` | `name`, `address`, `notes`, `hours JSONB` (`[{weekday, opens, closes}]`), `slot_minutes`, `slot_capacity` (NULL — без ограничений), `active` |
 | `carts`, `cart_items` | одна корзина на пользователя, `UNIQUE(cart_id, book_id)` |
@@ -520,6 +570,7 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 | GET `/users/me/recommendations` (книги по тегам взятых и отложенных) | полка «Вам может понравиться» | пользователь |
 | GET `/users/me/holds` · DELETE `/users/me/holds/{book_id}` | книги, отложенные для читателя; отказ | пользователь |
 | GET/POST `/users/me/reservations` · DELETE `/users/me/reservations/{id}` | бронь книги на дату; отмена | пользователь |
+| GET/POST `/purchase-requests` · PUT/DELETE `/purchase-requests/{id}/vote` | предложить книгу, голосовать | пользователь |
 | GET `/users/me/reading-log` · PUT/DELETE `/users/me/reading-log/{book_id}` | прочитанные книги, счётчики, значки, взятые книги без отметки | пользователь |
 | GET `/users/me/notifications` · POST `/users/me/notifications/read` (`{ids}` или пусто — все) | колокольчик: последние 30 новостей за 60 дней и число непрочитанных | пользователь |
 | GET/POST | `/admin/books`, GET `/admin/books/stats`, GET/PATCH/DELETE `/admin/books/{id}` | admin |
@@ -528,9 +579,13 @@ refresh (нет цикла); при неудаче auth-состояние оч�
 | GET | `/admin/books/quality` (издания без обложки, описания, тегов, ISBN или перевода; непроверенный машинный перевод) · `/admin/books?quality=<issue>` — их список | admin |
 | GET | `/admin/reports/summary`, `/admin/reports/demand` (самые длинные листы ожидания, чаще всего отложенные книги, популярные теги), `/admin/reports/orders.csv` (`date_from`, `date_to`; по умолчанию последние 30 дней) | admin |
 | POST | `/admin/books/{id}/copies` (`{count}`: ещё экземпляры книги) | admin |
+| POST | `/admin/books/bulk` (`book_ids` ≤ 200 и одно или несколько из `status`, `category`, `condition`, `add_tags`, `remove_tags`, `deactivate`: для всех экземпляров каждой книги, всё или ничего) | сотрудники |
 | POST/PATCH/DELETE | `/admin/tags`, `/admin/tags/{id}` · POST `/admin/tags/{id}/merge`; то же для `/admin/series` | admin |
 | POST | `/admin/translations/suggest` (название, автор и описание на другом языке; ничего не сохраняет) | admin |
-| GET | `/admin/users` · PATCH `/admin/users/{id}` (роль, блокировка) | admin |
+| GET | `/admin/users` (сотрудники) · PATCH `/admin/users/{id}` (роль, блокировка) | admin |
+| GET | `/admin/audit` (журнал действий, новые сверху) | admin |
+| GET | `/admin/purchase-requests` · PATCH `/admin/purchase-requests/{id}` (`status`, `librarian_note`) | сотрудники |
+| GET/POST | `/admin/stocktakes` · GET `/admin/stocktakes/{id}` (отчёт) · POST `/admin/stocktakes/{id}/scan` `{isbn}`, `/count` `{book_id, delta}`, `/finish` `{mark_missing}` | сотрудники |
 | GET/POST | `/admin/pickup-points` · PATCH/DELETE `/admin/pickup-points/{id}` | admin |
 | GET | `/admin/reservations` (брони на дату, ближайшие первыми) | admin |
 | GET | `/admin/orders`, `/admin/orders/{id}` · PATCH `/admin/orders/{id}/status`, `/admin/orders/{id}/due-date`, `/admin/orders/{id}/late-fee` | admin |

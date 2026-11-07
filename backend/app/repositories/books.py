@@ -42,6 +42,7 @@ from app.models.enums import (
     ACTIVE_ORDER_STATUSES,
     BookCategory,
     BookStatus,
+    CopyCondition,
     ReservationStatus,
     TranslationSource,
 )
@@ -265,6 +266,7 @@ def quality_condition(issue: QualityIssue) -> ColumnElement[bool]:
         QualityIssue.NO_TAGS: ~exists().where(book_tags.c.book_id == Book.id),
         QualityIssue.NO_ISBN: or_(Book.isbn.is_(None), Book.isbn == ""),
         QualityIssue.NO_TRANSLATION: ~has_translation,
+        QualityIssue.DAMAGED: Book.condition == CopyCondition.DAMAGED,
         QualityIssue.MACHINE_TRANSLATION: exists().where(
             BookTranslation.book_id == Book.id,
             or_(

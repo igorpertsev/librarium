@@ -11,7 +11,13 @@ from enum import StrEnum
 
 class UserRole(StrEnum):
     CUSTOMER = "customer"
+    # Staff: books, orders, reviews, tags and series, reports. Not users, settings or pickup
+    # points, and not the activity log (see app.api.dependencies.require_admin).
+    LIBRARIAN = "librarian"
     ADMIN = "admin"
+
+
+STAFF_ROLES = frozenset({UserRole.LIBRARIAN, UserRole.ADMIN})
 
 
 class ContactMethod(StrEnum):
@@ -38,6 +44,15 @@ class BookStatus(StrEnum):
     AVAILABLE = "available"
     AVAILABLE_SOON = "available-soon"
     NOT_AVAILABLE = "not-available"
+
+
+class CopyCondition(StrEnum):
+    """Physical state of a copy, noted by librarians (per copy, not per title)."""
+
+    NEW = "new"
+    GOOD = "good"
+    WORN = "worn"
+    DAMAGED = "damaged"
 
 
 class OrderStatus(StrEnum):
@@ -89,6 +104,7 @@ class NotificationKind(StrEnum):
     BOOK_AVAILABLE = "book_available"  # a book on the customer's waiting list is back
     BOOK_HELD = "book_held"  # a returned book is held for the customer for a while
     RESERVATION_READY = "reservation_ready"  # a book reserved for a date is ready to collect
+    PURCHASE_ADDED = "purchase_added"  # a book the reader asked the library to buy is in
 
 
 class NotificationStatus(StrEnum):
@@ -112,3 +128,12 @@ class ReservationStatus(StrEnum):
     ACTIVE = "active"  # waiting for its date
     FULFILLED = "fulfilled"  # the date came and the copy was held for the reader
     CANCELLED = "cancelled"  # by the reader
+
+
+class PurchaseStatus(StrEnum):
+    """A reader's suggestion for the library to buy a book."""
+
+    OPEN = "open"  # collecting votes
+    ORDERED = "ordered"  # the library has ordered it
+    ADDED = "added"  # it is in the catalogue (voters are told)
+    DECLINED = "declined"
