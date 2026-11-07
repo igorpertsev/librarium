@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Download } from 'lucide-react';
 import { toast } from 'sonner';
@@ -13,6 +13,11 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
+
+// The charts library is large: loaded only when the reports are opened.
+const LibraryStatistics = lazy(() =>
+  import('./LibraryStatistics').then((module) => ({ default: module.LibraryStatistics })),
+);
 
 const isoDay = (date: Date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -138,6 +143,10 @@ export function ReportsTab() {
               </Table>
             )}
           </section>
+
+          <Suspense fallback={<p className="text-sm text-muted-foreground">{t('common.loading')}</p>}>
+            <LibraryStatistics period={period} />
+          </Suspense>
 
           <DemandReport period={period} />
         </>

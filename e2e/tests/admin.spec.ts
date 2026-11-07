@@ -140,3 +140,18 @@ test('the librarian uploads a cover for a book', async ({ page, request }) => {
   await expect(preview).toBeVisible();
   await expect.poll(() => preview.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
 });
+
+test('the librarian sees statistics by month and loans by category', async ({ page }) => {
+  await signIn(page, ADMIN);
+  await page.goto('/admin');
+  await page.getByRole('tab', { name: /Reports/ }).click();
+  const stats = page.getByRole('region', { name: 'Statistics by month' });
+  await expect(stats.getByRole('figure').first()).toBeVisible();
+  await stats.getByText('Show the figures').click();
+  await expect(stats.getByRole('table').getByRole('row')).toHaveCount(13); // header + 12 months
+  await stats.getByRole('button', { name: '6 months' }).click();
+  await expect(stats.getByRole('table').getByRole('row')).toHaveCount(7);
+  const [download] = await Promise.all([page.waitForEvent('download'), stats.getByRole('button', { name: 'CSV' }).click()]);
+  expect(download.suggestedFilename()).toBe('library-by-month-6.csv');
+  await expect(stats.getByText('Books lent by category (the period above)')).toBeVisible();
+});

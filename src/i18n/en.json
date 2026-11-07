@@ -1235,5 +1235,21 @@
     "addBooks": "Add books",
     "saveBooks": "Save books",
     "booksSaved": "Books saved"
+  },
+  "stats": {
+    "title": "Statistics by month",
+    "range": "How many months",
+    "months_one": "{{count}} month",
+    "months_other": "{{count}} months",
+    "loans": "Books lent",
+    "returns": "Books returned",
+    "activeReaders": "Active readers",
+    "newReaders": "New readers",
+    "lendingChart": "Books lent and returned",
+    "readersChart": "Active and new readers",
+    "showTable": "Show the figures",
+    "month": "Month",
+    "byCategory": "Books lent by category (the period above)",
+    "noLoans": "No books lent in this period."
   }
 }

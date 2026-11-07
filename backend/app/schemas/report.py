@@ -3,6 +3,9 @@ from __future__ import annotations
 from datetime import date
 from decimal import Decimal
 
+from pydantic import Field
+
+from app.models.enums import BookCategory
 from app.schemas.common import ApiModel
 
 
@@ -44,3 +47,16 @@ class DemandRead(ApiModel):
     waiting: list[WantedTitleRead]
     saved: list[WantedTitleRead]
     tags: list[TagLoansRead]
+
+
+class MonthStatsRead(ApiModel):
+    month: str = Field(description="YYYY-MM, in the library's time zone")
+    loans: int = Field(description="Books handed over")
+    returns: int = Field(description="Books brought back")
+    active_readers: int = Field(description="Readers with a loan handed over that month")
+    new_readers: int = Field(description="Reader accounts created that month")
+
+
+class CategoryLoansRead(ApiModel):
+    category: BookCategory
+    loans: int
