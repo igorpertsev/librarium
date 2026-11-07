@@ -3109,12 +3109,14 @@ export interface components {
             weekday: number;
             /**
              * Opens
-             * Format: time
+             * @example 09:30
+             * @example 18:00:00
              */
             opens: string;
             /**
              * Closes
-             * Format: time
+             * @example 09:30
+             * @example 18:00:00
              */
             closes: string;
         };

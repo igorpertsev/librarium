@@ -11875,13 +11875,21 @@
           },
           "opens": {
             "type": "string",
-            "format": "time",
-            "title": "Opens"
+            "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9](\\.[0-9]+)?)?$",
+            "title": "Opens",
+            "examples": [
+              "09:30",
+              "18:00:00"
+            ]
           },
           "closes": {
             "type": "string",
-            "format": "time",
-            "title": "Closes"
+            "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9](\\.[0-9]+)?)?$",
+            "title": "Closes",
+            "examples": [
+              "09:30",
+              "18:00:00"
+            ]
           }
         },
         "type": "object",
