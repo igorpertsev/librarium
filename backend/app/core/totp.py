@@ -9,9 +9,10 @@ import hmac
 import secrets
 import struct
 import time
+from collections.abc import Sequence
 from urllib.parse import quote, urlencode
 
-from cryptography.fernet import Fernet, InvalidToken
+from cryptography.fernet import Fernet, InvalidToken, MultiFernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 
@@ -93,13 +94,16 @@ def hash_recovery_code(code: str) -> str:
 
 
 class SecretBox:
-    """Encrypts TOTP secrets with a key derived from the server secret (HKDF-SHA256)."""
+    """Encrypts TOTP secrets with keys derived from server keys (HKDF-SHA256).
 
-    def __init__(self, server_secret: str) -> None:
-        key = HKDF(
-            algorithm=hashes.SHA256(), length=32, salt=None, info=b"librarium-totp-secrets"
-        ).derive(server_secret.encode())
-        self._fernet = Fernet(base64.urlsafe_b64encode(key))
+    The first key encrypts; every key decrypts, so a new key can be put in front of the old ones
+    and the stored secrets re-encrypted (``rotate``) before the old key is dropped.
+    """
+
+    def __init__(self, keys: Sequence[str]) -> None:
+        if not keys:
+            raise ValueError("SecretBox needs at least one key")
+        self._fernet = MultiFernet([_fernet(key) for key in keys])
 
     def seal(self, secret: str) -> str:
         return self._fernet.encrypt(secret.encode()).decode()
@@ -108,4 +112,18 @@ class SecretBox:
         try:
             return self._fernet.decrypt(sealed.encode()).decode()
         except InvalidToken:
-            return None  # the server secret changed: the user has to set it up again
+            return None  # none of the keys fits: the user has to set it up again
+
+    def rotate(self, sealed: str) -> str | None:
+        """The same secret encrypted with the first key, or None if no key opens it."""
+        try:
+            return self._fernet.rotate(sealed.encode()).decode()
+        except InvalidToken:
+            return None
+
+
+def _fernet(key: str) -> Fernet:
+    derived = HKDF(
+        algorithm=hashes.SHA256(), length=32, salt=None, info=b"librarium-totp-secrets"
+    ).derive(key.encode())
+    return Fernet(base64.urlsafe_b64encode(derived))

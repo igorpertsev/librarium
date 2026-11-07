@@ -104,6 +104,7 @@ Docker Compose and Vite read the root `.env` (template: `.env.example`). Filled-
 | `SENTRY_DSN` | — | optional: report unhandled errors to Sentry or a compatible service; no personal data is sent |
 | `DATABASE_URL` | `postgresql+asyncpg://postgres:postgres@localhost:5433/bookstore` | `postgres://` and `postgresql://` are normalised to asyncpg |
 | `JWT_SECRET_KEY` | — | **required in production**, ≥ 32 characters, not a known weak value; in development an ephemeral secret is generated if empty |
+| `MFA_ENCRYPTION_KEYS` | — | keys that encrypt two-step sign-in secrets, comma-separated, the encrypting one first (≥ 32 characters each); empty: derived from `JWT_SECRET_KEY`. Rotate with `python -m app.cli rotate-mfa-keys` |
 | `JWT_ALGORITHM` | `HS256` | HS256/384/512 |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `15` | 1–60 |
 | `REFRESH_TOKEN_EXPIRE_DAYS` | `30` | 1–180 |
@@ -302,8 +303,10 @@ conversion to UI models in `src/api/mappers.ts`. After an API change: export the
   (`POST /users/me/mfa/setup`), scan the `otpauth://` QR code with an authenticator app, confirm with a code
   (`/users/me/mfa/enable`) and keep the ten recovery codes it returns (shown once, stored as SHA-256 hashes, each
   works once). TOTP per RFC 6238 (SHA-1, 6 digits, 30 s, ±1 step); a code is never accepted twice. Secrets are
-  encrypted (Fernet, key derived from `JWT_SECRET_KEY` with HKDF), so changing `JWT_SECRET_KEY` turns every
-  user's two-step sign-in unusable — reset it for them or let them set it up again. With it on, `/auth/login`
+  encrypted (Fernet, keys derived with HKDF) with the first of `MFA_ENCRYPTION_KEYS`; every listed key and the
+  key derived from `JWT_SECRET_KEY` (used when the setting is empty) can decrypt. To rotate, put a new key first,
+  run `python -m app.cli rotate-mfa-keys` (re-encrypts every secret with it) and drop the old key. Without
+  `MFA_ENCRYPTION_KEYS`, changing `JWT_SECRET_KEY` turns every user's two-step sign-in unusable. With it on, `/auth/login`
   answers `403 MFA_REQUIRED` with `details.mfa_token` (5 minutes) and `/auth/login/mfa` takes that token and a
   code or recovery code (rate-limited like the password). Administrators can require it for staff (setting
   `require_staff_mfa`; only after turning it on for themselves): staff without it get `403 MFA_SETUP_REQUIRED`

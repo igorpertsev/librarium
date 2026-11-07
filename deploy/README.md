@@ -112,18 +112,19 @@ For a private repository use a read-only deploy key or an HTTPS access token.
 cp deploy/.env.production.example .env && chmod 600 .env
 ```
 
-Generate the two secrets and put them into `.env` together with `DOMAIN` and `ACME_EMAIL`:
+Generate the secrets and put them into `.env` together with `DOMAIN` and `ACME_EMAIL`:
 
 ```bash
-python3 -c "import secrets; print('POSTGRES_PASSWORD=' + secrets.token_urlsafe(32)); print('JWT_SECRET_KEY=' + secrets.token_urlsafe(64))"
+python3 -c "import secrets; print('POSTGRES_PASSWORD=' + secrets.token_urlsafe(32)); print('JWT_SECRET_KEY=' + secrets.token_urlsafe(64)); print('MFA_ENCRYPTION_KEYS=' + secrets.token_urlsafe(32))"
 ```
 
 ```bash
 nano .env
 ```
 
-Keep `.env` safe: losing `POSTGRES_PASSWORD` locks you out of the existing database volume.
-Changing `JWT_SECRET_KEY` later only signs everybody out.
+Keep `.env` safe: losing `POSTGRES_PASSWORD` locks you out of the existing database volume, and
+losing `MFA_ENCRYPTION_KEYS` turns two-step sign-in off for everybody who uses it. Changing
+`JWT_SECRET_KEY` later only signs everybody out (as long as `MFA_ENCRYPTION_KEYS` is set).
 
 ## 6. Start the stack
 
@@ -433,6 +434,21 @@ are JSON lines; every line of one request carries the same `request_id`, which u
 ```bash
 docker compose -f docker-compose.prod.yml logs backend | grep '"request_id": "<code>"'
 ```
+
+**Rotating the two-step sign-in key.** Servers set up before `MFA_ENCRYPTION_KEYS` existed use a
+key derived from `JWT_SECRET_KEY` (the backend logs a warning); the same steps move them to their
+own key. Put a new key in front of the old ones in `.env` (`MFA_ENCRYPTION_KEYS=new,old`; leave
+`old` out the first time), restart, re-encrypt, then remove the old key and restart again:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d backend notifier
+```
+
+```bash
+docker compose -f docker-compose.prod.yml exec backend python -m app.cli rotate-mfa-keys
+```
+
+Secrets no key can open (the command counts them) need a reset by an administrator.
 
 **Error reporting (optional).** Put a Sentry (or GlitchTip) DSN into `SENTRY_DSN` in `.env` and run
 `docker compose -f docker-compose.prod.yml up -d`; unhandled errors are then reported with their stack
