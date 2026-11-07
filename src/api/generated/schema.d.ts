@@ -1881,6 +1881,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/reports/monthly": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin Report Monthly
+         * @description Loans, returns, active and new readers per calendar month, oldest first.
+         */
+        get: operations["admin_report_monthly_api_v1_admin_reports_monthly_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/reports/monthly.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin Report Monthly Csv
+         * @description The monthly figures as CSV (UTF-8 with BOM for spreadsheet apps).
+         */
+        get: operations["admin_report_monthly_csv_api_v1_admin_reports_monthly_csv_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/reports/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin Report Categories
+         * @description Books handed over in the period by category, most first (default: the last 30 days).
+         */
+        get: operations["admin_report_categories_api_v1_admin_reports_categories_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/reports/orders.csv": {
         parameters: {
             query?: never;
@@ -3002,6 +3062,12 @@ export interface components {
             /** Has Unavailable Items */
             has_unavailable_items: boolean;
         };
+        /** CategoryLoansRead */
+        CategoryLoansRead: {
+            category: components["schemas"]["BookCategory"];
+            /** Loans */
+            loans: number;
+        };
         /** ChallengeCreate */
         ChallengeCreate: {
             /** Name En */
@@ -3706,6 +3772,34 @@ export interface components {
             reader_name: string;
             /** Reader Email */
             reader_email: string;
+        };
+        /** MonthStatsRead */
+        MonthStatsRead: {
+            /**
+             * Month
+             * @description YYYY-MM, in the library's time zone
+             */
+            month: string;
+            /**
+             * Loans
+             * @description Books handed over
+             */
+            loans: number;
+            /**
+             * Returns
+             * @description Books brought back
+             */
+            returns: number;
+            /**
+             * Active Readers
+             * @description Readers with a loan handed over that month
+             */
+            active_readers: number;
+            /**
+             * New Readers
+             * @description Reader accounts created that month
+             */
+            new_readers: number;
         };
         /** MyReviewRead */
         MyReviewRead: {
@@ -10322,6 +10416,165 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DemandRead"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_report_monthly_api_v1_admin_reports_monthly_get: {
+        parameters: {
+            query?: {
+                /** @description How many months, up to this one */
+                months?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonthStatsRead"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_report_monthly_csv_api_v1_admin_reports_monthly_csv_get: {
+        parameters: {
+            query?: {
+                /** @description How many months, up to this one */
+                months?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_report_categories_api_v1_admin_reports_categories_get: {
+        parameters: {
+            query?: {
+                date_from?: string | null;
+                date_to?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryLoansRead"][];
                 };
             };
             /** @description Bad Request */

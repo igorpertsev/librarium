@@ -40,6 +40,8 @@ import type {
   PickupPointDto,
   ChallengeCreateDto,
   ChallengeDto,
+  CategoryLoansDto,
+  MonthStatsDto,
   BookPickDto,
   CollectionCreateDto,
   CollectionDto,
@@ -374,6 +376,10 @@ export const adminApi = {
   reportDemand: (period: ReportPeriod) =>
     apiRequest<DemandDto>('/admin/reports/demand', { query: period }),
   ordersCsv: (period: ReportPeriod) => apiDownload('/admin/reports/orders.csv', { query: period }),
+  reportMonthly: (months: number) => apiRequest<MonthStatsDto[]>('/admin/reports/monthly', { query: { months } }),
+  monthlyCsv: (months: number) => apiDownload('/admin/reports/monthly.csv', { query: { months } }),
+  reportCategories: (period: ReportPeriod) =>
+    apiRequest<CategoryLoansDto[]>('/admin/reports/categories', { query: period }),
   updateSettings: (body: LibrarySettingsUpdateDto) =>
     apiRequest<LibrarySettingsDto>('/admin/settings', { method: 'PATCH', body }),
 };

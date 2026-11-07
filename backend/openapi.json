@@ -7921,6 +7921,259 @@
         }
       }
     },
+    "/api/v1/admin/reports/monthly": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Report Monthly",
+        "description": "Loans, returns, active and new readers per calendar month, oldest first.",
+        "operationId": "admin_report_monthly_api_v1_admin_reports_monthly_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "months",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 36,
+              "minimum": 1,
+              "description": "How many months, up to this one",
+              "default": 12,
+              "title": "Months"
+            },
+            "description": "How many months, up to this one"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MonthStatsRead"
+                  },
+                  "title": "Response Admin Report Monthly Api V1 Admin Reports Monthly Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/reports/monthly.csv": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Report Monthly Csv",
+        "description": "The monthly figures as CSV (UTF-8 with BOM for spreadsheet apps).",
+        "operationId": "admin_report_monthly_csv_api_v1_admin_reports_monthly_csv_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "months",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 36,
+              "minimum": 1,
+              "description": "How many months, up to this one",
+              "default": 12,
+              "title": "Months"
+            },
+            "description": "How many months, up to this one"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/csv": {}
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/reports/categories": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Report Categories",
+        "description": "Books handed over in the period by category, most first (default: the last 30 days).",
+        "operationId": "admin_report_categories_api_v1_admin_reports_categories_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CategoryLoansRead"
+                  },
+                  "title": "Response Admin Report Categories Api V1 Admin Reports Categories Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
     "/api/v1/admin/reports/orders.csv": {
       "get": {
         "tags": [
@@ -12265,6 +12518,23 @@
         "title": "CartRead",
         "description": "The cart grouped into batches (in the order books were added).\n\n``total_amount`` is informational; the authoritative total is recomputed when the\norder is placed."
       },
+      "CategoryLoansRead": {
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/BookCategory"
+          },
+          "loans": {
+            "type": "integer",
+            "title": "Loans"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category",
+          "loans"
+        ],
+        "title": "CategoryLoansRead"
+      },
       "ChallengeCreate": {
         "properties": {
           "name_en": {
@@ -14113,6 +14383,44 @@
           "reader_email"
         ],
         "title": "ModerationReviewRead"
+      },
+      "MonthStatsRead": {
+        "properties": {
+          "month": {
+            "type": "string",
+            "title": "Month",
+            "description": "YYYY-MM, in the library's time zone"
+          },
+          "loans": {
+            "type": "integer",
+            "title": "Loans",
+            "description": "Books handed over"
+          },
+          "returns": {
+            "type": "integer",
+            "title": "Returns",
+            "description": "Books brought back"
+          },
+          "active_readers": {
+            "type": "integer",
+            "title": "Active Readers",
+            "description": "Readers with a loan handed over that month"
+          },
+          "new_readers": {
+            "type": "integer",
+            "title": "New Readers",
+            "description": "Reader accounts created that month"
+          }
+        },
+        "type": "object",
+        "required": [
+          "month",
+          "loans",
+          "returns",
+          "active_readers",
+          "new_readers"
+        ],
+        "title": "MonthStatsRead"
       },
       "MyReviewRead": {
         "properties": {
