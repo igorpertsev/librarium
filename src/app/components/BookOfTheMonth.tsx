@@ -45,7 +45,7 @@ export function BookOfTheMonth() {
     <section aria-labelledby="book-of-the-month" className="h-44 mb-6 flex gap-4 rounded-lg border border-border bg-card p-4 overflow-hidden">
       <div className="h-full aspect-[3/4] shrink-0 overflow-hidden rounded-md bg-muted">
         {pick.book.coverImage && (
-          <img src={coverOfSize(pick.book.coverImage, 'M')} alt="" className="w-full h-full object-cover" fetchPriority="high" />
+          <img src={coverOfSize(pick.book.coverImage, 'M')} alt="" className="w-full h-full object-cover" fetchpriority="high" />
         )}
       </div>
       <div className="min-w-0 flex flex-col">

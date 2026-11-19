@@ -123,7 +123,7 @@ export function BookCard({ book, eager = false }: BookCardProps) {
                     alt={t('bookDetails.imageAlt', { title: text.title, n: index + 1 })}
                     className="w-full h-full object-cover select-none"
                     loading={eager && index === 0 ? 'eager' : 'lazy'}
-                    fetchPriority={eager && index === 0 ? 'high' : 'auto'}
+                    fetchpriority={eager && index === 0 ? 'high' : 'auto'}
                     decoding="async"
                     draggable={false}
                   />
